@@ -456,7 +456,7 @@ export const CafePOSPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] bg-[#000000] text-white">
+    <div className="flex flex-col min-h-screen lg:h-[calc(100vh-4rem)] bg-[#000000] text-white overflow-x-hidden">
       {/* TOP BAR: Kasir, Meja, Status Shift */}
       <header className="flex flex-wrap items-center justify-between px-3 sm:px-4 py-2.5 bg-[#121215] border-b border-[#26272d] gap-3 shrink-0">
         <div className="flex items-center gap-2.5">
@@ -524,7 +524,7 @@ export const CafePOSPage = () => {
       )}
 
       {/* WORKSPACE DUA KOLOM */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-x-hidden min-h-0">
         {/* KOLOM KIRI: KATALOG MENU */}
         <section className="flex-1 flex flex-col min-w-0 bg-[#000000] overflow-hidden">
           {/* SEARCH & DYNAMIC CATEGORY FILTER BADGES */}
@@ -542,12 +542,12 @@ export const CafePOSPage = () => {
             </div>
 
             {/* Dynamic Category Badges from Admin Settings */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 max-w-full flex-nowrap">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 w-full max-w-full flex-nowrap">
               {categories.map(cat => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer active:scale-[0.98] ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer active:scale-[0.98] shrink-0 ${
                     selectedCategory === cat
                       ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-xs border border-[#00ffff]'
                       : 'bg-[#18181c] text-[#bbcbb2] hover:text-white border border-[#26272d] hover:border-[#3f414a]'
@@ -560,7 +560,7 @@ export const CafePOSPage = () => {
           </div>
 
           {/* MENU GRID */}
-          <div className="flex-1 p-3 sm:p-4 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
+          <div className="flex-1 p-2.5 sm:p-4 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-3 w-full max-w-full">
             {filteredMenu.length === 0 ? (
               <div className="col-span-full py-16 flex flex-col items-center justify-center text-[#bbcbb2] gap-2">
                 <Coffee className="w-10 h-10 text-[#6b7367]" />

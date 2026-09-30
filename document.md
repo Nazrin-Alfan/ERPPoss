@@ -2298,6 +2298,19 @@
       - **Verifikasi Kualitas**:
         - Vitest: 197/197 unit tests (34 test files) lulus 100% GREEN.
         - Vite production build sukses dalam 2.58 detik.
+    24. **Perbaikan Responsivitas Mode Mobile Kasir POS (Anti-Overflow) (2026-09-29)**:
+      - **Akar Masalah (*Root Cause*)**:
+        - Pembungkus terluar halaman POS menggunakan tinggi kaku `h-[calc(100vh-4rem)]` tanpa perlindungan `overflow-x-hidden`.
+        - Pada viewport mobile (lebar layar smartphone < 640px), kontainer dua kolom (`flex-col lg:flex-row`) terkompresi sementara keranjang belanja di bawah katalog produk memicu dorongan lebar minimum, menyebabkan kartu menu keluar dari tepi layar kanan (*horizontal overflow*).
+      - **Solusi Rekayasa**:
+        - Memperbarui `CafePOSPage.jsx` dan `CarwashPOSPage.jsx` dengan:
+          - Kontainer terluar: `min-h-screen lg:h-[calc(100vh-4rem)] overflow-x-hidden`.
+          - Kontainer workspace: `flex-1 flex flex-col lg:flex-row overflow-x-hidden min-h-0`.
+          - Grid menu: `grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-3 w-full max-w-full`.
+          - Badge filter kategori: `w-full max-w-full flex-nowrap overflow-x-auto no-scrollbar` dengan tombol kategori `shrink-0`.
+      - **Verifikasi Kualitas**:
+        - 197/197 unit tests PASS (100% GREEN).
+        - Vite production build sukses dalam 2.46 detik.
 
 
 
