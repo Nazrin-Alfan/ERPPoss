@@ -350,30 +350,14 @@ const CRM = () => {
 
         {/* Table Content */}
         <RelationTable
-          data={filteredCustomers}
-          keyExtractor={(c) => c.id_pelanggan || c.id || c.phone}
-          emptyMessage="Tidak ada pelanggan ditemukan."
+          data={paginatedCustomers}
+          keyExtractor={(c) => c.plat}
+          emptyMessage="Tidak ada kendaraan atau riwayat pelanggan ditemukan."
           columns={[
             {
-              key: 'nama_pelanggan',
-              label: 'Pelanggan',
-              render: (val, c) => (
-                <div>
-                  <div className="font-bold text-white flex items-center gap-1.5">
-                    {val || 'Pelanggan Walk-In'}
-                    {c.is_member && (
-                      <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.2 rounded font-mono">
-                        MEMBER
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-muted-dark text-[11px] font-mono">{c.phone || c.no_hp || '-'}</div>
-                </div>
-              ),
-            },
-            {
-              key: 'plat_nomor',
+              key: 'plat',
               label: 'Plat Kendaraan',
+              className: 'font-mono font-bold text-white',
               render: (val) => (
                 <span className="font-mono bg-subsurface text-foreground font-bold px-2 py-0.5 rounded border border-border">
                   {val || '-'}
@@ -381,17 +365,33 @@ const CRM = () => {
               ),
             },
             {
-              key: 'tipe_kendaraan',
-              label: 'Tipe / Warna',
+              key: 'model',
+              label: 'Model Kendaraan',
+              className: 'font-medium text-white',
               render: (val, c) => (
                 <div>
-                  <div className="text-white">{val || '-'}</div>
-                  <div className="text-muted-dark text-[11px]">{c.warna_kendaraan || ''}</div>
+                  <div className="text-white font-medium">{val || 'Mobil'}</div>
+                  <div className="text-muted-dark text-[10px] uppercase font-mono">{c.favPkg}</div>
                 </div>
               ),
             },
             {
-              key: 'total_kunjungan',
+              key: 'noTelepon',
+              label: 'No. WhatsApp',
+              className: 'font-mono text-muted text-xs',
+              render: (val) => (val && val !== '-' ? val : <span className="text-muted/40">-</span>),
+            },
+            {
+              key: 'segment',
+              label: 'Status / Segmen',
+              render: (_, c) => (
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border ${c.segmentBadge}`}>
+                  {c.segment}
+                </span>
+              ),
+            },
+            {
+              key: 'totalVisits',
               label: 'Kunjungan',
               numeric: true,
               render: (val) => (
@@ -401,7 +401,7 @@ const CRM = () => {
               ),
             },
             {
-              key: 'total_belanja',
+              key: 'totalSpent',
               label: 'Total Belanja',
               numeric: true,
               render: (val) => (
@@ -411,11 +411,11 @@ const CRM = () => {
               ),
             },
             {
-              key: 'terakhir_kunjungan',
+              key: 'lastVisit',
               label: 'Terakhir Berkunjung',
               render: (val) => (
-                <span className="text-muted text-[11px]">
-                  {val ? new Date(val).toLocaleDateString('id-ID', { dateStyle: 'medium' }) : '-'}
+                <span className="text-muted text-[11px] font-mono">
+                  {val ? parseDateSafe(val).toLocaleDateString('id-ID', { dateStyle: 'medium' }) : '-'}
                 </span>
               ),
             },
@@ -425,21 +425,24 @@ const CRM = () => {
               align: 'center',
               render: (_, c) => (
                 <div className="flex items-center justify-center gap-2">
-                  {c.phone && (
-                    <button
-                      onClick={() => handleOpenWhatsAppModal(c)}
+                  {c.noTelepon && c.noTelepon !== '-' && (
+                    <a
+                      href={`https://wa.me/${c.noTelepon.replace(/\D/g, '').replace(/^0/, '62')}`}
+                      target="_blank"
+                      rel="noreferrer"
                       className="text-primary hover:text-white p-1 rounded hover:bg-subsurface transition-colors"
-                      title="Kirim Pesan WhatsApp"
+                      title="Kirim WhatsApp"
                     >
                       <MessageSquare className="w-4 h-4" />
-                    </button>
+                    </a>
                   )}
                   <button
-                    onClick={() => handleViewDetail(c)}
-                    className="text-muted-foreground hover:text-white p-1 rounded hover:bg-subsurface transition-colors"
+                    onClick={() => setSelectedCustomerPlat(c.plat)}
+                    className="text-muted-foreground hover:text-white p-1 rounded hover:bg-subsurface transition-colors flex items-center gap-1 text-[11px]"
                     title="Lihat Detail Riwayat"
                   >
-                    <ChevronRight className="w-4 h-4" />
+                    <span>Rincian</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
               ),

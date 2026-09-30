@@ -2484,6 +2484,15 @@
       - **Verifikasi Kualitas**:
         - 215/215 unit tests PASS across 38 test files (100% GREEN).
         - Vite production build sukses dalam 1.89 detik.
+    40. **Penyelarasan Data Binding pada Tabel CRM Pelanggan (`CRM.jsx`) (2026-09-30)**:
+      - **Akar Masalah**: Kolom tabel CRM sebelumnya memetakan field generik (`nama_pelanggan`, `plat_nomor`, `phone`), sedangkan data agregasi CRM riil dihitung berdasarkan nomor plat mobil (`c.plat`, `c.model`, `c.noTelepon`, `c.totalVisits`, `c.totalSpent`, `c.lastVisit`, `c.segment`).
+      - **Tindakan Perbaikan**:
+        - Memperbaiki pemetaan kolom ke atribut CRM aktual (`plat`, `model`, `noTelepon`, `segment`, `totalVisits`, `totalSpent`, `lastVisit`).
+        - Menghubungkan pagination aman `data={paginatedCustomers}` (20 pelanggan per halaman).
+        - Menghubungkan tombol aksi: direct link WhatsApp via `https://wa.me/...` dan tombol Rincian Riwayat memanggil `setSelectedCustomerPlat(c.plat)` untuk membuka popup rincian kunjungan pelanggan.
+      - **Verifikasi Kualitas**:
+        - 215/215 unit tests PASS across 38 test files (100% GREEN).
+        - Vite production build sukses dalam 1.53 detik.
 
 
 
