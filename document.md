@@ -2348,6 +2348,18 @@
       - **Verifikasi Kualitas**:
         - 197/197 unit tests PASS (100% GREEN).
         - Vite production build sukses dalam 2.68 detik.
+    28. **Perombakan Total Warna Tab Carwash & Struk Belanja ke VRS_2026 Cyan Master (2026-09-30)**:
+      - **Akar Masalah (*Root Cause*)**:
+        - Pada tangkapan layar `Screenshot_2026-09-30_230134.png`, item carwash di dalam ringkasan struk belanja menggunakan solid background cyan terang benderang (`bg-[#00ffff]`) yang sangat menyilaukan dan merusak estetika antarmuka.
+        - Tombol aksi utama "Simpan & Cetak" memakai warna hijau zamrud (`bg-emerald-600`), tombol "Dine In" memakai hijau, dan tombol saldo laci kasir memakai warna ungu laci, menciptakan diskrepansi warna yang tidak konsisten dengan token palet yang telah disepakati.
+      - **Solusi Rekayasa**:
+        - Mengganti seluruh kartu item carwash di keranjang belanja desktop dan mobile menjadi permukaan gelap elegan (`bg-[#18181c] border border-[#26272d] hover:border-[#3f414a]`) dengan badge pill tipis cyan `bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30` dan nominal font mono cyan.
+        - Mengganti tombol aksi "Simpan & Cetak" di desktop dan drawer mobile menjadi `bg-[#00ffff] text-[#0f0f0f] font-black hover:bg-[#00ffff]/90 active:scale-[0.98]` berstandar tactile 21st.dev.
+        - Mengubah kontrol tipe pesanan (Dine In / Take Away) menjadi tombol ber-border sleek `#26272d` dengan state aktif `bg-[#00ffff] text-[#0f0f0f]`, menggantikan emoji dengan ikon vector Lucide (`Coffee` & `ShoppingBag`).
+        - Menyelaraskan kartu Estimasi Tarif Cuci dan pill saldo laci kasir ke palet `#18181c`, `#26272d`, dan aksen `#00ffff`.
+      - **Verifikasi Kualitas**:
+        - 197/197 unit tests PASS (100% GREEN).
+        - Vite production build sukses dalam 1.92 detik.
 
 
 

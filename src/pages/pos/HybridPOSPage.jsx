@@ -2160,14 +2160,14 @@ const CafePOS = () => {
             <button
               type="button"
               onClick={() => setShowCashDrawerDetail(!showCashDrawerDetail)}
-              className="flex items-center gap-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 rounded-lg px-2.5 py-1 text-xs transition-colors"
+              className="flex items-center gap-2 bg-[#18181c] hover:bg-[#26272d] border border-[#26272d] rounded-lg px-2.5 py-1 text-xs transition-colors"
               title="Klik untuk melihat rincian modal & arus kas laci"
             >
-              <Wallet size={13} className="text-purple-400" />
+              <Wallet size={13} className="text-[#00ffff]" />
               <span className="font-bold text-white font-mono text-xs">
                 {formatRupiah(todayStartingCapital + cashierCash.todayIn - cashierCash.todayOut)}
               </span>
-              <ChevronDown size={12} className={`text-purple-400 transition-transform ${showCashDrawerDetail ? 'rotate-180' : ''}`} />
+              <ChevronDown size={12} className={`text-[#6b7367] transition-transform ${showCashDrawerDetail ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Popover Rincian Arus Kas */}
@@ -2369,9 +2369,9 @@ const CafePOS = () => {
               <button
                 type="button"
                 onClick={() => setHasCarwash(!hasCarwash)}
-                className={`px-4 py-2 rounded-lg font-bold text-xs transition-colors border ${hasCarwash
-                  ? 'bg-[#00ffff] text-[#0f0f0f] text-slate-950 border-brand-blue'
-                  : 'bg-transparent text-[#bbcbb2] border-[#26272d] hover:border-[#3f414a]'
+                className={`px-3.5 py-1.5 rounded-lg font-bold text-xs transition-all border active:scale-[0.98] ${hasCarwash
+                  ? 'bg-[#00ffff] text-[#0f0f0f] border-[#00ffff] shadow-xs'
+                  : 'bg-[#18181c] text-[#bbcbb2] border-[#26272d] hover:border-[#3f414a] hover:text-white'
                   }`}
               >
                 {hasCarwash ? '✓ Aktif dalam Transaksi' : '+ Tambah ke Transaksi'}
@@ -2448,9 +2448,9 @@ const CafePOS = () => {
                         key={u}
                         type="button"
                         onClick={() => setCarwashForm(prev => ({ ...prev, ukuran: u }))}
-                        className={`py-2 rounded-lg font-bold text-xs transition-all ${carwashForm.ukuran === u
-                          ? 'bg-[#00ffff] text-[#0f0f0f]/20 text-[#00ffff] border border-brand-blue/40'
-                          : 'bg-[#121215] text-[#bbcbb2] border border-[#26272d]'
+                        className={`py-2 rounded-lg font-bold text-xs transition-all border active:scale-[0.98] ${carwashForm.ukuran === u
+                          ? 'bg-[#00ffff] text-[#0f0f0f] border-[#00ffff] shadow-xs font-black'
+                          : 'bg-[#18181c] text-[#bbcbb2] border-[#26272d] hover:border-[#3f414a] hover:text-white'
                           }`}
                       >
                         {u}
@@ -2486,9 +2486,9 @@ const CafePOS = () => {
                         key={v}
                         type="button"
                         onClick={() => setCarwashForm(prev => ({ ...prev, variant: v }))}
-                        className={`py-2 rounded-lg font-bold text-xs transition-all ${carwashForm.variant === v
-                          ? 'bg-[#00ffff] text-[#0f0f0f]/20 text-[#00ffff] border border-brand-blue/40'
-                          : 'bg-[#121215] text-[#bbcbb2] border border-[#26272d]'
+                        className={`py-2 rounded-lg font-bold text-xs transition-all border active:scale-[0.98] ${carwashForm.variant === v
+                          ? 'bg-[#00ffff] text-[#0f0f0f] border-[#00ffff] shadow-xs font-black'
+                          : 'bg-[#18181c] text-[#bbcbb2] border-[#26272d] hover:border-[#3f414a] hover:text-white'
                           }`}
                       >
                         {v}
@@ -2541,9 +2541,9 @@ const CafePOS = () => {
                         key={k}
                         type="button"
                         onClick={() => setCarwashForm(prev => ({ ...prev, kehadiran: k }))}
-                        className={`py-2 rounded-lg font-bold text-xs transition-all ${carwashForm.kehadiran === k
-                          ? 'bg-[#00ffff] text-[#0f0f0f]/20 text-[#00ffff] border border-brand-blue/40'
-                          : 'bg-[#121215] text-[#bbcbb2] border border-[#26272d]'
+                        className={`py-2 rounded-lg font-bold text-xs transition-all border active:scale-[0.98] ${carwashForm.kehadiran === k
+                          ? 'bg-[#00ffff] text-[#0f0f0f] border-[#00ffff] shadow-xs font-black'
+                          : 'bg-[#18181c] text-[#bbcbb2] border-[#26272d] hover:border-[#3f414a] hover:text-white'
                           }`}
                       >
                         {k}
@@ -2553,9 +2553,9 @@ const CafePOS = () => {
                 </div>
 
                 {/* Total Tarif Carwash */}
-                <div className="flex flex-col justify-end p-4 rounded-xl bg-[#00ffff] text-[#0f0f0f]/5 border border-brand-blue/10">
-                  <span className="text-[10px] uppercase tracking-wider font-semibold text-[#6b7367]">Estimasi Tarif Cuci</span>
-                  <span className="text-2xl font-black text-[#00ffff] mt-1">{formatRupiah(carwashForm.harga)}</span>
+                <div className="flex flex-col justify-end p-3.5 rounded-xl bg-[#18181c] border border-[#26272d]">
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-[#6b7367]">Estimasi Tarif Cuci</span>
+                  <span className="text-2xl font-black font-mono text-[#00ffff] mt-0.5">{formatRupiah(carwashForm.harga)}</span>
                 </div>
 
                 {/* Walkaround Inspection & Catatan Khusus Kendaraan (Estafet Detailing) */}
@@ -3739,25 +3739,25 @@ const CafePOS = () => {
               <button
                 type="button"
                 onClick={() => setOrderType('DINE IN')}
-                className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
                   orderType === 'DINE IN'
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'bg-[#18181c]/80 text-[#bbcbb2] hover:text-slate-200'
+                    ? 'bg-[#00ffff] text-[#0f0f0f] border-[#00ffff] shadow-xs'
+                    : 'bg-[#18181c] text-[#bbcbb2] border-[#26272d] hover:border-[#3f414a] hover:text-white'
                 }`}
               >
-                <span>🍽️</span>
+                <Coffee size={13} />
                 <span>Dine In</span>
               </button>
               <button
                 type="button"
                 onClick={() => setOrderType('TAKE AWAY')}
-                className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
                   orderType === 'TAKE AWAY'
-                    ? 'bg-amber-600 text-white shadow-xs'
-                    : 'bg-[#18181c]/80 text-[#bbcbb2] hover:text-slate-200'
+                    ? 'bg-[#00ffff] text-[#0f0f0f] border-[#00ffff] shadow-xs'
+                    : 'bg-[#18181c] text-[#bbcbb2] border-[#26272d] hover:border-[#3f414a] hover:text-white'
                 }`}
               >
-                <span>🥡</span>
+                <ShoppingBag size={13} />
                 <span>Take Away</span>
               </button>
             </div>
@@ -3838,25 +3838,26 @@ const CafePOS = () => {
 
             {/* Item Carwash */}
             {hasCarwash && (
-              <div className="p-3 rounded-lg bg-[#00ffff] text-[#0f0f0f]/5 border border-brand-blue/20 relative">
+              <div className="p-3 rounded-xl bg-[#18181c] border border-[#26272d] hover:border-[#3f414a] transition-all relative">
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="text-[8px] bg-[#00ffff] text-[#0f0f0f]/20 text-[#00ffff] px-2 py-0.5 rounded-full font-bold uppercase">Carwash</span>
+                    <span className="text-[9px] bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Carwash</span>
                     <h5 className="font-bold text-xs text-white mt-1.5">{carwashForm.paket}</h5>
-                    <p className="text-[10px] text-[#bbcbb2] mt-0.5 font-mono">
+                    <p className="text-[11px] text-[#bbcbb2] mt-0.5 font-mono">
                       {carwashForm.platNomor || '(PLAT KOSONG)'} • {carwashForm.ukuran} • {carwashForm.variant}
                     </p>
                   </div>
                   <button
                     onClick={() => setHasCarwash(false)}
-                    className="text-rose-400 hover:text-rose-500 p-1 shrink-0"
+                    className="text-rose-400 hover:text-rose-300 p-1 shrink-0 transition-colors"
+                    title="Hapus carwash dari transaksi"
                   >
-                    <Trash2 size={12} />
+                    <Trash2 size={13} />
                   </button>
                 </div>
-                <div className="mt-3 flex justify-between items-center border-t border-[#26272d]/40 pt-2 text-[10px] text-[#6b7367]">
+                <div className="mt-2.5 flex justify-between items-center border-t border-[#26272d] pt-2 text-[10px] text-[#6b7367]">
                   <span>Pencuci: {carwashForm.anggota1} {carwashForm.anggota2 && `+ ${carwashForm.anggota2}`}</span>
-                  <span className="font-bold text-[#00ffff]">{formatRupiah(carwashForm.harga)}</span>
+                  <span className="font-mono font-bold text-[#00ffff] text-xs">{formatRupiah(carwashForm.harga)}</span>
                 </div>
               </div>
             )}
@@ -4139,25 +4140,25 @@ const CafePOS = () => {
                 <button
                   type="button"
                   onClick={() => setOrderType('DINE IN')}
-                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
                     orderType === 'DINE IN'
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'bg-[#18181c]/80 text-[#bbcbb2] hover:text-slate-200'
+                      ? 'bg-[#00ffff] text-[#0f0f0f] border-[#00ffff] shadow-xs'
+                      : 'bg-[#18181c] text-[#bbcbb2] border-[#26272d] hover:border-[#3f414a] hover:text-white'
                   }`}
                 >
-                  <span>🍽️</span>
+                  <Coffee size={13} />
                   <span>Dine In</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setOrderType('TAKE AWAY')}
-                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
                     orderType === 'TAKE AWAY'
-                      ? 'bg-amber-600 text-white shadow-xs'
-                      : 'bg-[#18181c]/80 text-[#bbcbb2] hover:text-slate-200'
+                      ? 'bg-[#00ffff] text-[#0f0f0f] border-[#00ffff] shadow-xs'
+                      : 'bg-[#18181c] text-[#bbcbb2] border-[#26272d] hover:border-[#3f414a] hover:text-white'
                   }`}
                 >
-                  <span>🥡</span>
+                  <ShoppingBag size={13} />
                   <span>Take Away</span>
                 </button>
               </div>
@@ -4224,25 +4225,26 @@ const CafePOS = () => {
               ))}
 
               {hasCarwash && (
-                <div className="p-3 rounded-lg bg-[#00ffff] text-[#0f0f0f]/5 border border-brand-blue/20 relative">
+                <div className="p-3 rounded-xl bg-[#18181c] border border-[#26272d] hover:border-[#3f414a] transition-all relative">
                   <div className="flex justify-between items-start">
                     <div>
-                      <span className="text-[8px] bg-[#00ffff] text-[#0f0f0f]/20 text-[#00ffff] px-2 py-0.5 rounded-full font-bold uppercase">Carwash</span>
+                      <span className="text-[9px] bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Carwash</span>
                       <h5 className="font-bold text-xs text-white mt-1.5">{carwashForm.paket}</h5>
-                      <p className="text-[10px] text-[#bbcbb2] mt-0.5 font-mono">
+                      <p className="text-[11px] text-[#bbcbb2] mt-0.5 font-mono">
                         {carwashForm.platNomor || '(PLAT KOSONG)'} • {carwashForm.ukuran} • {carwashForm.variant}
                       </p>
                     </div>
                     <button
                       onClick={() => setHasCarwash(false)}
-                      className="text-rose-400 hover:text-rose-500 p-1 shrink-0"
+                      className="text-rose-400 hover:text-rose-300 p-1 shrink-0 transition-colors"
+                      title="Hapus carwash dari transaksi"
                     >
-                      <Trash2 size={12} />
+                      <Trash2 size={13} />
                     </button>
                   </div>
-                  <div className="mt-3 flex justify-between items-center border-t border-[#26272d]/40 pt-2 text-[10px] text-[#6b7367]">
+                  <div className="mt-2.5 flex justify-between items-center border-t border-[#26272d] pt-2 text-[10px] text-[#6b7367]">
                     <span>Pencuci: {carwashForm.anggota1} {carwashForm.anggota2 && `+ ${carwashForm.anggota2}`}</span>
-                    <span className="font-bold text-[#00ffff]">{formatRupiah(carwashForm.harga)}</span>
+                    <span className="font-mono font-bold text-[#00ffff] text-xs">{formatRupiah(carwashForm.harga)}</span>
                   </div>
                 </div>
               )}
@@ -4420,7 +4422,7 @@ const CafePOS = () => {
                   setShowMobileCart(false);
                 }}
                 disabled={loading || (cart.length === 0 && !hasCarwash) || isUangKurang}
-                className="w-full py-3 bg-[#00ffff] text-[#0f0f0f] hover:bg-emerald-450 active:bg-emerald-600 text-slate-950 font-extrabold rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 animate-pulse-glow"
+                className="w-full py-3.5 bg-[#00ffff] hover:bg-[#00ffff]/90 active:scale-[0.98] text-[#0f0f0f] font-black rounded-xl shadow-lg shadow-[#00ffff]/10 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {loading ? 'Memproses Transaksi...' : editingStrukId ? 'Simpan Perubahan' : `Simpan & Cetak (${paymentStatus})`}
               </button>
