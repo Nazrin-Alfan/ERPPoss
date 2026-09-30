@@ -2420,6 +2420,13 @@
       - **Verifikasi Kualitas**:
         - 208/208 unit tests PASS across 36 test files (100% GREEN).
         - Vite production build sukses dalam 1.93 detik.
+    33. **Penambahan Fitur Sorting Interaktif pada Semantic Table (2026-09-30)**:
+      - **Komponen & Hook Baru (`src/components/ui/Table.jsx`)**:
+        - `useTableSort(data, initialKey, initialDirection)`: Custom hook React untuk pengurutan data otomatis (mendeteksi string, angka finansial, dan tanggal ISO) dengan siklus 3-arah (`asc` -> `desc` -> `reset`).
+        - `<TableSortHead />`: Komponen header interaktif semantik dengan indikator panah dinamis (`ChevronUp`, `ChevronDown`, `ChevronsUpDown`) dan tactile color state (`text-primary` saat aktif).
+      - **Verifikasi Kualitas**:
+        - 208/208 unit tests PASS (100% GREEN).
+        - Vite production build sukses dalam 1.91 detik.
 
 
 

@@ -1,13 +1,74 @@
-import React from 'react'
+import React, { useState, useMemo } from 'react'
+import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
 
 /**
  * Enterprise Semantic Table Suite (VRS_2026 Cyan Master)
- * Standardized data-dense tabular presentation for ERP & POS systems.
+ * Standardized data-dense tabular presentation for ERP & POS systems with interactive sorting.
  */
 
 /**
+ * Hook Pembantu Sortir Data Otomatis (String, Number, Date)
+ */
+export function useTableSort(data = [], defaultKey = '', defaultDirection = 'asc') {
+  const [sortKey, setSortKey] = useState(defaultKey)
+  const [sortDirection, setSortDirection] = useState(defaultDirection) // 'asc' | 'desc' | null
+
+  const handleSort = (key) => {
+    if (sortKey === key) {
+      if (sortDirection === 'asc') setSortDirection('desc')
+      else if (sortDirection === 'desc') {
+        setSortKey('')
+        setSortDirection('asc')
+      }
+    } else {
+      setSortKey(key)
+      setSortDirection('asc')
+    }
+  }
+
+  const sortedData = useMemo(() => {
+    if (!sortKey || !sortDirection || !data || data.length === 0) return data
+
+    return [...data].sort((a, b) => {
+      let valA = a[sortKey]
+      let valB = b[sortKey]
+
+      if (valA === undefined || valA === null) valA = ''
+      if (valB === undefined || valB === null) valB = ''
+
+      // 1. Sort Number / Financials
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortDirection === 'asc' ? valA - valB : valB - valA
+      }
+
+      // 2. Sort Date / String representation of number
+      const numA = Number(valA)
+      const numB = Number(valB)
+      if (!isNaN(numA) && !isNaN(numB) && typeof valA !== 'boolean' && typeof valB !== 'boolean') {
+        return sortDirection === 'asc' ? numA - numB : numB - numA
+      }
+
+      // 3. Sort String
+      const strA = String(valA).toLowerCase()
+      const strB = String(valB).toLowerCase()
+      if (strA < strB) return sortDirection === 'asc' ? -1 : 1
+      if (strA > strB) return sortDirection === 'asc' ? 1 : -1
+      return 0
+    })
+  }, [data, sortKey, sortDirection])
+
+  return {
+    sortedData,
+    sortKey,
+    sortDirection,
+    handleSort,
+    setSortKey,
+    setSortDirection,
+  }
+}
+
+/**
  * 1. TableContainer: Wrapper pelindung tabel
- * Mengunci pembatas scroll horizontal, sudut lengkung rapi, dan border semantik.
  */
 export function TableContainer({
   children,
@@ -103,7 +164,7 @@ export function TableRow({
 }
 
 /**
- * 6. TableHead: Sel kolom header (th)
+ * 6. TableHead: Sel kolom header (th) statis
  */
 export function TableHead({
   children,
@@ -129,8 +190,58 @@ export function TableHead({
 }
 
 /**
- * 7. TableCell: Sel data tabel (td)
- * Otomatis memformat angka finansial/kode jika numeric=true
+ * 7. TableSortHead: Sel kolom header interaktif dengan tombol sorting terintegrasi
+ */
+export function TableSortHead({
+  children,
+  sortKey: currentKey,
+  currentSortKey,
+  currentDirection,
+  onSort,
+  align = 'left',
+  className = '',
+  ...props
+}) {
+  const isSorted = currentSortKey === currentKey
+  const isAsc = isSorted && currentDirection === 'asc'
+  const isDesc = isSorted && currentDirection === 'desc'
+
+  const alignClass =
+    align === 'right'
+      ? 'justify-end text-right'
+      : align === 'center'
+      ? 'justify-center text-center'
+      : 'justify-start text-left'
+
+  return (
+    <th
+      className={`px-3 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap select-none ${className}`}
+      {...props}
+    >
+      <button
+        type="button"
+        onClick={() => onSort && onSort(currentKey)}
+        className={`group flex items-center gap-1.5 w-full font-bold uppercase tracking-wider transition-colors hover:text-white ${alignClass} ${
+          isSorted ? 'text-primary' : 'text-muted'
+        }`}
+      >
+        <span>{children}</span>
+        <span className="shrink-0 transition-transform">
+          {isAsc ? (
+            <ChevronUp size={13} className="text-primary" />
+          ) : isDesc ? (
+            <ChevronDown size={13} className="text-primary" />
+          ) : (
+            <ChevronsUpDown size={13} className="text-muted-dark group-hover:text-muted" />
+          )}
+        </span>
+      </button>
+    </th>
+  )
+}
+
+/**
+ * 8. TableCell: Sel data tabel (td)
  */
 export function TableCell({
   children,
@@ -161,7 +272,7 @@ export function TableCell({
 }
 
 /**
- * 8. TableEmpty: Baris saat data kosong (Zero Data State)
+ * 9. TableEmpty: Baris saat data kosong (Zero Data State)
  */
 export function TableEmpty({
   colSpan = 5,
@@ -192,6 +303,8 @@ export default {
   TableBody,
   TableRow,
   TableHead,
+  TableSortHead,
   TableCell,
   TableEmpty,
+  useTableSort,
 }

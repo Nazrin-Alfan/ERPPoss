@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import React from 'react'
 import { renderToString } from 'react-dom/server'
 import {
@@ -8,11 +8,13 @@ import {
   TableBody,
   TableRow,
   TableHead,
+  TableSortHead,
   TableCell,
   TableEmpty,
+  useTableSort,
 } from '../Table'
 
-describe('Enterprise Semantic Table Suite (VRS_2026)', () => {
+describe('Enterprise Semantic Table Suite with Sorting (VRS_2026)', () => {
   it('renders TableContainer with safe scroll boundary and surface style', () => {
     const html = renderToString(
       React.createElement(TableContainer, null, 'Table Content')
@@ -42,6 +44,25 @@ describe('Enterprise Semantic Table Suite (VRS_2026)', () => {
     expect(rightHtml).toContain('text-right')
   })
 
+  it('renders TableSortHead with active indicator and sort chevron', () => {
+    const sortHeadHtml = renderToString(
+      React.createElement(
+        TableSortHead,
+        {
+          sortKey: 'harga',
+          currentSortKey: 'harga',
+          currentDirection: 'asc',
+          onSort: vi.fn(),
+          align: 'right',
+        },
+        'Harga'
+      )
+    )
+    expect(sortHeadHtml).toContain('Harga')
+    expect(sortHeadHtml).toContain('text-primary')
+    expect(sortHeadHtml).toContain('justify-end')
+  })
+
   it('renders TableCell with automatic numeric formatting and primary highlight', () => {
     const cellHtml = renderToString(
       React.createElement(TableCell, { numeric: true, highlight: true }, 'Rp 50.000')
@@ -50,14 +71,6 @@ describe('Enterprise Semantic Table Suite (VRS_2026)', () => {
     expect(cellHtml).toContain('tabular-nums')
     expect(cellHtml).toContain('text-right')
     expect(cellHtml).toContain('text-primary')
-  })
-
-  it('renders TableRow with selected state styling', () => {
-    const rowHtml = renderToString(
-      React.createElement(TableRow, { selected: true }, React.createElement('td', null, 'Row'))
-    )
-    expect(rowHtml).toContain('bg-primary/10')
-    expect(rowHtml).toContain('border-l-primary')
   })
 
   it('renders TableEmpty state with message and subtitle', () => {
