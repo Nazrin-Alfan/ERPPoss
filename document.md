@@ -2286,6 +2286,18 @@
             - Menambahkan unit test `src/utils/__tests__/categoryMatchingHelpers.test.js` (4/4 passing).
             - Vitest Suite: 197/197 unit tests (34 test files) lulus 100% GREEN.
             - Vite production build sukses dalam 3.16 detik.
+    23. **Pemisahan Ketat (*Strict Isolation*) Kategori Kopi (Coffee) vs Non-Coffee & Teh (2026-09-29)**:
+      - **Akar Masalah (*Root Cause*)**:
+        - Pada fungsi pencocokan sebelumnya, `normSelected.includes('coffee')` dan `normSelected.includes('teh')` memicu substring matching parsial yang menganggap kata `'coffee'` di dalam `'non-coffee'` sebagai kecocokan positif.
+        - Akibatnya: Ketika filter `'Kopi (Coffee)'` dipilih, minuman `'Non-Coffee & Teh'` ikut terpanggil, atau sebaliknya.
+      - **Solusi Rekayasa**:
+        - Memperbarui `src/utils/categoryMatchingHelpers.js` dengan aturan deteksi isolasi eksklusif:
+          - Jika filter kategori Kopi (Coffee) dipilih, seluruh item Non-Coffee & Teh diblokir mutlak (`isSelectedCoffee && isItemNonCoffee => false`).
+          - Jika filter Non-Coffee & Teh dipilih, seluruh item Kopi/Coffee diblokir mutlak (`isSelectedNonCoffee && isItemCoffee => false`).
+        - Menulis uji regresi khusus di `categoryMatchingHelpers.test.js` untuk memvalidasi isolasi dua arah.
+      - **Verifikasi Kualitas**:
+        - Vitest: 197/197 unit tests (34 test files) lulus 100% GREEN.
+        - Vite production build sukses dalam 2.58 detik.
 
 
 
