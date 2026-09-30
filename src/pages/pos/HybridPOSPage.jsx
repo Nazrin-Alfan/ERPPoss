@@ -32,6 +32,18 @@ import {
 } from 'lucide-react'
 
 import ThermalReceiptModal from '../../components/pos/ThermalReceiptModal'
+import {
+  TableContainer,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableSortHead,
+  TableCell,
+  TableEmpty,
+} from '../../components/ui/Table'
+
 import MerchandiseCatalog from '../../components/pos/MerchandiseCatalog'
 import CustomSelect from '../../components/common/CustomSelect'
 import {
@@ -3291,20 +3303,20 @@ const CafePOS = () => {
                 )}
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-border">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-subsurface text-muted border-b border-border font-bold uppercase tracking-wider text-[11px]">
-                      <th className="py-3 px-4 w-12 text-center">No</th>
-                      <th className="py-3 px-4">Kode</th>
-                      <th className="py-3 px-4">Nama Bahan Baku</th>
-                      <th className="py-3 px-4">Satuan</th>
-                      <th className="py-3 px-4 text-right">Sisa Stok Sistem</th>
-                      <th className="py-3 px-4 text-center">Status</th>
-                      <th className="py-3 px-4">Terakhir Diperbarui</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/50">
+              <TableContainer>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead align="center" className="w-12">No</TableHead>
+                      <TableHead>Kode</TableHead>
+                      <TableHead>Nama Bahan Baku</TableHead>
+                      <TableHead>Satuan</TableHead>
+                      <TableHead align="right">Sisa Stok Sistem</TableHead>
+                      <TableHead align="center">Status</TableHead>
+                      <TableHead>Terakhir Diperbarui</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {filteredInventory.map((item, idx) => {
                       const stokVal = Number(item.stok) || 0
                       const isSafe = stokVal > 10
@@ -3319,32 +3331,29 @@ const CafePOS = () => {
                         : '-'
 
                       return (
-                        <tr
-                          key={item.id_bahan_baku || idx}
-                          className="hover:bg-subsurface/30 transition-colors"
-                        >
-                          <td className="py-3.5 px-4 text-center font-mono text-muted-dark text-[11px]">
+                        <TableRow key={item.id_bahan_baku || idx}>
+                          <TableCell align="center" className="font-mono text-muted-dark text-[11px]">
                             {idx + 1}
-                          </td>
-                          <td className="py-3.5 px-4">
-                            <span className="font-mono text-xs font-bold bg-subsurface text-amber-400 border border-[#3f414a]/60 px-2 py-0.5 rounded">
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-mono text-xs font-bold bg-subsurface text-warning border border-border px-2 py-0.5 rounded-md">
                               {item.id_bahan_baku}
                             </span>
-                          </td>
-                          <td className="py-3.5 px-4 font-semibold text-white">
+                          </TableCell>
+                          <TableCell className="font-semibold text-white">
                             {item.nama_produk}
-                          </td>
-                          <td className="py-3.5 px-4 text-muted font-medium">
+                          </TableCell>
+                          <TableCell className="text-muted font-medium">
                             {item.satuan || 'Pcs'}
-                          </td>
-                          <td className="py-3.5 px-4 text-right font-mono font-bold text-sm">
+                          </TableCell>
+                          <TableCell numeric highlight={isSafe}>
                             <span
                               className={
                                 isSafe
-                                  ? 'text-emerald-400'
+                                  ? 'text-primary'
                                   : isLow
-                                  ? 'text-amber-400'
-                                  : 'text-rose-400'
+                                  ? 'text-warning'
+                                  : 'text-destructive'
                               }
                             >
                               {stokVal.toLocaleString('id-ID')}
@@ -3352,36 +3361,36 @@ const CafePOS = () => {
                             <span className="text-[10px] text-muted-dark font-normal ml-1">
                               {item.satuan || ''}
                             </span>
-                          </td>
-                          <td className="py-3.5 px-4 text-center">
+                          </TableCell>
+                          <TableCell align="center">
                             {isSafe && (
-                              <span className="inline-flex items-center gap-1 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase">
+                              <span className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase">
                                 <CheckCircle size={10} />
                                 Aman
                               </span>
                             )}
                             {isLow && (
-                              <span className="inline-flex items-center gap-1 bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase">
+                              <span className="inline-flex items-center gap-1 bg-warning/10 text-warning border border-warning/20 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase">
                                 <AlertTriangle size={10} />
                                 Menipis
                               </span>
                             )}
                             {isCritical && (
-                              <span className="inline-flex items-center gap-1 bg-rose-500/15 text-rose-400 border border-rose-500/30 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase">
+                              <span className="inline-flex items-center gap-1 bg-destructive/10 text-destructive border border-destructive/20 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase">
                                 <AlertCircle size={10} />
                                 {stokVal < 0 ? 'Minus' : 'Habis'}
                               </span>
                             )}
-                          </td>
-                          <td className="py-3.5 px-4 text-muted text-[11px]">
+                          </TableCell>
+                          <TableCell className="text-muted-dark font-mono text-[11px]">
                             {updatedTimeStr}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       )
                     })}
-                  </tbody>
-                </table>
-              </div>
+                  </TableBody>
+                </Table>
+              </TableContainer>
             )}
           </div>
         )}
@@ -3573,45 +3582,47 @@ const CafePOS = () => {
               {todayExpenses.length === 0 ? (
                 <p className="text-xs text-muted-dark">Belum ada pengeluaran kasir hari ini.</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-border text-muted-dark text-xs font-bold uppercase pb-2">
-                        <th className="pb-2">Jam</th>
-                        <th className="pb-2">Keterangan</th>
-                        <th className="pb-2">Unit</th>
-                        <th className="pb-2">Kategori</th>
-                        <th className="pb-2 text-right">Nominal</th>
-                        <th className="pb-2 text-center">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/50">
+                <TableContainer>
+                  <Table dense>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Jam</TableHead>
+                        <TableHead>Keterangan</TableHead>
+                        <TableHead>Unit</TableHead>
+                        <TableHead>Kategori</TableHead>
+                        <TableHead align="right">Nominal</TableHead>
+                        <TableHead align="center">Aksi</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {todayExpenses.map((exp) => (
-                        <tr key={exp.id_pengeluaran} className="text-xs text-slate-350 hover:bg-subsurface/20">
-                          <td className="py-2.5 font-mono text-muted-dark">{exp.jam?.substring(0, 5) || '--:--'}</td>
-                          <td className="py-2.5 font-medium text-slate-200">{exp.nama_pengeluaran}</td>
-                          <td className="py-2.5 uppercase font-bold text-[10px] text-muted">{exp.jenis?.replace('pengeluaran ', '') || 'Cafe'}</td>
-                          <td className="py-2.5">{exp.kategori}</td>
-                          <td className="py-2.5 text-right font-bold text-rose-450">{formatRupiah(exp.nominal)}</td>
-                          <td className="py-2.5 text-center flex justify-center gap-1.5">
-                            <button
-                              onClick={() => handleStartEditPosExpense(exp)}
-                              className="text-amber-500 hover:text-amber-400 font-bold px-2 py-1"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeletePosExpense(exp.id_pengeluaran)}
-                              className="text-rose-500 hover:text-rose-450 font-bold px-2 py-1"
-                            >
-                              Hapus
-                            </button>
-                          </td>
-                        </tr>
+                        <TableRow key={exp.id_pengeluaran}>
+                          <TableCell className="font-mono text-muted-dark">{exp.jam?.substring(0, 5) || '--:--'}</TableCell>
+                          <TableCell className="font-medium text-white">{exp.nama_pengeluaran}</TableCell>
+                          <TableCell className="uppercase font-bold text-[10px] text-muted">{exp.jenis?.replace('pengeluaran ', '') || 'Cafe'}</TableCell>
+                          <TableCell>{exp.kategori}</TableCell>
+                          <TableCell numeric className="text-destructive font-bold">{formatRupiah(exp.nominal)}</TableCell>
+                          <TableCell align="center">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => handleStartEditPosExpense(exp)}
+                                className="text-warning hover:underline font-bold text-[11px]"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeletePosExpense(exp.id_pengeluaran)}
+                                className="text-destructive hover:underline font-bold text-[11px]"
+                              >
+                                Hapus
+                              </button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
+                    </TableBody>
+                  </Table>
+                </TableContainer>
               )}
             </div>
           </div>

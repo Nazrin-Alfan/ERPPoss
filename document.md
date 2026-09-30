@@ -2427,6 +2427,15 @@
       - **Verifikasi Kualitas**:
         - 208/208 unit tests PASS (100% GREEN).
         - Vite production build sukses dalam 1.91 detik.
+    34. **Penyelarasan Tabel POS ke Enterprise Semantic Table Suite (2026-09-30)**:
+      - **Modul**: `src/pages/pos/HybridPOSPage.jsx`
+      - **Tabel yang Dimigrasikan**:
+        - Tabel Monitoring Stok Gudang: menggunakan `<TableContainer>`, `<Table>`, `<TableHeader>`, `<TableRow>`, `<TableHead>`, `<TableBody>`, dan `<TableCell numeric highlight>`.
+        - Tabel Pengeluaran Kasir Harian: menggunakan `<TableContainer>`, `<Table dense>`, `<TableHeader>`, `<TableRow>`, dan `<TableCell numeric>`.
+      - **Hasil**: Menghilangkan residu border custom lama, menyamakan font perataan angka finansial ke JetBrains Mono, dan memadukan status stok ke token semantik (`text-primary`, `text-warning`, `text-destructive`).
+      - **Verifikasi Kualitas**:
+        - 208/208 unit tests PASS (100% GREEN).
+        - Vite production build sukses dalam 1.89 detik.
 
 
 
