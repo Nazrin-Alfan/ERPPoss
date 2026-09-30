@@ -1,13 +1,4 @@
-import {
-  TableContainer,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-  TableEmpty,
-} from '../components/ui/Table'
+import { InventoryTable } from '../components/ui/tables'
 import React, { useState, useEffect, useMemo } from 'react'
 import { 
   Boxes, 
@@ -644,151 +635,144 @@ export default function Gudang() {
       </div>
 
       {/* 4. TABEL DATA STOK GUDANG */}
-      <TableContainer>
-        <Table dense>
-            <thead>
-              <tr className="bg-subsurface/90 text-muted uppercase tracking-wider text-[10px] font-bold border-b border-border">
-                <th className="py-3 px-4">ID / SKU</th>
-                <th className="py-3 px-4">Nama Barang</th>
-                <th className="py-3 px-4">Kategori</th>
-                <th className="py-3 px-4 text-center">Sisa Stok</th>
-                <th className="py-3 px-4 text-center">Status</th>
-                <th className="py-3 px-4 text-right">Harga Modal (HPP)</th>
-                {activeGudang === 'MERCHANDISE' && (
-                  <th className="py-3 px-4 text-right">Harga Jual</th>
+      <InventoryTable
+        data={filteredBahan}
+        keyExtractor={(item) => item.id_bahan_baku}
+        emptyMessage="Tidak ada data bahan baku ditemukan."
+        columns={[
+          {
+            key: 'id_bahan_baku',
+            label: 'KODE / BARCODE',
+            render: (val, item) => (
+              <div>
+                <div className="font-mono font-bold text-primary flex items-center gap-1.5">
+                  <Barcode className="w-3.5 h-3.5 text-muted" />
+                  {item.barcode || val}
+                </div>
+                {item.barcode && (
+                  <span className="text-[10px] text-muted-dark font-mono">
+                    ID: {val}
+                  </span>
                 )}
-                <th className="py-3 px-4 text-right">Total Nilai Stok</th>
-                {isOwnerOrAdmin && (
-                  <th className="py-3 px-4 text-center">Aksi Cepat</th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300">
-              {loading ? (
-                <tr>
-                  <td colSpan={activeGudang === 'MERCHANDISE' ? 9 : 8} className="py-12 text-center text-slate-500">
-                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                    Memuat data stok gudang...
-                  </td>
-                </tr>
-              ) : filteredItems.length === 0 ? (
-                <tr>
-                  <td colSpan={activeGudang === 'MERCHANDISE' ? 9 : 8} className="py-12 text-center text-slate-500">
-                    <Package className="w-10 h-10 mx-auto mb-2 text-slate-600 animate-pulse" />
-                    Tidak ada barang ditemukan di gudang ini.
-                  </td>
-                </tr>
+              </div>
+            ),
+          },
+          {
+            key: 'nama_produk',
+            label: 'NAMA BAHAN BAKU',
+            className: 'font-bold text-white',
+            render: (val, item) => (
+              <div>
+                <div>{val}</div>
+                <div className="text-[10px] text-muted-dark font-normal flex items-center gap-2">
+                  <span className="uppercase text-muted">{item.kategori || 'BAHAN'}</span>
+                  {item.merk && <span>• {item.merk}</span>}
+                </div>
+              </div>
+            ),
+          },
+          {
+            key: 'stok',
+            label: 'STOK SISTEM',
+            numeric: true,
+            render: (val, item) => {
+              const s = Number(val) || 0
+              const min = Number(item.stok_minimum) || 5
+              const isSafe = s > min
+              const isLow = s > 0 && s <= min
+              return (
+                <div>
+                  <span
+                    className={`font-mono text-sm font-bold ${
+                      isSafe
+                        ? 'text-primary'
+                        : isLow
+                        ? 'text-warning'
+                        : 'text-destructive'
+                    }`}
+                  >
+                    {s.toLocaleString('id-ID')}
+                  </span>{' '}
+                  <span className="text-[11px] text-muted-dark font-medium">
+                    {item.satuan || 'Pcs'}
+                  </span>
+                </div>
+              )
+            },
+          },
+          {
+            key: 'status',
+            label: 'STATUS AMBANG',
+            render: (_, item) => {
+              const s = Number(item.stok) || 0
+              const min = Number(item.stok_minimum) || 5
+              const isSafe = s > min
+              const isLow = s > 0 && s <= min
+              return isSafe ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  Aman
+                </span>
+              ) : isLow ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-warning/10 text-warning border border-warning/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-warning" />
+                  Menipis (Min: {min})
+                </span>
               ) : (
-                filteredItems.map((item) => {
-                  const stokNum = parseFloat(item.stok) || 0
-                  const minNum = parseFloat(item.min_stok) || 5
-                  const costNum = parseFloat(item.harga_beli) || 0
-                  const totalVal = Math.max(0, stokNum) * costNum
-
-                  let statusBadge = (
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                      Aman
-                    </span>
-                  )
-                  if (stokNum <= 0) {
-                    statusBadge = (
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                        Habis (0)
-                      </span>
-                    )
-                  } else if (stokNum <= minNum) {
-                    statusBadge = (
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                        Menipis
-                      </span>
-                    )
-                  }
-
-                  return (
-                    <tr key={item.id_barang} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="py-3 px-4 font-mono font-bold text-slate-400">
-                        {item.id_barang}
-                      </td>
-                      <td className="py-3 px-4 font-bold text-white">
-                        <div className="flex items-center gap-2">
-                          <span>{item.nama_barang}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-slate-400">
-                        <span className="px-2 py-0.5 rounded-md bg-slate-800/80 text-[11px] border border-slate-700/60">
-                          {item.kategori || 'Umum'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-center font-mono font-black text-sm">
-                        <span className={stokNum <= minNum ? 'text-amber-400' : 'text-white'}>
-                          {stokNum.toLocaleString()}
-                        </span>{' '}
-                        <span className="text-[11px] font-normal text-slate-400">{item.satuan}</span>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        {statusBadge}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono text-slate-300 font-semibold">
-                        {formatRupiah(costNum)}
-                      </td>
-                      {activeGudang === 'MERCHANDISE' && (
-                        <td className="py-3 px-4 text-right font-mono text-amber-400 font-bold">
-                          {formatRupiah(item.harga_jual)}
-                        </td>
-                      )}
-                      <td className="py-3 px-4 text-right font-mono font-bold text-brand-emerald">
-                        {formatRupiah(totalVal)}
-                      </td>
-                      {isOwnerOrAdmin && (
-                        <td className="py-3 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            {/* Tombol Restock */}
-                            <button
-                              onClick={() => handleOpenRestock(item)}
-                              className="px-2 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold text-[11px] border border-emerald-500/40 flex items-center gap-1 cursor-pointer"
-                              title="Catat Stok Masuk"
-                            >
-                              <ArrowDownRight size={13} />
-                              <span>Restock</span>
-                            </button>
-
-                            {/* Tombol Opname */}
-                            <button
-                              onClick={() => handleOpenOpname(item)}
-                              className="px-2 py-1 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 font-bold text-[11px] border border-blue-500/40 flex items-center gap-1 cursor-pointer"
-                              title="Sesuaikan Stok Fisik"
-                            >
-                              <SlidersHorizontal size={13} />
-                              <span>Opname</span>
-                            </button>
-
-                            {/* Tombol Edit */}
-                            <button
-                              onClick={() => handleOpenEditModal(item)}
-                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
-                              title="Edit Barang"
-                            >
-                              <Edit2 size={13} />
-                            </button>
-
-                            {/* Tombol Hapus */}
-                            <button
-                              onClick={() => handleDeleteItem(item)}
-                              className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors cursor-pointer"
-                              title="Hapus Barang"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-        </Table>
-      </TableContainer>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-destructive/10 text-destructive border border-destructive/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
+                  Habis
+                </span>
+              )
+            },
+          },
+          {
+            key: 'harga_satuan',
+            label: 'ESTIMASI HPP',
+            numeric: true,
+            render: (val, item) => (
+              <span className="font-mono text-xs text-muted font-medium">
+                {formatRupiah(val || 0)}/{item.satuan || 'pcs'}
+              </span>
+            ),
+          },
+          {
+            key: 'nilai_aset',
+            label: 'TOTAL NILAI ASET',
+            numeric: true,
+            render: (_, item) => {
+              const total = (Number(item.stok) || 0) * (Number(item.harga_satuan) || 0)
+              return (
+                <span className="font-mono text-xs font-bold text-foreground">
+                  {formatRupiah(total)}
+                </span>
+              )
+            },
+          },
+          {
+            key: 'actions',
+            label: 'AKSI',
+            align: 'center',
+            render: (_, item) => (
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  onClick={() => handleOpenStockAdjust(item)}
+                  className="px-2.5 py-1 rounded bg-subsurface hover:bg-border text-muted-foreground hover:text-white border border-border text-[11px] font-medium transition-colors"
+                  title="Sesuaikan Stok Fisik"
+                >
+                  Audit
+                </button>
+                <button
+                  onClick={() => handleOpenForm(item)}
+                  className="px-2.5 py-1 rounded bg-subsurface hover:bg-border text-muted-foreground hover:text-white border border-border text-[11px] font-medium transition-colors"
+                >
+                  Edit
+                </button>
+              </div>
+            ),
+          },
+        ]}
+      />
 
       {/* ========================================================================= */}
       {/* MODAL 1: TAMBAH / EDIT BARANG GUDANG */}

@@ -3303,94 +3303,100 @@ const CafePOS = () => {
                 )}
               </div>
             ) : (
-              <TableContainer>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead align="center" className="w-12">No</TableHead>
-                      <TableHead>Kode</TableHead>
-                      <TableHead>Nama Bahan Baku</TableHead>
-                      <TableHead>Satuan</TableHead>
-                      <TableHead align="right">Sisa Stok Sistem</TableHead>
-                      <TableHead align="center">Status</TableHead>
-                      <TableHead>Terakhir Diperbarui</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredInventory.map((item, idx) => {
+              <OperationalTable
+                data={filteredInventory}
+                keyExtractor={(item, idx) => item.id_bahan_baku || idx}
+                emptyMessage="Tidak ada bahan baku ditemukan"
+                columns={[
+                  {
+                    key: 'no',
+                    label: 'No',
+                    align: 'center',
+                    className: 'font-mono text-muted-dark text-[11px] w-12',
+                    render: (_, __, idx) => idx + 1,
+                  },
+                  {
+                    key: 'id_bahan_baku',
+                    label: 'Kode',
+                    render: (val) => (
+                      <span className="font-mono text-xs font-bold bg-subsurface text-warning border border-border px-2 py-0.5 rounded-md">
+                        {val}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'nama_produk',
+                    label: 'Nama Bahan Baku',
+                    className: 'font-semibold text-white',
+                  },
+                  {
+                    key: 'satuan',
+                    label: 'Satuan',
+                    className: 'text-muted font-medium',
+                    render: (val) => val || 'Pcs',
+                  },
+                  {
+                    key: 'stok',
+                    label: 'Sisa Stok Sistem',
+                    numeric: true,
+                    render: (val) => {
+                      const stokVal = Number(val) || 0
+                      const isSafe = stokVal > 10
+                      const isLow = stokVal > 0 && stokVal <= 10
+                      return (
+                        <span
+                          className={
+                            isSafe
+                              ? 'text-primary'
+                              : isLow
+                              ? 'text-warning'
+                              : 'text-destructive'
+                          }
+                        >
+                          {stokVal.toLocaleString('id-ID')}
+                        </span>
+                      )
+                    },
+                  },
+                  {
+                    key: 'status',
+                    label: 'Status',
+                    align: 'center',
+                    render: (_, item) => {
                       const stokVal = Number(item.stok) || 0
                       const isSafe = stokVal > 10
                       const isLow = stokVal > 0 && stokVal <= 10
-                      const isCritical = stokVal <= 0
-
-                      const updatedTimeStr = item.updated_at
-                        ? parseDateSafe(item.updated_at).toLocaleString('id-ID', {
+                      return isSafe ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                          Aman
+                        </span>
+                      ) : isLow ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-warning/10 text-warning border border-warning/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-warning" />
+                          Menipis
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-destructive/10 text-destructive border border-destructive/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
+                          Habis
+                        </span>
+                      )
+                    },
+                  },
+                  {
+                    key: 'updated_at',
+                    label: 'Terakhir Diperbarui',
+                    render: (val) =>
+                      val
+                        ? parseDateSafe(val).toLocaleString('id-ID', {
                             dateStyle: 'medium',
                             timeStyle: 'short',
                           })
-                        : '-'
-
-                      return (
-                        <TableRow key={item.id_bahan_baku || idx}>
-                          <TableCell align="center" className="font-mono text-muted-dark text-[11px]">
-                            {idx + 1}
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-mono text-xs font-bold bg-subsurface text-warning border border-border px-2 py-0.5 rounded-md">
-                              {item.id_bahan_baku}
-                            </span>
-                          </TableCell>
-                          <TableCell className="font-semibold text-white">
-                            {item.nama_produk}
-                          </TableCell>
-                          <TableCell className="text-muted font-medium">
-                            {item.satuan || 'Pcs'}
-                          </TableCell>
-                          <TableCell numeric highlight={isSafe}>
-                            <span
-                              className={
-                                isSafe
-                                  ? 'text-primary'
-                                  : isLow
-                                  ? 'text-warning'
-                                  : 'text-destructive'
-                              }
-                            >
-                              {stokVal.toLocaleString('id-ID')}
-                            </span>
-                            <span className="text-[10px] text-muted-dark font-normal ml-1">
-                              {item.satuan || ''}
-                            </span>
-                          </TableCell>
-                          <TableCell align="center">
-                            {isSafe && (
-                              <span className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase">
-                                <CheckCircle size={10} />
-                                Aman
-                              </span>
-                            )}
-                            {isLow && (
-                              <span className="inline-flex items-center gap-1 bg-warning/10 text-warning border border-warning/20 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase">
-                                <AlertTriangle size={10} />
-                                Menipis
-                              </span>
-                            )}
-                            {isCritical && (
-                              <span className="inline-flex items-center gap-1 bg-destructive/10 text-destructive border border-destructive/20 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase">
-                                <AlertCircle size={10} />
-                                {stokVal < 0 ? 'Minus' : 'Habis'}
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-muted-dark font-mono text-[11px]">
-                            {updatedTimeStr}
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                        : '-',
+                  },
+                ]}
+              />
             )}
           </div>
         )}
@@ -3579,51 +3585,62 @@ const CafePOS = () => {
 
             <div className="border-t border-border pt-6">
               <h4 className="font-bold text-sm text-white mb-3">Daftar Pengeluaran Hari Ini</h4>
-              {todayExpenses.length === 0 ? (
-                <p className="text-xs text-muted-dark">Belum ada pengeluaran kasir hari ini.</p>
-              ) : (
-                <TableContainer>
-                  <Table dense>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Jam</TableHead>
-                        <TableHead>Keterangan</TableHead>
-                        <TableHead>Unit</TableHead>
-                        <TableHead>Kategori</TableHead>
-                        <TableHead align="right">Nominal</TableHead>
-                        <TableHead align="center">Aksi</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {todayExpenses.map((exp) => (
-                        <TableRow key={exp.id_pengeluaran}>
-                          <TableCell className="font-mono text-muted-dark">{exp.jam?.substring(0, 5) || '--:--'}</TableCell>
-                          <TableCell className="font-medium text-white">{exp.nama_pengeluaran}</TableCell>
-                          <TableCell className="uppercase font-bold text-[10px] text-muted">{exp.jenis?.replace('pengeluaran ', '') || 'Cafe'}</TableCell>
-                          <TableCell>{exp.kategori}</TableCell>
-                          <TableCell numeric className="text-destructive font-bold">{formatRupiah(exp.nominal)}</TableCell>
-                          <TableCell align="center">
-                            <div className="flex items-center justify-center gap-2">
-                              <button
-                                onClick={() => handleStartEditPosExpense(exp)}
-                                className="text-warning hover:underline font-bold text-[11px]"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => handleDeletePosExpense(exp.id_pengeluaran)}
-                                className="text-destructive hover:underline font-bold text-[11px]"
-                              >
-                                Hapus
-                              </button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              )}
+              <OperationalTable
+                data={todayExpenses}
+                keyExtractor={(exp) => exp.id_pengeluaran}
+                emptyMessage="Belum ada pengeluaran kasir hari ini."
+                columns={[
+                  {
+                    key: 'jam',
+                    label: 'Jam',
+                    className: 'font-mono text-muted-dark',
+                    render: (val) => val?.substring(0, 5) || '--:--',
+                  },
+                  {
+                    key: 'nama_pengeluaran',
+                    label: 'Keterangan',
+                    className: 'font-medium text-white',
+                  },
+                  {
+                    key: 'jenis',
+                    label: 'Unit',
+                    className: 'uppercase font-bold text-[10px] text-muted',
+                    render: (val) => val?.replace('pengeluaran ', '') || 'Cafe',
+                  },
+                  {
+                    key: 'kategori',
+                    label: 'Kategori',
+                  },
+                  {
+                    key: 'nominal',
+                    label: 'Nominal',
+                    numeric: true,
+                    className: 'text-destructive font-bold',
+                    render: (val) => formatRupiah(val),
+                  },
+                  {
+                    key: 'actions',
+                    label: 'Aksi',
+                    align: 'center',
+                    render: (_, exp) => (
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleStartEditPosExpense(exp)}
+                          className="text-warning hover:underline font-bold text-[11px]"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeletePosExpense(exp.id_pengeluaran)}
+                          className="text-destructive hover:underline font-bold text-[11px]"
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    ),
+                  },
+                ]}
+              />
             </div>
           </div>
         )}

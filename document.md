@@ -2452,6 +2452,17 @@
       - **Verifikasi Kualitas**:
         - 208/208 unit tests PASS (100% GREEN).
         - Vite production build sukses dalam 1.64 detik.
+    36. **Arsitektur Taksonomi Tabel Berdasarkan Sifat Data (2026-09-30)**:
+      - **Pemisahan 4 Archetype Tabel di `src/components/ui/tables/`**:
+        1. `OperationalTable.jsx`: Ramping (*dense*), status dot kontras tinggi, aksi 1-klik, tanpa pagination berlebih. Diterapkan pada Kasir POS (`HybridPOSPage.jsx` - Pengeluaran & Stok Cepat).
+        2. `LedgerTable.jsx`: Format angka mono ketat rata kanan, zebra striping halus, dan footer akuntansi permanen (`<tfoot>` debit vs kredit). Diterapkan pada Akuntansi & Buku Besar (`GeneralLedgerView.jsx`).
+        3. `InventoryTable.jsx`: Penonjolan SKU/Barcode, visual alert ambang batas stok aktual vs minimum, dan total aset gudang. Diterapkan pada Master Bahan Baku (`Gudang.jsx`).
+        4. `RelationTable.jsx`: Penonjolan subjek utama (Plat Kendaraan / Nama Pelanggan / Avatar), tag tier loyalitas, dan integrasi WhatsApp. Diterapkan pada Modul CRM (`CRM.jsx`).
+      - **Suite Pengujian Vitest**:
+        - Dibuat `src/components/ui/__tests__/TableArchetypes.test.jsx` menguji rendering data, empty state, sorting chevron, dan footer total akuntansi.
+      - **Verifikasi Kualitas**:
+        - 214/214 unit tests PASS across 37 test files (100% GREEN).
+        - Vite production build sukses dalam 1.57 detik.
 
 
 

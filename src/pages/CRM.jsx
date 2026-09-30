@@ -1,13 +1,4 @@
-import {
-  TableContainer,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-  TableEmpty,
-} from '../components/ui/Table'
+import { RelationTable } from '../components/ui/tables'
 import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
 import {
@@ -356,61 +347,103 @@ const CRM = () => {
         </div>
 
         {/* Table Content */}
-        <TableContainer>
-          <Table dense>
-            <thead>
-              <tr className="border-b border-border text-muted font-bold uppercase text-[10px] bg-subsurface/80">
-                <th className="py-3 px-3">Nomor Plat</th>
-                <th className="py-3 px-3">Model Kendaraan</th>
-                <th className="py-3 px-3">No Telepon</th>
-                <th className="py-3 px-3 text-center">Kunjungan</th>
-                <th className="py-3 px-3">Paket Terfavorit</th>
-                <th className="py-3 px-3 text-right">Total Akumulasi</th>
-                <th className="py-3 px-3 text-center">Status</th>
-                <th className="py-3 px-3 text-center">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {loading ? (
-                <tr>
-                  <td colSpan={8} className="text-center py-10 text-slate-500">
-                    Memuat data CRM pelanggan...
-                  </td>
-                </tr>
-              ) : paginatedCustomers.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="text-center py-10 text-slate-500">
-                    Tidak ada pelanggan yang cocok dengan kriteria pencarian.
-                  </td>
-                </tr>
-              ) : (
-                paginatedCustomers.map((c, i) => (
-                  <tr key={i} className="hover:bg-slate-900/40 transition-colors">
-                    <td className="py-3 px-3 font-mono font-bold text-white uppercase tracking-wider">{c.plat}</td>
-                    <td className="py-3 px-3 text-slate-300">{c.model}</td>
-                    <td className="py-3 px-3 text-slate-400 font-mono text-[11px]">{c.noTelepon}</td>
-                    <td className="py-3 px-3 text-center font-bold text-primary">{c.totalVisits} kali</td>
-                    <td className="py-3 px-3 text-slate-300">{c.favPkg}</td>
-                    <td className="py-3 px-3 text-right font-mono font-bold text-primary">{formatRupiah(c.totalSpent)}</td>
-                    <td className="py-3 px-3 text-center">
-                      <span className={`text-[9px] px-2.5 py-0.5 rounded-full font-bold uppercase border ${c.segmentBadge}`}>
-                        {c.segment}
+        <RelationTable
+          data={filteredCustomers}
+          keyExtractor={(c) => c.id_pelanggan || c.id || c.phone}
+          emptyMessage="Tidak ada pelanggan ditemukan."
+          columns={[
+            {
+              key: 'nama_pelanggan',
+              label: 'Pelanggan',
+              render: (val, c) => (
+                <div>
+                  <div className="font-bold text-white flex items-center gap-1.5">
+                    {val || 'Pelanggan Walk-In'}
+                    {c.is_member && (
+                      <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.2 rounded font-mono">
+                        MEMBER
                       </span>
-                    </td>
-                    <td className="py-3 px-3 text-center">
-                      <button
-                        onClick={() => setSelectedCustomerPlat(c.plat)}
-                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold transition-all"
-                      >
-                        Detail
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </Table>
-        </TableContainer>
+                    )}
+                  </div>
+                  <div className="text-muted-dark text-[11px] font-mono">{c.phone || c.no_hp || '-'}</div>
+                </div>
+              ),
+            },
+            {
+              key: 'plat_nomor',
+              label: 'Plat Kendaraan',
+              render: (val) => (
+                <span className="font-mono bg-subsurface text-foreground font-bold px-2 py-0.5 rounded border border-border">
+                  {val || '-'}
+                </span>
+              ),
+            },
+            {
+              key: 'tipe_kendaraan',
+              label: 'Tipe / Warna',
+              render: (val, c) => (
+                <div>
+                  <div className="text-white">{val || '-'}</div>
+                  <div className="text-muted-dark text-[11px]">{c.warna_kendaraan || ''}</div>
+                </div>
+              ),
+            },
+            {
+              key: 'total_kunjungan',
+              label: 'Kunjungan',
+              numeric: true,
+              render: (val) => (
+                <span className="font-mono font-bold text-white">
+                  {val || 0}x
+                </span>
+              ),
+            },
+            {
+              key: 'total_belanja',
+              label: 'Total Belanja',
+              numeric: true,
+              render: (val) => (
+                <span className="font-mono text-primary font-bold">
+                  {formatRupiah(val || 0)}
+                </span>
+              ),
+            },
+            {
+              key: 'terakhir_kunjungan',
+              label: 'Terakhir Berkunjung',
+              render: (val) => (
+                <span className="text-muted text-[11px]">
+                  {val ? new Date(val).toLocaleDateString('id-ID', { dateStyle: 'medium' }) : '-'}
+                </span>
+              ),
+            },
+            {
+              key: 'actions',
+              label: 'Aksi',
+              align: 'center',
+              render: (_, c) => (
+                <div className="flex items-center justify-center gap-2">
+                  {c.phone && (
+                    <button
+                      onClick={() => handleOpenWhatsAppModal(c)}
+                      className="text-primary hover:text-white p-1 rounded hover:bg-subsurface transition-colors"
+                      title="Kirim Pesan WhatsApp"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleViewDetail(c)}
+                    className="text-muted-foreground hover:text-white p-1 rounded hover:bg-subsurface transition-colors"
+                    title="Lihat Detail Riwayat"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              ),
+            },
+          ]}
+        />
 
         {/* Pagination Bar */}
         {totalPages > 1 && (

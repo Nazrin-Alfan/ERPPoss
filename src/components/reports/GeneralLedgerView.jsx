@@ -1,13 +1,4 @@
-import {
-  TableContainer,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-  TableEmpty,
-} from '../ui/Table'
+import { LedgerTable } from '../ui/tables'
 import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../supabaseClient'
 import {
@@ -260,61 +251,71 @@ export default function GeneralLedgerView({ tenantId }) {
             </div>
           </div>
 
-          <TableContainer>
-            <Table>
-              <thead>
-                <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400 font-bold uppercase tracking-wider">
-                  <th className="py-3 px-4">Kode</th>
-                  <th className="py-3 px-4">Nama Akun</th>
-                  <th className="py-3 px-4">Kategori</th>
-                  <th className="py-3 px-4 text-right">Debit (Rp)</th>
-                  <th className="py-3 px-4 text-right">Kredit (Rp)</th>
-                  <th className="py-3 px-4 text-right">Saldo Normal (Rp)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/40 font-mono">
-                {filteredAccounts.map((acc) => (
-                  <tr
-                    key={acc.id}
+          <LedgerTable
+            data={filteredAccounts}
+            keyExtractor={(acc) => acc.id}
+            emptyMessage="Tidak ada akun buku besar yang sesuai filter."
+            footerTotals={{
+              code: 'Total Mutasi Buku Besar',
+              total_debit: formatRupiah(trialBalance?.total_debit || 0),
+              total_credit: formatRupiah(trialBalance?.total_credit || 0),
+              saldo: trialBalance?.is_balanced ? 'SEIMBANG' : 'SELISIH',
+            }}
+            columns={[
+              {
+                key: 'code',
+                label: 'Kode Akun',
+                className: 'font-mono font-bold text-primary',
+                render: (val, acc) => (
+                  <div
                     onClick={() => handleOpenDrilldown(acc)}
-                    className="hover:bg-slate-800/50 cursor-pointer transition-colors group"
+                    className="cursor-pointer group flex items-center gap-1.5"
                   >
-                    <td className="py-2.5 px-4 font-bold text-brand-emerald group-hover:underline flex items-center gap-1.5">
-                      {acc.code}
-                      <span className="text-[10px] text-slate-500 font-sans opacity-0 group-hover:opacity-100 transition-opacity">
-                        (Klik Rincian)
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-4 font-sans text-slate-200">{acc.name}</td>
-                    <td className="py-2.5 px-4 font-sans text-[11px] text-slate-400">
-                      <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-semibold">
-                        {acc.category}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-4 text-right text-slate-300">{formatRupiah(acc.total_debit)}</td>
-                    <td className="py-2.5 px-4 text-right text-slate-300">{formatRupiah(acc.total_credit)}</td>
-                    <td className="py-2.5 px-4 text-right font-bold text-white">
-                      {acc.normal_balance === 'DEBIT'
-                        ? formatRupiah(acc.balance_debit)
-                        : formatRupiah(acc.balance_credit)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-slate-700 bg-slate-950 font-bold font-mono">
-                  <td colSpan={3} className="py-3 px-4 uppercase text-slate-300 font-sans tracking-wider">
-                    Total Mutasi Buku Besar
-                  </td>
-                  <td className="py-3 px-4 text-right text-emerald-400">{formatRupiah(trialBalance?.total_debit || 0)}</td>
-                  <td className="py-3 px-4 text-right text-emerald-400">{formatRupiah(trialBalance?.total_credit || 0)}</td>
-                  <td className="py-3 px-4 text-right text-brand-emerald">
-                    {trialBalance?.is_balanced ? 'SEIMBANG' : 'SELISIH'}
-                  </td>
-                </tr>
-              </tfoot>
-            </Table>
-          </TableContainer>
+                    <span className="group-hover:underline">{val}</span>
+                    <span className="text-[10px] text-muted-dark opacity-0 group-hover:opacity-100 transition-opacity">
+                      (Rincian)
+                    </span>
+                  </div>
+                ),
+              },
+              {
+                key: 'name',
+                label: 'Nama Akun',
+                className: 'text-foreground font-medium',
+              },
+              {
+                key: 'category',
+                label: 'Kategori',
+                render: (val) => (
+                  <span className="px-2 py-0.5 rounded bg-subsurface text-muted font-semibold text-[10px] uppercase border border-border">
+                    {val}
+                  </span>
+                ),
+              },
+              {
+                key: 'total_debit',
+                label: 'Debit (Rp)',
+                numeric: true,
+                render: (val) => formatRupiah(val),
+              },
+              {
+                key: 'total_credit',
+                label: 'Kredit (Rp)',
+                numeric: true,
+                render: (val) => formatRupiah(val),
+              },
+              {
+                key: 'saldo',
+                label: 'Saldo Normal (Rp)',
+                numeric: true,
+                className: 'font-bold text-foreground',
+                render: (_, acc) =>
+                  formatRupiah(
+                    acc.normal_balance === 'DEBIT' ? acc.balance_debit : acc.balance_credit
+                  ),
+              },
+            ]}
+          />
         </div>
       )}
 
