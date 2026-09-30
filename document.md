@@ -2381,6 +2381,20 @@
       - **Verifikasi Kualitas**:
         - 197/197 unit tests PASS (100% GREEN).
         - Vite production build sukses dalam 1.94 detik.
+    30. **Migrasi Menyeluruh POS ke Semantic Utility Classes (2026-09-30)**:
+      - **Cakupan File**:
+        - `src/pages/pos/HybridPOSPage.jsx`
+        - `src/pages/pos/CafePOSPage.jsx`
+        - `src/pages/pos/CarwashPOSPage.jsx`
+      - **Perubahan**:
+        - Mengganti lebih dari 500 baris warna heksadesimal kaku (`bg-[#00ffff]`, `bg-[#121215]`, `bg-[#18181c]`, `border-[#26272d]`, `text-[#00ffff]`, `text-[#bbcbb2]`) menjadi kelas semantik resmi Tailwind:
+          - `bg-canvas`, `bg-surface`, `bg-subsurface`
+          - `border-border`, `hover:border-border-hover`, `focus:border-primary`, `border-primary`
+          - `bg-primary`, `text-primary`, `text-primary-foreground`
+          - `text-muted`, `text-muted-dark`, `text-destructive`, `text-warning`
+      - **Verifikasi Kualitas**:
+        - 197/197 unit tests PASS (100% GREEN).
+        - Vite production build sukses dalam 2.01 detik.
 
 
 

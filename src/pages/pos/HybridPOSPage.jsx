@@ -1970,14 +1970,14 @@ const CafePOS = () => {
         {/* Sisi Kiri: Navigasi Tabs Lengkap (Scrollable horizontal halus di mobile, wrap di desktop) */}
         <div className="flex items-center gap-1.5 w-full max-w-full overflow-x-auto no-scrollbar py-0.5 flex-nowrap overscroll-x-contain">
           {/* Grup 1: Penjualan / Transaksi Langsung */}
-          <div className="flex items-center gap-1 bg-[#18181c] p-1 rounded-xl border border-[#26272d] shrink-0">
+          <div className="flex items-center gap-1 bg-subsurface p-1 rounded-xl border border-border shrink-0">
             {features.hasCafe && (
               <button
                 onClick={() => setActiveTab('cafe')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
                   activeTab === 'cafe'
-                    ? 'bg-[#00ffff] text-[#0f0f0f] shadow-sm shadow-[#00ffff]/20'
-                    : 'text-[#bbcbb2] hover:text-slate-200'
+                    ? 'bg-primary text-primary-foreground shadow-sm shadow-[#00ffff]/20'
+                    : 'text-muted hover:text-slate-200'
                 }`}
               >
                 <Coffee size={14} />
@@ -1989,8 +1989,8 @@ const CafePOS = () => {
                 onClick={() => setActiveTab('carwash')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
                   activeTab === 'carwash'
-                    ? 'bg-[#00ffff] text-[#0f0f0f] shadow-sm shadow-[#00ffff]/20'
-                    : 'text-[#bbcbb2] hover:text-slate-200'
+                    ? 'bg-primary text-primary-foreground shadow-sm shadow-[#00ffff]/20'
+                    : 'text-muted hover:text-slate-200'
                 }`}
               >
                 <Car size={14} />
@@ -2002,7 +2002,7 @@ const CafePOS = () => {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
                 activeTab === 'merchandise'
                   ? 'bg-amber-400 text-slate-950 shadow-sm shadow-amber-400/20'
-                  : 'text-[#bbcbb2] hover:text-slate-200'
+                  : 'text-muted hover:text-slate-200'
               }`}
             >
               <ShoppingBag size={14} />
@@ -2013,20 +2013,20 @@ const CafePOS = () => {
           <span className="text-[#26272d] font-mono px-0.5 shrink-0">|</span>
 
           {/* Grup 2: Audit & Monitoring Lapangan */}
-          <div className="flex items-center gap-1 bg-[#18181c] p-1 rounded-xl border border-[#26272d] shrink-0">
+          <div className="flex items-center gap-1 bg-subsurface p-1 rounded-xl border border-border shrink-0">
             <button
               onClick={() => setActiveTab('pending')}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
                 activeTab === 'pending'
                   ? 'bg-amber-500 text-slate-950 shadow-sm shadow-amber-500/20'
-                  : 'text-[#bbcbb2] hover:text-slate-200'
+                  : 'text-muted hover:text-slate-200'
               }`}
             >
               <ShoppingCart size={13} />
               <span className="whitespace-nowrap">Bon Pending</span>
               {pendingBills.length > 0 && (
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                  activeTab === 'pending' ? 'bg-[#18181c] text-amber-400' : 'bg-amber-500/20 text-amber-400'
+                  activeTab === 'pending' ? 'bg-subsurface text-amber-400' : 'bg-amber-500/20 text-amber-400'
                 }`}>
                   {pendingBills.length}
                 </span>
@@ -2038,13 +2038,13 @@ const CafePOS = () => {
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
                 activeTab === 'history'
                   ? 'bg-purple-500 text-white shadow-sm shadow-purple-500/20'
-                  : 'text-[#bbcbb2] hover:text-slate-200'
+                  : 'text-muted hover:text-slate-200'
               }`}
             >
               <History size={13} />
               <span className="whitespace-nowrap">Riwayat</span>
               <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                activeTab === 'history' ? 'bg-[#18181c] text-purple-300' : 'bg-purple-500/20 text-purple-300'
+                activeTab === 'history' ? 'bg-subsurface text-purple-300' : 'bg-purple-500/20 text-purple-300'
               }`}>
                 {todayTransactions.length}
               </span>
@@ -2055,13 +2055,13 @@ const CafePOS = () => {
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
                 activeTab === 'inventory'
                   ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/20'
-                  : 'text-[#bbcbb2] hover:text-slate-200'
+                  : 'text-muted hover:text-slate-200'
               }`}
             >
               <Boxes size={13} />
               <span className="whitespace-nowrap">Stok Gudang</span>
               <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                activeTab === 'inventory' ? 'bg-[#18181c] text-amber-300' : 'bg-amber-600/20 text-amber-300'
+                activeTab === 'inventory' ? 'bg-subsurface text-amber-300' : 'bg-amber-600/20 text-amber-300'
               }`}>
                 {inventoryList.length}
               </span>
@@ -2078,7 +2078,7 @@ const CafePOS = () => {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all border shrink-0 ${
                 activeTab === 'expense' || activeTab === 'exchange'
                   ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                  : 'bg-[#121215] text-slate-200 hover:text-white border-[#26272d] hover:border-[#3f414a]'
+                  : 'bg-surface text-slate-200 hover:text-white border-border hover:border-border-hover'
               }`}
               title="Operasional Laci Kasir & Pergantian Shift"
             >
@@ -2092,12 +2092,12 @@ const CafePOS = () => {
             {showCashOpsMenu && (
               <>
                 <div className="fixed inset-0 z-20 bg-transparent" onClick={() => setShowCashOpsMenu(false)} />
-                <div className="absolute left-0 top-full mt-2 w-52 bg-[#121215] backdrop-blur-md border border-[#26272d] rounded-xl p-1.5 shadow-2xl z-30 space-y-1 animate-slide-up">
+                <div className="absolute left-0 top-full mt-2 w-52 bg-surface backdrop-blur-md border border-border rounded-xl p-1.5 shadow-2xl z-30 space-y-1 animate-slide-up">
                   <button
                     type="button"
                     onClick={() => { setActiveTab('expense'); setShowCashOpsMenu(false); }}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-left transition-colors ${
-                      activeTab === 'expense' ? 'bg-rose-500/20 text-rose-300' : 'text-slate-200 hover:bg-[#18181c] hover:text-white'
+                      activeTab === 'expense' ? 'bg-rose-500/20 text-rose-300' : 'text-slate-200 hover:bg-subsurface hover:text-white'
                     }`}
                   >
                     <TrendingDown size={14} className="text-rose-400" />
@@ -2108,14 +2108,14 @@ const CafePOS = () => {
                     type="button"
                     onClick={() => { setActiveTab('exchange'); setShowCashOpsMenu(false); }}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-left transition-colors ${
-                      activeTab === 'exchange' ? 'bg-cyan-500/20 text-cyan-300' : 'text-slate-200 hover:bg-[#18181c] hover:text-white'
+                      activeTab === 'exchange' ? 'bg-cyan-500/20 text-cyan-300' : 'text-slate-200 hover:bg-subsurface hover:text-white'
                     }`}
                   >
                     <RefreshCw size={14} className="text-cyan-400" />
                     <span>Tukar Uang / Tarik Kas</span>
                   </button>
 
-                  <div className="border-t border-[#26272d] my-1" />
+                  <div className="border-t border-border my-1" />
 
                   <button
                     type="button"
@@ -2132,11 +2132,11 @@ const CafePOS = () => {
         </div>
 
         {/* Sisi Kanan: Kasir Aktif & Status Laci Kas Ringkas */}
-        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end pt-1 sm:pt-0 border-t border-[#26272d]/50 sm:border-t-0">
+        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end pt-1 sm:pt-0 border-t border-border/50 sm:border-t-0">
           {/* Status Kasir & Shift */}
-          <div className="flex items-center gap-1.5 bg-[#18181c] border border-[#26272d] rounded-xl px-2.5 py-1 text-xs">
-            <span className="w-2 h-2 rounded-full bg-[#00ffff] text-[#0f0f0f] animate-pulse shrink-0"></span>
-            <span className="text-[#6b7367] text-[10px] font-semibold hidden sm:inline uppercase tracking-wider">Kasir:</span>
+          <div className="flex items-center gap-1.5 bg-subsurface border border-border rounded-xl px-2.5 py-1 text-xs">
+            <span className="w-2 h-2 rounded-full bg-primary text-primary-foreground animate-pulse shrink-0"></span>
+            <span className="text-muted-dark text-[10px] font-semibold hidden sm:inline uppercase tracking-wider">Kasir:</span>
             {profile?.role === 'Kasir' ? (
               <span className="font-bold text-white uppercase text-xs">{selectedCashier}</span>
             ) : (
@@ -2150,7 +2150,7 @@ const CafePOS = () => {
               />
             )}
             <span className="text-slate-700 font-mono">|</span>
-            <span className="text-[#00ffff] font-bold font-mono text-[11px]">
+            <span className="text-primary font-bold font-mono text-[11px]">
               {getShiftForCashier(selectedCashier)}
             </span>
           </div>
@@ -2160,14 +2160,14 @@ const CafePOS = () => {
             <button
               type="button"
               onClick={() => setShowCashDrawerDetail(!showCashDrawerDetail)}
-              className="flex items-center gap-2 bg-[#18181c] hover:bg-[#26272d] border border-[#26272d] rounded-lg px-2.5 py-1 text-xs transition-colors"
+              className="flex items-center gap-2 bg-subsurface hover:bg-[#26272d] border border-border rounded-lg px-2.5 py-1 text-xs transition-colors"
               title="Klik untuk melihat rincian modal & arus kas laci"
             >
-              <Wallet size={13} className="text-[#00ffff]" />
+              <Wallet size={13} className="text-primary" />
               <span className="font-bold text-white font-mono text-xs">
                 {formatRupiah(todayStartingCapital + cashierCash.todayIn - cashierCash.todayOut)}
               </span>
-              <ChevronDown size={12} className={`text-[#6b7367] transition-transform ${showCashDrawerDetail ? 'rotate-180' : ''}`} />
+              <ChevronDown size={12} className={`text-muted-dark transition-transform ${showCashDrawerDetail ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Popover Rincian Arus Kas */}
@@ -2177,8 +2177,8 @@ const CafePOS = () => {
                   className="fixed inset-0 z-20 bg-black/20 backdrop-blur-[0.5px]"
                   onClick={() => setShowCashDrawerDetail(false)}
                 />
-                <div className="absolute right-0 top-full mt-2 w-72 bg-[#121215] backdrop-blur-md border border-[#26272d] rounded-xl p-3.5 shadow-2xl z-30 space-y-2.5 animate-slide-up">
-                  <div className="flex items-center justify-between border-b border-[#26272d] pb-2">
+                <div className="absolute right-0 top-full mt-2 w-72 bg-surface backdrop-blur-md border border-border rounded-xl p-3.5 shadow-2xl z-30 space-y-2.5 animate-slide-up">
+                  <div className="flex items-center justify-between border-b border-border pb-2">
                     <span className="text-xs font-bold text-white flex items-center gap-1.5">
                       <Wallet size={14} className="text-purple-400" />
                       Rincian Uang Kasir
@@ -2186,29 +2186,29 @@ const CafePOS = () => {
                     <button
                       type="button"
                       onClick={() => setShowCashDrawerDetail(false)}
-                      className="text-[#6b7367] hover:text-white text-xs"
+                      className="text-muted-dark hover:text-white text-xs"
                     >
                       ✕
                     </button>
                   </div>
                   <div className="space-y-1.5 text-xs">
-                    <div className="flex justify-between items-center text-[#bbcbb2]">
+                    <div className="flex justify-between items-center text-muted">
                       <span>Modal Awal</span>
                       <span className="font-mono text-slate-200 font-bold">{formatRupiah(todayStartingCapital)}</span>
                     </div>
-                    <div className="flex justify-between items-center text-[#bbcbb2]">
+                    <div className="flex justify-between items-center text-muted">
                       <span>Uang Masuk (Cash)</span>
-                      <span className="font-mono text-[#00ffff] font-bold">+{formatRupiah(cashierCash.todayIn)}</span>
+                      <span className="font-mono text-primary font-bold">+{formatRupiah(cashierCash.todayIn)}</span>
                     </div>
-                    <div className="flex justify-between items-center text-[#bbcbb2]">
+                    <div className="flex justify-between items-center text-muted">
                       <span>Uang Keluar (Cash)</span>
                       <span className="font-mono text-rose-400 font-bold">-{formatRupiah(cashierCash.todayOut)}</span>
                     </div>
-                    <div className="flex justify-between items-center text-[#bbcbb2]">
+                    <div className="flex justify-between items-center text-muted">
                       <span>Total QRIS Masuk</span>
                       <span className="font-mono text-cyan-400 font-bold">{formatRupiah(cashierCash.todayQRIS)}</span>
                     </div>
-                    <div className="border-t border-[#26272d] pt-1.5 flex justify-between items-center font-bold text-white">
+                    <div className="border-t border-border pt-1.5 flex justify-between items-center font-bold text-white">
                       <span>Sisa Fisik di Laci</span>
                       <span className="font-mono text-purple-300 font-black">
                         {formatRupiah(todayStartingCapital + cashierCash.todayIn - cashierCash.todayOut)}
@@ -2228,17 +2228,17 @@ const CafePOS = () => {
         <div className={`${isOrderTab ? 'md:w-[64%]' : 'w-full'} flex flex-col flex-1 min-h-0 min-w-0 w-full max-w-full`}>
           {/* Tab 1: Menu Cafe */}
           {activeTab === 'cafe' && (
-            <div className="flex-1 flex flex-col bg-[#121215] border border-[#26272d] rounded-xl p-2.5 sm:p-4 min-h-0 w-full max-w-full min-w-0 overflow-hidden">
+            <div className="flex-1 flex flex-col bg-surface border border-border rounded-xl p-2.5 sm:p-4 min-h-0 w-full max-w-full min-w-0 overflow-hidden">
               {/* Search Bar & Filter Kategori Chips */}
               <div className="space-y-2.5 mb-4 shrink-0 min-w-0">
                 <div className="relative">
-                  <Search className="absolute left-3.5 top-3 text-[#6b7367]" size={16} />
+                  <Search className="absolute left-3.5 top-3 text-muted-dark" size={16} />
                   <input
                     type="text"
                     placeholder="Cari makanan, minuman, atau paket bundling..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-[#121215] border border-[#26272d] rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-[#00ffff]/60 text-sm"
+                    className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-primary/60 text-sm"
                   />
                 </div>
 
@@ -2251,8 +2251,8 @@ const CafePOS = () => {
                       onClick={() => setSelectedCafeCategory(cat)}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                         selectedCafeCategory === cat
-                          ? 'bg-[#00ffff] text-[#0f0f0f] text-slate-950 shadow-sm shadow-brand-emerald/20'
-                          : 'bg-[#18181c] border border-[#26272d] text-[#bbcbb2] hover:text-slate-200'
+                          ? 'bg-primary text-primary-foreground text-slate-950 shadow-sm shadow-brand-emerald/20'
+                          : 'bg-subsurface border border-border text-muted hover:text-slate-200'
                       }`}
                     >
                       {cat === 'SEMUA' ? '🌟 Semua Menu' : cat}
@@ -2271,8 +2271,8 @@ const CafePOS = () => {
                     key={menu.nama_menu}
                     type="button"
                     onClick={() => addToCart({ nama_menu: menu.nama_menu, harga: menu.harga })}
-                    className={`glass-card hover:border-[#00ffff]/50 p-0 rounded-xl flex flex-col justify-between text-left transition-all duration-300 active:scale-[0.98] group overflow-hidden min-h-[170px] relative w-full min-w-0 ${
-                      inCartItem ? 'border-brand-emerald/60 ring-1 ring-brand-emerald/40 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'border-[#26272d]'
+                    className={`glass-card hover:border-primary/50 p-0 rounded-xl flex flex-col justify-between text-left transition-all duration-300 active:scale-[0.98] group overflow-hidden min-h-[170px] relative w-full min-w-0 ${
+                      inCartItem ? 'border-brand-emerald/60 ring-1 ring-brand-emerald/40 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'border-border'
                     }`}
                   >
                     {/* Visual Banner / Gambar Menu */}
@@ -2313,22 +2313,22 @@ const CafePOS = () => {
 
                       {/* Counter Badge jika sudah ada di cart */}
                       {inCartItem && (
-                        <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[#00ffff] text-[#0f0f0f] text-slate-950 font-black text-xs flex items-center justify-center shadow-lg shadow-brand-emerald/30 animate-pop-in z-30">
+                        <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground text-slate-950 font-black text-xs flex items-center justify-center shadow-lg shadow-brand-emerald/30 animate-pop-in z-30">
                           {inCartItem.qty}
                         </span>
                       )}
                     </div>
 
                     {/* Informasi Menu & Harga */}
-                    <div className="p-3 flex-1 flex flex-col justify-between bg-[#18181c] backdrop-blur-md relative w-full">
-                      <h4 className="font-bold text-xs text-slate-100 group-hover:text-[#00ffff] transition-colors line-clamp-2 leading-tight">
+                    <div className="p-3 flex-1 flex flex-col justify-between bg-subsurface backdrop-blur-md relative w-full">
+                      <h4 className="font-bold text-xs text-slate-100 group-hover:text-primary transition-colors line-clamp-2 leading-tight">
                         {menu.nama_menu}
                       </h4>
                       <div className="mt-2 flex justify-between items-center">
-                        <span className="text-xs font-bold text-[#00ffff] font-mono">
+                        <span className="text-xs font-bold text-primary font-mono">
                           {formatRupiah(menu.harga)}
                         </span>
-                        <span className="w-6 h-6 rounded-lg bg-[#18181c] text-[#bbcbb2] flex items-center justify-center font-bold text-xs group-hover:bg-[#00ffff] group-hover:text-[#0f0f0f] transition-all">
+                        <span className="w-6 h-6 rounded-lg bg-subsurface text-muted flex items-center justify-center font-bold text-xs group-hover:bg-primary group-hover:text-primary-foreground transition-all">
                           <Plus size={12} />
                         </span>
                       </div>
@@ -2338,16 +2338,16 @@ const CafePOS = () => {
               })}
 
               {filteredMenus.length === 0 && (
-                <div className="col-span-full py-16 flex flex-col items-center justify-center text-center text-[#6b7367]">
-                  <Coffee size={36} className="text-[#6b7367] mb-2 opacity-60" />
-                  <p className="text-sm font-semibold text-[#bbcbb2]">
+                <div className="col-span-full py-16 flex flex-col items-center justify-center text-center text-muted-dark">
+                  <Coffee size={36} className="text-muted-dark mb-2 opacity-60" />
+                  <p className="text-sm font-semibold text-muted">
                     {menuItems.length === 0 ? 'Memuat daftar menu cafe...' : 'Tidak ada menu yang sesuai pencarian'}
                   </p>
                   {searchQuery && (
                     <button
                       type="button"
                       onClick={() => setSearchQuery('')}
-                      className="mt-2 text-xs text-[#00ffff] hover:underline font-medium"
+                      className="mt-2 text-xs text-primary hover:underline font-medium"
                     >
                       Reset kata kunci pencarian
                     </button>
@@ -2360,18 +2360,18 @@ const CafePOS = () => {
 
         {/* Tab 2: Cuci Mobil (Carwash) */}
         {activeTab === 'carwash' && (
-          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-[#121215] border border-[#26272d] rounded-xl p-6 overflow-y-auto space-y-6">
+          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-surface border border-border rounded-xl p-6 overflow-y-auto space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold text-white">Layanan Cuci Mobil</h3>
-                <p className="text-xs text-[#6b7367] mt-0.5">Lengkapi form transaksi cucian mobil pelanggan</p>
+                <p className="text-xs text-muted-dark mt-0.5">Lengkapi form transaksi cucian mobil pelanggan</p>
               </div>
               <button
                 type="button"
                 onClick={() => setHasCarwash(!hasCarwash)}
                 className={`px-3.5 py-1.5 rounded-lg font-bold text-xs transition-all border active:scale-[0.98] ${hasCarwash
-                  ? 'bg-[#00ffff] text-[#0f0f0f] border-[#00ffff] shadow-xs'
-                  : 'bg-[#18181c] text-[#bbcbb2] border-[#26272d] hover:border-[#3f414a] hover:text-white'
+                  ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                  : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
                   }`}
               >
                 {hasCarwash ? '✓ Aktif dalam Transaksi' : '+ Tambah ke Transaksi'}
@@ -2382,7 +2382,7 @@ const CafePOS = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Plat Nomor */}
                 <div className="flex flex-col">
-                  <label className="text-xs font-semibold text-[#bbcbb2] mb-1.5 uppercase tracking-wider">
+                  <label className="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
                     Plat Nomor Kendaraan
                   </label>
                   <input
@@ -2390,13 +2390,13 @@ const CafePOS = () => {
                     placeholder="Contoh: AD 1234 AB"
                     value={carwashForm.platNomor}
                     onChange={(e) => setCarwashForm(prev => ({ ...prev, platNomor: e.target.value.toUpperCase() }))}
-                    className="w-full px-4 py-2 bg-[#121215] border border-[#26272d] rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-[#00ffff] text-sm uppercase font-mono tracking-widest font-bold"
+                    className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-primary text-sm uppercase font-mono tracking-widest font-bold"
                   />
                 </div>
 
                 {/* Paket Cuci */}
                 <div className="flex flex-col">
-                  <label className="text-xs font-semibold text-[#bbcbb2] mb-1.5 uppercase tracking-wider">
+                  <label className="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
                     Pilihan Paket Layanan
                   </label>
                   <CustomSelect
@@ -2411,7 +2411,7 @@ const CafePOS = () => {
 
                 {/* Merk/Model Mobil */}
                 <div className="flex flex-col">
-                  <label className="text-xs font-semibold text-[#bbcbb2] mb-1.5 uppercase tracking-wider">
+                  <label className="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
                     Merk / Model Mobil
                   </label>
                   <input
@@ -2419,13 +2419,13 @@ const CafePOS = () => {
                     placeholder="Contoh: Avanza, Fortuner, Civic"
                     value={carwashForm.model}
                     onChange={(e) => setCarwashForm(prev => ({ ...prev, model: e.target.value }))}
-                    className="w-full px-4 py-2 bg-[#121215] border border-[#26272d] rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-[#00ffff] text-sm"
+                    className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-primary text-sm"
                   />
                 </div>
 
                 {/* No Telepon Customer */}
                 <div className="flex flex-col">
-                  <label className="text-xs font-semibold text-[#bbcbb2] mb-1.5 uppercase tracking-wider">
+                  <label className="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
                     No Telepon Customer (CRM WhatsApp)
                   </label>
                   <input
@@ -2433,13 +2433,13 @@ const CafePOS = () => {
                     placeholder="Contoh: 081234567890"
                     value={carwashForm.noTelepon}
                     onChange={(e) => setCarwashForm(prev => ({ ...prev, noTelepon: e.target.value }))}
-                    className="w-full px-4 py-2 bg-[#121215] border border-[#26272d] rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-[#00ffff] text-sm"
+                    className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-primary text-sm"
                   />
                 </div>
 
                 {/* Ukuran Kendaraan */}
                 <div className="flex flex-col col-span-1 md:col-span-2">
-                  <label className="text-xs font-semibold text-[#bbcbb2] mb-1.5 uppercase tracking-wider">
+                  <label className="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
                     Ukuran Kendaraan
                   </label>
                   <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
@@ -2449,8 +2449,8 @@ const CafePOS = () => {
                         type="button"
                         onClick={() => setCarwashForm(prev => ({ ...prev, ukuran: u }))}
                         className={`py-2 rounded-lg font-bold text-xs transition-all border active:scale-[0.98] ${carwashForm.ukuran === u
-                          ? 'bg-[#00ffff] text-[#0f0f0f] border-[#00ffff] shadow-xs font-black'
-                          : 'bg-[#18181c] text-[#bbcbb2] border-[#26272d] hover:border-[#3f414a] hover:text-white'
+                          ? 'bg-primary text-primary-foreground border-primary shadow-xs font-black'
+                          : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
                           }`}
                       >
                         {u}
@@ -2462,7 +2462,7 @@ const CafePOS = () => {
                 {/* Harga Custom (Hanya tampil jika Ukuran = Custom) */}
                 {carwashForm.ukuran === 'Custom' && (
                   <div className="flex flex-col col-span-1 md:col-span-2">
-                    <label className="text-xs font-semibold text-[#bbcbb2] mb-1.5 uppercase tracking-wider">
+                    <label className="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
                       Harga Custom (Rp)
                     </label>
                     <input
@@ -2470,14 +2470,14 @@ const CafePOS = () => {
                       placeholder="Masukkan harga custom..."
                       value={carwashForm.customHarga}
                       onChange={(e) => setCarwashForm(prev => ({ ...prev, customHarga: parseFloat(e.target.value) || 0 }))}
-                      className="w-full px-4 py-2 bg-[#121215] border border-[#26272d] rounded-lg text-white focus:outline-none focus:border-[#00ffff] text-sm font-bold text-[#00ffff]"
+                      className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-white focus:outline-none focus:border-primary text-sm font-bold text-primary"
                     />
                   </div>
                 )}
 
                 {/* Variant Cuci */}
                 <div className="flex flex-col">
-                  <label className="text-xs font-semibold text-[#bbcbb2] mb-1.5 uppercase tracking-wider">
+                  <label className="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
                     Variant Cuci
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -2487,8 +2487,8 @@ const CafePOS = () => {
                         type="button"
                         onClick={() => setCarwashForm(prev => ({ ...prev, variant: v }))}
                         className={`py-2 rounded-lg font-bold text-xs transition-all border active:scale-[0.98] ${carwashForm.variant === v
-                          ? 'bg-[#00ffff] text-[#0f0f0f] border-[#00ffff] shadow-xs font-black'
-                          : 'bg-[#18181c] text-[#bbcbb2] border-[#26272d] hover:border-[#3f414a] hover:text-white'
+                          ? 'bg-primary text-primary-foreground border-primary shadow-xs font-black'
+                          : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
                           }`}
                       >
                         {v}
@@ -2499,7 +2499,7 @@ const CafePOS = () => {
 
                 {/* Anggota 1 */}
                 <div className="flex flex-col">
-                  <label className="text-xs font-semibold text-[#bbcbb2] mb-1.5 uppercase tracking-wider">
+                  <label className="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
                     Anggota Pencuci 1
                   </label>
                   <CustomSelect
@@ -2514,7 +2514,7 @@ const CafePOS = () => {
 
                 {/* Anggota 2 */}
                 <div className="flex flex-col">
-                  <label className="text-xs font-semibold text-[#bbcbb2] mb-1.5 uppercase tracking-wider">
+                  <label className="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
                     Anggota Pencuci 2 (Opsional)
                   </label>
                   <CustomSelect
@@ -2532,7 +2532,7 @@ const CafePOS = () => {
 
                 {/* Kehadiran */}
                 <div className="flex flex-col">
-                  <label className="text-xs font-semibold text-[#bbcbb2] mb-1.5 uppercase tracking-wider">
+                  <label className="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
                     Kehadiran Pelanggan
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -2542,8 +2542,8 @@ const CafePOS = () => {
                         type="button"
                         onClick={() => setCarwashForm(prev => ({ ...prev, kehadiran: k }))}
                         className={`py-2 rounded-lg font-bold text-xs transition-all border active:scale-[0.98] ${carwashForm.kehadiran === k
-                          ? 'bg-[#00ffff] text-[#0f0f0f] border-[#00ffff] shadow-xs font-black'
-                          : 'bg-[#18181c] text-[#bbcbb2] border-[#26272d] hover:border-[#3f414a] hover:text-white'
+                          ? 'bg-primary text-primary-foreground border-primary shadow-xs font-black'
+                          : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
                           }`}
                       >
                         {k}
@@ -2553,24 +2553,24 @@ const CafePOS = () => {
                 </div>
 
                 {/* Total Tarif Carwash */}
-                <div className="flex flex-col justify-end p-3.5 rounded-xl bg-[#18181c] border border-[#26272d]">
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-[#6b7367]">Estimasi Tarif Cuci</span>
-                  <span className="text-2xl font-black font-mono text-[#00ffff] mt-0.5">{formatRupiah(carwashForm.harga)}</span>
+                <div className="flex flex-col justify-end p-3.5 rounded-xl bg-subsurface border border-border">
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-muted-dark">Estimasi Tarif Cuci</span>
+                  <span className="text-2xl font-black font-mono text-primary mt-0.5">{formatRupiah(carwashForm.harga)}</span>
                 </div>
 
                 {/* Walkaround Inspection & Catatan Khusus Kendaraan (Estafet Detailing) */}
-                <div className="col-span-1 md:col-span-2 p-3.5 rounded-xl bg-[#121215] border border-[#26272d] space-y-3">
-                  <div className="flex items-center justify-between border-b border-[#26272d] pb-2">
+                <div className="col-span-1 md:col-span-2 p-3.5 rounded-xl bg-surface border border-border space-y-3">
+                  <div className="flex items-center justify-between border-b border-border pb-2">
                     <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                       <span>🔍</span>
                       <span>Inspeksi Walkaround & Kondisi Masuk</span>
                     </span>
-                    <span className="text-[10px] text-[#6b7367] font-medium">Cegah komplain baret/barang</span>
+                    <span className="text-[10px] text-muted-dark font-medium">Cegah komplain baret/barang</span>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[11px] font-semibold text-[#bbcbb2] mb-1 block">Kondisi Bodi Awal</label>
+                      <label className="text-[11px] font-semibold text-muted mb-1 block">Kondisi Bodi Awal</label>
                       <div className="grid grid-cols-3 gap-1.5">
                         {['Normal', 'Baret Halus', 'Dent/Penyok'].map((cond) => (
                           <button
@@ -2580,7 +2580,7 @@ const CafePOS = () => {
                             className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all ${
                               carwashForm.kondisi_bodi === cond
                                 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs'
-                                : 'bg-[#18181c] text-[#bbcbb2] border border-[#26272d] hover:text-slate-200'
+                                : 'bg-subsurface text-muted border border-border hover:text-slate-200'
                             }`}
                           >
                             {cond}
@@ -2590,7 +2590,7 @@ const CafePOS = () => {
                     </div>
 
                     <div>
-                      <label className="text-[11px] font-semibold text-[#bbcbb2] mb-1 block">Barang Berharga Kabin</label>
+                      <label className="text-[11px] font-semibold text-muted mb-1 block">Barang Berharga Kabin</label>
                       <div className="grid grid-cols-2 gap-1.5">
                         {['Aman / Nihil', 'Sudah Diamankan'].map((val) => (
                           <button
@@ -2600,7 +2600,7 @@ const CafePOS = () => {
                             className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all ${
                               carwashForm.barang_berharga === val
                                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-xs'
-                                : 'bg-[#18181c] text-[#bbcbb2] border border-[#26272d] hover:text-slate-200'
+                                : 'bg-subsurface text-muted border border-border hover:text-slate-200'
                             }`}
                           >
                             {val}
@@ -2611,13 +2611,13 @@ const CafePOS = () => {
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-semibold text-[#bbcbb2] mb-1 block">Catatan Khusus Kendaraan (Opsional)</label>
+                    <label className="text-[11px] font-semibold text-muted mb-1 block">Catatan Khusus Kendaraan (Opsional)</label>
                     <input
                       type="text"
                       placeholder="Cth: Velg baru repaint, kaca film baru 2 hari, wiper getas..."
                       value={carwashForm.catatan_kendaraan}
                       onChange={(e) => setCarwashForm(prev => ({ ...prev, catatan_kendaraan: e.target.value }))}
-                      className="w-full bg-[#18181c] border border-[#26272d] rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-[#6b7367] focus:outline-hidden focus:border-[#00ffff]"
+                      className="w-full bg-subsurface border border-border rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-muted-dark focus:outline-hidden focus:border-primary"
                     />
                   </div>
                 </div>
@@ -2625,13 +2625,13 @@ const CafePOS = () => {
             )}
 
             {!hasCarwash && (
-              <div className="flex-1 flex flex-col items-center justify-center p-8 border border-dashed border-[#26272d] rounded-xl text-[#6b7367]">
+              <div className="flex-1 flex flex-col items-center justify-center p-8 border border-dashed border-border rounded-xl text-muted-dark">
                 <Car size={36} className="mb-2" />
                 <p className="text-sm font-medium">Layanan cuci mobil belum ditambahkan.</p>
                 <button
                   type="button"
                   onClick={() => setHasCarwash(true)}
-                  className="mt-3 px-4 py-1.5 bg-[#121215] border border-[#26272d] hover:border-[#3f414a] text-slate-200 font-bold rounded-lg text-xs transition-colors"
+                  className="mt-3 px-4 py-1.5 bg-surface border border-border hover:border-border-hover text-slate-200 font-bold rounded-lg text-xs transition-colors"
                 >
                   + Aktifkan Carwash
                 </button>
@@ -2642,14 +2642,14 @@ const CafePOS = () => {
 
         {/* Tab Penjualan Merchandise & Retail */}
         {activeTab === 'merchandise' && (
-          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-[#121215] border border-[#26272d] rounded-xl p-4 md:p-6 overflow-y-auto space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-[#26272d]">
+          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-surface border border-border rounded-xl p-4 md:p-6 overflow-y-auto space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-border">
               <div>
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <ShoppingBag className="w-5 h-5 text-amber-400" />
                   <span>Merchandise & Produk Retail</span>
                 </h3>
-                <p className="text-xs text-[#6b7367] mt-0.5">Penjualan produk fisik carwash: parfum, lap microfiber, aksesoris & semir mobil</p>
+                <p className="text-xs text-muted-dark mt-0.5">Penjualan produk fisik carwash: parfum, lap microfiber, aksesoris & semir mobil</p>
               </div>
             </div>
 
@@ -2665,7 +2665,7 @@ const CafePOS = () => {
 
         {/* Tab 3: Tagihan Pending */}
         {activeTab === 'pending' && (
-          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-[#121215] border border-[#26272d] rounded-xl p-6 overflow-y-auto space-y-4">
+          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-surface border border-border rounded-xl p-6 overflow-y-auto space-y-4">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
               <div>
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -2674,13 +2674,13 @@ const CafePOS = () => {
                     {pendingBills.length} Bon
                   </span>
                 </h3>
-                <p className="text-xs text-[#6b7367] mt-0.5">Daftar struk transaksi yang belum dilunasi oleh pelanggan</p>
+                <p className="text-xs text-muted-dark mt-0.5">Daftar struk transaksi yang belum dilunasi oleh pelanggan</p>
               </div>
 
               <div className="flex items-center gap-2">
                 <button
                   onClick={fetchPendingBills}
-                  className="px-3 py-1.5 bg-[#18181c] hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
+                  className="px-3 py-1.5 bg-subsurface hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
                   title="Muat ulang tagihan pending"
                 >
                   <RefreshCw size={13} />
@@ -2691,18 +2691,18 @@ const CafePOS = () => {
 
             {/* Search Bar Tagihan Pending */}
             <div className="relative">
-              <Search className="absolute left-3.5 top-3 text-[#6b7367]" size={15} />
+              <Search className="absolute left-3.5 top-3 text-muted-dark" size={15} />
               <input
                 type="text"
                 placeholder="Cari nomor struk, nama kasir, plat nomor, menu cafe, atau paket cuci..."
                 value={pendingSearchQuery}
                 onChange={(e) => setPendingSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 bg-[#18181c] border border-[#26272d] rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 text-xs transition-colors"
+                className="w-full pl-10 pr-10 py-2.5 bg-subsurface border border-border rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 text-xs transition-colors"
               />
               {pendingSearchQuery && (
                 <button
                   onClick={() => setPendingSearchQuery('')}
-                  className="absolute right-3.5 top-2.5 text-[#6b7367] hover:text-white text-xs font-bold p-1"
+                  className="absolute right-3.5 top-2.5 text-muted-dark hover:text-white text-xs font-bold p-1"
                 >
                   ✕
                 </button>
@@ -2710,21 +2710,21 @@ const CafePOS = () => {
             </div>
 
             {filteredPendingBills.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-12 text-[#6b7367]">
+              <div className="flex-1 flex flex-col items-center justify-center p-12 text-muted-dark">
                 {pendingBills.length === 0 ? (
                   <>
-                    <CheckCircle size={36} className="mb-2 text-[#00ffff]/60" />
+                    <CheckCircle size={36} className="mb-2 text-primary/60" />
                     <p className="text-sm font-semibold">Semua tagihan bersih!</p>
                     <p className="text-xs text-slate-700 mt-0.5">Tidak ada bill gantung yang pending.</p>
                   </>
                 ) : (
                   <>
-                    <Search size={36} className="mb-2 text-[#6b7367]" />
-                    <p className="text-sm font-semibold text-[#bbcbb2]">Pencarian Tidak Ditemukan</p>
-                    <p className="text-xs text-[#6b7367] mt-0.5">Tidak ada tagihan pending yang cocok dengan "{pendingSearchQuery}"</p>
+                    <Search size={36} className="mb-2 text-muted-dark" />
+                    <p className="text-sm font-semibold text-muted">Pencarian Tidak Ditemukan</p>
+                    <p className="text-xs text-muted-dark mt-0.5">Tidak ada tagihan pending yang cocok dengan "{pendingSearchQuery}"</p>
                     <button
                       onClick={() => setPendingSearchQuery('')}
-                      className="mt-3 px-3 py-1.5 bg-[#18181c] hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-colors"
+                      className="mt-3 px-3 py-1.5 bg-subsurface hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-colors"
                     >
                       Reset Filter Pencarian
                     </button>
@@ -2733,7 +2733,7 @@ const CafePOS = () => {
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="text-[11px] text-[#bbcbb2] font-medium">
+                <div className="text-[11px] text-muted font-medium">
                   Menampilkan <span className="text-white font-bold">{filteredPendingBills.length}</span> dari {pendingBills.length} tagihan pending
                 </div>
                 {filteredPendingBills.map(bill => {
@@ -2743,23 +2743,23 @@ const CafePOS = () => {
                   })
 
                   return (
-                    <div key={bill.id} className="glass-card p-4 rounded-xl border border-[#26272d] hover:border-[#3f414a]/60 transition-all flex flex-col justify-between md:flex-row md:items-center gap-4">
+                    <div key={bill.id} className="glass-card p-4 rounded-xl border border-border hover:border-border-hover/60 transition-all flex flex-col justify-between md:flex-row md:items-center gap-4">
                       <div className="space-y-1 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-sm font-black text-[#00ffff] uppercase">
+                          <span className="font-mono text-sm font-black text-primary uppercase">
                             #{bill.id.substring(0, 8)}
                           </span>
-                          <span className="text-[10px] bg-[#18181c] text-[#bbcbb2] px-2 py-0.5 rounded font-bold">
+                          <span className="text-[10px] bg-subsurface text-muted px-2 py-0.5 rounded font-bold">
                             Kasir: {bill.kasir}
                           </span>
-                          <span className="text-[10px] text-[#6b7367]">{dateStr}</span>
+                          <span className="text-[10px] text-muted-dark">{dateStr}</span>
                           <span className="text-[9px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-extrabold uppercase">
                             PENDING
                           </span>
                         </div>
 
                         {/* Bill Items Detail */}
-                        <div className="text-xs text-[#bbcbb2] space-y-0.5 pt-1.5 border-t border-[#26272d]/50 mt-1">
+                        <div className="text-xs text-muted space-y-0.5 pt-1.5 border-t border-border/50 mt-1">
                           {bill.cafe?.map((item, idx) => (
                             <span key={idx} className="block text-[11px]">
                               ☕ {item.nama_menu} x{item.jumlah} ({formatRupiah(item.harga_satuan * item.jumlah)})
@@ -2775,7 +2775,7 @@ const CafePOS = () => {
 
                       {/* Right Action / Settle */}
                       <div className="flex flex-col items-end gap-2 shrink-0 self-start md:self-center">
-                        <span className="text-sm font-black text-[#00ffff]">{formatRupiah(bill.total_harga)}</span>
+                        <span className="text-sm font-black text-primary">{formatRupiah(bill.total_harga)}</span>
                         <div className="flex gap-2 flex-wrap justify-end">
                           <button
                             type="button"
@@ -2804,7 +2804,7 @@ const CafePOS = () => {
                               })
                               setActiveReceipt(receipt)
                             }}
-                            className="px-2.5 py-1.5 bg-[#18181c] hover:bg-slate-700 border border-[#3f414a] text-slate-200 font-bold rounded-lg text-xs transition-colors flex items-center gap-1.5 shadow-sm"
+                            className="px-2.5 py-1.5 bg-subsurface hover:bg-slate-700 border border-[#3f414a] text-slate-200 font-bold rounded-lg text-xs transition-colors flex items-center gap-1.5 shadow-sm"
                             title="Pratinjau, Cetak Thermal atau Kirim WA Bukti Order"
                           >
                             <FileText size={12} className="text-amber-400" />
@@ -2840,22 +2840,22 @@ const CafePOS = () => {
 
         {/* Tab 4: Riwayat/Daftar Transaksi Hari Ini */}
         {activeTab === 'history' && (
-          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-[#121215] border border-[#26272d] rounded-xl p-6 overflow-y-auto space-y-4">
+          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-surface border border-border rounded-xl p-6 overflow-y-auto space-y-4">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
               <div>
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <span>Daftar Riwayat Transaksi</span>
-                  <span className="text-xs bg-[#00ffff] text-[#0f0f0f]/20 text-[#00ffff] border border-brand-blue/30 px-2 py-0.5 rounded-full font-black">
+                  <span className="text-xs bg-primary text-primary-foreground/20 text-primary border border-brand-blue/30 px-2 py-0.5 rounded-full font-black">
                     {todayTransactions.length} Transaksi
                   </span>
                 </h3>
-                <p className="text-xs text-[#6b7367] mt-0.5">Daftar seluruh transaksi kasir berdasarkan tanggal terpilih</p>
+                <p className="text-xs text-muted-dark mt-0.5">Daftar seluruh transaksi kasir berdasarkan tanggal terpilih</p>
               </div>
 
               {/* Date Filter & Actions */}
               <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1.5 bg-[#18181c] border border-[#26272d] rounded-lg px-2.5 py-1 text-xs">
-                  <Calendar size={13} className="text-[#bbcbb2]" />
+                <div className="flex items-center gap-1.5 bg-subsurface border border-border rounded-lg px-2.5 py-1 text-xs">
+                  <Calendar size={13} className="text-muted" />
                   <input
                     type="date"
                     value={historyDate}
@@ -2867,15 +2867,15 @@ const CafePOS = () => {
                   onClick={() => setHistoryDate(new Date().toLocaleDateString('en-CA'))}
                   className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors ${
                     historyDate === new Date().toLocaleDateString('en-CA')
-                      ? 'bg-[#00ffff] text-[#0f0f0f] text-white'
-                      : 'bg-[#18181c] hover:bg-slate-700 text-slate-200'
+                      ? 'bg-primary text-primary-foreground text-white'
+                      : 'bg-subsurface hover:bg-slate-700 text-slate-200'
                   }`}
                 >
                   Hari Ini
                 </button>
                 <button
                   onClick={() => fetchTodayTransactions(historyDate)}
-                  className="p-1.5 bg-[#18181c] hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-all"
+                  className="p-1.5 bg-subsurface hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-all"
                   title="Muat ulang riwayat"
                 >
                   <RefreshCw size={13} />
@@ -2885,18 +2885,18 @@ const CafePOS = () => {
 
             {/* Search Bar Transaksi */}
             <div className="relative">
-              <Search className="absolute left-3.5 top-3 text-[#6b7367]" size={15} />
+              <Search className="absolute left-3.5 top-3 text-muted-dark" size={15} />
               <input
                 type="text"
                 placeholder="Cari ID struk, kasir, nama pelanggan, metode (CASH/QRIS), plat mobil, menu..."
                 value={historySearchQuery}
                 onChange={(e) => setHistorySearchQuery(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 bg-[#18181c] border border-[#26272d] rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-[#00ffff] text-xs transition-colors"
+                className="w-full pl-10 pr-10 py-2.5 bg-subsurface border border-border rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-primary text-xs transition-colors"
               />
               {historySearchQuery && (
                 <button
                   onClick={() => setHistorySearchQuery('')}
-                  className="absolute right-3.5 top-2.5 text-[#6b7367] hover:text-white text-xs font-bold p-1"
+                  className="absolute right-3.5 top-2.5 text-muted-dark hover:text-white text-xs font-bold p-1"
                 >
                   ✕
                 </button>
@@ -2904,7 +2904,7 @@ const CafePOS = () => {
             </div>
 
             {filteredTodayTransactions.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-12 text-[#6b7367]">
+              <div className="flex-1 flex flex-col items-center justify-center p-12 text-muted-dark">
                 {todayTransactions.length === 0 ? (
                   <>
                     <History size={36} className="mb-2 text-slate-700" />
@@ -2912,19 +2912,19 @@ const CafePOS = () => {
                     <p className="text-xs text-slate-700 mt-0.5">Pilih tanggal lain atau kembali ke transaksi hari ini.</p>
                     <button
                       onClick={() => setHistoryDate(new Date().toLocaleDateString('en-CA'))}
-                      className="mt-3 px-3 py-1.5 bg-[#00ffff] text-[#0f0f0f] hover:bg-blue-600 text-white rounded-lg text-xs font-bold transition-colors"
+                      className="mt-3 px-3 py-1.5 bg-primary text-primary-foreground hover:bg-blue-600 text-white rounded-lg text-xs font-bold transition-colors"
                     >
                       Pilih Hari Ini
                     </button>
                   </>
                 ) : (
                   <>
-                    <Search size={36} className="mb-2 text-[#6b7367]" />
-                    <p className="text-sm font-semibold text-[#bbcbb2]">Pencarian Tidak Ditemukan</p>
-                    <p className="text-xs text-[#6b7367] mt-0.5">Tidak ada transaksi yang cocok dengan "{historySearchQuery}"</p>
+                    <Search size={36} className="mb-2 text-muted-dark" />
+                    <p className="text-sm font-semibold text-muted">Pencarian Tidak Ditemukan</p>
+                    <p className="text-xs text-muted-dark mt-0.5">Tidak ada transaksi yang cocok dengan "{historySearchQuery}"</p>
                     <button
                       onClick={() => setHistorySearchQuery('')}
-                      className="mt-3 px-3 py-1.5 bg-[#18181c] hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-colors"
+                      className="mt-3 px-3 py-1.5 bg-subsurface hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-colors"
                     >
                       Reset Filter Pencarian
                     </button>
@@ -2933,11 +2933,11 @@ const CafePOS = () => {
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex items-center justify-between text-[11px] text-[#bbcbb2] font-medium">
+                <div className="flex items-center justify-between text-[11px] text-muted font-medium">
                   <div>
                     Menampilkan <span className="text-white font-bold">{filteredTodayTransactions.length}</span> dari {todayTransactions.length} transaksi ({historyDate})
                   </div>
-                  <div className="text-[#00ffff] font-bold font-mono">
+                  <div className="text-primary font-bold font-mono">
                     Total: {formatRupiah(filteredTodayTransactions.reduce((acc, t) => t.status_bayar === 'Selesai' ? acc + (t.total_harga || 0) : acc, 0))}
                   </div>
                 </div>
@@ -2948,20 +2948,20 @@ const CafePOS = () => {
                   const merkWash = tx.carwash?.[0]?.merk_mobil
                   const platWash = tx.carwash?.[0]?.plat_nomor
                   return (
-                    <div key={tx.id} className="glass-card p-4 rounded-xl border border-[#26272d] hover:border-slate-750 transition-all flex flex-col justify-between md:flex-row md:items-center gap-4">
+                    <div key={tx.id} className="glass-card p-4 rounded-xl border border-border hover:border-slate-750 transition-all flex flex-col justify-between md:flex-row md:items-center gap-4">
                       <div className="space-y-1 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-xs font-bold text-[#bbcbb2] uppercase">
+                          <span className="font-mono text-xs font-bold text-muted uppercase">
                             #{tx.id.substring(0, 8)}
                           </span>
-                          <span className="text-[10px] bg-[#18181c] text-[#bbcbb2] px-2 py-0.5 rounded font-bold">
+                          <span className="text-[10px] bg-subsurface text-muted px-2 py-0.5 rounded font-bold">
                             {tx.kasir}
                           </span>
-                          <span className="text-[10px] text-[#6b7367] font-medium">
+                          <span className="text-[10px] text-muted-dark font-medium">
                             ⏱️ {tx.jam || '00:00'}
                           </span>
                           <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase ${isSelesai
-                            ? 'bg-[#00ffff] text-[#0f0f0f]/15 text-[#00ffff]'
+                            ? 'bg-primary text-primary-foreground/15 text-primary'
                             : tx.status_bayar === 'Batal'
                               ? 'bg-rose-500/15 text-rose-450 border border-rose-500/15'
                               : 'bg-amber-500/15 text-amber-500'
@@ -2993,7 +2993,7 @@ const CafePOS = () => {
                         </div>
 
                         {/* Transaction Detail Items */}
-                        <div className="text-xs text-[#bbcbb2] space-y-0.5 pt-1.5 border-t border-[#26272d]/50 mt-1">
+                        <div className="text-xs text-muted space-y-0.5 pt-1.5 border-t border-border/50 mt-1">
                           {tx.cafe?.map((item, idx) => (
                             <span key={idx} className="block text-[11px]">
                               ☕ {item.nama_menu} x{item.jumlah} ({formatRupiah(item.harga_satuan * item.jumlah)})
@@ -3064,10 +3064,10 @@ const CafePOS = () => {
                                   })
                               setActiveReceipt(receipt)
                             }}
-                            className="px-2 py-1 bg-[#18181c] hover:bg-slate-700 border border-[#3f414a] text-slate-200 font-bold rounded text-[10px] transition-colors flex items-center gap-1 shadow-sm"
+                            className="px-2 py-1 bg-subsurface hover:bg-slate-700 border border-[#3f414a] text-slate-200 font-bold rounded text-[10px] transition-colors flex items-center gap-1 shadow-sm"
                             title="Cetak Struk Thermal atau Kirim WhatsApp"
                           >
-                            <Printer size={11} className={isSelesai ? 'text-[#00ffff]' : 'text-amber-400'} />
+                            <Printer size={11} className={isSelesai ? 'text-primary' : 'text-amber-400'} />
                             <span>{isSelesai ? 'Struk' : 'Order'}</span>
                           </button>
 
@@ -3117,7 +3117,7 @@ const CafePOS = () => {
                           {tx.status_bayar === 'Batal' && (
                             <button
                               onClick={() => handleReactivatePaidTransaction(tx.id)}
-                              className="px-2.5 py-1 bg-[#00ffff] text-[#0f0f0f]/10 hover:bg-[#00ffff] text-[#0f0f0f]/20 border border-brand-emerald/20 hover:border-brand-emerald/30 text-[#00ffff] font-bold rounded text-[10px] transition-colors"
+                              className="px-2.5 py-1 bg-primary text-primary-foreground/10 hover:bg-primary text-primary-foreground/20 border border-brand-emerald/20 hover:border-brand-emerald/30 text-primary font-bold rounded text-[10px] transition-colors"
                             >
                               Pulihkan
                             </button>
@@ -3134,7 +3134,7 @@ const CafePOS = () => {
 
         {/* Tab: Stok Gudang (Pemantauan Kasir / Stock Opname) */}
         {activeTab === 'inventory' && (
-          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-[#121215] border border-[#26272d] rounded-xl p-6 overflow-y-auto space-y-5">
+          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-surface border border-border rounded-xl p-6 overflow-y-auto space-y-5">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
               <div>
@@ -3145,7 +3145,7 @@ const CafePOS = () => {
                     {inventoryList.length} Item
                   </span>
                 </h3>
-                <p className="text-xs text-[#6b7367] mt-0.5">
+                <p className="text-xs text-muted-dark mt-0.5">
                   Pemantauan sisa persediaan fisik untuk pencocokan lapangan (Stock Opname) oleh kasir
                 </p>
               </div>
@@ -3154,7 +3154,7 @@ const CafePOS = () => {
                 <button
                   onClick={fetchInventory}
                   disabled={inventoryLoading}
-                  className="px-3 py-1.5 bg-[#18181c] hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-3 py-1.5 bg-subsurface hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 disabled:opacity-50"
                   title="Muat ulang data stok gudang"
                 >
                   <RefreshCw size={13} className={inventoryLoading ? 'animate-spin' : ''} />
@@ -3176,12 +3176,12 @@ const CafePOS = () => {
 
             {/* Mini Summary Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="glass-card p-3.5 rounded-xl border border-[#26272d] flex items-center justify-between">
+              <div className="glass-card p-3.5 rounded-xl border border-border flex items-center justify-between">
                 <div>
-                  <p className="text-[11px] text-[#bbcbb2] font-medium">Total Bahan Baku</p>
+                  <p className="text-[11px] text-muted font-medium">Total Bahan Baku</p>
                   <p className="text-lg font-black text-white mt-0.5">{inventoryList.length}</p>
                 </div>
-                <div className="w-9 h-9 rounded-lg bg-[#18181c] flex items-center justify-center text-[#bbcbb2]">
+                <div className="w-9 h-9 rounded-lg bg-subsurface flex items-center justify-center text-muted">
                   <Package size={18} />
                 </div>
               </div>
@@ -3227,18 +3227,18 @@ const CafePOS = () => {
             <div className="flex flex-col sm:flex-row gap-2.5 sm:items-center justify-between">
               {/* Search Bar */}
               <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-3 text-[#6b7367]" size={15} />
+                <Search className="absolute left-3.5 top-3 text-muted-dark" size={15} />
                 <input
                   type="text"
                   placeholder="Cari nama bahan baku (kopi, gula, teh...), kode (BK-01), atau satuan..."
                   value={inventorySearchQuery}
                   onChange={(e) => setInventorySearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 bg-[#18181c] border border-[#26272d] rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 text-xs transition-colors"
+                  className="w-full pl-10 pr-10 py-2.5 bg-subsurface border border-border rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 text-xs transition-colors"
                 />
                 {inventorySearchQuery && (
                   <button
                     onClick={() => setInventorySearchQuery('')}
-                    className="absolute right-3.5 top-2.5 text-[#6b7367] hover:text-white text-xs font-bold p-1"
+                    className="absolute right-3.5 top-2.5 text-muted-dark hover:text-white text-xs font-bold p-1"
                   >
                     ✕
                   </button>
@@ -3259,7 +3259,7 @@ const CafePOS = () => {
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
                       inventoryFilter === tab.id
                         ? 'bg-amber-500 text-slate-950'
-                        : 'bg-[#18181c] text-[#bbcbb2] hover:text-white'
+                        : 'bg-subsurface text-muted hover:text-white'
                     }`}
                   >
                     {tab.label}
@@ -3270,10 +3270,10 @@ const CafePOS = () => {
 
             {/* Inventory List / Table */}
             {filteredInventory.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-12 text-[#6b7367]">
-                <Search size={36} className="mb-2 text-[#6b7367]" />
-                <p className="text-sm font-semibold text-[#bbcbb2]">Tidak ada data bahan baku yang cocok</p>
-                <p className="text-xs text-[#6b7367] mt-0.5">
+              <div className="flex-1 flex flex-col items-center justify-center p-12 text-muted-dark">
+                <Search size={36} className="mb-2 text-muted-dark" />
+                <p className="text-sm font-semibold text-muted">Tidak ada data bahan baku yang cocok</p>
+                <p className="text-xs text-muted-dark mt-0.5">
                   {inventorySearchQuery
                     ? `Tidak ditemukan hasil untuk "${inventorySearchQuery}"`
                     : 'Belum ada data bahan baku tersimpan.'}
@@ -3284,17 +3284,17 @@ const CafePOS = () => {
                       setInventorySearchQuery('')
                       setInventoryFilter('ALL')
                     }}
-                    className="mt-3 px-3 py-1.5 bg-[#18181c] hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-colors"
+                    className="mt-3 px-3 py-1.5 bg-subsurface hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-colors"
                   >
                     Reset Filter
                   </button>
                 )}
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-[#26272d]">
+              <div className="overflow-x-auto rounded-xl border border-border">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-[#18181c] text-[#bbcbb2] border-b border-[#26272d] font-bold uppercase tracking-wider text-[11px]">
+                    <tr className="bg-subsurface text-muted border-b border-border font-bold uppercase tracking-wider text-[11px]">
                       <th className="py-3 px-4 w-12 text-center">No</th>
                       <th className="py-3 px-4">Kode</th>
                       <th className="py-3 px-4">Nama Bahan Baku</th>
@@ -3321,20 +3321,20 @@ const CafePOS = () => {
                       return (
                         <tr
                           key={item.id_bahan_baku || idx}
-                          className="hover:bg-[#18181c]/30 transition-colors"
+                          className="hover:bg-subsurface/30 transition-colors"
                         >
-                          <td className="py-3.5 px-4 text-center font-mono text-[#6b7367] text-[11px]">
+                          <td className="py-3.5 px-4 text-center font-mono text-muted-dark text-[11px]">
                             {idx + 1}
                           </td>
                           <td className="py-3.5 px-4">
-                            <span className="font-mono text-xs font-bold bg-[#18181c] text-amber-400 border border-[#3f414a]/60 px-2 py-0.5 rounded">
+                            <span className="font-mono text-xs font-bold bg-subsurface text-amber-400 border border-[#3f414a]/60 px-2 py-0.5 rounded">
                               {item.id_bahan_baku}
                             </span>
                           </td>
                           <td className="py-3.5 px-4 font-semibold text-white">
                             {item.nama_produk}
                           </td>
-                          <td className="py-3.5 px-4 text-[#bbcbb2] font-medium">
+                          <td className="py-3.5 px-4 text-muted font-medium">
                             {item.satuan || 'Pcs'}
                           </td>
                           <td className="py-3.5 px-4 text-right font-mono font-bold text-sm">
@@ -3349,7 +3349,7 @@ const CafePOS = () => {
                             >
                               {stokVal.toLocaleString('id-ID')}
                             </span>
-                            <span className="text-[10px] text-[#6b7367] font-normal ml-1">
+                            <span className="text-[10px] text-muted-dark font-normal ml-1">
                               {item.satuan || ''}
                             </span>
                           </td>
@@ -3373,7 +3373,7 @@ const CafePOS = () => {
                               </span>
                             )}
                           </td>
-                          <td className="py-3.5 px-4 text-[#bbcbb2] text-[11px]">
+                          <td className="py-3.5 px-4 text-muted text-[11px]">
                             {updatedTimeStr}
                           </td>
                         </tr>
@@ -3388,27 +3388,27 @@ const CafePOS = () => {
 
         {/* Tab 5: Catat Pengeluaran Kasir */}
         {activeTab === 'expense' && (
-          <div className="glass-panel p-6 rounded-xl border border-[#26272d] flex-1 flex flex-col min-h-0 overflow-y-auto space-y-6">
+          <div className="glass-panel p-6 rounded-xl border border-border flex-1 flex flex-col min-h-0 overflow-y-auto space-y-6">
             <div>
               <h3 className="text-lg font-bold text-white">Catat Pengeluaran Laci Kasir</h3>
-              <p className="text-xs text-[#6b7367] mt-0.5">Catat pengeluaran operasional hari ini menggunakan uang dari laci kasir</p>
+              <p className="text-xs text-muted-dark mt-0.5">Catat pengeluaran operasional hari ini menggunakan uang dari laci kasir</p>
             </div>
 
             <form onSubmit={handleSavePosExpense} className="space-y-4 max-w-xl shrink-0">
               <div className={`grid grid-cols-1 ${posExpenseForm.kategori === 'Casbon' ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4`}>
                 <div>
-                  <label className="block text-xs font-semibold text-[#bbcbb2] mb-1.5 uppercase">Tanggal</label>
+                  <label className="block text-xs font-semibold text-muted mb-1.5 uppercase">Tanggal</label>
                   <input
                     type="date"
                     value={posExpenseForm.tanggal}
                     onChange={(e) => setPosExpenseForm(prev => ({ ...prev, tanggal: e.target.value }))}
-                    className="w-full bg-[#121215] border border-[#26272d] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#00ffff]"
+                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#bbcbb2] mb-1.5 uppercase">Unit Usaha</label>
+                  <label className="block text-xs font-semibold text-muted mb-1.5 uppercase">Unit Usaha</label>
                   <CustomSelect
                     value={posExpenseForm.unit}
                     onChange={(newUnit) => {
@@ -3440,11 +3440,11 @@ const CafePOS = () => {
 
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
-                    <label className="block text-xs font-semibold text-[#bbcbb2] uppercase">Kategori (Terkunci)</label>
+                    <label className="block text-xs font-semibold text-muted uppercase">Kategori (Terkunci)</label>
                     <button
                       type="button"
                       onClick={() => setIsCustomPosExpenseKat(!isCustomPosExpenseKat)}
-                      className="text-[11px] text-[#00ffff] hover:underline font-medium"
+                      className="text-[11px] text-primary hover:underline font-medium"
                     >
                       {isCustomPosExpenseKat ? '← Pilihan' : '+ Custom'}
                     </button>
@@ -3455,7 +3455,7 @@ const CafePOS = () => {
                       placeholder="Ketik kategori pengeluaran..."
                       value={posExpenseForm.kategori}
                       onChange={(e) => setPosExpenseForm(prev => ({ ...prev, kategori: e.target.value }))}
-                      className="w-full bg-[#121215] border border-brand-emerald rounded-xl px-3 py-2 text-white text-sm focus:outline-none"
+                      className="w-full bg-surface border border-brand-emerald rounded-xl px-3 py-2 text-white text-sm focus:outline-none"
                       autoFocus
                     />
                   ) : (
@@ -3495,7 +3495,7 @@ const CafePOS = () => {
 
                 {['Casbon', 'Ambil Uang Paketan'].includes(posExpenseForm.kategori) && (
                   <div>
-                    <label className="block text-xs font-semibold text-[#bbcbb2] mb-1.5 uppercase">Karyawan</label>
+                    <label className="block text-xs font-semibold text-muted mb-1.5 uppercase">Karyawan</label>
                     <CustomSelect
                       value={posExpenseForm.karyawan}
                       onChange={(val) => setPosExpenseForm(prev => ({ ...prev, karyawan: val }))}
@@ -3512,24 +3512,24 @@ const CafePOS = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#bbcbb2] mb-1.5 uppercase">Keterangan / Nama Pengeluaran</label>
+                <label className="block text-xs font-semibold text-muted mb-1.5 uppercase">Keterangan / Nama Pengeluaran</label>
                 <input
                   type="text"
                   placeholder="Contoh: Beli es batu, isi ulang gas, sabun cuci"
                   value={posExpenseForm.keterangan}
                   onChange={(e) => setPosExpenseForm(prev => ({ ...prev, keterangan: e.target.value }))}
-                  className="w-full bg-[#121215] border border-[#26272d] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#00ffff]"
+                  className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#bbcbb2] mb-1.5 uppercase">Nominal (Rp)</label>
+                <label className="block text-xs font-semibold text-muted mb-1.5 uppercase">Nominal (Rp)</label>
                 <input
                   type="number"
                   placeholder="0"
                   value={posExpenseForm.nominal}
                   onChange={(e) => setPosExpenseForm(prev => ({ ...prev, nominal: e.target.value }))}
-                  className="w-full bg-[#121215] border border-[#26272d] rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-[#00ffff]"
+                  className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-primary"
                 />
               </div>
 
@@ -3553,7 +3553,7 @@ const CafePOS = () => {
                         karyawan: ''
                       })
                     }}
-                    className="flex-1 py-2.5 bg-[#18181c] hover:bg-slate-700 text-slate-350 font-bold rounded-lg text-sm transition-all"
+                    className="flex-1 py-2.5 bg-subsurface hover:bg-slate-700 text-slate-350 font-bold rounded-lg text-sm transition-all"
                   >
                     Batal Edit
                   </button>
@@ -3561,22 +3561,22 @@ const CafePOS = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 disabled:bg-[#18181c] text-slate-950 font-bold rounded-lg text-sm transition-all"
+                  className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 disabled:bg-subsurface text-slate-950 font-bold rounded-lg text-sm transition-all"
                 >
                   {loading ? 'Menyimpan...' : (editingExpenseId ? 'Simpan Perubahan' : 'Catat Pengeluaran')}
                 </button>
               </div>
             </form>
 
-            <div className="border-t border-[#26272d] pt-6">
+            <div className="border-t border-border pt-6">
               <h4 className="font-bold text-sm text-white mb-3">Daftar Pengeluaran Hari Ini</h4>
               {todayExpenses.length === 0 ? (
-                <p className="text-xs text-[#6b7367]">Belum ada pengeluaran kasir hari ini.</p>
+                <p className="text-xs text-muted-dark">Belum ada pengeluaran kasir hari ini.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="border-b border-[#26272d] text-[#6b7367] text-xs font-bold uppercase pb-2">
+                      <tr className="border-b border-border text-muted-dark text-xs font-bold uppercase pb-2">
                         <th className="pb-2">Jam</th>
                         <th className="pb-2">Keterangan</th>
                         <th className="pb-2">Unit</th>
@@ -3587,10 +3587,10 @@ const CafePOS = () => {
                     </thead>
                     <tbody className="divide-y divide-slate-800/50">
                       {todayExpenses.map((exp) => (
-                        <tr key={exp.id_pengeluaran} className="text-xs text-slate-350 hover:bg-[#18181c]/20">
-                          <td className="py-2.5 font-mono text-[#6b7367]">{exp.jam?.substring(0, 5) || '--:--'}</td>
+                        <tr key={exp.id_pengeluaran} className="text-xs text-slate-350 hover:bg-subsurface/20">
+                          <td className="py-2.5 font-mono text-muted-dark">{exp.jam?.substring(0, 5) || '--:--'}</td>
                           <td className="py-2.5 font-medium text-slate-200">{exp.nama_pengeluaran}</td>
-                          <td className="py-2.5 uppercase font-bold text-[10px] text-[#bbcbb2]">{exp.jenis?.replace('pengeluaran ', '') || 'Cafe'}</td>
+                          <td className="py-2.5 uppercase font-bold text-[10px] text-muted">{exp.jenis?.replace('pengeluaran ', '') || 'Cafe'}</td>
                           <td className="py-2.5">{exp.kategori}</td>
                           <td className="py-2.5 text-right font-bold text-rose-450">{formatRupiah(exp.nominal)}</td>
                           <td className="py-2.5 text-center flex justify-center gap-1.5">
@@ -3619,16 +3619,16 @@ const CafePOS = () => {
 
         {/* Tab 6: Tukar Uang / Tarik Tunai QRIS */}
         {activeTab === 'exchange' && (
-          <div className="glass-panel p-6 rounded-xl border border-[#26272d] flex-1 flex flex-col min-h-0 overflow-y-auto space-y-6">
+          <div className="glass-panel p-6 rounded-xl border border-border flex-1 flex flex-col min-h-0 overflow-y-auto space-y-6">
             <div>
               <h3 className="text-lg font-bold text-white">Tukar Uang (Cash Out / QRIS ke Tunai)</h3>
-              <p className="text-xs text-[#6b7367] mt-0.5">Catat transaksi penukaran uang: pelanggan transfer QRIS ke toko, kasir memberikan uang tunai dari laci</p>
+              <p className="text-xs text-muted-dark mt-0.5">Catat transaksi penukaran uang: pelanggan transfer QRIS ke toko, kasir memberikan uang tunai dari laci</p>
             </div>
 
             <form onSubmit={handleSaveExchange} className="space-y-4 max-w-xl shrink-0">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#bbcbb2] mb-1.5 uppercase">Jumlah Uang Tunai Diberikan (Cash)</label>
+                  <label className="block text-xs font-semibold text-muted mb-1.5 uppercase">Jumlah Uang Tunai Diberikan (Cash)</label>
                   <input
                     type="number"
                     value={exchangeCash}
@@ -3641,19 +3641,19 @@ const CafePOS = () => {
                       }
                     }}
                     placeholder="Contoh: 100000"
-                    className="w-full bg-[#121215] border border-[#26272d] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#00ffff] font-mono font-bold"
+                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary font-mono font-bold"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#bbcbb2] mb-1.5 uppercase">Jumlah Transfer QRIS Diterima</label>
+                  <label className="block text-xs font-semibold text-muted mb-1.5 uppercase">Jumlah Transfer QRIS Diterima</label>
                   <input
                     type="number"
                     value={exchangeQris}
                     onChange={(e) => setExchangeQris(e.target.value)}
                     placeholder="Contoh: 102000"
-                    className="w-full bg-[#121215] border border-[#26272d] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#00ffff] font-mono font-bold"
+                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary font-mono font-bold"
                     required
                   />
                 </div>
@@ -3661,19 +3661,19 @@ const CafePOS = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#bbcbb2] mb-1.5 uppercase">Nama Pelanggan (Keterangan)</label>
+                  <label className="block text-xs font-semibold text-muted mb-1.5 uppercase">Nama Pelanggan (Keterangan)</label>
                   <input
                     type="text"
                     value={exchangeCustomer}
                     onChange={(e) => setExchangeCustomer(e.target.value)}
                     placeholder="Contoh: Budi (Tukar Uang)"
-                    className="w-full bg-[#121215] border border-[#26272d] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#00ffff]"
+                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#bbcbb2] mb-1.5 uppercase">Estimasi Biaya Admin (Pendapatan Toko)</label>
-                  <div className="w-full bg-[#18181c] border border-slate-850 rounded-lg px-3 py-2 text-[#00ffff] text-sm font-mono font-bold">
+                  <label className="block text-xs font-semibold text-muted mb-1.5 uppercase">Estimasi Biaya Admin (Pendapatan Toko)</label>
+                  <div className="w-full bg-subsurface border border-slate-850 rounded-lg px-3 py-2 text-primary text-sm font-mono font-bold">
                     {formatRupiah(Math.max(0, parseFloat(exchangeQris || 0) - parseFloat(exchangeCash || 0)))}
                   </div>
                 </div>
@@ -3682,15 +3682,15 @@ const CafePOS = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 bg-cyan-500 hover:bg-cyan-400 disabled:bg-[#18181c] text-slate-950 font-bold rounded-lg text-sm transition-all"
+                className="w-full py-2.5 bg-cyan-500 hover:bg-cyan-400 disabled:bg-subsurface text-slate-950 font-bold rounded-lg text-sm transition-all"
               >
                 {loading ? 'Memproses...' : 'Catat Penukaran Uang'}
               </button>
             </form>
 
-            <div className="border-t border-[#26272d] pt-6">
+            <div className="border-t border-border pt-6">
               <h4 className="font-bold text-sm text-white mb-1">Informasi Cara Kerja Tukar Uang:</h4>
-              <p className="text-xs text-[#bbcbb2] leading-relaxed">
+              <p className="text-xs text-muted leading-relaxed">
                 Fitur ini mencatat uang masuk QRIS ke rekening bank Anda (menambah saldo QRIS) dan uang keluar Cash dari laci kasir (mengurangi expected cash laci).
                 Selisih antara QRIS diterima dan Cash diberikan otomatis tercatat sebagai pendapatan admin (laba bersih bertambah).
               </p>
@@ -3701,10 +3701,10 @@ const CafePOS = () => {
 
       {/* Kolom Kanan: Rincian Belanja & Checkout (36% di tablet landscape) */}
       {isOrderTab && (
-        <div className="hidden md:flex md:w-[36%] bg-[#121215] border border-[#26272d] p-4 rounded-xl flex-col h-fit min-w-0 shrink-0 sticky top-2">
-          <div className="flex items-center justify-between border-b border-[#26272d] pb-3 mb-3 shrink-0">
+        <div className="hidden md:flex md:w-[36%] bg-surface border border-border p-4 rounded-xl flex-col h-fit min-w-0 shrink-0 sticky top-2">
+          <div className="flex items-center justify-between border-b border-border pb-3 mb-3 shrink-0">
             <div className="flex items-center gap-2">
-              <ShoppingCart className="text-[#00ffff]" size={20} />
+              <ShoppingCart className="text-primary" size={20} />
               <h3 className="font-bold text-base text-white">Struk Belanja</h3>
             </div>
             {cart.length > 0 && (
@@ -3720,7 +3720,7 @@ const CafePOS = () => {
 
           {/* Alert Popups */}
           {success && (
-            <div className="mb-3 p-3 rounded-xl bg-[#00ffff] text-[#0f0f0f]/10 border border-brand-emerald/20 text-[#00ffff] text-xs flex items-center gap-2 shrink-0">
+            <div className="mb-3 p-3 rounded-xl bg-primary text-primary-foreground/10 border border-brand-emerald/20 text-primary text-xs flex items-center gap-2 shrink-0">
               <CheckCircle size={15} />
               <span>Transaksi berhasil disimpan!</span>
             </div>
@@ -3734,15 +3734,15 @@ const CafePOS = () => {
           )}
 
           {/* Quick Header: Tipe Pesanan & Meja/Nomor Antrean Akrilik */}
-          <div className="bg-[#121215] p-2.5 rounded-xl border border-[#26272d] mb-2.5 space-y-2 shrink-0">
+          <div className="bg-surface p-2.5 rounded-xl border border-border mb-2.5 space-y-2 shrink-0">
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => setOrderType('DINE IN')}
                 className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
                   orderType === 'DINE IN'
-                    ? 'bg-[#00ffff] text-[#0f0f0f] border-[#00ffff] shadow-xs'
-                    : 'bg-[#18181c] text-[#bbcbb2] border-[#26272d] hover:border-[#3f414a] hover:text-white'
+                    ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                    : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
                 }`}
               >
                 <Coffee size={13} />
@@ -3753,8 +3753,8 @@ const CafePOS = () => {
                 onClick={() => setOrderType('TAKE AWAY')}
                 className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
                   orderType === 'TAKE AWAY'
-                    ? 'bg-[#00ffff] text-[#0f0f0f] border-[#00ffff] shadow-xs'
-                    : 'bg-[#18181c] text-[#bbcbb2] border-[#26272d] hover:border-[#3f414a] hover:text-white'
+                    ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                    : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
                 }`}
               >
                 <ShoppingBag size={13} />
@@ -3767,7 +3767,7 @@ const CafePOS = () => {
                 placeholder={orderType === 'DINE IN' ? "No. Meja / No. Akrilik / Pager (Cth: #12)" : "Nama / Panggilan Pembungkus"}
                 value={tableOrQueueNumber}
                 onChange={(e) => setTableOrQueueNumber(e.target.value)}
-                className="w-full bg-[#18181c] border border-[#26272d] rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-[#6b7367] focus:outline-hidden focus:border-[#00ffff]"
+                className="w-full bg-subsurface border border-border rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-muted-dark focus:outline-hidden focus:border-primary"
               />
             </div>
           </div>
@@ -3775,16 +3775,16 @@ const CafePOS = () => {
           {/* List Cart Items (Scrollable jika item banyak, tanpa paksaan tinggi palsu) */}
           <div className="max-h-[320px] overflow-y-auto space-y-2 pr-1 my-1">
             {cart.length === 0 && !hasCarwash && (
-              <div className="flex flex-col items-center justify-center text-[#6b7367] text-xs py-5">
+              <div className="flex flex-col items-center justify-center text-muted-dark text-xs py-5">
                 <ShoppingCart size={28} className="mb-2 text-slate-700" />
-                <p className="font-semibold text-[#bbcbb2]">Belum ada menu dipilih</p>
-                <p className="text-[11px] text-[#6b7367] mt-0.5">Klik menu di samping untuk menambahkan ke struk.</p>
+                <p className="font-semibold text-muted">Belum ada menu dipilih</p>
+                <p className="text-[11px] text-muted-dark mt-0.5">Klik menu di samping untuk menambahkan ke struk.</p>
               </div>
             )}
 
             {/* List Item Cafe */}
             {cart.map((item) => (
-              <div key={item.nama_menu} className="p-2 rounded-xl bg-[#121215] border border-[#26272d] hover:border-[#3f414a] transition-all shrink-0">
+              <div key={item.nama_menu} className="p-2 rounded-xl bg-surface border border-border hover:border-border-hover transition-all shrink-0">
                 <div className="flex justify-between items-start">
                   <div className="overflow-hidden mr-2">
                     <h5 className="font-bold text-xs text-white truncate">{item.nama_menu}</h5>
@@ -3803,7 +3803,7 @@ const CafePOS = () => {
                         setActiveNoteMenu(item.nama_menu)
                         setActiveNoteText(item.catatan || '')
                       }}
-                      className="px-1.5 py-1 rounded-lg bg-[#18181c] hover:bg-slate-700 text-slate-200 text-[10px] font-medium transition-colors"
+                      className="px-1.5 py-1 rounded-lg bg-subsurface hover:bg-slate-700 text-slate-200 text-[10px] font-medium transition-colors"
                       title="Tambah Catatan Rasa"
                     >
                       {item.catatan ? 'Edit Rasa' : '+ Catatan'}
@@ -3811,7 +3811,7 @@ const CafePOS = () => {
                     <button
                       type="button"
                       onClick={() => updateQty(item.nama_menu, -1)}
-                      className="w-9 h-9 rounded-xl bg-[#18181c] hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors font-bold text-xs tap-tactile"
+                      className="w-9 h-9 rounded-xl bg-subsurface hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors font-bold text-xs tap-tactile"
                     >
                       <Minus size={13} strokeWidth={2} />
                     </button>
@@ -3819,7 +3819,7 @@ const CafePOS = () => {
                     <button
                       type="button"
                       onClick={() => updateQty(item.nama_menu, 1)}
-                      className="w-9 h-9 rounded-xl bg-[#18181c] hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors font-bold text-xs tap-tactile"
+                      className="w-9 h-9 rounded-xl bg-subsurface hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors font-bold text-xs tap-tactile"
                     >
                       <Plus size={13} strokeWidth={2} />
                     </button>
@@ -3838,12 +3838,12 @@ const CafePOS = () => {
 
             {/* Item Carwash */}
             {hasCarwash && (
-              <div className="p-3 rounded-xl bg-[#18181c] border border-[#26272d] hover:border-[#3f414a] transition-all relative">
+              <div className="p-3 rounded-xl bg-subsurface border border-border hover:border-border-hover transition-all relative">
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="text-[9px] bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Carwash</span>
+                    <span className="text-[9px] bg-primary/15 text-primary border border-primary/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Carwash</span>
                     <h5 className="font-bold text-xs text-white mt-1.5">{carwashForm.paket}</h5>
-                    <p className="text-[11px] text-[#bbcbb2] mt-0.5 font-mono">
+                    <p className="text-[11px] text-muted mt-0.5 font-mono">
                       {carwashForm.platNomor || '(PLAT KOSONG)'} • {carwashForm.ukuran} • {carwashForm.variant}
                     </p>
                   </div>
@@ -3855,17 +3855,17 @@ const CafePOS = () => {
                     <Trash2 size={13} />
                   </button>
                 </div>
-                <div className="mt-2.5 flex justify-between items-center border-t border-[#26272d] pt-2 text-[10px] text-[#6b7367]">
+                <div className="mt-2.5 flex justify-between items-center border-t border-border pt-2 text-[10px] text-muted-dark">
                   <span>Pencuci: {carwashForm.anggota1} {carwashForm.anggota2 && `+ ${carwashForm.anggota2}`}</span>
-                  <span className="font-mono font-bold text-[#00ffff] text-xs">{formatRupiah(carwashForm.harga)}</span>
+                  <span className="font-mono font-bold text-primary text-xs">{formatRupiah(carwashForm.harga)}</span>
                 </div>
               </div>
             )}
           </div>
 
         {/* Ringkasan & Checkout Button */}
-        <div className="border-t border-[#26272d] pt-4 mt-4 shrink-0 space-y-4">
-          <div className="space-y-1.5 text-xs text-[#bbcbb2]">
+        <div className="border-t border-border pt-4 mt-4 shrink-0 space-y-4">
+          <div className="space-y-1.5 text-xs text-muted">
             {cart.length > 0 && (
               <div className="flex justify-between">
                 <span>Total Cafe</span>
@@ -3882,7 +3882,7 @@ const CafePOS = () => {
              {/* Dropdown Diskon Carwash */}
              {hasCarwash && (
                <div className="space-y-1 py-1">
-                 <label className="text-[10px] text-[#6b7367] uppercase tracking-wider font-extrabold block">Diskon Carwash</label>
+                 <label className="text-[10px] text-muted-dark uppercase tracking-wider font-extrabold block">Diskon Carwash</label>
                  <CustomSelect
                    value={selectedDiskonCarwash ? selectedDiskonCarwash.id_diskon : ''}
                    onChange={(val) => {
@@ -3904,7 +3904,7 @@ const CafePOS = () => {
                    className="w-full"
                  />
                  {diskonCarwashNominal > 0 && (
-                   <span className="text-[10px] text-[#00ffff] font-semibold block">Potongan: -{formatRupiah(diskonCarwashNominal)}</span>
+                   <span className="text-[10px] text-primary font-semibold block">Potongan: -{formatRupiah(diskonCarwashNominal)}</span>
                  )}
                </div>
              )}
@@ -3912,7 +3912,7 @@ const CafePOS = () => {
              {/* Dropdown Diskon Cafe */}
              {cart.length > 0 && (
                <div className="space-y-1 py-1">
-                 <label className="text-[10px] text-[#6b7367] uppercase tracking-wider font-extrabold block">Diskon Cafe</label>
+                 <label className="text-[10px] text-muted-dark uppercase tracking-wider font-extrabold block">Diskon Cafe</label>
                  <CustomSelect
                    value={selectedDiskonCafe ? selectedDiskonCafe.id_diskon : ''}
                    onChange={(val) => {
@@ -3934,21 +3934,21 @@ const CafePOS = () => {
                    className="w-full"
                  />
                  {diskonCafeNominal > 0 && (
-                   <span className="text-[10px] text-[#00ffff] font-semibold block">Potongan: -{formatRupiah(diskonCafeNominal)}</span>
+                   <span className="text-[10px] text-primary font-semibold block">Potongan: -{formatRupiah(diskonCafeNominal)}</span>
                  )}
                </div>
              )}
 
-             <div className="flex justify-between text-base font-extrabold text-white pt-2 border-t border-[#26272d]/50">
+             <div className="flex justify-between text-base font-extrabold text-white pt-2 border-t border-border/50">
                <span>Total Bayar</span>
-               <span className="text-[#00ffff]">{formatRupiah(grandTotal)}</span>
+               <span className="text-primary">{formatRupiah(grandTotal)}</span>
              </div>
              </div>
 
              {/* Pilihan Metode Bayar & Status Transaksi */}
-             <div className="grid grid-cols-2 gap-2 p-3 bg-[#121215] rounded-xl border border-[#26272d] my-1">
+             <div className="grid grid-cols-2 gap-2 p-3 bg-surface rounded-xl border border-border my-1">
              <div>
-               <label className="text-[10px] text-[#bbcbb2] uppercase tracking-wider font-extrabold block mb-1">Metode Bayar</label>
+               <label className="text-[10px] text-muted uppercase tracking-wider font-extrabold block mb-1">Metode Bayar</label>
                <CustomSelect
                  value={selectedPayment}
                  onChange={(val) => setSelectedPayment(val)}
@@ -3962,7 +3962,7 @@ const CafePOS = () => {
                />
              </div>
              <div>
-               <label className="text-[10px] text-[#bbcbb2] uppercase tracking-wider font-extrabold block mb-1">Status</label>
+               <label className="text-[10px] text-muted uppercase tracking-wider font-extrabold block mb-1">Status</label>
                <CustomSelect
                  value={paymentStatus}
                  onChange={(val) => setPaymentStatus(val)}
@@ -3978,10 +3978,10 @@ const CafePOS = () => {
              </div>
 
                  {selectedPayment === 'SPLIT' && (
-             <div className="p-3.5 rounded-xl bg-[#121215] border border-slate-850 space-y-3 my-1">
-               <span className="text-[10px] text-[#6b7367] uppercase tracking-wider font-extrabold block">Pembayaran Terpisah (Split)</span>
+             <div className="p-3.5 rounded-xl bg-surface border border-slate-850 space-y-3 my-1">
+               <span className="text-[10px] text-muted-dark uppercase tracking-wider font-extrabold block">Pembayaran Terpisah (Split)</span>
                <div className="space-y-1">
-                 <label className="text-[10px] text-[#bbcbb2] font-semibold block">Tunai (Cash):</label>
+                 <label className="text-[10px] text-muted font-semibold block">Tunai (Cash):</label>
                  <input
                    type="number"
                    value={splitCashAmount}
@@ -3992,11 +3992,11 @@ const CafePOS = () => {
                      setSplitQrisAmount(Math.max(0, grandTotal - parsed).toString())
                    }}
                    placeholder="Contoh: 50000"
-                   className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-1.5 px-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-[#00ffff]"
+                   className="w-full bg-subsurface border border-border rounded-lg py-1.5 px-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
                  />
                </div>
                <div className="space-y-1">
-                 <label className="text-[10px] text-[#bbcbb2] font-semibold block">Non-Tunai (QRIS):</label>
+                 <label className="text-[10px] text-muted font-semibold block">Non-Tunai (QRIS):</label>
                  <input
                    type="number"
                    value={splitQrisAmount}
@@ -4007,7 +4007,7 @@ const CafePOS = () => {
                      setSplitCashAmount(Math.max(0, grandTotal - parsed).toString())
                    }}
                    placeholder="Contoh: 50000"
-                   className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-1.5 px-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-[#00ffff]"
+                   className="w-full bg-subsurface border border-border rounded-lg py-1.5 px-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
                  />
                </div>
              </div>
@@ -4015,28 +4015,28 @@ const CafePOS = () => {
 
            {/* Input Uang Diterima & Kembalian */}
            {paymentStatus === 'Selesai' && (selectedPayment === 'CASH' || selectedPayment === 'SPLIT') && (
-             <div className="p-3.5 rounded-xl bg-[#121215] border border-slate-850 space-y-3 my-1">
-               <span className="text-[10px] text-[#6b7367] uppercase tracking-wider font-extrabold block">Kalkulator Kembalian</span>
+             <div className="p-3.5 rounded-xl bg-surface border border-slate-850 space-y-3 my-1">
+               <span className="text-[10px] text-muted-dark uppercase tracking-wider font-extrabold block">Kalkulator Kembalian</span>
                <div className="space-y-1">
-                 <label className="text-[10px] text-[#bbcbb2] font-semibold block">Uang Diterima (Cash):</label>
+                 <label className="text-[10px] text-muted font-semibold block">Uang Diterima (Cash):</label>
                  <div className="relative">
-                   <span className="absolute left-3 top-1.5 text-xs text-[#6b7367] font-bold font-mono">Rp</span>
+                   <span className="absolute left-3 top-1.5 text-xs text-muted-dark font-bold font-mono">Rp</span>
                    <input
                      type="number"
                      value={uangDiterima}
                      onChange={(e) => setUangDiterima(e.target.value)}
                      placeholder="Contoh: 100000"
-                     className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-1.5 pl-8 pr-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-[#00ffff]"
+                     className="w-full bg-subsurface border border-border rounded-lg py-1.5 pl-8 pr-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
                    />
                  </div>
                </div>
                {uangDiterima && (
-                 <div className="flex justify-between items-center text-xs border-t border-[#26272d]/50 pt-2">
-                   <span className="text-[#bbcbb2]">Kembalian:</span>
+                 <div className="flex justify-between items-center text-xs border-t border-border/50 pt-2">
+                   <span className="text-muted">Kembalian:</span>
                    {isUangKurang ? (
                      <span className="font-mono font-bold text-rose-450 uppercase text-[10px]">Kurang {formatRupiah(Math.abs(kembalian))}</span>
                    ) : (
-                     <span className="font-mono font-black text-[#00ffff] text-sm">{formatRupiah(kembalian)}</span>
+                     <span className="font-mono font-black text-primary text-sm">{formatRupiah(kembalian)}</span>
                    )}
                  </div>
                )}
@@ -4049,13 +4049,13 @@ const CafePOS = () => {
                  <span className="text-xs font-bold text-amber-400">Mode Edit Aktif</span>
                  <span className="text-[10px] bg-amber-500/20 text-amber-350 px-2 py-0.5 rounded-md font-mono">#{editingStrukId.substring(0, 8)}</span>
                </div>
-               <p className="text-[10px] text-[#bbcbb2] leading-relaxed">
+               <p className="text-[10px] text-muted leading-relaxed">
                  Anda sedang mengubah transaksi ini. Klik "Simpan Perubahan" untuk memperbarui database.
                </p>
                <button
                  type="button"
                  onClick={handleCancelEditTransaction}
-                 className="w-full py-1.5 bg-[#18181c] hover:bg-slate-700 active:bg-slate-750 text-slate-350 font-bold rounded-lg text-[10px] transition-colors"
+                 className="w-full py-1.5 bg-subsurface hover:bg-slate-700 active:bg-slate-750 text-slate-350 font-bold rounded-lg text-[10px] transition-colors"
                >
                  Batal Edit
                </button>
@@ -4078,7 +4078,7 @@ const CafePOS = () => {
            {(cart.length > 0 || hasCarwash) && !showMobileCart ? (
            <button
            onClick={() => setShowMobileCart(true)}
-           className="md:hidden fixed bottom-5 left-4 right-4 z-30 bg-[#121215] border border-emerald-500/40 p-3.5 rounded-2xl flex items-center justify-between shadow-2xl animate-slide-up text-left group transition-transform active:scale-[0.98] tap-tactile"
+           className="md:hidden fixed bottom-5 left-4 right-4 z-30 bg-surface border border-emerald-500/40 p-3.5 rounded-2xl flex items-center justify-between shadow-2xl animate-slide-up text-left group transition-transform active:scale-[0.98] tap-tactile"
            >
            <div className="flex items-center gap-3 pointer-events-none">
              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 relative">
@@ -4088,7 +4088,7 @@ const CafePOS = () => {
                </span>
              </div>
              <div>
-               <span className="block text-[9px] uppercase tracking-wider font-bold text-[#bbcbb2]">Total Tagihan</span>
+               <span className="block text-[9px] uppercase tracking-wider font-bold text-muted">Total Tagihan</span>
                <span className="text-sm font-black font-mono text-emerald-400">{formatRupiah(grandTotal)}</span>
              </div>
            </div>
@@ -4100,20 +4100,20 @@ const CafePOS = () => {
 
            {/* Mobile Cart Overlay/Drawer */}
            {showMobileCart && (
-           <div className="md:hidden fixed inset-0 bg-[#18181c] backdrop-blur-sm z-50 flex flex-col justify-end animate-fade-in">
+           <div className="md:hidden fixed inset-0 bg-subsurface backdrop-blur-sm z-50 flex flex-col justify-end animate-fade-in">
            {/* Backdrop click area to close */}
            <div className="absolute inset-0" onClick={() => setShowMobileCart(false)}></div>
 
-           <div className="relative bg-[#080C14] border-t border-[#26272d] rounded-t-3xl max-h-[85vh] flex flex-col p-5 animate-slide-up shadow-2xl">
+           <div className="relative bg-[#080C14] border-t border-border rounded-t-3xl max-h-[85vh] flex flex-col p-5 animate-slide-up shadow-2xl">
             {/* Header of Mobile Cart */}
             <div className="flex items-center justify-between border-b border-slate-850 pb-4 mb-4">
               <div className="flex items-center gap-2">
-                <ShoppingCart className="text-[#00ffff]" size={20} />
+                <ShoppingCart className="text-primary" size={20} />
                 <h3 className="font-bold text-lg text-white">Struk Belanja ({cart.reduce((sum, item) => sum + item.qty, 0) + (hasCarwash ? 1 : 0)} item)</h3>
               </div>
               <button
                 onClick={() => setShowMobileCart(false)}
-                className="text-xs font-bold text-[#bbcbb2] hover:text-white px-3 py-1.5 rounded-lg bg-[#18181c] border border-[#26272d] transition-colors"
+                className="text-xs font-bold text-muted hover:text-white px-3 py-1.5 rounded-lg bg-subsurface border border-border transition-colors"
               >
                 Tutup
               </button>
@@ -4121,7 +4121,7 @@ const CafePOS = () => {
 
             {/* Alert Popups in Mobile Cart */}
             {success && (
-              <div className="mb-4 p-4 rounded-xl bg-[#00ffff] text-[#0f0f0f]/10 border border-brand-emerald/20 text-[#00ffff] text-xs flex items-center gap-3 shrink-0">
+              <div className="mb-4 p-4 rounded-xl bg-primary text-primary-foreground/10 border border-brand-emerald/20 text-primary text-xs flex items-center gap-3 shrink-0">
                 <CheckCircle size={16} />
                 <span>Transaksi berhasil disimpan!</span>
               </div>
@@ -4135,15 +4135,15 @@ const CafePOS = () => {
             )}
 
             {/* Quick Mobile Header: Tipe Pesanan & Meja/Nomor Antrean Akrilik */}
-            <div className="bg-[#121215] p-2.5 rounded-xl border border-[#26272d] mb-2 space-y-2 shrink-0">
+            <div className="bg-surface p-2.5 rounded-xl border border-border mb-2 space-y-2 shrink-0">
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setOrderType('DINE IN')}
                   className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
                     orderType === 'DINE IN'
-                      ? 'bg-[#00ffff] text-[#0f0f0f] border-[#00ffff] shadow-xs'
-                      : 'bg-[#18181c] text-[#bbcbb2] border-[#26272d] hover:border-[#3f414a] hover:text-white'
+                      ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                      : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
                   }`}
                 >
                   <Coffee size={13} />
@@ -4154,8 +4154,8 @@ const CafePOS = () => {
                   onClick={() => setOrderType('TAKE AWAY')}
                   className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
                     orderType === 'TAKE AWAY'
-                      ? 'bg-[#00ffff] text-[#0f0f0f] border-[#00ffff] shadow-xs'
-                      : 'bg-[#18181c] text-[#bbcbb2] border-[#26272d] hover:border-[#3f414a] hover:text-white'
+                      ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                      : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
                   }`}
                 >
                   <ShoppingBag size={13} />
@@ -4168,7 +4168,7 @@ const CafePOS = () => {
                   placeholder={orderType === 'DINE IN' ? "No. Meja / Akrilik / Pager (#12)" : "Nama Pembungkus"}
                   value={tableOrQueueNumber}
                   onChange={(e) => setTableOrQueueNumber(e.target.value)}
-                  className="w-full bg-[#18181c] border border-[#26272d] rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-[#6b7367] focus:outline-hidden focus:border-[#00ffff]"
+                  className="w-full bg-subsurface border border-border rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-muted-dark focus:outline-hidden focus:border-primary"
                 />
               </div>
             </div>
@@ -4176,7 +4176,7 @@ const CafePOS = () => {
             {/* List Cart Items (Scrollable) */}
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 mb-4">
               {cart.map((item) => (
-                <div key={item.nama_menu} className="p-2 rounded-xl bg-[#18181c] border border-slate-850">
+                <div key={item.nama_menu} className="p-2 rounded-xl bg-subsurface border border-slate-850">
                   <div className="flex justify-between items-start">
                     <div className="overflow-hidden mr-2">
                       <h5 className="font-bold text-xs text-white truncate">{item.nama_menu}</h5>
@@ -4195,21 +4195,21 @@ const CafePOS = () => {
                           setActiveNoteMenu(item.nama_menu)
                           setActiveNoteText(item.catatan || '')
                         }}
-                        className="px-1.5 py-1 rounded bg-[#18181c] hover:bg-slate-700 text-slate-200 text-[10px]"
+                        className="px-1.5 py-1 rounded bg-subsurface hover:bg-slate-700 text-slate-200 text-[10px]"
                         title="Catatan Rasa"
                       >
                         {item.catatan ? 'Edit' : '+ Catatan'}
                       </button>
                       <button
                         onClick={() => updateQty(item.nama_menu, -1)}
-                        className="w-9 h-9 rounded-xl bg-[#18181c] hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors tap-tactile"
+                        className="w-9 h-9 rounded-xl bg-subsurface hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors tap-tactile"
                       >
                         <Minus size={13} strokeWidth={2} />
                       </button>
                       <span className="text-sm font-bold text-white w-6 text-center font-mono">{item.qty}</span>
                       <button
                         onClick={() => updateQty(item.nama_menu, 1)}
-                        className="w-9 h-9 rounded-xl bg-[#18181c] hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors tap-tactile"
+                        className="w-9 h-9 rounded-xl bg-subsurface hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors tap-tactile"
                       >
                         <Plus size={13} strokeWidth={2} />
                       </button>
@@ -4225,12 +4225,12 @@ const CafePOS = () => {
               ))}
 
               {hasCarwash && (
-                <div className="p-3 rounded-xl bg-[#18181c] border border-[#26272d] hover:border-[#3f414a] transition-all relative">
+                <div className="p-3 rounded-xl bg-subsurface border border-border hover:border-border-hover transition-all relative">
                   <div className="flex justify-between items-start">
                     <div>
-                      <span className="text-[9px] bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Carwash</span>
+                      <span className="text-[9px] bg-primary/15 text-primary border border-primary/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Carwash</span>
                       <h5 className="font-bold text-xs text-white mt-1.5">{carwashForm.paket}</h5>
-                      <p className="text-[11px] text-[#bbcbb2] mt-0.5 font-mono">
+                      <p className="text-[11px] text-muted mt-0.5 font-mono">
                         {carwashForm.platNomor || '(PLAT KOSONG)'} • {carwashForm.ukuran} • {carwashForm.variant}
                       </p>
                     </div>
@@ -4242,17 +4242,17 @@ const CafePOS = () => {
                       <Trash2 size={13} />
                     </button>
                   </div>
-                  <div className="mt-2.5 flex justify-between items-center border-t border-[#26272d] pt-2 text-[10px] text-[#6b7367]">
+                  <div className="mt-2.5 flex justify-between items-center border-t border-border pt-2 text-[10px] text-muted-dark">
                     <span>Pencuci: {carwashForm.anggota1} {carwashForm.anggota2 && `+ ${carwashForm.anggota2}`}</span>
-                    <span className="font-mono font-bold text-[#00ffff] text-xs">{formatRupiah(carwashForm.harga)}</span>
+                    <span className="font-mono font-bold text-primary text-xs">{formatRupiah(carwashForm.harga)}</span>
                   </div>
                 </div>
               )}
             </div>
 
             {/* Ringkasan & Checkout Button */}
-            <div className="border-t border-[#26272d] pt-4 shrink-0 space-y-4">
-              <div className="space-y-1.5 text-xs text-[#bbcbb2]">
+            <div className="border-t border-border pt-4 shrink-0 space-y-4">
+              <div className="space-y-1.5 text-xs text-muted">
                 {cart.length > 0 && (
                   <div className="flex justify-between">
                     <span>Total Cafe</span>
@@ -4269,7 +4269,7 @@ const CafePOS = () => {
                 {/* Dropdown Diskon Carwash Mobile */}
                 {hasCarwash && (
                   <div className="space-y-1 py-1">
-                    <label className="text-[10px] text-[#6b7367] uppercase tracking-wider font-extrabold block">Diskon Carwash</label>
+                    <label className="text-[10px] text-muted-dark uppercase tracking-wider font-extrabold block">Diskon Carwash</label>
                     <CustomSelect
                       value={selectedDiskonCarwash ? selectedDiskonCarwash.id_diskon : ''}
                       onChange={(val) => {
@@ -4291,7 +4291,7 @@ const CafePOS = () => {
                       className="w-full"
                     />
                     {diskonCarwashNominal > 0 && (
-                      <span className="text-[10px] text-[#00ffff] font-semibold block">Potongan: -{formatRupiah(diskonCarwashNominal)}</span>
+                      <span className="text-[10px] text-primary font-semibold block">Potongan: -{formatRupiah(diskonCarwashNominal)}</span>
                     )}
                   </div>
                 )}
@@ -4299,7 +4299,7 @@ const CafePOS = () => {
                 {/* Dropdown Diskon Cafe Mobile */}
                 {cart.length > 0 && (
                   <div className="space-y-1 py-1">
-                    <label className="text-[10px] text-[#6b7367] uppercase tracking-wider font-extrabold block">Diskon Cafe</label>
+                    <label className="text-[10px] text-muted-dark uppercase tracking-wider font-extrabold block">Diskon Cafe</label>
                     <CustomSelect
                       value={selectedDiskonCafe ? selectedDiskonCafe.id_diskon : ''}
                       onChange={(val) => {
@@ -4321,21 +4321,21 @@ const CafePOS = () => {
                       className="w-full"
                     />
                     {diskonCafeNominal > 0 && (
-                      <span className="text-[10px] text-[#00ffff] font-semibold block">Potongan: -{formatRupiah(diskonCafeNominal)}</span>
+                      <span className="text-[10px] text-primary font-semibold block">Potongan: -{formatRupiah(diskonCafeNominal)}</span>
                     )}
                   </div>
                 )}
 
-                <div className="flex justify-between text-base font-extrabold text-white pt-2 border-t border-[#26272d]/50">
+                <div className="flex justify-between text-base font-extrabold text-white pt-2 border-t border-border/50">
                   <span>Total Bayar</span>
-                  <span className="text-[#00ffff]">{formatRupiah(grandTotal)}</span>
+                  <span className="text-primary">{formatRupiah(grandTotal)}</span>
                 </div>
               </div>
 
               {/* Pilihan Metode Bayar & Status Mobile */}
-              <div className="grid grid-cols-2 gap-2 p-3 bg-[#18181c] rounded-xl border border-slate-850 my-1">
+              <div className="grid grid-cols-2 gap-2 p-3 bg-subsurface rounded-xl border border-slate-850 my-1">
                 <div>
-                  <label className="text-[10px] text-[#bbcbb2] uppercase tracking-wider font-extrabold block mb-1">Metode Bayar</label>
+                  <label className="text-[10px] text-muted uppercase tracking-wider font-extrabold block mb-1">Metode Bayar</label>
                   <CustomSelect
                     value={selectedPayment}
                     onChange={(val) => setSelectedPayment(val)}
@@ -4349,7 +4349,7 @@ const CafePOS = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-[#bbcbb2] uppercase tracking-wider font-extrabold block mb-1">Status</label>
+                  <label className="text-[10px] text-muted uppercase tracking-wider font-extrabold block mb-1">Status</label>
                   <CustomSelect
                     value={paymentStatus}
                     onChange={(val) => setPaymentStatus(val)}
@@ -4366,28 +4366,28 @@ const CafePOS = () => {
 
               {/* Input Uang Diterima & Kembalian Mobile */}
               {paymentStatus === 'Selesai' && (selectedPayment === 'CASH' || selectedPayment === 'SPLIT') && (
-                <div className="p-3.5 rounded-xl bg-[#18181c] border border-slate-850 space-y-3 my-1">
-                  <span className="text-[10px] text-[#6b7367] uppercase tracking-wider font-extrabold block">Kalkulator Kembalian</span>
+                <div className="p-3.5 rounded-xl bg-subsurface border border-slate-850 space-y-3 my-1">
+                  <span className="text-[10px] text-muted-dark uppercase tracking-wider font-extrabold block">Kalkulator Kembalian</span>
                   <div className="space-y-1">
-                    <label className="text-[10px] text-[#bbcbb2] font-semibold block">Uang Diterima (Cash):</label>
+                    <label className="text-[10px] text-muted font-semibold block">Uang Diterima (Cash):</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1.5 text-xs text-[#6b7367] font-bold font-mono">Rp</span>
+                      <span className="absolute left-3 top-1.5 text-xs text-muted-dark font-bold font-mono">Rp</span>
                       <input
                         type="number"
                         value={uangDiterima}
                         onChange={(e) => setUangDiterima(e.target.value)}
                         placeholder="Contoh: 100000"
-                        className="w-full bg-[#121215] border border-[#26272d] rounded-lg py-1.5 pl-8 pr-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-[#00ffff]"
+                        className="w-full bg-surface border border-border rounded-lg py-1.5 pl-8 pr-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
                       />
                     </div>
                   </div>
                   {uangDiterima && (
-                    <div className="flex justify-between items-center text-xs border-t border-[#26272d]/50 pt-2">
-                      <span className="text-[#bbcbb2]">Kembalian:</span>
+                    <div className="flex justify-between items-center text-xs border-t border-border/50 pt-2">
+                      <span className="text-muted">Kembalian:</span>
                       {isUangKurang ? (
                         <span className="font-mono font-bold text-rose-450 uppercase text-[10px]">Kurang {formatRupiah(Math.abs(kembalian))}</span>
                       ) : (
-                        <span className="font-mono font-black text-[#00ffff] text-sm">{formatRupiah(kembalian)}</span>
+                        <span className="font-mono font-black text-primary text-sm">{formatRupiah(kembalian)}</span>
                       )}
                     </div>
                   )}
@@ -4400,7 +4400,7 @@ const CafePOS = () => {
                     <span className="text-xs font-bold text-amber-400">Mode Edit Aktif</span>
                     <span className="text-[10px] bg-amber-500/20 text-amber-350 px-2 py-0.5 rounded-md font-mono">#{editingStrukId.substring(0, 8)}</span>
                   </div>
-                  <p className="text-[10px] text-[#bbcbb2] leading-relaxed">
+                  <p className="text-[10px] text-muted leading-relaxed">
                     Anda sedang mengubah transaksi ini. Klik "Simpan Perubahan" untuk memperbarui database.
                   </p>
                   <button
@@ -4409,7 +4409,7 @@ const CafePOS = () => {
                       handleCancelEditTransaction();
                       setShowMobileCart(false);
                     }}
-                    className="w-full py-1.5 bg-[#18181c] hover:bg-slate-700 active:bg-slate-750 text-slate-350 font-bold rounded-lg text-[10px] transition-colors"
+                    className="w-full py-1.5 bg-subsurface hover:bg-slate-700 active:bg-slate-750 text-slate-350 font-bold rounded-lg text-[10px] transition-colors"
                   >
                     Batal Edit
                   </button>
@@ -4422,7 +4422,7 @@ const CafePOS = () => {
                   setShowMobileCart(false);
                 }}
                 disabled={loading || (cart.length === 0 && !hasCarwash) || isUangKurang}
-                className="w-full py-3.5 bg-[#00ffff] hover:bg-[#00ffff]/90 active:scale-[0.98] text-[#0f0f0f] font-black rounded-xl shadow-lg shadow-[#00ffff]/10 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full py-3.5 bg-primary hover:bg-primary/90 active:scale-[0.98] text-primary-foreground font-black rounded-xl shadow-lg shadow-[#00ffff]/10 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {loading ? 'Memproses Transaksi...' : editingStrukId ? 'Simpan Perubahan' : `Simpan & Cetak (${paymentStatus})`}
               </button>
@@ -4433,15 +4433,15 @@ const CafePOS = () => {
 
       {/* MODAL: Selesaikan Pembayaran Pending */}
       {settlingBill && (
-        <div className="fixed inset-0 bg-[#18181c] backdrop-blur-md flex items-center justify-center p-4 z-[60] animate-fade-in">
+        <div className="fixed inset-0 bg-subsurface backdrop-blur-md flex items-center justify-center p-4 z-[60] animate-fade-in">
           <div className="glass-panel w-full max-w-md p-6 rounded-2xl shadow-2xl border border-[#3f414a] shadow-[0_0_40px_rgba(16,185,129,0.15)] animate-pop-in">
-            <div className="flex justify-between items-center border-b border-[#26272d] pb-4 mb-4">
+            <div className="flex justify-between items-center border-b border-border pb-4 mb-4">
               <h3 className="text-lg font-bold text-white">
                 Pelunasan Tagihan #{settlingBill.id.substring(0, 8)}
               </h3>
               <button
                 onClick={() => setSettlingBill(null)}
-                className="text-[#bbcbb2] hover:text-slate-200"
+                className="text-muted hover:text-slate-200"
               >
                 ✕
               </button>
@@ -4453,9 +4453,9 @@ const CafePOS = () => {
 
                 return (
                   <>
-                    <div className="p-4 rounded-xl bg-[#121215]/60 border border-[#26272d] space-y-1.5 text-xs">
+                    <div className="p-4 rounded-xl bg-surface/60 border border-border space-y-1.5 text-xs">
                       <div className="flex justify-between">
-                        <span className="text-[#bbcbb2]">Tagihan Layanan:</span>
+                        <span className="text-muted">Tagihan Layanan:</span>
                         <span className="font-bold text-slate-200 font-mono">{formatRupiah(settlingBill.total_harga)}</span>
                       </div>
                       {settleSurcharge.enabled && (
@@ -4464,37 +4464,37 @@ const CafePOS = () => {
                           <span className="font-bold font-mono">+{formatRupiah(settleSurcharge.nominal || 0)}</span>
                         </div>
                       )}
-                      <div className="flex justify-between pt-1.5 border-t border-[#26272d]">
+                      <div className="flex justify-between pt-1.5 border-t border-border">
                         <span className="text-white font-bold">Total Pelunasan:</span>
-                        <span className="font-black text-[#00ffff] text-base font-mono">{formatRupiah(finalTotalToPay)}</span>
+                        <span className="font-black text-primary text-base font-mono">{formatRupiah(finalTotalToPay)}</span>
                       </div>
-                      <div className="flex justify-between text-[#bbcbb2] text-[11px]">
+                      <div className="flex justify-between text-muted text-[11px]">
                         <span>Kasir Pembuka:</span>
                         <span className="text-slate-200 font-bold">{settlingBill.kasir}</span>
                       </div>
                     </div>
 
                     {/* Fitur Cas Inap / Biaya Tambahan Mobil Menginap */}
-                    <div className="p-3.5 rounded-xl bg-[#121215] border border-[#26272d] space-y-2.5">
+                    <div className="p-3.5 rounded-xl bg-surface border border-border space-y-2.5">
                       <div className="flex items-center justify-between">
                         <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-amber-400">
                           <input
                             type="checkbox"
                             checked={settleSurcharge.enabled}
                             onChange={(e) => setSettleSurcharge(prev => ({ ...prev, enabled: e.target.checked }))}
-                            className="rounded bg-[#18181c] border-[#3f414a] text-amber-500 focus:ring-0 w-4 h-4 cursor-pointer"
+                            className="rounded bg-subsurface border-[#3f414a] text-amber-500 focus:ring-0 w-4 h-4 cursor-pointer"
                           />
                           <span>Tambah Biaya Inap / Cas Keterlambatan</span>
                         </label>
                         {settleSurcharge.enabled && (
-                          <span className="text-[10px] font-bold text-[#00ffff] bg-[#00ffff] text-[#0f0f0f]/15 px-2 py-0.5 rounded font-mono">
+                          <span className="text-[10px] font-bold text-primary bg-primary text-primary-foreground/15 px-2 py-0.5 rounded font-mono">
                             +{formatRupiah(settleSurcharge.nominal || 0)}
                           </span>
                         )}
                       </div>
 
                       {settleSurcharge.enabled && (
-                        <div className="space-y-2 pt-2 border-t border-[#26272d] animate-fade-in">
+                        <div className="space-y-2 pt-2 border-t border-border animate-fade-in">
                           {/* Preset Buttons */}
                           <div className="flex gap-1.5 flex-wrap">
                             <button
@@ -4503,7 +4503,7 @@ const CafePOS = () => {
                               className={`px-2.5 py-1 text-[10px] rounded-lg font-bold border transition-colors ${
                                 settleSurcharge.nominal === 50000 
                                   ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' 
-                                  : 'bg-[#18181c] text-[#bbcbb2] border-[#26272d] hover:text-white'
+                                  : 'bg-subsurface text-muted border-border hover:text-white'
                               }`}
                             >
                               1 Malam (50rb)
@@ -4514,7 +4514,7 @@ const CafePOS = () => {
                               className={`px-2.5 py-1 text-[10px] rounded-lg font-bold border transition-colors ${
                                 settleSurcharge.nominal === 100000 
                                   ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' 
-                                  : 'bg-[#18181c] text-[#bbcbb2] border-[#26272d] hover:text-white'
+                                  : 'bg-subsurface text-muted border-border hover:text-white'
                               }`}
                             >
                               2 Malam (100rb)
@@ -4525,7 +4525,7 @@ const CafePOS = () => {
                               className={`px-2.5 py-1 text-[10px] rounded-lg font-bold border transition-colors ${
                                 settleSurcharge.nominal === 35000 
                                   ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' 
-                                  : 'bg-[#18181c] text-[#bbcbb2] border-[#26272d] hover:text-white'
+                                  : 'bg-subsurface text-muted border-border hover:text-white'
                               }`}
                             >
                               Telat Ambil (35rb)
@@ -4534,22 +4534,22 @@ const CafePOS = () => {
 
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <label className="text-[10px] text-[#bbcbb2] font-semibold block mb-1">Nominal Cas (Rp):</label>
+                              <label className="text-[10px] text-muted font-semibold block mb-1">Nominal Cas (Rp):</label>
                               <input
                                 type="number"
                                 value={settleSurcharge.nominal}
                                 onChange={(e) => setSettleSurcharge(prev => ({ ...prev, nominal: parseFloat(e.target.value) || 0 }))}
-                                className="w-full bg-[#18181c] border border-[#26272d] rounded-lg px-2.5 py-1.5 text-white text-xs font-mono font-bold focus:outline-none focus:border-amber-500"
+                                className="w-full bg-subsurface border border-border rounded-lg px-2.5 py-1.5 text-white text-xs font-mono font-bold focus:outline-none focus:border-amber-500"
                               />
                             </div>
                             <div>
-                              <label className="text-[10px] text-[#bbcbb2] font-semibold block mb-1">Keterangan Biaya:</label>
+                              <label className="text-[10px] text-muted font-semibold block mb-1">Keterangan Biaya:</label>
                               <input
                                 type="text"
                                 value={settleSurcharge.keterangan}
                                 onChange={(e) => setSettleSurcharge(prev => ({ ...prev, keterangan: e.target.value }))}
                                 placeholder="Contoh: Biaya Inap 1 Malam"
-                                className="w-full bg-[#18181c] border border-[#26272d] rounded-lg px-2.5 py-1.5 text-white text-xs focus:outline-none focus:border-amber-500"
+                                className="w-full bg-subsurface border border-border rounded-lg px-2.5 py-1.5 text-white text-xs focus:outline-none focus:border-amber-500"
                               />
                             </div>
                           </div>
@@ -4558,13 +4558,13 @@ const CafePOS = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
+                      <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
                         Metode Pembayaran Pelunasan
                       </label>
                       <select
                         value={settlePaymentMethod}
                         onChange={(e) => setSettlePaymentMethod(e.target.value)}
-                        className="w-full bg-[#121215] border border-slate-850 rounded-lg py-2 px-3 text-white text-sm"
+                        className="w-full bg-surface border border-slate-850 rounded-lg py-2 px-3 text-white text-sm"
                         required
                       >
                         {paymentMethods.map(p => (
@@ -4574,10 +4574,10 @@ const CafePOS = () => {
                     </div>
 
                     {settlePaymentMethod === 'SPLIT' && (
-                      <div className="p-3.5 rounded-xl bg-[#18181c] border border-slate-850 space-y-3 my-1">
-                        <span className="text-[10px] text-[#6b7367] uppercase tracking-wider font-extrabold block text-[#bbcbb2]">Pembayaran Terpisah (Split)</span>
+                      <div className="p-3.5 rounded-xl bg-subsurface border border-slate-850 space-y-3 my-1">
+                        <span className="text-[10px] text-muted-dark uppercase tracking-wider font-extrabold block text-muted">Pembayaran Terpisah (Split)</span>
                         <div className="space-y-1">
-                          <label className="text-[10px] text-[#6b7367] font-semibold block">Tunai (Cash):</label>
+                          <label className="text-[10px] text-muted-dark font-semibold block">Tunai (Cash):</label>
                           <input
                             type="number"
                             value={splitCashAmount}
@@ -4588,12 +4588,12 @@ const CafePOS = () => {
                               setSplitQrisAmount(Math.max(0, finalTotalToPay - parsed).toString())
                             }}
                             placeholder="Contoh: 50000"
-                            className="w-full bg-[#121215] border border-[#26272d] rounded-lg py-1.5 px-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-[#00ffff]"
+                            className="w-full bg-surface border border-border rounded-lg py-1.5 px-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
                             required
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[10px] text-[#6b7367] font-semibold block">Non-Tunai (QRIS):</label>
+                          <label className="text-[10px] text-muted-dark font-semibold block">Non-Tunai (QRIS):</label>
                           <input
                             type="number"
                             value={splitQrisAmount}
@@ -4604,7 +4604,7 @@ const CafePOS = () => {
                               setSplitCashAmount(Math.max(0, finalTotalToPay - parsed).toString())
                             }}
                             placeholder="Contoh: 50000"
-                            className="w-full bg-[#121215] border border-[#26272d] rounded-lg py-1.5 px-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-[#00ffff]"
+                            className="w-full bg-surface border border-border rounded-lg py-1.5 px-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
                             required
                           />
                         </div>
@@ -4618,30 +4618,30 @@ const CafePOS = () => {
                       const isSKurang = settleCashReceived && sKembalian < 0
 
                       return (
-                        <div className="p-3.5 rounded-xl bg-[#121215] border border-[#26272d] space-y-3 my-1">
-                          <span className="text-[10px] text-[#bbcbb2] uppercase tracking-wider font-extrabold block">Kalkulator Kembalian Pelunasan</span>
+                        <div className="p-3.5 rounded-xl bg-surface border border-border space-y-3 my-1">
+                          <span className="text-[10px] text-muted uppercase tracking-wider font-extrabold block">Kalkulator Kembalian Pelunasan</span>
                           <div className="space-y-1">
-                            <label className="text-[10px] text-[#bbcbb2] font-semibold block">
+                            <label className="text-[10px] text-muted font-semibold block">
                               Uang Diterima dari Pelanggan (Cash):
                             </label>
                             <div className="relative">
-                              <span className="absolute left-3 top-2 text-xs text-[#6b7367] font-bold font-mono">Rp</span>
+                              <span className="absolute left-3 top-2 text-xs text-muted-dark font-bold font-mono">Rp</span>
                               <input
                                 type="number"
                                 value={settleCashReceived}
                                 onChange={(e) => setSettleCashReceived(e.target.value)}
                                 placeholder={targetCash ? `Contoh: ${targetCash}` : 'Contoh: 100000'}
-                                className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 pl-8 pr-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-[#00ffff]"
+                                className="w-full bg-subsurface border border-border rounded-lg py-2 pl-8 pr-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
                               />
                             </div>
                           </div>
                           {settleCashReceived && (
-                            <div className="flex justify-between items-center text-xs border-t border-[#26272d]/60 pt-2">
-                              <span className="text-[#bbcbb2]">Kembalian Pelanggan:</span>
+                            <div className="flex justify-between items-center text-xs border-t border-border/60 pt-2">
+                              <span className="text-muted">Kembalian Pelanggan:</span>
                               {isSKurang ? (
                                 <span className="font-mono font-bold text-rose-450 uppercase text-[10px]">Kurang {formatRupiah(Math.abs(sKembalian))}</span>
                               ) : (
-                                <span className="font-mono font-black text-[#00ffff] text-sm">{formatRupiah(sKembalian)}</span>
+                                <span className="font-mono font-black text-primary text-sm">{formatRupiah(sKembalian)}</span>
                               )}
                             </div>
                           )}
@@ -4649,18 +4649,18 @@ const CafePOS = () => {
                       )
                     })()}
 
-                    <div className="flex justify-end gap-3 pt-4 border-t border-[#26272d] mt-4">
+                    <div className="flex justify-end gap-3 pt-4 border-t border-border mt-4">
                       <button
                         type="button"
                         onClick={() => setSettlingBill(null)}
-                        className="px-4 py-2 bg-[#18181c] hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-sm"
+                        className="px-4 py-2 bg-subsurface hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-sm"
                       >
                         Batal
                       </button>
                       <button
                         type="submit"
                         disabled={loading || ((settlePaymentMethod === 'CASH' || settlePaymentMethod === 'SPLIT') && settleCashReceived && (parseFloat(settleCashReceived) < (settlePaymentMethod === 'SPLIT' ? (parseFloat(splitCashAmount) || 0) : finalTotalToPay)))}
-                        className="px-4 py-2 bg-[#00ffff] text-[#0f0f0f] hover:bg-emerald-500 active:bg-emerald-600 text-slate-950 font-bold rounded-xl text-sm disabled:opacity-50"
+                        className="px-4 py-2 bg-primary text-primary-foreground hover:bg-emerald-500 active:bg-emerald-600 text-slate-950 font-bold rounded-xl text-sm disabled:opacity-50"
                       >
                         {loading ? 'Memproses...' : 'Konfirmasi Lunas & Cetak Struk'}
                       </button>
@@ -4675,19 +4675,19 @@ const CafePOS = () => {
 
       {/* MODAL: Input Modal Hari Ini */}
       {showModalModal && (
-        <div className="fixed inset-0 bg-[#18181c] backdrop-blur-md flex items-center justify-center p-4 z-[70] animate-fade-in">
-          <div className="glass-panel w-full max-w-md p-6 rounded-2xl shadow-2xl border border-[#26272d] animate-pop-in">
+        <div className="fixed inset-0 bg-subsurface backdrop-blur-md flex items-center justify-center p-4 z-[70] animate-fade-in">
+          <div className="glass-panel w-full max-w-md p-6 rounded-2xl shadow-2xl border border-border animate-pop-in">
             <div className="text-center mb-6">
               <div className="w-12 h-12 mx-auto rounded-xl bg-gradient-to-tr from-brand-emerald to-brand-blue flex items-center justify-center font-bold text-lg text-slate-900 shadow-md mb-3">
                 JB
               </div>
               <h3 className="text-lg font-bold text-white">Masukkan Modal Hari Ini</h3>
-              <p className="text-[#bbcbb2] text-xs mt-1">Sistem mendeteksi modal awal untuk hari ini belum dimasukkan.</p>
+              <p className="text-muted text-xs mt-1">Sistem mendeteksi modal awal untuk hari ini belum dimasukkan.</p>
             </div>
 
             <form onSubmit={handleSaveStartingCapital} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-2">
                   Nominal Modal Awal (Rp)
                 </label>
                 <input
@@ -4695,7 +4695,7 @@ const CafePOS = () => {
                   placeholder="Contoh: 100000"
                   value={startingCapitalInput}
                   onChange={(e) => setStartingCapitalInput(e.target.value)}
-                  className="w-full bg-[#121215] border border-[#26272d] rounded-xl py-3 px-4 text-white text-sm text-center font-bold text-[#00ffff] focus:outline-none focus:border-[#00ffff] placeholder-slate-700"
+                  className="w-full bg-surface border border-border rounded-xl py-3 px-4 text-white text-sm text-center font-bold text-primary focus:outline-none focus:border-primary placeholder-slate-700"
                   required
                   min="0"
                 />
@@ -4710,7 +4710,7 @@ const CafePOS = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-[#00ffff] text-[#0f0f0f] hover:bg-emerald-500 active:bg-emerald-600 text-slate-950 font-bold rounded-xl shadow-lg shadow-brand-emerald/10 transition-all text-sm disabled:opacity-50"
+                className="w-full py-3 bg-primary text-primary-foreground hover:bg-emerald-500 active:bg-emerald-600 text-slate-950 font-bold rounded-xl shadow-lg shadow-brand-emerald/10 transition-all text-sm disabled:opacity-50"
               >
                 {loading ? 'Menyimpan...' : 'Konfirmasi & Mulai Shift'}
               </button>
@@ -4721,8 +4721,8 @@ const CafePOS = () => {
 
       {/* CUSTOM MODAL: Alert / Confirm */}
       {customAlert && (
-        <div className="fixed inset-0 bg-[#18181c] backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">
-          <div className="glass-panel w-full max-w-sm p-6 rounded-2xl shadow-2xl border border-[#26272d] shadow-[0_0_50px_rgba(16,185,129,0.08)] animate-pop-in text-center">
+        <div className="fixed inset-0 bg-subsurface backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">
+          <div className="glass-panel w-full max-w-sm p-6 rounded-2xl shadow-2xl border border-border shadow-[0_0_50px_rgba(16,185,129,0.08)] animate-pop-in text-center">
             <div className="mb-4">
               {customAlert.title === 'Sukses' ? (
                 <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/10 flex items-center justify-center">
@@ -4751,7 +4751,7 @@ const CafePOS = () => {
                 <button
                   type="button"
                   onClick={customAlert.onCancel}
-                  className="px-4 py-2 bg-[#18181c] hover:bg-slate-700 active:scale-95 text-slate-200 font-bold rounded-xl text-xs transition-all w-24"
+                  className="px-4 py-2 bg-subsurface hover:bg-slate-700 active:scale-95 text-slate-200 font-bold rounded-xl text-xs transition-all w-24"
                 >
                   Batal
                 </button>
@@ -4761,7 +4761,7 @@ const CafePOS = () => {
                 onClick={customAlert.onConfirm}
                 className={`px-4 py-2 active:scale-95 font-bold rounded-xl text-xs transition-all w-24 ${customAlert.title === 'Error' || customAlert.title === 'Hapus Pengeluaran' || customAlert.title === 'Batalkan Transaksi'
                   ? 'bg-rose-500 hover:bg-rose-600 text-white'
-                  : 'bg-[#00ffff] text-[#0f0f0f] hover:bg-emerald-500 text-slate-950'
+                  : 'bg-primary text-primary-foreground hover:bg-emerald-500 text-slate-950'
                   }`}
               >
                 {customAlert.type === 'confirm' ? 'Ya' : 'OK'}
@@ -4773,12 +4773,12 @@ const CafePOS = () => {
 
       {/* MODAL: Catatan Rasa / Modifier Menu (Cafe & Resto) */}
       {activeNoteMenu && (
-        <div className="fixed inset-0 bg-[#18181c] backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">
-          <div className="glass-panel w-full max-w-md p-5 rounded-2xl shadow-2xl border border-[#26272d] animate-pop-in">
-            <div className="flex items-center justify-between pb-3 border-b border-[#26272d] mb-3">
+        <div className="fixed inset-0 bg-subsurface backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">
+          <div className="glass-panel w-full max-w-md p-5 rounded-2xl shadow-2xl border border-border animate-pop-in">
+            <div className="flex items-center justify-between pb-3 border-b border-border mb-3">
               <div>
                 <h4 className="text-sm font-bold text-white">Catatan & Preferensi Menu</h4>
-                <p className="text-xs text-[#00ffff] font-semibold truncate max-w-[280px]">{activeNoteMenu}</p>
+                <p className="text-xs text-primary font-semibold truncate max-w-[280px]">{activeNoteMenu}</p>
               </div>
               <button
                 type="button"
@@ -4786,7 +4786,7 @@ const CafePOS = () => {
                   setActiveNoteMenu(null)
                   setActiveNoteText('')
                 }}
-                className="text-[#bbcbb2] hover:text-white p-1 text-sm font-bold"
+                className="text-muted hover:text-white p-1 text-sm font-bold"
               >
                 ✕
               </button>
@@ -4794,7 +4794,7 @@ const CafePOS = () => {
 
             <div className="space-y-3">
               <div>
-                <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
+                <label className="block text-[11px] font-semibold text-muted uppercase tracking-wider mb-1.5">
                   Preset Cepat (1-Klik):
                 </label>
                 <div className="flex flex-wrap gap-1.5">
@@ -4819,7 +4819,7 @@ const CafePOS = () => {
                           return `${prev}, ${preset}`
                         })
                       }}
-                      className="px-2.5 py-1 rounded-lg text-xs bg-[#18181c] hover:bg-slate-700 text-slate-200 border border-[#3f414a] active:scale-95 transition-all"
+                      className="px-2.5 py-1 rounded-lg text-xs bg-subsurface hover:bg-slate-700 text-slate-200 border border-[#3f414a] active:scale-95 transition-all"
                     >
                       +{preset}
                     </button>
@@ -4828,7 +4828,7 @@ const CafePOS = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-semibold text-muted uppercase tracking-wider mb-1">
                   Catatan Kustom:
                 </label>
                 <input
@@ -4836,7 +4836,7 @@ const CafePOS = () => {
                   placeholder="Cth: Less sugar, es sedikit, gelas sedang..."
                   value={activeNoteText}
                   onChange={(e) => setActiveNoteText(e.target.value)}
-                  className="w-full bg-[#121215] border border-[#26272d] rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#00ffff]"
+                  className="w-full bg-surface border border-border rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-primary"
                   autoFocus
                 />
               </div>
@@ -4856,14 +4856,14 @@ const CafePOS = () => {
                       setActiveNoteMenu(null)
                       setActiveNoteText('')
                     }}
-                    className="px-3 py-2 rounded-xl text-xs bg-[#18181c] hover:bg-slate-700 text-slate-200 font-semibold transition-colors"
+                    className="px-3 py-2 rounded-xl text-xs bg-subsurface hover:bg-slate-700 text-slate-200 font-semibold transition-colors"
                   >
                     Batal
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSetItemNote(activeNoteMenu, activeNoteText.trim())}
-                    className="px-4 py-2 rounded-xl text-xs bg-[#00ffff] text-[#0f0f0f] hover:bg-emerald-500 text-slate-950 font-bold shadow-md transition-colors"
+                    className="px-4 py-2 rounded-xl text-xs bg-primary text-primary-foreground hover:bg-emerald-500 text-slate-950 font-bold shadow-md transition-colors"
                   >
                     Simpan Catatan
                   </button>

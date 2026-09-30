@@ -456,25 +456,25 @@ export const CafePOSPage = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen lg:h-[calc(100vh-4rem)] w-full max-w-full bg-[#000000] text-white overflow-x-hidden">
+    <div className="flex flex-col min-h-screen lg:h-[calc(100vh-4rem)] w-full max-w-full bg-canvas text-white overflow-x-hidden">
       {/* TOP BAR: Kasir, Meja, Status Shift */}
-      <header className="flex flex-wrap items-center justify-between px-3 sm:px-4 py-2.5 bg-[#121215] border-b border-[#26272d] gap-3 shrink-0">
+      <header className="flex flex-wrap items-center justify-between px-3 sm:px-4 py-2.5 bg-surface border-b border-border gap-3 shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-[#18181c] border border-[#26272d] text-[#00ffff] flex items-center justify-center shrink-0 shadow-xs">
+          <div className="w-9 h-9 rounded-lg bg-subsurface border border-border text-primary flex items-center justify-center shrink-0 shadow-xs">
             <Coffee className="w-5 h-5" strokeWidth={2} />
           </div>
           <div>
             <h1 className="font-bold text-xs sm:text-sm text-white uppercase tracking-wider leading-tight">
               Kasir Kafe & Resto (POS)
             </h1>
-            <p className="text-[11px] text-[#bbcbb2]">Katalog Menu F&B & Pengaturan Meja Dine-in</p>
+            <p className="text-[11px] text-muted">Katalog Menu F&B & Pengaturan Meja Dine-in</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           {/* Kasir Selector */}
-          <div className="flex items-center gap-1.5 bg-[#18181c] px-2.5 py-1 rounded-lg border border-[#26272d] text-xs">
-            <User className="w-3.5 h-3.5 text-[#bbcbb2] shrink-0" />
+          <div className="flex items-center gap-1.5 bg-subsurface px-2.5 py-1 rounded-lg border border-border text-xs">
+            <User className="w-3.5 h-3.5 text-muted shrink-0" />
             <CustomSelect
               value={selectedCashier}
               onChange={(val) => setSelectedCashier(val)}
@@ -487,20 +487,20 @@ export const CafePOSPage = () => {
           {/* Pending Bills Button */}
           <button
             onClick={() => setShowPendingModal(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-[#18181c] hover:bg-[#242428] text-white border border-[#26272d] rounded-lg text-xs font-semibold transition cursor-pointer relative"
+            className="flex items-center gap-2 px-3 py-1.5 bg-subsurface hover:bg-[#242428] text-white border border-border rounded-lg text-xs font-semibold transition cursor-pointer relative"
           >
-            <Clock className="w-3.5 h-3.5 text-[#ffc71f]" />
+            <Clock className="w-3.5 h-3.5 text-warning" />
             <span>Bill Meja</span>
             {pendingBills.length > 0 && (
-              <span className="px-1.5 py-0.2 bg-[#00ffff] text-[#0f0f0f] rounded-full text-[10px] font-mono font-bold">
+              <span className="px-1.5 py-0.2 bg-primary text-primary-foreground rounded-full text-[10px] font-mono font-bold">
                 {pendingBills.length}
               </span>
             )}
           </button>
 
           {/* Shift Status Pill */}
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-[#18181c] border border-[#26272d] rounded-lg text-xs text-[#00ffff] font-mono font-semibold">
-            <span className="w-2 h-2 rounded-full bg-[#00ffff] animate-pulse"></span>
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-subsurface border border-border rounded-lg text-xs text-primary font-mono font-semibold">
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
             <span>Shift Aktif</span>
           </div>
         </div>
@@ -508,16 +508,16 @@ export const CafePOSPage = () => {
 
       {/* FEEDBACK BANNER */}
       {error && (
-        <div className="bg-[#ff5102]/15 border-b border-[#ff5102]/30 p-2.5 px-4 text-xs text-[#ff5102] flex items-center justify-between">
+        <div className="bg-destructive/15 border-b border-[#ff5102]/30 p-2.5 px-4 text-xs text-destructive flex items-center justify-between">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
-          <button onClick={() => setError('')} className="text-white hover:text-[#ff5102] font-bold text-sm cursor-pointer">✕</button>
+          <button onClick={() => setError('')} className="text-white hover:text-destructive font-bold text-sm cursor-pointer">✕</button>
         </div>
       )}
       {success && (
-        <div className="bg-[#00ffff]/15 border-b border-[#00ffff]/30 p-2.5 px-4 text-xs text-[#00ffff] flex items-center gap-2">
+        <div className="bg-primary/15 border-b border-primary/30 p-2.5 px-4 text-xs text-primary flex items-center gap-2">
           <CheckCircle className="w-4 h-4 shrink-0" />
           <span>Transaksi berhasil diproses & dicatat ke laporan!</span>
         </div>
@@ -526,18 +526,18 @@ export const CafePOSPage = () => {
       {/* WORKSPACE DUA KOLOM */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-x-hidden min-h-0">
         {/* KOLOM KIRI: KATALOG MENU */}
-        <section className="flex-1 flex flex-col min-w-0 w-full max-w-full bg-[#000000] overflow-hidden">
+        <section className="flex-1 flex flex-col min-w-0 w-full max-w-full bg-canvas overflow-hidden">
           {/* SEARCH & DYNAMIC CATEGORY FILTER BADGES */}
-          <div className="p-3 sm:p-4 border-b border-[#26272d] space-y-2.5 bg-[#121215] shrink-0">
+          <div className="p-3 sm:p-4 border-b border-border space-y-2.5 bg-surface shrink-0">
             {/* Search Input */}
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-[#bbcbb2]" />
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-muted" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari kopi, espresso, makanan, cemilan..."
-                className="w-full pl-9 pr-3 py-2 bg-[#18181c] border border-[#26272d] rounded-lg text-xs text-white placeholder-[#6b7367] focus:outline-none focus:border-[#00ffff] focus:ring-1 focus:ring-[#00ffff] transition-all"
+                className="w-full pl-9 pr-3 py-2 bg-subsurface border border-border rounded-lg text-xs text-white placeholder-[#6b7367] focus:outline-none focus:border-primary focus:ring-1 focus:ring-[#00ffff] transition-all"
               />
             </div>
 
@@ -549,8 +549,8 @@ export const CafePOSPage = () => {
                   onClick={() => setSelectedCategory(cat)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer active:scale-[0.98] shrink-0 ${
                     selectedCategory === cat
-                      ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-xs border border-[#00ffff]'
-                      : 'bg-[#18181c] text-[#bbcbb2] hover:text-white border border-[#26272d] hover:border-[#3f414a]'
+                      ? 'bg-primary text-primary-foreground font-bold shadow-xs border border-primary'
+                      : 'bg-subsurface text-muted hover:text-white border border-border hover:border-border-hover'
                   }`}
                 >
                   {cat === 'ALL' || cat === 'SEMUA' ? 'Semua Menu' : cat}
@@ -562,10 +562,10 @@ export const CafePOSPage = () => {
           {/* MENU GRID */}
           <div className="flex-1 p-2 sm:p-4 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 w-full max-w-full min-w-0">
             {filteredMenu.length === 0 ? (
-              <div className="col-span-full py-16 flex flex-col items-center justify-center text-[#bbcbb2] gap-2">
-                <Coffee className="w-10 h-10 text-[#6b7367]" />
+              <div className="col-span-full py-16 flex flex-col items-center justify-center text-muted gap-2">
+                <Coffee className="w-10 h-10 text-muted-dark" />
                 <p className="text-sm font-semibold text-white">Tidak ada menu ditemukan</p>
-                <p className="text-xs text-[#bbcbb2]">Coba ganti kata kunci pencarian atau kategori filter</p>
+                <p className="text-xs text-muted">Coba ganti kata kunci pencarian atau kategori filter</p>
               </div>
             ) : (
               filteredMenu.map(menu => {
@@ -574,9 +574,9 @@ export const CafePOSPage = () => {
                   <div
                     key={menu.id || menu.nama_menu}
                     onClick={() => handleAddToCart(menu)}
-                    className="group relative flex flex-col bg-[#121215] rounded-xl border border-[#26272d] hover:border-[#00ffff]/60 overflow-hidden cursor-pointer hover:shadow-lg active:scale-[0.98] transition-all justify-between"
+                    className="group relative flex flex-col bg-surface rounded-xl border border-border hover:border-primary/60 overflow-hidden cursor-pointer hover:shadow-lg active:scale-[0.98] transition-all justify-between"
                   >
-                    <div className="aspect-[4/3] w-full bg-[#18181c] overflow-hidden relative">
+                    <div className="aspect-[4/3] w-full bg-subsurface overflow-hidden relative">
                       <img
                         src={menu.foto || getMenuPhoto(menu.nama_menu)}
                         alt={menu.nama_menu}
@@ -584,20 +584,20 @@ export const CafePOSPage = () => {
                         loading="lazy"
                       />
                       {inCart && (
-                        <span className="absolute top-2 right-2 px-2 py-0.5 flex items-center justify-center bg-[#00ffff] text-[#0f0f0f] rounded-full text-xs font-bold font-mono shadow-md">
+                        <span className="absolute top-2 right-2 px-2 py-0.5 flex items-center justify-center bg-primary text-primary-foreground rounded-full text-xs font-bold font-mono shadow-md">
                           +{inCart.qty}
                         </span>
                       )}
                     </div>
                     <div className="p-3 flex-1 flex flex-col justify-between">
-                      <h3 className="font-bold text-xs text-white line-clamp-2 leading-tight mb-1 group-hover:text-[#00ffff] transition-colors">
+                      <h3 className="font-bold text-xs text-white line-clamp-2 leading-tight mb-1 group-hover:text-primary transition-colors">
                         {menu.nama_menu}
                       </h3>
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#26272d]">
-                        <span className="text-xs font-mono font-bold text-[#00ffff]">
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
+                        <span className="text-xs font-mono font-bold text-primary">
                           {formatRupiah(menu.harga)}
                         </span>
-                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#18181c] text-[#bbcbb2] border border-[#26272d] truncate max-w-[80px]">
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-subsurface text-muted border border-border truncate max-w-[80px]">
                           {menu.kategori || 'Menu'}
                         </span>
                       </div>
@@ -610,14 +610,14 @@ export const CafePOSPage = () => {
         </section>
 
         {/* KOLOM KANAN: ORDER SUMMARY & CART */}
-        <aside className="w-full lg:w-80 xl:w-96 max-w-full flex flex-col bg-[#121215] border-t lg:border-t-0 lg:border-l border-[#26272d] shrink-0 h-full">
+        <aside className="w-full lg:w-80 xl:w-96 max-w-full flex flex-col bg-surface border-t lg:border-t-0 lg:border-l border-border shrink-0 h-full">
           {/* HEADER CART */}
-          <div className="p-3 border-b border-[#26272d] flex items-center justify-between shrink-0">
+          <div className="p-3 border-b border-border flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
-              <ShoppingCart className="w-4 h-4 text-[#00ffff]" />
+              <ShoppingCart className="w-4 h-4 text-primary" />
               <h2 className="font-bold text-xs uppercase tracking-wider text-white">Detail Pesanan</h2>
               {settlingBill && (
-                <span className="px-2 py-0.5 bg-[#ffc71f]/15 border border-[#ffc71f]/30 text-[#ffc71f] rounded text-[10px] font-bold">
+                <span className="px-2 py-0.5 bg-warning/15 border border-[#ffc71f]/30 text-warning rounded text-[10px] font-bold">
                   Selesaikan Meja
                 </span>
               )}
@@ -625,7 +625,7 @@ export const CafePOSPage = () => {
             {cart.length > 0 && (
               <button
                 onClick={handleClearCart}
-                className="text-[11px] text-[#ff5102] hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-[11px] text-destructive hover:underline flex items-center gap-1 cursor-pointer"
               >
                 <Trash2 className="w-3 h-3" /> Reset
               </button>
@@ -633,8 +633,8 @@ export const CafePOSPage = () => {
           </div>
 
           {/* INPUT NO MEJA / NAMA TAMU */}
-          <div className="p-3 border-b border-[#26272d] bg-[#18181c] shrink-0">
-            <label className="text-[11px] font-semibold text-[#bbcbb2] block mb-1">
+          <div className="p-3 border-b border-border bg-subsurface shrink-0">
+            <label className="text-[11px] font-semibold text-muted block mb-1">
               Nomor Meja / Atas Nama Tamu
             </label>
             <input
@@ -642,27 +642,27 @@ export const CafePOSPage = () => {
               value={tableOrCustomer}
               onChange={(e) => setTableOrCustomer(e.target.value)}
               placeholder="Contoh: Meja 04 / Bpk. Rudi"
-              className="w-full px-2.5 py-1.5 bg-[#121215] border border-[#26272d] rounded-lg text-xs text-white placeholder-[#6b7367] focus:border-[#00ffff] focus:ring-1 focus:ring-[#00ffff] focus:outline-none font-medium"
+              className="w-full px-2.5 py-1.5 bg-surface border border-border rounded-lg text-xs text-white placeholder-[#6b7367] focus:border-primary focus:ring-1 focus:ring-[#00ffff] focus:outline-none font-medium"
             />
           </div>
 
           {/* ITEM LIST */}
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
             {cart.length === 0 ? (
-              <div className="h-full py-10 flex flex-col items-center justify-center text-[#bbcbb2] gap-2">
-                <Coffee className="w-8 h-8 text-[#6b7367] opacity-60" />
+              <div className="h-full py-10 flex flex-col items-center justify-center text-muted gap-2">
+                <Coffee className="w-8 h-8 text-muted-dark opacity-60" />
                 <p className="text-xs font-semibold text-white">Keranjang masih kosong</p>
-                <p className="text-[11px] text-[#bbcbb2]">Pilih menu di sebelah kiri untuk menambah</p>
+                <p className="text-[11px] text-muted">Pilih menu di sebelah kiri untuk menambah</p>
               </div>
             ) : (
               cart.map(item => (
                 <div
                   key={item.nama_menu}
-                  className="bg-[#18181c] p-2.5 rounded-xl border border-[#26272d] flex flex-col gap-1.5"
+                  className="bg-subsurface p-2.5 rounded-xl border border-border flex flex-col gap-1.5"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-xs font-bold text-white leading-tight truncate">{item.nama_menu}</span>
-                    <span className="text-xs font-mono font-bold text-[#00ffff] shrink-0">
+                    <span className="text-xs font-mono font-bold text-primary shrink-0">
                       {formatRupiah(item.harga * item.qty)}
                     </span>
                   </div>
@@ -674,20 +674,20 @@ export const CafePOSPage = () => {
                       value={item.catatan || ''}
                       onChange={(e) => handleUpdateNotes(item.nama_menu, e.target.value)}
                       placeholder="Catatan: less sugar, pedas..."
-                      className="text-[10px] text-[#bbcbb2] placeholder-[#6b7367] bg-transparent border-b border-dotted border-[#26272d] focus:border-[#00ffff] focus:outline-none w-32 sm:w-40"
+                      className="text-[10px] text-muted placeholder-[#6b7367] bg-transparent border-b border-dotted border-border focus:border-primary focus:outline-none w-32 sm:w-40"
                     />
 
-                    <div className="flex items-center gap-1.5 bg-[#121215] border border-[#26272d] rounded-lg px-1.5 py-0.5">
+                    <div className="flex items-center gap-1.5 bg-surface border border-border rounded-lg px-1.5 py-0.5">
                       <button
                         onClick={() => handleUpdateQty(item.nama_menu, -1)}
-                        className="text-[#bbcbb2] hover:text-[#ff5102] transition cursor-pointer"
+                        className="text-muted hover:text-destructive transition cursor-pointer"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
                       <span className="text-xs font-bold font-mono px-1 text-white">{item.qty}</span>
                       <button
                         onClick={() => handleUpdateQty(item.nama_menu, 1)}
-                        className="text-[#bbcbb2] hover:text-[#00ffff] transition cursor-pointer"
+                        className="text-muted hover:text-primary transition cursor-pointer"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -699,12 +699,12 @@ export const CafePOSPage = () => {
           </div>
 
           {/* CHECKOUT CALCULATION & PAYMENT CONTROLS */}
-          <div className="p-3 border-t border-[#26272d] bg-[#121215] space-y-2.5 shrink-0">
+          <div className="p-3 border-t border-border bg-surface space-y-2.5 shrink-0">
             {/* Diskon Selector */}
             {diskonList.length > 0 && (
               <div className="flex items-center justify-between text-xs">
-                <span className="text-[#bbcbb2] flex items-center gap-1">
-                  <Tag className="w-3 h-3 text-[#ffc71f]" /> Diskon Promo
+                <span className="text-muted flex items-center gap-1">
+                  <Tag className="w-3 h-3 text-warning" /> Diskon Promo
                 </span>
                 <CustomSelect
                   value={selectedDiskonId}
@@ -724,19 +724,19 @@ export const CafePOSPage = () => {
 
             {/* Subtotal & Diskon Display */}
             <div className="space-y-1 text-xs">
-              <div className="flex justify-between text-[#bbcbb2]">
+              <div className="flex justify-between text-muted">
                 <span>Subtotal Menu</span>
                 <span className="font-mono text-white">{formatRupiah(subtotal)}</span>
               </div>
               {diskonAmount > 0 && (
-                <div className="flex justify-between text-[#00ffff] font-medium">
+                <div className="flex justify-between text-primary font-medium">
                   <span>Potongan Promo</span>
                   <span className="font-mono">-{formatRupiah(diskonAmount)}</span>
                 </div>
               )}
-              <div className="flex justify-between text-sm font-bold pt-1.5 border-t border-[#26272d]">
+              <div className="flex justify-between text-sm font-bold pt-1.5 border-t border-border">
                 <span className="text-white">Total Tagihan</span>
-                <span className="font-mono text-lg font-bold text-[#00ffff]">{formatRupiah(grandTotal)}</span>
+                <span className="font-mono text-lg font-bold text-primary">{formatRupiah(grandTotal)}</span>
               </div>
             </div>
 
@@ -748,8 +748,8 @@ export const CafePOSPage = () => {
                   onClick={() => setSelectedPayment(pm.nama)}
                   className={`py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
                     selectedPayment === pm.nama
-                      ? 'bg-[#00ffff] border-[#00ffff] text-[#0f0f0f] shadow-xs'
-                      : 'bg-[#18181c] border-[#26272d] text-[#bbcbb2] hover:text-white hover:border-[#3f414a]'
+                      ? 'bg-primary border-primary text-primary-foreground shadow-xs'
+                      : 'bg-subsurface border-border text-muted hover:text-white hover:border-border-hover'
                   }`}
                 >
                   {pm.nama}
@@ -766,19 +766,19 @@ export const CafePOSPage = () => {
                     value={nominalBayar}
                     onChange={(e) => setNominalBayar(e.target.value)}
                     placeholder="Nominal uang diterima..."
-                    className="w-full px-2.5 py-1.5 bg-[#18181c] border border-[#26272d] rounded-lg text-xs font-mono text-white placeholder-[#6b7367] focus:outline-none focus:border-[#00ffff]"
+                    className="w-full px-2.5 py-1.5 bg-subsurface border border-border rounded-lg text-xs font-mono text-white placeholder-[#6b7367] focus:outline-none focus:border-primary"
                   />
                   <button
                     onClick={() => setNominalBayar(grandTotal)}
-                    className="px-2.5 py-1.5 bg-[#18181c] hover:bg-[#242428] border border-[#26272d] text-[#00ffff] text-[11px] font-mono font-bold rounded-lg whitespace-nowrap cursor-pointer transition"
+                    className="px-2.5 py-1.5 bg-subsurface hover:bg-[#242428] border border-border text-primary text-[11px] font-mono font-bold rounded-lg whitespace-nowrap cursor-pointer transition"
                   >
                     Uang Pas
                   </button>
                 </div>
                 {Number(nominalBayar) >= grandTotal && (
-                  <div className="flex justify-between items-center text-xs bg-[#18181c] p-2 rounded-lg border border-[#26272d]">
-                    <span className="font-semibold text-[#bbcbb2]">Kembalian:</span>
-                    <span className="font-mono font-bold text-sm text-[#00ffff]">{formatRupiah(kembalian)}</span>
+                  <div className="flex justify-between items-center text-xs bg-subsurface p-2 rounded-lg border border-border">
+                    <span className="font-semibold text-muted">Kembalian:</span>
+                    <span className="font-mono font-bold text-sm text-primary">{formatRupiah(kembalian)}</span>
                   </div>
                 )}
               </div>
@@ -789,16 +789,16 @@ export const CafePOSPage = () => {
               <button
                 disabled={loading}
                 onClick={handleSaveBill}
-                className="h-11 px-2 bg-[#18181c] hover:bg-[#242428] text-white border border-[#26272d] rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="h-11 px-2 bg-subsurface hover:bg-[#242428] text-white border border-border rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
-                <Clock className="w-3.5 h-3.5 text-[#ffc71f]" />
+                <Clock className="w-3.5 h-3.5 text-warning" />
                 <span>Simpan Meja</span>
               </button>
 
               <button
                 disabled={loading}
                 onClick={handleCheckout}
-                className="h-11 px-3 bg-[#00ffff] hover:brightness-110 active:scale-[0.98] text-[#0f0f0f] rounded-xl text-xs font-bold transition shadow-md shadow-[#00ffff]/20 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="h-11 px-3 bg-primary hover:brightness-110 active:scale-[0.98] text-primary-foreground rounded-xl text-xs font-bold transition shadow-md shadow-[#00ffff]/20 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <Check className="w-4 h-4" strokeWidth={2.5} />
                 <span>{loading ? 'Menyimpan...' : 'Bayar Sekarang'}</span>
@@ -811,15 +811,15 @@ export const CafePOSPage = () => {
       {/* MODAL BILL MEJA (PENDING BILLS) */}
       {showPendingModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4">
-          <div className="bg-[#121215] border border-[#26272d] rounded-xl w-full max-w-lg p-4 sm:p-5 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#26272d] pb-3">
+          <div className="bg-surface border border-border rounded-xl w-full max-w-lg p-4 sm:p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-[#ffc71f]" />
+                <Clock className="w-5 h-5 text-warning" />
                 <h3 className="font-bold text-sm text-white">Daftar Bill Meja Aktif (Pending)</h3>
               </div>
               <button
                 onClick={() => setShowPendingModal(false)}
-                className="p-1 rounded-md text-[#bbcbb2] hover:text-white cursor-pointer"
+                className="p-1 rounded-md text-muted hover:text-white cursor-pointer"
               >
                 ✕
               </button>
@@ -827,36 +827,36 @@ export const CafePOSPage = () => {
 
             <div className="max-h-80 overflow-y-auto space-y-2.5">
               {pendingBills.length === 0 ? (
-                <div className="py-8 text-center text-[#bbcbb2] text-xs">
+                <div className="py-8 text-center text-muted text-xs">
                   Tidak ada bill meja yang sedang menunggu pembayaran.
                 </div>
               ) : (
                 pendingBills.map(bill => (
                   <div
                     key={bill.id_struk}
-                    className="p-3 bg-[#18181c] rounded-xl border border-[#26272d] hover:border-[#00ffff]/50 flex items-center justify-between gap-3 transition"
+                    className="p-3 bg-subsurface rounded-xl border border-border hover:border-primary/50 flex items-center justify-between gap-3 transition"
                   >
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-xs text-white">
                           {bill.no_meja || bill.nama_pelanggan}
                         </span>
-                        <span className="text-[10px] font-mono text-[#00ffff] bg-[#00ffff]/10 px-1.5 py-0.2 rounded border border-[#00ffff]/20">
+                        <span className="text-[10px] font-mono text-primary bg-primary/10 px-1.5 py-0.2 rounded border border-primary/20">
                           {bill.id_struk}
                         </span>
                       </div>
-                      <p className="text-[11px] text-[#bbcbb2] mt-0.5">
+                      <p className="text-[11px] text-muted mt-0.5">
                         Waktu: {bill.jam} • Kasir: {bill.kasir}
                       </p>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <span className="font-mono font-bold text-xs text-[#00ffff]">
+                      <span className="font-mono font-bold text-xs text-primary">
                         {formatRupiah(bill.total_biaya)}
                       </span>
                       <button
                         onClick={() => handleOpenPendingBill(bill)}
-                        className="px-3 py-1.5 bg-[#00ffff] text-[#0f0f0f] rounded-lg text-xs font-bold hover:brightness-110 active:scale-[0.98] transition cursor-pointer"
+                        className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-bold hover:brightness-110 active:scale-[0.98] transition cursor-pointer"
                       >
                         Selesaikan
                       </button>
