@@ -2267,6 +2267,25 @@
          - **Verifikasi Kualitas**:
          - Vitest: 193/193 tests passed (100% GREEN).
          - Vite build: Sukses (2.08s, 289 kB gzip).
+         22. **Perbaikan Sinkronisasi Kategori Menu Cafe & Smart Category Matching (2026-09-29)**:
+         - **Akar Masalah (*Root Cause Diagnosis*)**:
+         - Di database awal (`realSeedData.json` dan `masterDataDefaults.js`), seluruh 31 menu F&B Cafe masih memiliki kolom `kategori: "Cafe"` (label generik tunggal).
+         - Sementara itu, di tabel `master_categories` Pengaturan Admin, kategori menu telah dipecah secara spesifik menjadi: `Kopi (Coffee)`, `Non-Coffee & Teh`, `Makanan Berat`, `Camilan & Snack`, dan `Dessert & Pastry`.
+         - Akibatnya: Saat kasir mengklik badge kategori spesifik seperti *"Kopi (Coffee)"*, filter melakukan perbandingan kaku (`item.kategori === selectedCategory`). Karena seluruh menu berlabel `"Cafe"`, maka filter mengembalikan 0 item (kosong).
+         - **Solusi Rekayasa yang Diimplementasikan**:
+         1. **Klasifikasi Data Menu F&B Terstruktur**:
+            - Mengkategorikan seluruh item menu ke kategori master yang tepat:
+              - `Kopi (Coffee)`: Americano Dingin/Panas, Sanger Dingin/Panas, Kopi Susu Gula Aren, Kopi Late Dingin/Panas (8 menu).
+              - `Non-Coffee & Teh`: Air Mineral, Badak, Badak Susu, Teh Manis/Tawar, Teh Susu, Susu Putih/Dingin (8 menu).
+              - `Makanan Berat`: Ayam Penyet, Ayam Geprek, Aneka Nasi Goreng, Aneka Indomie (10 menu).
+              - `Camilan & Snack`: Segala Tempe, Sosis Goreng, Nugget Goreng, Kentang Goreng, Mix Platter (5 menu).
+         2. **Modul Smart Matching (`src/utils/categoryMatchingHelpers.js`)**:
+            - Menyediakan fungsi `isCategoryMatch(itemCat, selectedCat)` yang mendukung pencocokan normalisasi huruf besar/kecil, penanganan alias (misal: "Kopi (Coffee)" cocok dengan "Kopi", "Non-Coffee & Teh" cocok dengan "Teh"), serta fallback universal.
+            - Mengintegrasikan modul ini ke `CafePOSPage.jsx` dan `HybridPOSPage.jsx`.
+         3. **Unit Testing & Verifikasi**:
+            - Menambahkan unit test `src/utils/__tests__/categoryMatchingHelpers.test.js` (4/4 passing).
+            - Vitest Suite: 197/197 unit tests (34 test files) lulus 100% GREEN.
+            - Vite production build sukses dalam 3.16 detik.
 
 
 

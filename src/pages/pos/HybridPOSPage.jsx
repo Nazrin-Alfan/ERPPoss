@@ -58,6 +58,7 @@ import { addToCart as cartAdd, updateQty as cartUpdate, updateItemNotes as cartU
 import { validatePosExpenseForm, formatPosExpensePayload } from '../../utils/financeHelpers'
 import { DEFAULT_MASTER_DATA } from '../../constants/masterDataDefaults'
 import { getCategoriesForPOS } from '../../utils/posCategoryHelpers'
+import { isCategoryMatch } from '../../utils/categoryMatchingHelpers'
 
 const getMenuPhoto = (menuName) => {
   const name = String(menuName).toLowerCase()
@@ -1956,7 +1957,7 @@ const CafePOS = () => {
   const filteredMenus = (menuItems || []).filter(item => {
     if (!item || item.kategori === 'Carwash') return false
     const matchSearch = (item.nama_menu || item.daftar_menu || '').toLowerCase().includes((searchQuery || '').toLowerCase())
-    const matchCat = selectedCafeCategory === 'SEMUA' || item.kategori === selectedCafeCategory
+    const matchCat = isCategoryMatch(item.kategori, selectedCafeCategory)
     return matchSearch && matchCat
   })
 
