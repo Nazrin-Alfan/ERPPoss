@@ -2478,6 +2478,12 @@
       - **Verifikasi Kualitas**:
         - 214/214 unit tests PASS across 37 test files (100% GREEN).
         - Vite production build sukses dalam 1.97 detik.
+    39. **Perbaikan Missing Icon Import di Halaman CRM (`CRM.jsx`) (2026-09-30)**:
+      - Menambahkan impor `ChevronRight` dan `MessageSquare` dari `lucide-react` pada `src/pages/CRM.jsx`.
+      - Menambahkan unit test integritas modul `src/pages/__tests__/pageIntegrity.test.jsx` untuk memverifikasi import module `Gudang` dan `CRM` secara otomatis.
+      - **Verifikasi Kualitas**:
+        - 215/215 unit tests PASS across 38 test files (100% GREEN).
+        - Vite production build sukses dalam 1.89 detik.
 
 
 

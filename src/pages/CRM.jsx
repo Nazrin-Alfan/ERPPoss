@@ -15,7 +15,9 @@ import {
   Clock,
   Sparkles,
   ExternalLink,
-  MessageCircle
+  MessageCircle,
+  MessageSquare,
+  ChevronRight
 } from 'lucide-react'
 import { formatRupiah, parseDateSafe } from '../utils/helpers'
 
