@@ -47,30 +47,30 @@ export default function VoidReasonModal({ isOpen, onClose, onConfirm, transactio
   const totalAmount = transaction.total_tagihan || transaction.total_harga || 0
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000]/85 backdrop-blur-sm animate-fade-in">
       <div className="w-full max-w-md glass-panel border border-rose-500/30 rounded-3xl p-6 shadow-2xl relative">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-3 border-b border-[#26272d]">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
+            <div className="w-9 h-9 rounded-lg bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
               <ShieldAlert size={18} />
             </div>
             <div>
               <h3 className="text-base font-bold text-white">Pembatalan Nota (Void)</h3>
-              <p className="text-[10px] text-slate-400 font-mono">
+              <p className="text-[10px] text-[#bbcbb2] font-mono">
                 Struk #{String(strukId).substring(0, 10)} • Rp {Number(totalAmount).toLocaleString('id-ID')}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-[#bbcbb2] hover:text-white hover:bg-[#18181c] transition-colors"
           >
             <X size={16} />
           </button>
         </div>
 
         {/* Warning Policy */}
-        <div className="my-4 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 space-y-1">
+        <div className="my-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 space-y-1">
           <div className="font-bold flex items-center gap-1.5">
             <AlertTriangle size={13} className="shrink-0" />
             <span>Kebijakan Zero Hard Delete:</span>
@@ -81,14 +81,14 @@ export default function VoidReasonModal({ isOpen, onClose, onConfirm, transactio
         </div>
 
         {error && (
-          <div className="mb-3 p-2.5 rounded-xl bg-rose-500/20 text-rose-300 text-xs font-medium">
+          <div className="mb-3 p-2.5 rounded-lg bg-rose-500/20 text-rose-300 text-xs font-medium">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-[#bbcbb2] mb-2">
               Pilih Alasan Cepat:
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -102,7 +102,7 @@ export default function VoidReasonModal({ isOpen, onClose, onConfirm, transactio
                     className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
                       isSelected
                         ? 'bg-rose-500/20 border-rose-500 text-white shadow-sm'
-                        : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                        : 'bg-[#121215]/60 border-[#26272d] text-[#bbcbb2] hover:text-slate-200 hover:border-[#3f414a]'
                     }`}
                   >
                     {reason}
@@ -113,7 +113,7 @@ export default function VoidReasonModal({ isOpen, onClose, onConfirm, transactio
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-[#bbcbb2] mb-1.5">
               Keterangan / Alasan Pembatalan <span className="text-rose-400">*</span>
             </label>
             <textarea
@@ -122,7 +122,7 @@ export default function VoidReasonModal({ isOpen, onClose, onConfirm, transactio
               placeholder="Jelaskan alasan nota ini dibatalkan secara detail..."
               value={customReason}
               onChange={(e) => setCustomReason(e.target.value)}
-              className="w-full p-3 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs placeholder-slate-600 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30 resize-none"
+              className="w-full p-3 bg-[#121215] border border-[#26272d] rounded-lg text-white text-xs placeholder-slate-600 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30 resize-none"
             />
           </div>
 
@@ -131,14 +131,14 @@ export default function VoidReasonModal({ isOpen, onClose, onConfirm, transactio
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold transition-all cursor-pointer"
+              className="px-4 py-2 rounded-lg bg-[#121215] hover:bg-[#18181c] text-slate-200 text-xs font-semibold transition-all cursor-pointer"
             >
               Kembali
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-xs font-bold shadow-lg shadow-rose-600/30 flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+              className="px-5 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-xs font-bold shadow-lg shadow-rose-600/30 flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
             >
               <RotateCcw size={13} />
               <span>{loading ? 'Membatalkan...' : 'Konfirmasi Batal (Void)'}</span>

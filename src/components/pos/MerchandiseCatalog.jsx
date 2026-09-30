@@ -114,13 +114,13 @@ export default function MerchandiseCatalog({
       {/* Search & Category Filter */}
       <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6b7367]" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Cari merchandise (parfum, lap, aksesoris)..."
-            className="w-full pl-9 pr-3 py-1.5 bg-slate-950/70 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-all"
+            className="w-full pl-9 pr-3 py-1.5 bg-[#18181c] border border-[#26272d] rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00ffff] transition-all"
           />
         </div>
 
@@ -133,7 +133,7 @@ export default function MerchandiseCatalog({
               className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all ${
                 selectedCategory === cat
                   ? 'bg-amber-400 text-slate-950 shadow-sm'
-                  : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+                  : 'bg-[#121215] text-[#bbcbb2] hover:text-white hover:bg-[#18181c] border border-[#26272d]'
               }`}
             >
               {cat === 'ALL' ? 'Semua Retail' : cat}
@@ -144,14 +144,14 @@ export default function MerchandiseCatalog({
 
       {/* Grid of Merchandise Products - 100% Identical Dimensions to Cafe Menu Cards */}
       {displayItems.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-12 text-center bg-slate-900/40 rounded-2xl border border-slate-800/60 min-h-[300px]">
-          <Package className="w-10 h-10 text-slate-600 mb-2 animate-pulse" />
-          <p className="text-xs font-semibold text-slate-400">
+        <div className="flex flex-col items-center justify-center p-12 text-center bg-[#121215] rounded-lg border border-[#26272d] min-h-[300px]">
+          <Package className="w-10 h-10 text-[#6b7367] mb-2 animate-pulse" />
+          <p className="text-xs font-semibold text-[#bbcbb2]">
             {(!items || items.length === 0) 
               ? 'Belum ada produk merchandise retail'
               : 'Tidak ada produk merchandise ditemukan'}
           </p>
-          <p className="text-[11px] text-slate-500 mt-0.5">
+          <p className="text-[11px] text-[#6b7367] mt-0.5">
             {(!items || items.length === 0)
               ? 'Tambahkan produk merchandise baru melalui menu Kelola Admin > Tab Merchandise.'
               : 'Coba kata kunci lain atau pilih Semua Kategori.'}
@@ -181,10 +181,10 @@ export default function MerchandiseCatalog({
                     })
                   }
                 }}
-                className={`glass-card hover:border-amber-400/50 p-0 rounded-2xl flex flex-col justify-between text-left transition-all duration-300 group overflow-hidden h-[185px] relative shrink-0 cursor-pointer ${
+                className={`glass-card hover:border-amber-400/50 p-0 rounded-lg flex flex-col justify-between text-left transition-all duration-300 group overflow-hidden h-[185px] relative shrink-0 cursor-pointer ${
                   inCart 
                     ? 'border-amber-400/70 ring-1 ring-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.15)]' 
-                    : 'border-slate-800'
+                    : 'border-[#26272d]'
                 }`}
               >
                 {/* Visual Banner / Gambar Icon */}
@@ -220,7 +220,7 @@ export default function MerchandiseCatalog({
                     <span className={`absolute top-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-md border backdrop-blur-md z-20 ${
                       currentStock <= 5 
                         ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' 
-                        : 'bg-slate-900/80 text-slate-300 border-slate-700/60'
+                        : 'bg-[#121215] text-slate-200 border-[#26272d]'
                     }`}>
                       Stok: {currentStock}
                     </span>
@@ -228,7 +228,7 @@ export default function MerchandiseCatalog({
                 </div>
 
                 {/* Informasi Produk & Harga */}
-                <div className="p-2.5 flex-1 flex flex-col justify-between bg-slate-950/80 backdrop-blur-md relative w-full">
+                <div className="p-2.5 flex-1 flex flex-col justify-between bg-[#18181c] backdrop-blur-md relative w-full">
                   <h4 className="font-bold text-xs text-slate-100 group-hover:text-amber-400 transition-colors line-clamp-2 leading-tight">
                     {prodName}
                   </h4>
@@ -247,7 +247,7 @@ export default function MerchandiseCatalog({
                         <button
                           type="button"
                           onClick={() => onUpdateQty && onUpdateQty(prodName, -1)}
-                          className="w-5 h-5 rounded bg-slate-900 text-amber-400 hover:bg-slate-800 flex items-center justify-center font-bold text-xs"
+                          className="w-5 h-5 rounded bg-[#121215] text-amber-400 hover:bg-[#18181c] flex items-center justify-center font-bold text-xs"
                         >
                           <Minus size={10} />
                         </button>
@@ -257,7 +257,7 @@ export default function MerchandiseCatalog({
                         <button
                           type="button"
                           onClick={() => onUpdateQty && onUpdateQty(prodName, 1)}
-                          className="w-5 h-5 rounded bg-slate-900 text-amber-400 hover:bg-slate-800 flex items-center justify-center font-bold text-xs"
+                          className="w-5 h-5 rounded bg-[#121215] text-amber-400 hover:bg-[#18181c] flex items-center justify-center font-bold text-xs"
                         >
                           <Plus size={10} />
                         </button>
@@ -278,8 +278,8 @@ export default function MerchandiseCatalog({
                         }}
                         className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs transition-all ${
                           currentStock <= 0
-                            ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
-                            : 'bg-slate-800 text-slate-300 group-hover:bg-amber-400 group-hover:text-slate-950'
+                            ? 'bg-[#18181c] text-[#6b7367] cursor-not-allowed'
+                            : 'bg-[#18181c] text-slate-200 group-hover:bg-[#00ffff] group-hover:text-[#0f0f0f]'
                         }`}
                       >
                         <Plus size={12} />

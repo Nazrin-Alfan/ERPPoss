@@ -106,30 +106,30 @@ export default function ShiftClosingModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-lg glass-panel border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-2xl relative">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000]/85 backdrop-blur-sm animate-fade-in">
+      <div className="w-full max-w-lg glass-panel border border-[#26272d] rounded-3xl p-6 sm:p-7 shadow-2xl relative">
+        <div className="flex items-center justify-between pb-3 border-b border-[#26272d]">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+            <div className="w-9 h-9 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
               <Calculator size={18} />
             </div>
             <div>
               <h3 className="text-base font-bold text-white">Tutup Shift Kasir (Model Terbuka)</h3>
-              <p className="text-[10px] text-slate-400">
+              <p className="text-[10px] text-[#bbcbb2]">
                 Pencocokan Uang Fisik Laci Kasir dengan Sistem
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-[#bbcbb2] hover:text-white hover:bg-[#18181c] transition-colors"
           >
             <X size={16} />
           </button>
         </div>
 
         {error && (
-          <div className="my-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
+          <div className="my-3 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
             {error}
           </div>
         )}
@@ -137,25 +137,25 @@ export default function ShiftClosingModal({
         {!isSuccessClosed ? (
           <div className="space-y-4 my-4 animate-fade-in">
             {/* Rincian Hitungan Komputer / Sistem */}
-            <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2 text-xs">
-              <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center justify-between">
+            <div className="p-3.5 rounded-lg bg-[#121215]/80 border border-[#26272d] space-y-2 text-xs">
+              <div className="text-[10px] uppercase font-bold text-[#bbcbb2] tracking-wider flex items-center justify-between">
                 <span>Rincian Sistem Komputer</span>
-                <span className="text-slate-500 font-mono">Kasir: {cashierName}</span>
+                <span className="text-[#6b7367] font-mono">Kasir: {cashierName}</span>
               </div>
-              <div className="flex justify-between items-center py-1 border-b border-slate-800/60">
-                <span className="text-slate-300">Modal Awal Kasir</span>
+              <div className="flex justify-between items-center py-1 border-b border-[#26272d]/60">
+                <span className="text-slate-200">Modal Awal Kasir</span>
                 <span className="font-mono font-bold text-white">{formatRupiah(startingCapital)}</span>
               </div>
-              <div className="flex justify-between items-center py-1 border-b border-slate-800/60">
-                <span className="text-slate-300">Penerimaan Tunai (Cash)</span>
+              <div className="flex justify-between items-center py-1 border-b border-[#26272d]/60">
+                <span className="text-slate-200">Penerimaan Tunai (Cash)</span>
                 <span className="font-mono font-bold text-emerald-400">+{formatRupiah(todayCashSales)}</span>
               </div>
-              <div className="flex justify-between items-center py-1 border-b border-slate-800/60">
-                <span className="text-slate-300">Penerimaan QRIS / Transfer Bank</span>
-                <span className="font-mono font-bold text-blue-400">{formatRupiah(todayQrisSales)}</span>
+              <div className="flex justify-between items-center py-1 border-b border-[#26272d]/60">
+                <span className="text-slate-200">Penerimaan QRIS / Transfer Bank</span>
+                <span className="font-mono font-bold text-[#00ffff]">{formatRupiah(todayQrisSales)}</span>
               </div>
-              <div className="flex justify-between items-center py-1 border-b border-slate-800/60">
-                <span className="text-slate-300">Pengeluaran Kasir Hari Ini</span>
+              <div className="flex justify-between items-center py-1 border-b border-[#26272d]/60">
+                <span className="text-slate-200">Pengeluaran Kasir Hari Ini</span>
                 <span className="font-mono font-bold text-rose-400">-{formatRupiah(todayExpenses)}</span>
               </div>
               <div className="flex justify-between items-center pt-1.5 font-bold text-sm">
@@ -166,28 +166,28 @@ export default function ShiftClosingModal({
 
             {/* Input Uang Fisik Nyata di Laci */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-slate-200 uppercase tracking-wider mb-1.5">
                 Hitung & Masukkan Uang Fisik di Laci <span className="text-rose-400">*</span>
               </label>
               <div className="relative">
-                <span className="absolute left-3.5 top-3 text-slate-400 font-bold text-sm">Rp</span>
+                <span className="absolute left-3.5 top-3 text-[#bbcbb2] font-bold text-sm">Rp</span>
                 <input
                   type="number"
                   placeholder="0"
                   value={physicalCash}
                   onChange={(e) => setPhysicalCash(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-base font-mono font-bold focus:outline-none focus:border-brand-emerald"
+                  className="w-full pl-11 pr-4 py-2.5 bg-[#121215] border border-[#26272d] rounded-lg text-white text-base font-mono font-bold focus:outline-none focus:border-[#00ffff]"
                   autoFocus
                 />
               </div>
 
               {/* Tampilan Selisih Real-Time */}
               {physicalCash !== '' && (
-                <div className={`mt-2 p-2.5 rounded-xl border flex items-center justify-between text-xs font-bold ${
+                <div className={`mt-2 p-2.5 rounded-lg border flex items-center justify-between text-xs font-bold ${
                   discrepancy === 0
                     ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
                     : discrepancy > 0
-                    ? 'bg-blue-500/15 border-blue-500/30 text-blue-300'
+                    ? 'bg-[#00ffff]/10 border-[#00ffff]/30 text-[#00ffff]'
                     : 'bg-rose-500/15 border-rose-500/30 text-rose-300'
                 }`}>
                   <span className="flex items-center gap-1.5">
@@ -203,7 +203,7 @@ export default function ShiftClosingModal({
 
             {/* Catatan / Alasan Selisih */}
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                 Catatan Kasir / Keterangan Selisih
               </label>
               <textarea
@@ -211,7 +211,7 @@ export default function ShiftClosingModal({
                 placeholder="Tulis catatan penutupan kasir atau penjelasan jika ada selisih..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-brand-emerald resize-none"
+                className="w-full p-2.5 bg-[#121215] border border-[#26272d] rounded-lg text-white text-xs focus:outline-none focus:border-[#00ffff] resize-none"
               />
             </div>
 
@@ -220,7 +220,7 @@ export default function ShiftClosingModal({
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold transition-all cursor-pointer"
+                className="px-4 py-2.5 rounded-lg bg-[#121215] hover:bg-[#18181c] text-slate-200 text-xs font-semibold transition-all cursor-pointer"
               >
                 Batal
               </button>
@@ -228,7 +228,7 @@ export default function ShiftClosingModal({
                 type="button"
                 onClick={handleProcessClosing}
                 disabled={loading}
-                className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                className="px-5 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
               >
                 <Calculator size={14} />
                 <span>{loading ? 'Menutup Kasir...' : 'Konfirmasi Tutup Kasir'}</span>
@@ -243,18 +243,18 @@ export default function ShiftClosingModal({
             </div>
             <div>
               <h4 className="text-lg font-black text-white">Tutup Kasir Berhasil!</h4>
-              <p className="text-slate-400 text-xs mt-1">
+              <p className="text-[#bbcbb2] text-xs mt-1">
                 Data penutupan shift kasir telah dibukukan ke jurnal arus kas (cashflow).
               </p>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-left text-xs space-y-1.5 max-w-sm mx-auto">
+            <div className="p-3.5 rounded-lg bg-[#121215]/80 border border-[#26272d] text-left text-xs space-y-1.5 max-w-sm mx-auto">
               <div className="flex justify-between">
-                <span className="text-slate-400">Total Uang Fisik Laci:</span>
+                <span className="text-[#bbcbb2]">Total Uang Fisik Laci:</span>
                 <span className="font-mono font-bold text-white">{formatRupiah(closingSummary?.physicalCash)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Status Selisih:</span>
+                <span className="text-[#bbcbb2]">Status Selisih:</span>
                 <span className={`font-mono font-bold ${
                   closingSummary?.discrepancy === 0 ? 'text-emerald-400' : 'text-amber-400'
                 }`}>
@@ -267,7 +267,7 @@ export default function ShiftClosingModal({
               <button
                 type="button"
                 onClick={handleSendToWhatsApp}
-                className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer"
+                className="w-full py-3 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer"
               >
                 <Send size={15} />
                 <span>Kirim Rekap ke WhatsApp Owner 📲</span>
@@ -276,7 +276,7 @@ export default function ShiftClosingModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold text-xs transition-all cursor-pointer"
+                className="w-full py-2.5 px-4 rounded-lg bg-[#121215] hover:bg-[#18181c] text-slate-200 font-bold text-xs transition-all cursor-pointer"
               >
                 Selesai & Keluar
               </button>

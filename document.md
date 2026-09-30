@@ -2253,6 +2253,20 @@
          - Membuat unit test TDD baru: `src/pages/pos/__tests__/posCategories.test.jsx` untuk memverifikasi isolasi kategori Cafe vs Carwash, eliminasi hardcode, dan reaktivitas terhadap penambahan kategori admin.
          - Vitest Suite: 193/193 unit tests (33 test files) lulus 100% GREEN.
          - Vite production build sukses dalam 2.08 detik (289 kB gzip).
+         21. **Penyelarasan Warna Komprehensif Kasir POS & Struk Belanja ke VRS_2026 Cyan Master (2026-09-29)**:
+         - **Pembersihan Residu Biru Gelap (*Slate / Navy Clean Up*)**:
+         - Membedah `ThermalReceiptModal.jsx`: Mengganti backdrop dan kontainer dialog dari `slate-900 / slate-950` ke `#121215` (Elevated Card Surface), latar body ke `#000000`, dan border ke `#26272d`.
+         - Tombol Cetak Thermal Bluetooth: Mengganti gradasi biru indigo lama (`from-blue-600 to-indigo-600`) menjadi tombol taktil berbingkai Electric Cyan `#00ffff` dengan ikon Bluetooth Cyan.
+         - Tombol Cetak Browser: Menyelaraskan tombol aksi utama ke warna Electric Cyan `#00ffff` (teks `#0f0f0f` kontras tinggi) untuk transaksi umum dan `#ffc71f` (Warm Gold) untuk tiket dapur / serah-terima mobil ditinggal.
+         - Input WhatsApp & Salin Teks: Mengeliminasi slate-800/slate-950 menjadi `#18181c`, border `#26272d`, dan aksen Cyan.
+         - **Penyelarasan Modal Operasional POS Lainnya**:
+         - `CrewDailyCommissionModal.jsx`: Merombak kontainer slip komisi kru cuci, avatar badge, dan tombol print mini ke `#121215`, `#18181c`, dan `#00ffff`.
+         - `ShiftClosingModal.jsx`: Menghilangkan sisa warna `slate-900` dan `blue-400` pada kalkulator kas & rekap QRIS penutupan kasir shift.
+         - `VoidReasonModal.jsx`: Menyelaraskan form input alasan pembatalan order ke `#121215` dan `#18181c`.
+         - `HybridPOSPage.jsx` & `MerchandiseCatalog.jsx`: Menghapus seluruh palet legacy slate & blue pada tab pesanan tertunda, tab riwayat, dan katalog barang dagangan retail.
+         - **Verifikasi Kualitas**:
+         - Vitest: 193/193 tests passed (100% GREEN).
+         - Vite build: Sukses (2.08s, 289 kB gzip).
 
 
 
