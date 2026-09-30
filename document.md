@@ -2322,6 +2322,21 @@
       - **Verifikasi Kualitas**:
         - 197/197 unit tests PASS (100% GREEN).
         - Vite production build sukses dalam 2.02 detik.
+    26. **Perbaikan Tampilan Mobile Viewport pada HybridPOSPage (2026-09-30)**:
+      - **Akar Masalah (*Root Cause*)**:
+        - Sesuai tangkapan layar `Screenshot_2026-09-30_221635.png`, halaman yang aktif adalah `HybridPOSPage.jsx` (mode hybrid estafet terintegrasi: Cafe + Carwash + Merchandise).
+        - Pada halaman tersebut:
+          1. Grid menu memiliki batas kaku `min-h-[450px]` dengan kartu item berketinggian dan lebar kaku `h-[185px] shrink-0` serta `p-4 min-h-[500px]`, sehingga kartu di kolom kanan (*Badak...*, *Teh M...*) terdorong ke luar viewport kanan layar HP.
+          2. Header tab operasional di atas memanjang tanpa pembatas lebar responsif mobile.
+          3. Warna harga produk masih menggunakan warna legacy hijau neon (`text-emerald-400`).
+      - **Solusi Rekayasa**:
+        - **Kontainer Root**: Menambahkan `w-full max-w-full min-w-0 overflow-x-hidden p-2 sm:p-4`.
+        - **Header Operasional**: Diubah menjadi `flex flex-col sm:flex-row w-full max-w-full overflow-hidden`.
+        - **Kartu Menu Fluid**: Menghapus `h-[185px] shrink-0` dan menggantinya dengan `min-h-[170px] w-full min-w-0 active:scale-[0.98]` dalam grid `gap-2 sm:gap-3 content-start min-h-0 w-full max-w-full min-w-0`.
+        - **Warna Harga**: Diselaraskan menjadi `font-mono font-bold text-[#00ffff]` (Electric Cyan).
+      - **Verifikasi Kualitas**:
+        - 197/197 unit tests PASS (100% GREEN).
+        - Vite production build sukses dalam 1.61 detik.
 
 
 

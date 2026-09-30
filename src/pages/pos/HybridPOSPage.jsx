@@ -1964,9 +1964,9 @@ const CafePOS = () => {
   const isOrderTab = activeTab === 'cafe' || activeTab === 'carwash' || activeTab === 'merchandise'
 
   return (
-    <div className="p-3 md:p-4 md:pb-6 flex flex-col max-w-7xl mx-auto min-h-[calc(100vh-4rem)] w-full space-y-3">
+    <div className="p-2 sm:p-4 md:pb-6 flex flex-col max-w-7xl mx-auto min-h-[calc(100vh-4rem)] w-full max-w-full min-w-0 overflow-x-hidden space-y-3">
       {/* 1. TOP HEADER FULL-WIDTH (BEBAS DARI SCROLL SAMPING & TAMPIL 100% LEGA) */}
-      <div className="glass-panel px-3.5 py-2.5 rounded-xl flex flex-wrap items-center justify-between gap-2.5 shrink-0 relative z-20">
+      <div className="glass-panel p-2.5 sm:px-3.5 sm:py-2.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0 relative z-20 w-full max-w-full overflow-hidden">
         {/* Sisi Kiri: Navigasi Tabs Lengkap Terbuka Tanpa Scroll Samping */}
         <div className="flex flex-wrap items-center gap-1.5">
           {/* Grup 1: Penjualan / Transaksi Langsung */}
@@ -2223,12 +2223,12 @@ const CafePOS = () => {
       </div>
 
       {/* 2. AREA KERJA UTAMA: 2-KOLOM SAAT JUALAN, FULL-WIDTH SAAT AUDIT/MONITORING */}
-      <div className="flex-1 min-h-0 flex flex-col md:flex-row items-start gap-3 md:gap-4 w-full">
+      <div className="flex-1 min-h-0 flex flex-col md:flex-row items-start gap-3 md:gap-4 w-full max-w-full min-w-0 overflow-x-hidden">
         {/* Kolom Kiri: Pilihan Item / Form / Tabel Audit (64% di tablet landscape) */}
-        <div className={`${isOrderTab ? 'md:w-[64%]' : 'w-full'} flex flex-col flex-1 min-h-0 min-w-0`}>
+        <div className={`${isOrderTab ? 'md:w-[64%]' : 'w-full'} flex flex-col flex-1 min-h-0 min-w-0 w-full max-w-full`}>
           {/* Tab 1: Menu Cafe */}
           {activeTab === 'cafe' && (
-            <div className="flex-1 flex flex-col bg-[#121215] border border-[#26272d] rounded-xl p-4 min-h-[500px]">
+            <div className="flex-1 flex flex-col bg-[#121215] border border-[#26272d] rounded-xl p-2.5 sm:p-4 min-h-0 w-full max-w-full min-w-0 overflow-hidden">
               {/* Search Bar & Filter Kategori Chips */}
               <div className="space-y-2.5 mb-4 shrink-0 min-w-0">
                 <div className="relative">
@@ -2243,7 +2243,7 @@ const CafePOS = () => {
                 </div>
 
                 {/* Filter Kategori Chips (Bisa Kustom Dinamis) */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full scrollbar-none">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 w-full max-w-full flex-nowrap scrollbar-none overscroll-x-contain">
                   {cafeCategoriesList.map((cat) => (
                     <button
                       key={cat}
@@ -2262,7 +2262,7 @@ const CafePOS = () => {
               </div>
 
               {/* Grid Item Menu (Scrollable) */}
-              <div className="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-3 pr-1 content-start min-h-[450px]">
+              <div className="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 content-start min-h-0 w-full max-w-full min-w-0">
               {filteredMenus.map((menu, idx) => {
                 const theme = getMenuTheme(menu.nama_menu)
                 const inCartItem = cart.find(c => c.nama_menu === menu.nama_menu)
@@ -2271,7 +2271,7 @@ const CafePOS = () => {
                     key={menu.nama_menu}
                     type="button"
                     onClick={() => addToCart({ nama_menu: menu.nama_menu, harga: menu.harga })}
-                    className={`glass-card hover:border-brand-emerald/50 p-0 rounded-2xl flex flex-col justify-between text-left transition-all duration-300 active:scale-95 group overflow-hidden h-[185px] relative shrink-0 ${
+                    className={`glass-card hover:border-[#00ffff]/50 p-0 rounded-xl flex flex-col justify-between text-left transition-all duration-300 active:scale-[0.98] group overflow-hidden min-h-[170px] relative w-full min-w-0 ${
                       inCartItem ? 'border-brand-emerald/60 ring-1 ring-brand-emerald/40 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'border-[#26272d]'
                     }`}
                   >
@@ -2325,7 +2325,7 @@ const CafePOS = () => {
                         {menu.nama_menu}
                       </h4>
                       <div className="mt-2 flex justify-between items-center">
-                        <span className="text-xs font-black text-emerald-400 font-mono">
+                        <span className="text-xs font-bold text-[#00ffff] font-mono">
                           {formatRupiah(menu.harga)}
                         </span>
                         <span className="w-6 h-6 rounded-lg bg-[#18181c] text-[#bbcbb2] flex items-center justify-center font-bold text-xs group-hover:bg-[#00ffff] group-hover:text-[#0f0f0f] transition-all">
