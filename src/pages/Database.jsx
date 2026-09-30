@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
+import { useAuth } from '../context/AuthContext'
+import { getTenantFeatures } from '../utils/businessCapabilities'
 import { 
   Database as DbIcon, 
   Search, 
@@ -193,7 +195,30 @@ const TABLES_METADATA = {
 }
 
 const DatabaseManager = () => {
-  const [selectedTable, setSelectedTable] = useState('carwash')
+  const { activeTenant } = useAuth()
+  const features = getTenantFeatures(activeTenant?.business_type)
+
+  const availableTables = useMemo(() => {
+    return Object.keys(TABLES_METADATA).filter(key => {
+      if (features.isCafeOnly) {
+        return key !== 'carwash' && key !== 'karyawan_cuci'
+      }
+      if (features.isCarwashOnly) {
+        return key !== 'cafe' && key !== 'daftar_harga_menu' && key !== 'resep'
+      }
+      return true
+    })
+  }, [features.isCafeOnly, features.isCarwashOnly])
+
+  const defaultTable = features.isCafeOnly ? 'struk' : 'carwash'
+  const [selectedTable, setSelectedTable] = useState(defaultTable)
+
+  useEffect(() => {
+    if (!availableTables.includes(selectedTable)) {
+      setSelectedTable(availableTables[0] || 'struk')
+    }
+  }, [availableTables, selectedTable])
+
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -576,7 +601,7 @@ const DatabaseManager = () => {
       {/* Top Header */}
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-500 bg-clip-text text-transparent flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-3">
             <DbIcon size={32} className="text-brand-blue animate-pulse" />
             Database Manager
           </h1>
@@ -610,7 +635,7 @@ const DatabaseManager = () => {
               onChange={handleTableChange}
               className="bg-slate-900 border border-slate-800 rounded-xl py-2 px-3 text-white text-xs font-bold focus:outline-none focus:border-brand-blue min-w-[200px]"
             >
-              {Object.keys(TABLES_METADATA).map(key => (
+              {availableTables.map(key => (
                 <option key={key} value={key}>{TABLES_METADATA[key].name} ({key})</option>
               ))}
             </select>

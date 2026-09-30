@@ -38,10 +38,27 @@ if (fs.existsSync(envPath)) {
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    cors: true,
+  },
   plugins: [
     react(),
     tailwindcss(),
   ],
+  build: {
+    chunkSizeWarningLimit: 8000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('realSeedData.json')) {
+            return 'real-seed-database'
+          }
+        },
+      },
+    },
+  },
   define: {
     // Ekspos variabel VITE_ dengan prioritas process.env (Vercel Dashboard) -> customEnv (file)
     'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(process.env.VITE_SUPABASE_URL || customEnv.VITE_SUPABASE_URL || ''),

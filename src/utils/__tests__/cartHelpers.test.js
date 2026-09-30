@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   addToCart,
   updateQty,
+  updateItemNotes,
   removeFromCart
 } from '../cartHelpers'
 
@@ -17,7 +18,7 @@ describe('Cart Helpers', () => {
       const nextCart = addToCart(initialCart, newMenu)
       
       expect(nextCart.length).toBe(3)
-      expect(nextCart[2]).toEqual({ nama_menu: 'Latte', harga: 25000, qty: 1 })
+      expect(nextCart[2]).toEqual({ nama_menu: 'Latte', harga: 25000, qty: 1, catatan: '' })
     })
 
     it('should increment quantity if item already exists in cart', () => {
@@ -63,6 +64,14 @@ describe('Cart Helpers', () => {
     it('should return the cart unmodified if item is not found', () => {
       const nextCart = removeFromCart(initialCart, 'Cappuccino')
       expect(nextCart).toEqual(initialCart)
+    })
+  })
+
+  describe('updateItemNotes', () => {
+    it('should attach or modify notes for a specific menu item in cart', () => {
+      const nextCart = updateItemNotes(initialCart, 'Espresso', 'Less Sugar, Double Shot')
+      expect(nextCart[0].catatan).toBe('Less Sugar, Double Shot')
+      expect(nextCart[1].catatan).toBeUndefined()
     })
   })
 })

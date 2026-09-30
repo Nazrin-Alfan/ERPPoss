@@ -1,0 +1,62 @@
+[
+  {
+    "id": "96e0b43e-b470-4394-b46c-242bb6dfeece",
+    "nama": "nazrinalfansyurihrp",
+    "role": "Owner",
+    "created_at": "2026-07-24T08:27:32.727654+00:00"
+  },
+  {
+    "id": "ed62f767-8fb1-4ddd-8a87-aff1a5e4e926",
+    "nama": "system",
+    "role": "Kasir",
+    "created_at": "2026-07-28T08:20:23.324822+00:00"
+  },
+  {
+    "id": "8fbc4946-4eba-46bf-8c11-705c3add3c84",
+    "nama": "QA Owner",
+    "role": "Owner",
+    "created_at": "2026-07-30T14:24:40.067206+00:00"
+  },
+  {
+    "id": "2ee0513d-29b2-47b3-9bf2-0efbe258193b",
+    "nama": "SuperAdmin",
+    "role": "Owner",
+    "created_at": "2026-07-31T14:25:38.221112+00:00"
+  },
+  {
+    "id": "8e5a462e-81bb-4c2b-bb5f-4f8ab8133f66",
+    "nama": "admin",
+    "role": "Kasir",
+    "created_at": "2026-07-31T14:49:51.848301+00:00"
+  },
+  {
+    "id": "2a150300-c308-4eb8-b03e-8d0310af30a0",
+    "nama": "YAZID",
+    "role": "Owner",
+    "created_at": "2026-08-02T10:55:58.161326+00:00"
+  },
+  {
+    "id": "fed08332-7e4b-4a8f-9e81-8b16ef3608ac",
+    "nama": "SYAFA HAIKAL",
+    "role": "Kasir",
+    "created_at": "2026-08-03T08:51:42.752307+00:00"
+  },
+  {
+    "id": "114b821f-cbab-43b5-9227-107ddace936e",
+    "nama": "ALEXSA",
+    "role": "Kasir",
+    "created_at": "2026-08-03T08:52:21.431003+00:00"
+  },
+  {
+    "id": "57ce5c9b-b71a-4c4b-9a90-8973f234469a",
+    "nama": "Raka ",
+    "role": "Owner",
+    "created_at": "2026-08-09T14:48:51.15652+00:00"
+  },
+  {
+    "id": "b8364ce3-719c-4575-8ff8-c3db00af99ce",
+    "nama": "Rita",
+    "role": "Kasir",
+    "created_at": "2026-09-05T16:44:10.227604+00:00"
+  }
+]

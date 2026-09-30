@@ -1,0 +1,372 @@
+[
+  {
+    "id_menu": "MN-01",
+    "daftar_menu": "Air Mineral",
+    "harga": 5000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MN-02",
+    "daftar_menu": "Badak",
+    "harga": 10000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MN-03",
+    "daftar_menu": "Badak Susu",
+    "harga": 15000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MN-04-01",
+    "daftar_menu": "Americano Dingin",
+    "harga": 12000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MN-04-02",
+    "daftar_menu": "Americano Panas",
+    "harga": 12000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MN-05-01",
+    "daftar_menu": "Sanger Dingin",
+    "harga": 15000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MN-05-02",
+    "daftar_menu": "Sanger Panas",
+    "harga": 15000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MN-06-01",
+    "daftar_menu": "Kopi Susu Gula Aren Dingin",
+    "harga": 20000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MN-06-02",
+    "daftar_menu": "Kopi Susu Gula Aren Panas",
+    "harga": 20000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MN-07-01",
+    "daftar_menu": "Kopi Late Panas",
+    "harga": 18000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MN-07-02",
+    "daftar_menu": "Kopi Late Dingin",
+    "harga": 18000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MN-08-01",
+    "daftar_menu": "Teh Manis/Tawar Dingin",
+    "harga": 8000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MN-08-02",
+    "daftar_menu": "Teh Manis/Tawar Panas",
+    "harga": 8000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "CML-01",
+    "daftar_menu": "Segala Tempe",
+    "harga": 15000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MKN-01",
+    "daftar_menu": "Ayam Penyet",
+    "harga": 25000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MKN-02",
+    "daftar_menu": "Ayam Geprek",
+    "harga": 25000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "CML-02",
+    "daftar_menu": "Sosis Goreng",
+    "harga": 12000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "CML-03",
+    "daftar_menu": "Nugget Goreng",
+    "harga": 12000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "CML-04",
+    "daftar_menu": "Kentang Goreng",
+    "harga": 12000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MKN-03",
+    "daftar_menu": "Nasi Goreng",
+    "harga": 17000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MKN-04",
+    "daftar_menu": "Nasi Goreng Spesial",
+    "harga": 28000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MKN-05",
+    "daftar_menu": "Nasi Goreng Kampung",
+    "harga": 17000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MKN-06",
+    "daftar_menu": "Nasi Goreng Kampung Spesial",
+    "harga": 28000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MKN-07",
+    "daftar_menu": "Indomie kuah",
+    "harga": 12000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MKN-08",
+    "daftar_menu": "Indomie kuah jumbo",
+    "harga": 15000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MKN-09",
+    "daftar_menu": "Indomie Goreng",
+    "harga": 15000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "b1a98a20",
+    "daftar_menu": "Teh susu",
+    "harga": 15000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "c2d8f5ad",
+    "daftar_menu": "Susu putih",
+    "harga": 12000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "e0f0da1d",
+    "daftar_menu": "Susu dingin",
+    "harga": 12000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "CW-KACA",
+    "daftar_menu": "KACA BENING (JAMUR KACA)",
+    "harga": 30000,
+    "kategori": "Carwash",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "CW-TALAS",
+    "daftar_menu": "DAUN TALAS (WAX KACA)",
+    "harga": 35000,
+    "kategori": "Carwash",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "CW-JURAGAN",
+    "daftar_menu": "JURAGAN (JAMUR KACA + WAX KACA)",
+    "harga": 60000,
+    "kategori": "Carwash",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "CW-GLOWUP",
+    "daftar_menu": "GLOW UP (WAX BODY)",
+    "harga": 50000,
+    "kategori": "Carwash",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "CW-PEJABAT",
+    "daftar_menu": "PEJABAT (JAMUR BODY + WAX BODY)",
+    "harga": 90000,
+    "kategori": "Carwash",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "CW-SULTAN",
+    "daftar_menu": "SULTAN (JAMUR KACA-BODY + WAX KACA-BODY)",
+    "harga": 130000,
+    "kategori": "Carwash",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": null,
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "MKN-10",
+    "daftar_menu": "Indomie goreng jumbo",
+    "harga": 18000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": "",
+    "is_bundling": false,
+    "is_active": true
+  },
+  {
+    "id_menu": "51580ead",
+    "daftar_menu": "Mix pletter",
+    "harga": 16000,
+    "kategori": "Cafe",
+    "updated_at": "2026-07-30T18:10:53.45581+00:00",
+    "deskripsi": "",
+    "is_bundling": false,
+    "is_active": true
+  }
+]

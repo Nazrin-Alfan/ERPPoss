@@ -1,9 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
+import { useAuth } from '../context/AuthContext'
+import { getTenantFeatures } from '../utils/businessCapabilities'
 import { 
   DollarSign, 
   ArrowUpRight, 
   ArrowDownRight, 
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  SlidersHorizontal,
   Plus, 
   Trash2,
   AlertCircle,
@@ -26,6 +32,7 @@ import {
   RotateCcw
 } from 'lucide-react'
 import { formatRupiah, parseDateSafe, generateUUID } from '../utils/helpers'
+import CustomSelect from '../components/common/CustomSelect'
 import {
   validateExpenseForm,
   formatExpensePayload,
@@ -36,12 +43,25 @@ import {
   downloadCSV,
   isPindahSaldo,
   normalizeCategory,
-  normalizeJenis
+  normalizeJenis,
+  getLockedCategoriesForJenis
 } from '../utils/financeHelpers'
 
 const Finance = () => {
+  const { activeTenant } = useAuth()
+  const features = getTenantFeatures(activeTenant?.business_type)
+
   // Navigation & Loading States
   const [activeTab, setActiveTab] = useState('cashflow') // 'cashflow' | 'carwash' | 'cafe' | 'expenses'
+
+  useEffect(() => {
+    if (activeTab === 'carwash' && !features.hasCarwash) {
+      setActiveTab('cashflow')
+    } else if (activeTab === 'cafe' && !features.hasCafe) {
+      setActiveTab('cashflow')
+    }
+  }, [activeTab, features.hasCarwash, features.hasCafe])
+
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -59,26 +79,31 @@ const Finance = () => {
   const [customEndDate, setCustomEndDate] = useState(() => new Date().toLocaleDateString('en-CA'))
   const [searchQuery, setSearchQuery] = useState('')
   
+  // Table Sorting States
+  const [sortKey, setSortKey] = useState('tanggal') // 'tanggal' | 'nominal'
+  const [sortOrder, setSortOrder] = useState('desc') // 'desc' (menurun) | 'asc' (menaik)
+
   // Specific Column Filters
-  const [filterType, setFilterType] = useState('all') // 'all' | 'pemasukan' | 'pengeluaran'
-  const [filterPos, setFilterPos] = useState('all') // 'all' | 'SALDO CASH' | 'SALDO REKENING Y' | 'SALDO REKENING N'
+  const [filterType, setFilterType] = useState('all') // 'all' | 'pemasukan' | 'pengeluaran' | 'pindah'
+  const [filterPos, setFilterPos] = useState('all') // 'all' | 'SALDO CASH' | 'SALDO REKENING Y' | 'SALDO REKENING N' | 'SALDO REKENING R'
+  const [filterCashflowJenis, setFilterCashflowJenis] = useState('all')
+  const [filterCashflowKategori, setFilterCashflowKategori] = useState('all')
+  const [filterExpenseJenis, setFilterExpenseJenis] = useState('all')
+  const [filterExpenseCategory, setFilterExpenseCategory] = useState('all')
   const [filterCarwashPayment, setFilterCarwashPayment] = useState('all')
   const [filterCarwashStatus, setFilterCarwashStatus] = useState('all')
   const [filterCafeCategory, setFilterCafeCategory] = useState('all')
-  const [filterExpenseCategory, setFilterExpenseCategory] = useState('all')
 
   // Pagination State
   const [pageSize, setPageSize] = useState(25) // 25, 50, 100, 0 (all)
   const [currentPage, setCurrentPage] = useState(1)
-
-  // Sub-metric Breakdown State (Carwash Segments: Owner, Operasional, Gaji Kru)
-  const [selectedMetricCategory, setSelectedMetricCategory] = useState(null)
 
   // Master Data Lists from Database
   const [cashflowList, setCashflowList] = useState([])
   const [carwashList, setCarwashList] = useState([])
   const [cafeList, setCafeList] = useState([])
   const [expensesList, setExpensesList] = useState([])
+  const [masterCategories, setMasterCategories] = useState([])
   const [stokBahan, setStokBahan] = useState([])
   const [summary, setSummary] = useState({ totalIncome: 0, totalExpense: 0, totalBalance: 0 })
 
@@ -93,11 +118,11 @@ const Finance = () => {
   // Form States
   const [expenseForm, setExpenseForm] = useState({
     tanggal: new Date().toLocaleDateString('en-CA'),
-    jenis: 'Pengeluaran Cafe',
-    kategori: 'Operasional',
-    total_harga: 0,
+    jenis: 'Pengeluaran Bersama',
+    kategori: 'Listrik, Air & Utilitas',
+    pos: 'SALDO CASH',
     keterangan: '',
-    pos: 'SALDO CASH'
+    total_harga: ''
   })
   const [incomeForm, setIncomeForm] = useState({
     tanggal: new Date().toLocaleDateString('en-CA'),
@@ -134,10 +159,29 @@ const Finance = () => {
     status: 'Selesai'
   })
 
-  // Base Default Options (Concise, Clean & Standard Title Case)
-  const defaultJenisOptions = ['Pengeluaran Cafe', 'Pengeluaran Carwash', 'Pengeluaran Bersama', 'Operasional', 'Casbon']
+  // Base Default Options (Concise, Clean & Standard Title Case - Filtered by Tenant Model)
+  const defaultJenisOptions = useMemo(() => {
+    if (features.isCafeOnly) {
+      return ['Pengeluaran Cafe', 'Pengeluaran Bersama', 'Operasional', 'Casbon']
+    }
+    if (features.isCarwashOnly) {
+      return ['Pengeluaran Carwash', 'Pengeluaran Bersama', 'Operasional', 'Casbon']
+    }
+    return ['Pengeluaran Cafe', 'Pengeluaran Carwash', 'Pengeluaran Bersama', 'Operasional', 'Casbon']
+  }, [features.isCafeOnly, features.isCarwashOnly])
+
   const defaultKategoriOptions = ['Operasional', 'Bahan Baku', 'Sewa', 'Casbon', 'Lain-lain']
-  const defaultIncomeJenisOptions = ['Pemasukan', 'Pemasukan Cafe', 'Pemasukan Carwash']
+
+  const defaultIncomeJenisOptions = useMemo(() => {
+    if (features.isCafeOnly) {
+      return ['Pemasukan', 'Pemasukan Cafe']
+    }
+    if (features.isCarwashOnly) {
+      return ['Pemasukan', 'Pemasukan Carwash']
+    }
+    return ['Pemasukan', 'Pemasukan Cafe', 'Pemasukan Carwash']
+  }, [features.isCafeOnly, features.isCarwashOnly])
+
   const defaultIncomeKategoriOptions = ['Omzet Penjualan', 'Modal Awal', 'Pemasukan Lain-lain']
   const posOptions = ['SALDO CASH', 'SALDO REKENING Y', 'SALDO REKENING N', 'SALDO REKENING R']
 
@@ -218,16 +262,21 @@ const Finance = () => {
 
   const allKategoriOptions = useMemo(() => {
     const map = new Map()
+    // Kategori dari Master Categories (Database)
+    masterCategories.filter(c => c.tipe_arus === 'PENGELUARAN').forEach(c => {
+      const norm = normalizeCategory(c.nama_kategori)
+      if (norm) map.set(norm.toLowerCase(), norm)
+    })
     defaultKategoriOptions.forEach(k => {
       const norm = normalizeCategory(k)
-      if (norm) map.set(norm.toLowerCase(), norm)
+      if (norm && !map.has(norm.toLowerCase())) map.set(norm.toLowerCase(), norm)
     })
     customKategoriList.forEach(k => {
       const norm = normalizeCategory(k)
       if (norm && !map.has(norm.toLowerCase())) map.set(norm.toLowerCase(), norm)
     })
     return Array.from(map.values())
-  }, [customKategoriList])
+  }, [masterCategories, customKategoriList])
 
   const allIncomeJenisOptions = useMemo(() => {
     const map = new Map()
@@ -244,21 +293,189 @@ const Finance = () => {
 
   const allIncomeKategoriOptions = useMemo(() => {
     const map = new Map()
+    // Kategori dari Master Categories (Database)
+    masterCategories.filter(c => c.tipe_arus === 'PEMASUKAN').forEach(c => {
+      const norm = normalizeCategory(c.nama_kategori)
+      if (norm) map.set(norm.toLowerCase(), norm)
+    })
     defaultIncomeKategoriOptions.forEach(k => {
       const norm = normalizeCategory(k)
-      if (norm) map.set(norm.toLowerCase(), norm)
+      if (norm && !map.has(norm.toLowerCase())) map.set(norm.toLowerCase(), norm)
     })
     customIncomeKategoriList.forEach(k => {
       const norm = normalizeCategory(k)
       if (norm && !map.has(norm.toLowerCase())) map.set(norm.toLowerCase(), norm)
     })
     return Array.from(map.values())
-  }, [customIncomeKategoriList])
+  }, [masterCategories, customIncomeKategoriList])
 
   // Backward compatibility alias
   const jenisOptions = allJenisOptions
   const kategoriOptions = allKategoriOptions
   const incomeKategoriOptions = allIncomeKategoriOptions
+
+  // Available Categories Locked to the Selected Jenis in Modal Forms
+  const availableExpenseCategories = useMemo(() => {
+    return getLockedCategoriesForJenis(expenseForm.jenis, masterCategories, customKategoriList, false)
+  }, [expenseForm.jenis, masterCategories, customKategoriList])
+
+  const availableIncomeCategories = useMemo(() => {
+    return getLockedCategoriesForJenis(incomeForm.jenis, masterCategories, customIncomeKategoriList, true)
+  }, [incomeForm.jenis, masterCategories, customIncomeKategoriList])
+
+  const handleExpenseJenisSelect = (selectedJenis) => {
+    if (selectedJenis === '__CUSTOM__') {
+      setIsCustomExpenseJenis(true)
+      setExpenseForm(prev => ({ ...prev, jenis: '' }))
+    } else {
+      const nextCats = getLockedCategoriesForJenis(selectedJenis, masterCategories, customKategoriList, false)
+      setExpenseForm(prev => {
+        const isCurrentValid = nextCats.some(c => c.toLowerCase() === (prev.kategori || '').toLowerCase())
+        const newCat = isCurrentValid ? prev.kategori : (nextCats[0] || 'Operasional')
+        return {
+          ...prev,
+          jenis: selectedJenis,
+          kategori: newCat,
+          total_harga: newCat === 'Bahan Baku' ? 0 : prev.total_harga
+        }
+      })
+      if (nextCats[0] !== 'Bahan Baku') setBarangMasukList([])
+    }
+  }
+
+  const handleIncomeJenisSelect = (selectedJenis) => {
+    if (selectedJenis === '__CUSTOM__') {
+      setIsCustomIncomeJenis(true)
+      setIncomeForm(prev => ({ ...prev, jenis: '' }))
+    } else {
+      const nextCats = getLockedCategoriesForJenis(selectedJenis, masterCategories, customIncomeKategoriList, true)
+      setIncomeForm(prev => {
+        const isCurrentValid = nextCats.some(c => c.toLowerCase() === (prev.kategori || '').toLowerCase())
+        return {
+          ...prev,
+          jenis: selectedJenis,
+          kategori: isCurrentValid ? prev.kategori : (nextCats[0] || 'Omzet Penjualan')
+        }
+      })
+    }
+  }
+
+  // Dynamic filter options extracted from lists
+  const cashflowJenisList = useMemo(() => {
+    const map = new Map()
+    cashflowList.forEach(item => {
+      const j = item.jenis
+      if (j && !map.has(j.toLowerCase())) map.set(j.toLowerCase(), j)
+    })
+    allJenisOptions.forEach(j => {
+      if (j && !map.has(j.toLowerCase())) map.set(j.toLowerCase(), j)
+    })
+    allIncomeJenisOptions.forEach(j => {
+      if (j && !map.has(j.toLowerCase())) map.set(j.toLowerCase(), j)
+    })
+    return Array.from(map.values())
+  }, [cashflowList, allJenisOptions, allIncomeJenisOptions])
+
+  const cashflowKategoriList = useMemo(() => {
+    const map = new Map()
+    cashflowList.forEach(item => {
+      const k = item.kategori
+      if (k && !map.has(k.toLowerCase())) map.set(k.toLowerCase(), k)
+    })
+    allKategoriOptions.forEach(k => {
+      if (k && !map.has(k.toLowerCase())) map.set(k.toLowerCase(), k)
+    })
+    allIncomeKategoriOptions.forEach(k => {
+      if (k && !map.has(k.toLowerCase())) map.set(k.toLowerCase(), k)
+    })
+    return Array.from(map.values())
+  }, [cashflowList, allKategoriOptions, allIncomeKategoriOptions])
+
+  const expenseJenisList = useMemo(() => {
+    const map = new Map()
+    expensesList.forEach(item => {
+      const j = item.jenis
+      if (j && !map.has(j.toLowerCase())) map.set(j.toLowerCase(), j)
+    })
+    allJenisOptions.forEach(j => {
+      if (j && !map.has(j.toLowerCase())) map.set(j.toLowerCase(), j)
+    })
+    return Array.from(map.values())
+  }, [expensesList, allJenisOptions])
+
+  const expenseKategoriList = useMemo(() => {
+    const map = new Map()
+    expensesList.forEach(item => {
+      const k = item.kategori
+      if (k && !map.has(k.toLowerCase())) map.set(k.toLowerCase(), k)
+    })
+    allKategoriOptions.forEach(k => {
+      if (k && !map.has(k.toLowerCase())) map.set(k.toLowerCase(), k)
+    })
+    return Array.from(map.values())
+  }, [expensesList, allKategoriOptions])
+
+  // Filtered Kategori lists locked by selected Jenis in table filter bars
+  const cashflowFilteredKategoriOptions = useMemo(() => {
+    if (filterCashflowJenis === 'all') return cashflowKategoriList
+    return getLockedCategoriesForJenis(filterCashflowJenis, masterCategories, [], false)
+  }, [filterCashflowJenis, cashflowKategoriList, masterCategories])
+
+  const expenseFilteredKategoriOptions = useMemo(() => {
+    if (filterExpenseJenis === 'all') return expenseKategoriList
+    return getLockedCategoriesForJenis(filterExpenseJenis, masterCategories, [], false)
+  }, [filterExpenseJenis, expenseKategoriList, masterCategories])
+
+  const editAvailableCategories = useMemo(() => {
+    const isInc = parseFloat(editForm.pemasukan || 0) > 0 || String(editForm.jenis || '').toLowerCase().includes('pemasukan')
+    return getLockedCategoriesForJenis(editForm.jenis, masterCategories, [], isInc)
+  }, [editForm.jenis, editForm.pemasukan, masterCategories])
+
+  const handleFilterCashflowJenisChange = (newJenis) => {
+    setFilterCashflowJenis(newJenis)
+    if (newJenis !== 'all') {
+      const validCats = getLockedCategoriesForJenis(newJenis, masterCategories, [], false)
+      if (!validCats.some(k => k.toLowerCase() === (filterCashflowKategori || '').toLowerCase())) {
+        setFilterCashflowKategori('all')
+      }
+    }
+  }
+
+  const handleFilterExpenseJenisChange = (newJenis) => {
+    setFilterExpenseJenis(newJenis)
+    if (newJenis !== 'all') {
+      const validCats = getLockedCategoriesForJenis(newJenis, masterCategories, [], false)
+      if (!validCats.some(k => k.toLowerCase() === (filterExpenseCategory || '').toLowerCase())) {
+        setFilterExpenseCategory('all')
+      }
+    }
+  }
+
+  // Sort toggle handler
+  const handleSortToggle = (colKey) => {
+    if (sortKey === colKey) {
+      setSortOrder(prev => (prev === 'desc' ? 'asc' : 'desc'))
+    } else {
+      setSortKey(colKey)
+      setSortOrder('desc')
+    }
+  }
+
+  // Reset all filters & sorting
+  const handleResetFilters = () => {
+    setFilterType('all')
+    setFilterPos('all')
+    setFilterCashflowJenis('all')
+    setFilterCashflowKategori('all')
+    setFilterExpenseJenis('all')
+    setFilterExpenseCategory('all')
+    setFilterCarwashPayment('all')
+    setFilterCarwashStatus('all')
+    setFilterCafeCategory('all')
+    setSearchQuery('')
+    setSortKey('tanggal')
+    setSortOrder('desc')
+  }
 
   // Alert & Confirm Helpers
   const showAlert = (message, title = 'Informasi') => {
@@ -341,28 +558,40 @@ const Finance = () => {
         return allData
       }
 
-      // 2. Fetch Cashflow
-      const cfData = await fetchAllData('cashflow', '*', 'tanggal')
+      // 2-6. Fetch Cashflow, Carwash, Cafe, Expenses, Master Categories, & Stok Barang secara paralel
+      const [
+        cfData,
+        cwData,
+        cafeData,
+        expData,
+        resMc,
+        resSb
+      ] = await Promise.all([
+        fetchAllData('cashflow', '*', 'tanggal'),
+        fetchAllData('carwash', '*', 'tanggal'),
+        fetchAllData('cafe', '*, struk(tanggal, jam, kasir, metode_bayar, status_bayar)'),
+        fetchAllData('pengeluaran', '*', 'tanggal'),
+        supabase.from('master_categories').select('*'),
+        supabase.from('stok_barang').select('*')
+      ])
+
+      const mcData = resMc?.data
+      const sbData = resSb?.data
+
       setCashflowList(cfData || [])
-
-      // 3. Fetch Carwash
-      const cwData = await fetchAllData('carwash', '*', 'tanggal')
       setCarwashList(cwData || [])
-
-      // 4. Fetch Cafe Detail
-      const cafeData = await fetchAllData('cafe', '*, struk(tanggal, jam, kasir, metode_bayar, status_bayar)')
       setCafeList(cafeData || [])
-
-      // 5. Fetch Expenses (Pengeluaran)
-      const expData = await fetchAllData('pengeluaran', '*', 'tanggal')
       setExpensesList(expData || [])
 
-      // 6. Fetch Stok Barang
-      const { data: sbData } = await supabase.from('stok_barang').select('id_bahan_baku, nama_produk, satuan')
+      if (mcData && mcData.length > 0) {
+        setMasterCategories(mcData)
+      }
+
       const formattedStok = sbData?.length ? sbData.map(b => ({
-        nama_bahan: b.id_bahan_baku,
-        nama_produk: b.nama_produk,
-        satuan: b.satuan
+        id_bahan_baku: b.id_bahan_baku || b.id || b.id_barang,
+        nama_bahan: b.nama_produk || b.nama_barang || b.id_bahan_baku,
+        nama_produk: b.nama_produk || b.nama_barang || b.id_bahan_baku,
+        satuan: b.satuan || 'Gram'
       })) : []
       setStokBahan(formattedStok)
 
@@ -439,7 +668,7 @@ const Finance = () => {
   // TAB 1: CASHFLOW FILTERED & METRICS
   // ==========================================
   const filteredCashflow = useMemo(() => {
-    return cashflowList.filter(item => {
+    const list = cashflowList.filter(item => {
       if (!isDateInRange(item.tanggal)) return false
 
       const isPindah = isPindahSaldo(item)
@@ -448,6 +677,9 @@ const Finance = () => {
       if (filterType === 'pindah' && !isPindah) return false
 
       if (filterPos !== 'all' && item.pos !== filterPos) return false
+
+      if (filterCashflowJenis !== 'all' && String(item.jenis || '').toLowerCase() !== filterCashflowJenis.toLowerCase()) return false
+      if (filterCashflowKategori !== 'all' && String(item.kategori || '').toLowerCase() !== filterCashflowKategori.toLowerCase()) return false
 
       if (searchQuery) {
         const q = searchQuery.toLowerCase()
@@ -460,7 +692,26 @@ const Finance = () => {
 
       return true
     })
-  }, [cashflowList, filterPeriodMode, selectedMonth, quickPreset, customStartDate, customEndDate, filterType, filterPos, searchQuery])
+
+    return [...list].sort((a, b) => {
+      if (sortKey === 'nominal') {
+        const isIncA = parseFloat(a.pemasukan || 0) > 0
+        const isIncB = parseFloat(b.pemasukan || 0) > 0
+        const nomA = parseFloat(isIncA ? a.pemasukan : a.pengeluaran || 0)
+        const nomB = parseFloat(isIncB ? b.pemasukan : b.pengeluaran || 0)
+        return sortOrder === 'asc' ? nomA - nomB : nomB - nomA
+      }
+      // default: tanggal
+      const dateA = String(a.tanggal || '')
+      const dateB = String(b.tanggal || '')
+      if (dateA !== dateB) {
+        return sortOrder === 'asc' ? dateA.localeCompare(dateB) : dateB.localeCompare(dateA)
+      }
+      const createdA = String(a.created_at || a.id_cashflow || '')
+      const createdB = String(b.created_at || b.id_cashflow || '')
+      return sortOrder === 'asc' ? createdA.localeCompare(createdB) : createdB.localeCompare(createdA)
+    })
+  }, [cashflowList, filterPeriodMode, selectedMonth, quickPreset, customStartDate, customEndDate, filterType, filterPos, filterCashflowJenis, filterCashflowKategori, searchQuery, sortKey, sortOrder])
 
   // All-time real summary (Mengecualikan Pindah Saldo antar rekening)
   const allTimeSummary = useMemo(() => {
@@ -539,58 +790,11 @@ const Finance = () => {
     }
   }, [filteredCashflow])
 
-  // Carwash Segmented Metrics (Owner, Operasional, Gaji Kru)
-  const filteredCwMetrics = useMemo(() => {
-    const filteredCw = carwashList.filter(c => isDateInRange(c.tanggal) && c.status === 'Selesai')
-    const totalCwRevenue = filteredCw.reduce((sum, c) => sum + (parseFloat(c.harga) || 0), 0)
-
-    const filteredCf = cashflowList.filter(c => isDateInRange(c.tanggal) && !isPindahSaldo(c))
-
-    // A. Owner: 1/3 CW - 'bang awal'
-    const ownerLogs = filteredCf.filter(c => parseFloat(c.pengeluaran || 0) > 0 && String(c.keterangan_transaksi || '').toLowerCase().includes('bang awal'))
-    const totalBangAwal = ownerLogs.reduce((sum, c) => sum + parseFloat(c.pengeluaran || 0), 0)
-    const ownerMetric = (totalCwRevenue / 3) - totalBangAwal
-
-    // B. Operasional: 1/3 CW - carwash exp outside wages & casbon
-    const operasionalLogs = filteredCf.filter(c => {
-      const isCw = String(c.jenis || '').toLowerCase().includes('carwash')
-      const isExp = parseFloat(c.pengeluaran || 0) > 0
-      const isWageOrCasbon = String(c.keterangan_transaksi || '').toLowerCase().includes('gaji') ||
-                             String(c.keterangan_transaksi || '').toLowerCase().includes('wage') ||
-                             String(c.keterangan_transaksi || '').toLowerCase().includes('pencuci') ||
-                             String(c.keterangan_transaksi || '').toLowerCase().includes('casbon') ||
-                             String(c.kategori || '').toLowerCase().includes('karyawan') ||
-                             String(c.kategori || '').toLowerCase().includes('casbon') ||
-                             String(c.jenis || '').toLowerCase().includes('casbon')
-      return isCw && isExp && !isWageOrCasbon
-    })
-    const totalCwExpNoWages = operasionalLogs.reduce((sum, c) => sum + parseFloat(c.pengeluaran || 0), 0)
-    const operasionalMetric = (totalCwRevenue / 3) - totalCwExpNoWages
-
-    // C. Gaji Karyawan Cuci: 1/3 CW - 'gaji karyawan cuci'
-    const gajiKaryawanLogs = filteredCf.filter(c => parseFloat(c.pengeluaran || 0) > 0 && String(c.keterangan_transaksi || '').toLowerCase().includes('gaji karyawan cuci'))
-    const totalWagesCw = gajiKaryawanLogs.reduce((sum, c) => sum + parseFloat(c.pengeluaran || 0), 0)
-    const gajiKaryawanMetric = (totalCwRevenue / 3) - totalWagesCw
-
-    return {
-      owner: ownerMetric,
-      operasional: operasionalMetric,
-      gajiKaryawan: gajiKaryawanMetric,
-      totalCwRevenue,
-      totalBangAwal,
-      totalCwExpNoWages,
-      totalWagesCw,
-      ownerLogs,
-      operasionalLogs,
-      gajiKaryawanLogs
-    }
-  }, [carwashList, cashflowList, filterPeriodMode, selectedMonth, quickPreset, customStartDate, customEndDate])
-
   // ==========================================
   // TAB 2: CARWASH FILTERED & KPIS
   // ==========================================
   const filteredCarwash = useMemo(() => {
-    return carwashList.filter(item => {
+    const list = carwashList.filter(item => {
       if (!isDateInRange(item.tanggal)) return false
 
       if (filterCarwashPayment !== 'all' && item.metode_bayar !== filterCarwashPayment) return false
@@ -607,7 +811,18 @@ const Finance = () => {
 
       return true
     })
-  }, [carwashList, filterPeriodMode, selectedMonth, quickPreset, customStartDate, customEndDate, filterCarwashPayment, filterCarwashStatus, searchQuery])
+
+    return [...list].sort((a, b) => {
+      if (sortKey === 'nominal') {
+        const nomA = parseFloat(a.harga || 0)
+        const nomB = parseFloat(b.harga || 0)
+        return sortOrder === 'asc' ? nomA - nomB : nomB - nomA
+      }
+      const dtA = `${a.tanggal || ''} ${a.jam || ''}`
+      const dtB = `${b.tanggal || ''} ${b.jam || ''}`
+      return sortOrder === 'asc' ? dtA.localeCompare(dtB) : dtB.localeCompare(dtA)
+    })
+  }, [carwashList, filterPeriodMode, selectedMonth, quickPreset, customStartDate, customEndDate, filterCarwashPayment, filterCarwashStatus, searchQuery, sortKey, sortOrder])
 
   const carwashKpis = useMemo(() => {
     let units = 0
@@ -629,11 +844,15 @@ const Finance = () => {
     return { units, grossRev, discount, netRev }
   }, [filteredCarwash])
 
+  const itemTotalHarga = (item) => {
+    return item?.subtotal || item?.total_harga || ((parseFloat(item?.qty || item?.jumlah || 1)) * (parseFloat(item?.harga_satuan) || 0))
+  }
+
   // ==========================================
   // TAB 3: CAFE FILTERED & KPIS
   // ==========================================
   const filteredCafe = useMemo(() => {
-    return cafeList.filter(item => {
+    const list = cafeList.filter(item => {
       const itemDate = item.struk?.tanggal || ''
       if (!isDateInRange(itemDate)) return false
 
@@ -651,7 +870,18 @@ const Finance = () => {
 
       return true
     })
-  }, [cafeList, filterPeriodMode, selectedMonth, quickPreset, customStartDate, customEndDate, filterCafeCategory, searchQuery])
+
+    return [...list].sort((a, b) => {
+      if (sortKey === 'nominal') {
+        const totA = parseFloat(itemTotalHarga(a)) || 0
+        const totB = parseFloat(itemTotalHarga(b)) || 0
+        return sortOrder === 'asc' ? totA - totB : totB - totA
+      }
+      const dtA = `${a.struk?.tanggal || ''} ${a.struk?.jam || ''}`
+      const dtB = `${b.struk?.tanggal || ''} ${b.struk?.jam || ''}`
+      return sortOrder === 'asc' ? dtA.localeCompare(dtB) : dtB.localeCompare(dtA)
+    })
+  }, [cafeList, filterPeriodMode, selectedMonth, quickPreset, customStartDate, customEndDate, filterCafeCategory, searchQuery, sortKey, sortOrder])
 
   const cafeKpis = useMemo(() => {
     let totalItems = 0
@@ -692,11 +922,13 @@ const Finance = () => {
   // TAB 4: EXPENSES (PENGELUARAN) FILTERED & KPIS
   // ==========================================
   const filteredExpenses = useMemo(() => {
-    return expensesList.filter(item => {
+    const list = expensesList.filter(item => {
       if (!isDateInRange(item.tanggal)) return false
       if (isPindahSaldo(item)) return false
 
-      if (filterExpenseCategory !== 'all' && item.kategori !== filterExpenseCategory) return false
+      if (filterExpenseJenis !== 'all' && String(item.jenis || '').toLowerCase() !== filterExpenseJenis.toLowerCase()) return false
+      if (filterExpenseCategory !== 'all' && String(item.kategori || '').toLowerCase() !== filterExpenseCategory.toLowerCase()) return false
+      if (filterPos !== 'all' && item.pos !== filterPos) return false
 
       if (searchQuery) {
         const q = searchQuery.toLowerCase()
@@ -708,7 +940,18 @@ const Finance = () => {
 
       return true
     })
-  }, [expensesList, filterPeriodMode, selectedMonth, quickPreset, customStartDate, customEndDate, filterExpenseCategory, searchQuery])
+
+    return [...list].sort((a, b) => {
+      if (sortKey === 'nominal') {
+        const nomA = parseFloat(a.nominal || a.total_harga || 0)
+        const nomB = parseFloat(b.nominal || b.total_harga || 0)
+        return sortOrder === 'asc' ? nomA - nomB : nomB - nomA
+      }
+      const dtA = `${a.tanggal || ''} ${a.jam || ''}`
+      const dtB = `${b.tanggal || ''} ${b.jam || ''}`
+      return sortOrder === 'asc' ? dtA.localeCompare(dtB) : dtB.localeCompare(dtA)
+    })
+  }, [expensesList, filterPeriodMode, selectedMonth, quickPreset, customStartDate, customEndDate, filterExpenseJenis, filterExpenseCategory, filterPos, searchQuery, sortKey, sortOrder])
 
   const expensesKpis = useMemo(() => {
     let opTotal = 0
@@ -752,7 +995,27 @@ const Finance = () => {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [activeTab, filterPeriodMode, selectedMonth, quickPreset, customStartDate, customEndDate, searchQuery, filterType, filterPos, pageSize])
+  }, [
+    activeTab, 
+    filterPeriodMode, 
+    selectedMonth, 
+    quickPreset, 
+    customStartDate, 
+    customEndDate, 
+    searchQuery, 
+    filterType, 
+    filterPos, 
+    filterCashflowJenis,
+    filterCashflowKategori,
+    filterExpenseJenis,
+    filterExpenseCategory,
+    filterCarwashPayment,
+    filterCarwashStatus,
+    filterCafeCategory,
+    sortKey,
+    sortOrder,
+    pageSize
+  ])
 
   // ==========================================
   // EXPORT CSV HANDLER
@@ -866,9 +1129,9 @@ const Finance = () => {
       setSuccess('Pengeluaran berhasil dicatat langsung ke Cashflow!')
       setExpenseForm({
         tanggal: new Date().toLocaleDateString('en-CA'),
-        jenis: 'pengeluaran Cafe',
-        kategori: 'Operasional',
-        total_harga: 0,
+        jenis: 'Pengeluaran Bersama',
+        kategori: 'Listrik, Air & Utilitas',
+        total_harga: '',
         keterangan: '',
         pos: 'SALDO CASH'
       })
@@ -1192,11 +1455,11 @@ const Finance = () => {
 
   // Stock Material Helpers
   const addBarangMasukItem = () => {
-    const defaultBahan = stokBahan[0]?.nama_bahan || ''
+    const defaultBahan = stokBahan[0]?.id_bahan_baku || ''
     const defaultSatuan = stokBahan[0]?.satuan || 'Gram'
     setBarangMasukList(prev => [
       ...prev,
-      { id_bahan_baku: defaultBahan, jumlah: 1, harga_satuan: 10000, satuan: defaultSatuan }
+      { id_bahan_baku: defaultBahan, jumlah: '', harga_satuan: '', satuan: defaultSatuan }
     ])
   }
   const removeBarangMasukItem = (index) => {
@@ -1208,7 +1471,7 @@ const Finance = () => {
         if (i === index) {
           const updated = { ...item, [field]: value }
           if (field === 'id_bahan_baku') {
-            const match = stokBahan.find(b => b.nama_bahan === value)
+            const match = stokBahan.find(b => b.id_bahan_baku === value || b.nama_bahan === value || b.nama_produk === value)
             if (match) updated.satuan = match.satuan
           }
           return updated
@@ -1220,8 +1483,8 @@ const Finance = () => {
 
   useEffect(() => {
     if (expenseForm.kategori === 'Bahan Baku' && barangMasukList.length > 0) {
-      const computedTotal = barangMasukList.reduce((sum, item) => sum + (item.jumlah * item.harga_satuan), 0)
-      setExpenseForm(prev => ({ ...prev, total_harga: computedTotal }))
+      const computedTotal = barangMasukList.reduce((sum, item) => sum + ((parseFloat(item.jumlah) || 0) * (parseFloat(item.harga_satuan) || 0)), 0)
+      setExpenseForm(prev => ({ ...prev, total_harga: computedTotal > 0 ? computedTotal : '' }))
     }
   }, [barangMasukList, expenseForm.kategori])
 
@@ -1230,7 +1493,7 @@ const Finance = () => {
       {/* Top Header */}
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-500 bg-clip-text text-transparent flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-3">
             <DollarSign size={28} className="text-brand-emerald" />
             Monitoring Keuangan
           </h1>
@@ -1287,79 +1550,91 @@ const Finance = () => {
       )}
 
       {/* Global Net Balance Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-        <div className="glass-panel p-4.5 rounded-2xl border border-slate-800/80">
-          <p className="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Total Kas Bersih (All-time)</p>
-          <h3 className={`text-2xl font-black mt-1.5 ${allTimeSummary.totalBalance >= 0 ? 'text-brand-emerald' : 'text-rose-400'}`}>
-            {formatRupiah(allTimeSummary.totalBalance)}
-          </h3>
-          <span className="text-[10px] text-slate-500 mt-1 block">Net akumulasi seluruh pemasukan - pengeluaran riil</span>
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-xs text-slate-400 px-1">
+          <span className="font-bold uppercase tracking-wider text-[11px] text-slate-400">Ringkasan Finansial Akumulatif (Sepanjang Waktu)</span>
+          <span className="text-[10px] text-slate-500">Total riil sistem sejak awal operasional</span>
         </div>
-        <div className="glass-panel p-4.5 rounded-2xl border border-slate-800/80">
-          <div className="flex justify-between items-center">
-            <p className="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Total Pemasukan Riil (All-time)</p>
-            <ArrowUpRight size={16} className="text-brand-emerald" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+          <div className="glass-panel p-4.5 rounded-2xl border border-slate-800/80 hover:border-slate-700 transition-colors">
+            <p className="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Total Kas Bersih (All-time)</p>
+            <h3 className={`text-2xl font-black mt-1.5 ${allTimeSummary.totalBalance >= 0 ? 'text-brand-emerald' : 'text-rose-400'}`}>
+              {formatRupiah(allTimeSummary.totalBalance)}
+            </h3>
+            <span className="text-[10px] text-slate-500 mt-1 block">Net akumulasi seluruh pemasukan riil - pengeluaran riil</span>
           </div>
-          <h3 className="text-2xl font-bold text-white mt-1.5">{formatRupiah(allTimeSummary.totalIncome)}</h3>
-          <span className="text-[10px] text-slate-500 mt-1 block">Akumulasi struk lunas & kas masuk (di luar pindah saldo)</span>
-        </div>
-        <div className="glass-panel p-4.5 rounded-2xl border border-slate-800/80">
-          <div className="flex justify-between items-center">
-            <p className="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Total Pengeluaran Riil (All-time)</p>
-            <ArrowDownRight size={16} className="text-brand-rose" />
+          <div className="glass-panel p-4.5 rounded-2xl border border-slate-800/80 hover:border-slate-700 transition-colors">
+            <div className="flex justify-between items-center">
+              <p className="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Total Pemasukan Riil (All-time)</p>
+              <ArrowUpRight size={16} className="text-brand-emerald" />
+            </div>
+            <h3 className="text-2xl font-bold text-white mt-1.5">{formatRupiah(allTimeSummary.totalIncome)}</h3>
+            <span className="text-[10px] text-slate-500 mt-1 block">Akumulasi struk lunas & kas masuk (di luar pindah saldo)</span>
           </div>
-          <h3 className="text-2xl font-bold text-white mt-1.5">{formatRupiah(allTimeSummary.totalExpense)}</h3>
-          <span className="text-[10px] text-slate-500 mt-1 block">Akumulasi beban operasional riil (di luar pindah saldo)</span>
+          <div className="glass-panel p-4.5 rounded-2xl border border-slate-800/80 hover:border-slate-700 transition-colors">
+            <div className="flex justify-between items-center">
+              <p className="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Total Pengeluaran Riil (All-time)</p>
+              <ArrowDownRight size={16} className="text-brand-rose" />
+            </div>
+            <h3 className="text-2xl font-bold text-white mt-1.5">{formatRupiah(allTimeSummary.totalExpense)}</h3>
+            <span className="text-[10px] text-slate-500 mt-1 block">Akumulasi beban operasional riil (di luar pindah saldo)</span>
+          </div>
         </div>
       </div>
 
       {/* Real-Time Wallet Balances Cards (Laci Cash, Mandiri Utama, Mandiri Ops, Rekening R) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <div className="glass-panel p-3.5 rounded-xl border border-slate-800/80 flex items-center justify-between">
-          <div>
-            <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Laci Kasir (Cash)</span>
-            <h4 className={`text-base md:text-lg font-black mt-0.5 ${posAllTimeBalances.cash >= 0 ? 'text-white' : 'text-rose-400'}`}>
-              {formatRupiah(posAllTimeBalances.cash)}
-            </h4>
-          </div>
-          <div className="w-8 h-8 rounded-lg bg-slate-800/80 text-slate-300 flex items-center justify-center font-bold text-xs">
-            💵
-          </div>
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-xs text-slate-400 px-1">
+          <span className="font-bold uppercase tracking-wider text-[11px] text-slate-400">Posisi Saldo Riil per Dompet / Rekening (Saat Ini)</span>
+          <span className="text-[10px] text-slate-500">Saldo fisik di laci kasir & mutasi bank</span>
         </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div className="glass-panel p-3.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-slate-700 transition-colors">
+            <div>
+              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Laci Kasir (Cash Fisik)</span>
+              <h4 className={`text-base md:text-lg font-black mt-0.5 ${posAllTimeBalances.cash >= 0 ? 'text-white' : 'text-rose-400'}`}>
+                {formatRupiah(posAllTimeBalances.cash)}
+              </h4>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-slate-800/80 text-slate-300 flex items-center justify-center font-bold text-xs">
+              💵
+            </div>
+          </div>
 
-        <div className="glass-panel p-3.5 rounded-xl border border-slate-800/80 flex items-center justify-between">
-          <div>
-            <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Mandiri Utama (Rek Y)</span>
-            <h4 className={`text-base md:text-lg font-black mt-0.5 ${posAllTimeBalances.rekY >= 0 ? 'text-brand-emerald' : 'text-rose-400'}`}>
-              {formatRupiah(posAllTimeBalances.rekY)}
-            </h4>
+          <div className="glass-panel p-3.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-slate-700 transition-colors">
+            <div>
+              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Mandiri Utama (Rek Y)</span>
+              <h4 className={`text-base md:text-lg font-black mt-0.5 ${posAllTimeBalances.rekY >= 0 ? 'text-brand-emerald' : 'text-rose-400'}`}>
+                {formatRupiah(posAllTimeBalances.rekY)}
+              </h4>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-xs">
+              Y
+            </div>
           </div>
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-xs">
-            Y
-          </div>
-        </div>
 
-        <div className="glass-panel p-3.5 rounded-xl border border-slate-800/80 flex items-center justify-between">
-          <div>
-            <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Mandiri Ops (Rek N)</span>
-            <h4 className={`text-base md:text-lg font-black mt-0.5 ${posAllTimeBalances.rekN >= 0 ? 'text-brand-blue' : 'text-rose-400'}`}>
-              {formatRupiah(posAllTimeBalances.rekN)}
-            </h4>
+          <div className="glass-panel p-3.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-slate-700 transition-colors">
+            <div>
+              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Mandiri Ops (Rek N)</span>
+              <h4 className={`text-base md:text-lg font-black mt-0.5 ${posAllTimeBalances.rekN >= 0 ? 'text-brand-blue' : 'text-rose-400'}`}>
+                {formatRupiah(posAllTimeBalances.rekN)}
+              </h4>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-brand-blue/10 text-brand-blue flex items-center justify-center font-bold text-xs">
+              N
+            </div>
           </div>
-          <div className="w-8 h-8 rounded-lg bg-brand-blue/10 text-brand-blue flex items-center justify-center font-bold text-xs">
-            N
-          </div>
-        </div>
 
-        <div className="glass-panel p-3.5 rounded-xl border border-slate-800/80 flex items-center justify-between">
-          <div>
-            <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Saldo Rekening R</span>
-            <h4 className={`text-base md:text-lg font-black mt-0.5 ${posAllTimeBalances.rekR >= 0 ? 'text-purple-400' : 'text-rose-400'}`}>
-              {formatRupiah(posAllTimeBalances.rekR)}
-            </h4>
-          </div>
-          <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold text-xs">
-            R
+          <div className="glass-panel p-3.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-slate-700 transition-colors">
+            <div>
+              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Saldo Rekening R (Cadangan)</span>
+              <h4 className={`text-base md:text-lg font-black mt-0.5 ${posAllTimeBalances.rekR >= 0 ? 'text-purple-400' : 'text-rose-400'}`}>
+                {formatRupiah(posAllTimeBalances.rekR)}
+              </h4>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold text-xs">
+              R
+            </div>
           </div>
         </div>
       </div>
@@ -1410,15 +1685,14 @@ const Finance = () => {
           {filterPeriodMode === 'month' && (
             <div className="flex items-center gap-2">
               <label className="text-xs text-slate-400 font-semibold">Bulan:</label>
-              <select
+              <CustomSelect
                 value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="bg-slate-900 border border-slate-800 text-white rounded-xl py-1.5 px-3 text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
-              >
-                {monthOptions.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+                onChange={(val) => setSelectedMonth(val)}
+                options={monthOptions}
+                size="xs"
+                variant="blue"
+                className="w-48"
+              />
             </div>
           )}
 
@@ -1486,14 +1760,14 @@ const Finance = () => {
         </div>
       </div>
 
-      {/* 4 Main Tabs Navigation */}
+      {/* Dynamic Main Tabs Navigation based on Tenant Capabilities */}
       <div className="flex border-b border-slate-800 gap-2 overflow-x-auto pb-1">
         {[
-          { id: 'cashflow', label: '1. Arus Kas (Cashflow)', icon: DollarSign, count: filteredCashflow.length },
-          { id: 'carwash', label: '2. Log Carwash', icon: Car, count: filteredCarwash.length },
-          { id: 'cafe', label: '3. Log Cafe (F&B)', icon: Coffee, count: filteredCafe.length },
-          { id: 'expenses', label: '4. Pengeluaran (Expenses)', icon: Receipt, count: filteredExpenses.length }
-        ].map(tab => {
+          { id: 'cashflow', label: '1. Arus Kas (Cashflow)', icon: DollarSign, count: filteredCashflow.length, visible: true },
+          { id: 'carwash', label: '2. Log Carwash', icon: Car, count: filteredCarwash.length, visible: features.hasCarwash },
+          { id: 'cafe', label: '3. Log Cafe (F&B)', icon: Coffee, count: filteredCafe.length, visible: features.hasCafe },
+          { id: 'expenses', label: '4. Pengeluaran (Expenses)', icon: Receipt, count: filteredExpenses.length, visible: true }
+        ].filter(t => t.visible).map(tab => {
           const Icon = tab.icon
           const isActive = activeTab === tab.id
           return (
@@ -1557,175 +1831,75 @@ const Finance = () => {
             </div>
           </div>
 
-          {/* Keuangan Carwash Segment Cards (Owner, Operasional, Gaji Kru) */}
-          <div className="space-y-3 pt-2">
-            <div className="flex justify-between items-center">
-              <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
-                <Car size={16} className="text-brand-emerald" />
-                Segmen Keuangan Carwash ({activePeriodLabel})
-              </h3>
-              <span className="text-[11px] text-slate-400">Total Omzet CW: <strong className="text-white font-mono">{formatRupiah(filteredCwMetrics.totalCwRevenue)}</strong></span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-              {/* Owner */}
-              <div 
-                onClick={() => setSelectedMetricCategory(prev => prev === 'owner' ? null : 'owner')}
-                className={`glass-panel p-4.5 rounded-2xl relative overflow-hidden group border cursor-pointer transition-all duration-200 hover:scale-[1.01] ${
-                  selectedMetricCategory === 'owner' 
-                    ? 'border-brand-blue ring-2 ring-brand-blue/50 bg-slate-900 shadow-lg shadow-brand-blue/10' 
-                    : 'border-slate-800/80 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex justify-between items-start">
-                  <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Owner</p>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors ${
-                    selectedMetricCategory === 'owner' ? 'bg-brand-blue text-slate-950' : 'bg-slate-800 text-slate-400 group-hover:text-white'
-                  }`}>
-                    {selectedMetricCategory === 'owner' ? '▼ Aktif' : 'Lihat Log'}
-                  </span>
-                </div>
-                <h3 className={`text-xl font-black mt-1.5 ${filteredCwMetrics.owner >= 0 ? 'text-brand-emerald' : 'text-rose-400'}`}>
-                  {formatRupiah(filteredCwMetrics.owner)}
-                </h3>
-                <span className="text-[10px] text-slate-500 mt-1 block">
-                  1/3 Omzet ({formatRupiah(filteredCwMetrics.totalCwRevenue / 3)}) - "Bang Awal" ({formatRupiah(filteredCwMetrics.totalBangAwal)})
-                </span>
-              </div>
-
-              {/* Operasional */}
-              <div 
-                onClick={() => setSelectedMetricCategory(prev => prev === 'operasional' ? null : 'operasional')}
-                className={`glass-panel p-4.5 rounded-2xl relative overflow-hidden group border cursor-pointer transition-all duration-200 hover:scale-[1.01] ${
-                  selectedMetricCategory === 'operasional' 
-                    ? 'border-brand-blue ring-2 ring-brand-blue/50 bg-slate-900 shadow-lg shadow-brand-blue/10' 
-                    : 'border-slate-800/80 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex justify-between items-start">
-                  <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Operasional</p>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors ${
-                    selectedMetricCategory === 'operasional' ? 'bg-brand-blue text-slate-950' : 'bg-slate-800 text-slate-400 group-hover:text-white'
-                  }`}>
-                    {selectedMetricCategory === 'operasional' ? '▼ Aktif' : 'Lihat Log'}
-                  </span>
-                </div>
-                <h3 className={`text-xl font-black mt-1.5 ${filteredCwMetrics.operasional >= 0 ? 'text-brand-emerald' : 'text-rose-400'}`}>
-                  {formatRupiah(filteredCwMetrics.operasional)}
-                </h3>
-                <span className="text-[10px] text-slate-500 mt-1 block">
-                  1/3 Omzet ({formatRupiah(filteredCwMetrics.totalCwRevenue / 3)}) - Operasional Murni ({formatRupiah(filteredCwMetrics.totalCwExpNoWages)})
-                </span>
-              </div>
-
-              {/* Gaji Karyawan Cuci */}
-              <div 
-                onClick={() => setSelectedMetricCategory(prev => prev === 'gajiKaryawan' ? null : 'gajiKaryawan')}
-                className={`glass-panel p-4.5 rounded-2xl relative overflow-hidden group border cursor-pointer transition-all duration-200 hover:scale-[1.01] ${
-                  selectedMetricCategory === 'gajiKaryawan' 
-                    ? 'border-brand-blue ring-2 ring-brand-blue/50 bg-slate-900 shadow-lg shadow-brand-blue/10' 
-                    : 'border-slate-800/80 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex justify-between items-start">
-                  <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Gaji Karyawan Cuci</p>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors ${
-                    selectedMetricCategory === 'gajiKaryawan' ? 'bg-brand-blue text-slate-950' : 'bg-slate-800 text-slate-400 group-hover:text-white'
-                  }`}>
-                    {selectedMetricCategory === 'gajiKaryawan' ? '▼ Aktif' : 'Lihat Log'}
-                  </span>
-                </div>
-                <h3 className={`text-xl font-black mt-1.5 ${filteredCwMetrics.gajiKaryawan >= 0 ? 'text-brand-emerald' : 'text-rose-400'}`}>
-                  {formatRupiah(filteredCwMetrics.gajiKaryawan)}
-                </h3>
-                <span className="text-[10px] text-slate-500 mt-1 block">
-                  1/3 Omzet ({formatRupiah(filteredCwMetrics.totalCwRevenue / 3)}) - Gaji Cuci ({formatRupiah(filteredCwMetrics.totalWagesCw)})
-                </span>
-              </div>
-            </div>
-
-            {/* Segment Breakdown Table */}
-            {selectedMetricCategory && (
-              <div className="glass-panel p-5 rounded-2xl border border-brand-blue/40 bg-slate-900/90 animate-fade-in space-y-3.5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
-                  <h4 className="text-sm font-extrabold text-white flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-brand-blue animate-pulse"></span>
-                    <span>
-                      {selectedMetricCategory === 'owner' && 'Rincian Pengeluaran Owner ("Bang Awal")'}
-                      {selectedMetricCategory === 'operasional' && 'Rincian Pengeluaran Operasional Carwash Murni'}
-                      {selectedMetricCategory === 'gajiKaryawan' && 'Rincian Pengeluaran Gaji Karyawan Cuci'}
-                    </span>
-                  </h4>
-                  <button
-                    onClick={() => setSelectedMetricCategory(null)}
-                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition-colors self-start sm:self-auto"
-                  >
-                    ✕ Tutup Rincian
-                  </button>
-                </div>
-
-                {(() => {
-                  const logs = selectedMetricCategory === 'owner' ? filteredCwMetrics.ownerLogs :
-                               selectedMetricCategory === 'operasional' ? filteredCwMetrics.operasionalLogs :
-                               filteredCwMetrics.gajiKaryawanLogs
-
-                  if (!logs || logs.length === 0) {
-                    return <p className="text-xs text-slate-500 italic p-4 text-center">Tidak ada transaksi pengeluaran pada kategori ini.</p>
-                  }
-
-                  return (
-                    <div className="overflow-x-auto">
-                      <table className="w-full min-w-[550px] text-left text-xs text-slate-300">
-                        <thead>
-                          <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[10px]">
-                            <th className="p-2.5">Tanggal</th>
-                            <th className="p-2.5">Keterangan</th>
-                            <th className="p-2.5">POS</th>
-                            <th className="p-2.5 text-right">Pengeluaran</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-800/40">
-                          {logs.map((item, idx) => (
-                            <tr key={item.id_cashflow || idx} className="hover:bg-slate-800/30">
-                              <td className="p-2.5 font-mono text-slate-400">{item.tanggal}</td>
-                              <td className="p-2.5 font-semibold text-white">{item.keterangan_transaksi}</td>
-                              <td className="p-2.5"><span className="px-1.5 py-0.5 rounded bg-slate-950 font-mono text-[10px] text-slate-400">{item.pos}</span></td>
-                              <td className="p-2.5 text-right font-mono font-bold text-rose-400">-{formatRupiah(item.pengeluaran)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )
-                })()}
-              </div>
-            )}
-          </div>
-
           {/* Cashflow Table Section */}
           <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-bold text-white">Log Transaksi Cashflow</h3>
-                {/* Specific Filters */}
-                <select
+                
+                {/* Specific Filters: Arus */}
+                <CustomSelect
                   value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className="bg-slate-900 border border-slate-800 rounded-lg text-xs py-1 px-2.5 text-white"
-                >
-                  <option value="all">Semua Arus</option>
-                  <option value="pemasukan">Pemasukan Murni (+)</option>
-                  <option value="pengeluaran">Pengeluaran Murni (-)</option>
-                  <option value="pindah">Pindah Saldo (Mutasi Rekening)</option>
-                </select>
-                <select
+                  onChange={(val) => setFilterType(val)}
+                  options={[
+                    { value: 'all', label: 'Semua Arus' },
+                    { value: 'pemasukan', label: 'Pemasukan Murni (+)' },
+                    { value: 'pengeluaran', label: 'Pengeluaran Murni (-)' },
+                    { value: 'pindah', label: 'Pindah Saldo (Mutasi)' }
+                  ]}
+                  size="xs"
+                  variant="emerald"
+                />
+
+                {/* Specific Filters: Jenis */}
+                <CustomSelect
+                  value={filterCashflowJenis}
+                  onChange={(val) => handleFilterCashflowJenisChange(val)}
+                  options={[
+                    { value: 'all', label: 'Semua Jenis' },
+                    ...cashflowJenisList.map(j => ({ value: j, label: j }))
+                  ]}
+                  searchable={cashflowJenisList.length > 5}
+                  size="xs"
+                  variant="emerald"
+                />
+
+                {/* Specific Filters: Kategori (Terkunci sesuai jenis yang dipilih) */}
+                <CustomSelect
+                  value={filterCashflowKategori}
+                  onChange={(val) => setFilterCashflowKategori(val)}
+                  options={[
+                    { value: 'all', label: `Semua Kategori ${filterCashflowJenis !== 'all' ? `(${filterCashflowJenis})` : ''}` },
+                    ...cashflowFilteredKategoriOptions.map(k => ({ value: k, label: k }))
+                  ]}
+                  searchable={cashflowFilteredKategoriOptions.length > 5}
+                  size="xs"
+                  variant="emerald"
+                />
+
+                {/* Specific Filters: POS Kas */}
+                <CustomSelect
                   value={filterPos}
-                  onChange={(e) => setFilterPos(e.target.value)}
-                  className="bg-slate-900 border border-slate-800 rounded-lg text-xs py-1 px-2.5 text-white"
-                >
-                  <option value="all">Semua POS Kas</option>
-                  {posOptions.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
+                  onChange={(val) => setFilterPos(val)}
+                  options={[
+                    { value: 'all', label: 'Semua POS Kas' },
+                    ...posOptions.map(p => ({ value: p, label: p }))
+                  ]}
+                  size="xs"
+                  variant="emerald"
+                />
+
+                {/* Reset filter button if active */}
+                {(filterType !== 'all' || filterCashflowJenis !== 'all' || filterCashflowKategori !== 'all' || filterPos !== 'all' || searchQuery !== '' || sortKey !== 'tanggal' || sortOrder !== 'desc') && (
+                  <button
+                    onClick={handleResetFilters}
+                    className="flex items-center gap-1 text-[11px] text-amber-400 hover:text-amber-300 font-bold px-2 py-1 rounded bg-amber-400/10 border border-amber-400/20 transition-colors"
+                    title="Reset Filter Tabel"
+                  >
+                    <RotateCcw size={12} />
+                    Reset
+                  </button>
+                )}
               </div>
 
               <button
@@ -1742,11 +1916,52 @@ const Finance = () => {
               <table className="w-full min-w-[700px] text-left text-xs text-slate-300">
                 <thead>
                   <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[10px] bg-slate-950/40">
-                    <th className="p-3">Tanggal</th>
-                    <th className="p-3">Jenis / Kategori</th>
+                    <th 
+                      className="p-3 cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
+                      onClick={() => handleSortToggle('tanggal')}
+                      title="Klik untuk mengurutkan tanggal (menaik/menurun)"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Tanggal</span>
+                        {sortKey === 'tanggal' ? (
+                          sortOrder === 'desc' ? (
+                            <ArrowDown size={14} className="text-brand-emerald" />
+                          ) : (
+                            <ArrowUp size={14} className="text-brand-emerald" />
+                          )
+                        ) : (
+                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="p-3">
+                      <div className="flex items-center gap-1.5">
+                        <span>Jenis / Kategori</span>
+                        {(filterCashflowJenis !== 'all' || filterCashflowKategori !== 'all') && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-brand-emerald animate-pulse" title="Filter Jenis/Kategori Aktif" />
+                        )}
+                      </div>
+                    </th>
                     <th className="p-3">Keterangan</th>
                     <th className="p-3">POS Kas</th>
-                    <th className="p-3 text-right">Nominal</th>
+                    <th 
+                      className="p-3 text-right cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
+                      onClick={() => handleSortToggle('nominal')}
+                      title="Klik untuk mengurutkan nominal (menaik/menurun)"
+                    >
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span>Nominal</span>
+                        {sortKey === 'nominal' ? (
+                          sortOrder === 'desc' ? (
+                            <ArrowDown size={14} className="text-brand-emerald" />
+                          ) : (
+                            <ArrowUp size={14} className="text-brand-emerald" />
+                          )
+                        ) : (
+                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
+                        )}
+                      </div>
+                    </th>
                     <th className="p-3 text-center">Aksi</th>
                   </tr>
                 </thead>
@@ -1834,7 +2049,7 @@ const Finance = () => {
                 <select
                   value={pageSize}
                   onChange={(e) => setPageSize(parseInt(e.target.value))}
-                  className="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-white text-xs"
+                  className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
                 >
                   <option value={25}>25</option>
                   <option value={50}>50</option>
@@ -1896,26 +2111,30 @@ const Finance = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-bold text-white">Log Transaksi Carwash</h3>
-                <select
+                <CustomSelect
                   value={filterCarwashPayment}
-                  onChange={(e) => setFilterCarwashPayment(e.target.value)}
-                  className="bg-slate-900 border border-slate-800 rounded-lg text-xs py-1 px-2.5 text-white"
-                >
-                  <option value="all">Semua Metode Bayar</option>
-                  <option value="CASH">CASH</option>
-                  <option value="QRIS">QRIS</option>
-                  <option value="SPLIT">SPLIT</option>
-                </select>
-                <select
+                  onChange={(val) => setFilterCarwashPayment(val)}
+                  options={[
+                    { value: 'all', label: 'Semua Metode Bayar' },
+                    { value: 'CASH', label: 'CASH' },
+                    { value: 'QRIS', label: 'QRIS' },
+                    { value: 'SPLIT', label: 'SPLIT' }
+                  ]}
+                  size="xs"
+                  variant="blue"
+                />
+                <CustomSelect
                   value={filterCarwashStatus}
-                  onChange={(e) => setFilterCarwashStatus(e.target.value)}
-                  className="bg-slate-900 border border-slate-800 rounded-lg text-xs py-1 px-2.5 text-white"
-                >
-                  <option value="all">Semua Status</option>
-                  <option value="Selesai">Selesai</option>
-                  <option value="Proses">Proses</option>
-                  <option value="Antre">Antre</option>
-                </select>
+                  onChange={(val) => setFilterCarwashStatus(val)}
+                  options={[
+                    { value: 'all', label: 'Semua Status' },
+                    { value: 'Selesai', label: 'Selesai' },
+                    { value: 'Proses', label: 'Proses' },
+                    { value: 'Antre', label: 'Antre' }
+                  ]}
+                  size="xs"
+                  variant="blue"
+                />
               </div>
 
               <button
@@ -1931,12 +2150,46 @@ const Finance = () => {
               <table className="w-full min-w-[750px] text-left text-xs text-slate-300">
                 <thead>
                   <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[10px] bg-slate-950/40">
-                    <th className="p-3">Tanggal & Jam</th>
+                    <th 
+                      className="p-3 cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
+                      onClick={() => handleSortToggle('tanggal')}
+                      title="Klik untuk mengurutkan tanggal (menaik/menurun)"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Tanggal & Jam</span>
+                        {sortKey === 'tanggal' ? (
+                          sortOrder === 'desc' ? (
+                            <ArrowDown size={14} className="text-brand-emerald" />
+                          ) : (
+                            <ArrowUp size={14} className="text-brand-emerald" />
+                          )
+                        ) : (
+                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
+                        )}
+                      </div>
+                    </th>
                     <th className="p-3">Plat & Model</th>
                     <th className="p-3">Layanan</th>
                     <th className="p-3">Metode Bayar</th>
                     <th className="p-3">Status</th>
-                    <th className="p-3 text-right">Harga Bersih</th>
+                    <th 
+                      className="p-3 text-right cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
+                      onClick={() => handleSortToggle('nominal')}
+                      title="Klik untuk mengurutkan harga (menaik/menurun)"
+                    >
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span>Harga Bersih</span>
+                        {sortKey === 'nominal' ? (
+                          sortOrder === 'desc' ? (
+                            <ArrowDown size={14} className="text-brand-emerald" />
+                          ) : (
+                            <ArrowUp size={14} className="text-brand-emerald" />
+                          )
+                        ) : (
+                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
+                        )}
+                      </div>
+                    </th>
                     <th className="p-3 text-center">Aksi</th>
                   </tr>
                 </thead>
@@ -2020,7 +2273,7 @@ const Finance = () => {
                 <select
                   value={pageSize}
                   onChange={(e) => setPageSize(parseInt(e.target.value))}
-                  className="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-white text-xs"
+                  className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
                 >
                   <option value={25}>25</option>
                   <option value={50}>50</option>
@@ -2070,14 +2323,17 @@ const Finance = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-bold text-white">Log Detail Penjualan Cafe</h3>
-                <select
+                <CustomSelect
                   value={filterCafeCategory}
-                  onChange={(e) => setFilterCafeCategory(e.target.value)}
-                  className="bg-slate-900 border border-slate-800 rounded-lg text-xs py-1 px-2.5 text-white"
-                >
-                  <option value="all">Semua Kategori Menu</option>
-                  {cafeCategoryOptions.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                  onChange={(val) => setFilterCafeCategory(val)}
+                  options={[
+                    { value: 'all', label: 'Semua Kategori Menu' },
+                    ...cafeCategoryOptions.map(c => ({ value: c, label: c }))
+                  ]}
+                  searchable={cafeCategoryOptions.length > 5}
+                  size="xs"
+                  variant="blue"
+                />
               </div>
 
               <button
@@ -2093,12 +2349,53 @@ const Finance = () => {
               <table className="w-full min-w-[700px] text-left text-xs text-slate-300">
                 <thead>
                   <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[10px] bg-slate-950/40">
-                    <th className="p-3">Waktu & Struk</th>
+                    <th 
+                      className="p-3 cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
+                      onClick={() => handleSortToggle('tanggal')}
+                      title="Klik untuk mengurutkan waktu/tanggal (menaik/menurun)"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Waktu & Struk</span>
+                        {sortKey === 'tanggal' ? (
+                          sortOrder === 'desc' ? (
+                            <ArrowDown size={14} className="text-brand-emerald" />
+                          ) : (
+                            <ArrowUp size={14} className="text-brand-emerald" />
+                          )
+                        ) : (
+                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
+                        )}
+                      </div>
+                    </th>
                     <th className="p-3">Nama Menu</th>
-                    <th className="p-3">Kategori</th>
+                    <th className="p-3">
+                      <div className="flex items-center gap-1.5">
+                        <span>Kategori</span>
+                        {filterCafeCategory !== 'all' && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-brand-emerald animate-pulse" title="Filter Kategori Aktif" />
+                        )}
+                      </div>
+                    </th>
                     <th className="p-3 text-center">Qty</th>
                     <th className="p-3 text-right">Harga Satuan</th>
-                    <th className="p-3 text-right">Total Tagihan</th>
+                    <th 
+                      className="p-3 text-right cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
+                      onClick={() => handleSortToggle('nominal')}
+                      title="Klik untuk mengurutkan total tagihan (menaik/menurun)"
+                    >
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span>Total Tagihan</span>
+                        {sortKey === 'nominal' ? (
+                          sortOrder === 'desc' ? (
+                            <ArrowDown size={14} className="text-brand-emerald" />
+                          ) : (
+                            <ArrowUp size={14} className="text-brand-emerald" />
+                          )
+                        ) : (
+                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
+                        )}
+                      </div>
+                    </th>
                     <th className="p-3 text-center">Aksi</th>
                   </tr>
                 </thead>
@@ -2169,7 +2466,7 @@ const Finance = () => {
                 <select
                   value={pageSize}
                   onChange={(e) => setPageSize(parseInt(e.target.value))}
-                  className="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-white text-xs"
+                  className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
                 >
                   <option value={25}>25</option>
                   <option value={50}>50</option>
@@ -2223,14 +2520,56 @@ const Finance = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-bold text-white">Log Pengeluaran Lengkap</h3>
-                <select
+                
+                {/* Specific Filters: Jenis */}
+                <CustomSelect
+                  value={filterExpenseJenis}
+                  onChange={(val) => handleFilterExpenseJenisChange(val)}
+                  options={[
+                    { value: 'all', label: 'Semua Jenis' },
+                    ...expenseJenisList.map(j => ({ value: j, label: j }))
+                  ]}
+                  searchable={expenseJenisList.length > 5}
+                  size="xs"
+                  variant="rose"
+                />
+
+                {/* Specific Filters: Kategori (Terkunci sesuai jenis pengeluaran) */}
+                <CustomSelect
                   value={filterExpenseCategory}
-                  onChange={(e) => setFilterExpenseCategory(e.target.value)}
-                  className="bg-slate-900 border border-slate-800 rounded-lg text-xs py-1 px-2.5 text-white"
-                >
-                  <option value="all">Semua Kategori</option>
-                  {kategoriOptions.map(k => <option key={k} value={k}>{k}</option>)}
-                </select>
+                  onChange={(val) => setFilterExpenseCategory(val)}
+                  options={[
+                    { value: 'all', label: `Semua Kategori ${filterExpenseJenis !== 'all' ? `(${filterExpenseJenis})` : ''}` },
+                    ...expenseFilteredKategoriOptions.map(k => ({ value: k, label: k }))
+                  ]}
+                  searchable={expenseFilteredKategoriOptions.length > 5}
+                  size="xs"
+                  variant="rose"
+                />
+
+                {/* Specific Filters: POS Kas */}
+                <CustomSelect
+                  value={filterPos}
+                  onChange={(val) => setFilterPos(val)}
+                  options={[
+                    { value: 'all', label: 'Semua POS Kas' },
+                    ...posOptions.map(p => ({ value: p, label: p }))
+                  ]}
+                  size="xs"
+                  variant="rose"
+                />
+
+                {/* Reset filter button if active */}
+                {(filterExpenseJenis !== 'all' || filterExpenseCategory !== 'all' || filterPos !== 'all' || searchQuery !== '' || sortKey !== 'tanggal' || sortOrder !== 'desc') && (
+                  <button
+                    onClick={handleResetFilters}
+                    className="flex items-center gap-1 text-[11px] text-amber-400 hover:text-amber-300 font-bold px-2 py-1 rounded bg-amber-400/10 border border-amber-400/20 transition-colors"
+                    title="Reset Filter Tabel"
+                  >
+                    <RotateCcw size={12} />
+                    Reset
+                  </button>
+                )}
               </div>
 
               <button
@@ -2246,11 +2585,52 @@ const Finance = () => {
               <table className="w-full min-w-[700px] text-left text-xs text-slate-300">
                 <thead>
                   <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[10px] bg-slate-950/40">
-                    <th className="p-3">Tanggal & Jam</th>
+                    <th 
+                      className="p-3 cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
+                      onClick={() => handleSortToggle('tanggal')}
+                      title="Klik untuk mengurutkan tanggal (menaik/menurun)"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Tanggal & Jam</span>
+                        {sortKey === 'tanggal' ? (
+                          sortOrder === 'desc' ? (
+                            <ArrowDown size={14} className="text-brand-rose" />
+                          ) : (
+                            <ArrowUp size={14} className="text-brand-rose" />
+                          )
+                        ) : (
+                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
+                        )}
+                      </div>
+                    </th>
                     <th className="p-3">Keterangan / Item</th>
-                    <th className="p-3">Jenis & Kategori</th>
+                    <th className="p-3">
+                      <div className="flex items-center gap-1.5">
+                        <span>Jenis & Kategori</span>
+                        {(filterExpenseJenis !== 'all' || filterExpenseCategory !== 'all') && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-brand-rose animate-pulse" title="Filter Jenis/Kategori Aktif" />
+                        )}
+                      </div>
+                    </th>
                     <th className="p-3">POS Kas</th>
-                    <th className="p-3 text-right">Nominal</th>
+                    <th 
+                      className="p-3 text-right cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
+                      onClick={() => handleSortToggle('nominal')}
+                      title="Klik untuk mengurutkan nominal beban (menaik/menurun)"
+                    >
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span>Nominal</span>
+                        {sortKey === 'nominal' ? (
+                          sortOrder === 'desc' ? (
+                            <ArrowDown size={14} className="text-brand-rose" />
+                          ) : (
+                            <ArrowUp size={14} className="text-brand-rose" />
+                          )
+                        ) : (
+                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
+                        )}
+                      </div>
+                    </th>
                     <th className="p-3 text-center">Aksi</th>
                   </tr>
                 </thead>
@@ -2325,7 +2705,7 @@ const Finance = () => {
                 <select
                   value={pageSize}
                   onChange={(e) => setPageSize(parseInt(e.target.value))}
-                  className="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-white text-xs"
+                  className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
                 >
                   <option value={25}>25</option>
                   <option value={50}>50</option>
@@ -2409,33 +2789,36 @@ const Finance = () => {
                         type="text"
                         placeholder="Ketik jenis..."
                         value={expenseForm.jenis}
-                        onChange={(e) => setExpenseForm(prev => ({ ...prev, jenis: e.target.value }))}
-                        className="w-full bg-slate-900 border border-brand-emerald rounded-lg py-2 px-3 text-white text-sm focus:outline-none"
+                        onChange={(e) => handleExpenseJenisSelect(e.target.value)}
+                        className="w-full bg-slate-900 border border-brand-emerald rounded-xl py-2 px-3 text-white text-xs md:text-sm focus:outline-none"
                         autoFocus
                       />
                     ) : (
-                      <select
+                      <CustomSelect
                         value={expenseForm.jenis}
-                        onChange={(e) => {
-                          if (e.target.value === '__CUSTOM__') {
+                        onChange={(val) => {
+                          if (val === '__CUSTOM__') {
                             setIsCustomExpenseJenis(true)
                             setExpenseForm(prev => ({ ...prev, jenis: '' }))
                           } else {
-                            setExpenseForm(prev => ({ ...prev, jenis: e.target.value }))
+                            handleExpenseJenisSelect(val)
                           }
                         }}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-rose"
-                      >
-                        {allJenisOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                        <option value="__CUSTOM__">✨ + Custom (Ketik Sendiri)...</option>
-                      </select>
+                        options={[
+                          ...allJenisOptions.map(o => ({ value: o, label: o })),
+                          { value: '__CUSTOM__', label: '✨ + Custom (Ketik Sendiri)...' }
+                        ]}
+                        size="md"
+                        variant="rose"
+                        className="w-full"
+                      />
                     )}
                   </div>
 
                   <div>
                     <div className="flex justify-between items-center mb-1.5">
                       <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                        Kategori
+                        Kategori (Terkunci)
                       </label>
                       <button
                         type="button"
@@ -2459,32 +2842,34 @@ const Finance = () => {
                           }))
                           if (newCat !== 'Bahan Baku') setBarangMasukList([])
                         }}
-                        className="w-full bg-slate-900 border border-brand-emerald rounded-lg py-2 px-3 text-white text-sm focus:outline-none"
+                        className="w-full bg-slate-900 border border-brand-emerald rounded-xl py-2 px-3 text-white text-xs md:text-sm focus:outline-none"
                         autoFocus
                       />
                     ) : (
-                      <select
+                      <CustomSelect
                         value={expenseForm.kategori}
-                        onChange={(e) => {
-                          if (e.target.value === '__CUSTOM__') {
+                        onChange={(val) => {
+                          if (val === '__CUSTOM__') {
                             setIsCustomExpenseKategori(true)
                             setExpenseForm(prev => ({ ...prev, kategori: '' }))
                             setBarangMasukList([])
                           } else {
-                            const newCat = e.target.value
                             setExpenseForm(prev => ({ 
                               ...prev, 
-                              kategori: newCat,
-                              total_harga: newCat === 'Bahan Baku' ? 0 : prev.total_harga
+                              kategori: val,
+                              total_harga: val === 'Bahan Baku' ? 0 : prev.total_harga
                             }))
-                            if (newCat !== 'Bahan Baku') setBarangMasukList([])
+                            if (val !== 'Bahan Baku') setBarangMasukList([])
                           }
                         }}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-rose"
-                      >
-                        {allKategoriOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                        <option value="__CUSTOM__">✨ + Custom (Ketik Sendiri)...</option>
-                      </select>
+                        options={[
+                          ...availableExpenseCategories.map(o => ({ value: o, label: o })),
+                          { value: '__CUSTOM__', label: '✨ + Custom (Ketik Sendiri)...' }
+                        ]}
+                        size="md"
+                        variant="rose"
+                        className="w-full"
+                      />
                     )}
                   </div>
 
@@ -2492,13 +2877,14 @@ const Finance = () => {
                     <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                       POS Kas
                     </label>
-                    <select
+                    <CustomSelect
                       value={expenseForm.pos}
-                      onChange={(e) => setExpenseForm(prev => ({ ...prev, pos: e.target.value }))}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-rose"
-                    >
-                      {posOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
+                      onChange={(val) => setExpenseForm(prev => ({ ...prev, pos: val }))}
+                      options={posOptions.map(o => ({ value: o, label: o }))}
+                      size="md"
+                      variant="rose"
+                      className="w-full"
+                    />
                   </div>
                 </div>
 
@@ -2523,8 +2909,8 @@ const Finance = () => {
                       type="number"
                       placeholder="0"
                       value={expenseForm.total_harga}
-                      onChange={(e) => setExpenseForm(prev => ({ ...prev, total_harga: parseFloat(e.target.value) || 0 }))}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-rose"
+                      onChange={(e) => setExpenseForm(prev => ({ ...prev, total_harga: e.target.value }))}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm font-mono focus:outline-none focus:border-brand-rose"
                     />
                   </div>
                 ) : (
@@ -2548,30 +2934,32 @@ const Finance = () => {
                           <select
                             value={item.id_bahan_baku}
                             onChange={(e) => updateBarangMasukItem(idx, 'id_bahan_baku', e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-850 rounded py-1.5 px-2 text-white text-xs"
+                            className="w-full bg-slate-900 border border-slate-800 rounded py-1.5 px-2 text-white text-xs font-semibold focus:outline-none focus:border-brand-rose"
                           >
                             {stokBahan.map(b => (
-                              <option key={b.nama_bahan} value={b.nama_bahan}>{b.nama_bahan}</option>
+                              <option key={b.id_bahan_baku} value={b.id_bahan_baku}>
+                                {b.nama_produk} ({b.satuan})
+                              </option>
                             ))}
                           </select>
                         </div>
-                        <div className="w-16">
+                        <div className="w-20">
                           <input
                             type="number"
                             placeholder="Qty"
                             value={item.jumlah}
-                            onChange={(e) => updateBarangMasukItem(idx, 'jumlah', parseFloat(e.target.value) || 0)}
-                            className="w-full bg-slate-900 border border-slate-850 rounded py-1.5 px-2 text-white text-xs text-center"
+                            onChange={(e) => updateBarangMasukItem(idx, 'jumlah', e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-800 rounded py-1.5 px-2 text-white text-xs text-center font-mono focus:outline-none focus:border-brand-rose"
                           />
                         </div>
-                        <span className="text-[10px] text-slate-500 w-12 font-mono">{item.satuan}</span>
-                        <div className="flex-1 min-w-[80px]">
+                        <span className="text-[10px] text-slate-400 w-12 font-mono">{item.satuan}</span>
+                        <div className="flex-1 min-w-[100px]">
                           <input
                             type="number"
                             placeholder="Harga Satuan"
                             value={item.harga_satuan}
-                            onChange={(e) => updateBarangMasukItem(idx, 'harga_satuan', parseFloat(e.target.value) || 0)}
-                            className="w-full bg-slate-900 border border-slate-850 rounded py-1.5 px-2 text-white text-xs text-right"
+                            onChange={(e) => updateBarangMasukItem(idx, 'harga_satuan', e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-800 rounded py-1.5 px-2 text-white text-xs text-right font-mono focus:outline-none focus:border-brand-rose"
                           />
                         </div>
                         <button
@@ -2667,33 +3055,36 @@ const Finance = () => {
                         type="text"
                         placeholder="Ketik jenis..."
                         value={incomeForm.jenis}
-                        onChange={(e) => setIncomeForm(prev => ({ ...prev, jenis: e.target.value }))}
-                        className="w-full bg-slate-900 border border-brand-emerald rounded-lg py-2 px-3 text-white text-sm focus:outline-none"
+                        onChange={(e) => handleIncomeJenisSelect(e.target.value)}
+                        className="w-full bg-slate-900 border border-brand-emerald rounded-xl py-2 px-3 text-white text-xs md:text-sm focus:outline-none"
                         autoFocus
                       />
                     ) : (
-                      <select
+                      <CustomSelect
                         value={incomeForm.jenis}
-                        onChange={(e) => {
-                          if (e.target.value === '__CUSTOM__') {
+                        onChange={(val) => {
+                          if (val === '__CUSTOM__') {
                             setIsCustomIncomeJenis(true)
                             setIncomeForm(prev => ({ ...prev, jenis: '' }))
                           } else {
-                            setIncomeForm(prev => ({ ...prev, jenis: e.target.value }))
+                            handleIncomeJenisSelect(val)
                           }
                         }}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-emerald"
-                      >
-                        {allIncomeJenisOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                        <option value="__CUSTOM__">✨ + Custom (Ketik Sendiri)...</option>
-                      </select>
+                        options={[
+                          ...allIncomeJenisOptions.map(o => ({ value: o, label: o })),
+                          { value: '__CUSTOM__', label: '✨ + Custom (Ketik Sendiri)...' }
+                        ]}
+                        size="md"
+                        variant="emerald"
+                        className="w-full"
+                      />
                     )}
                   </div>
 
                   <div>
                     <div className="flex justify-between items-center mb-1.5">
                       <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                        Kategori Pemasukan
+                        Kategori Pemasukan (Terkunci)
                       </label>
                       <button
                         type="button"
@@ -2709,25 +3100,28 @@ const Finance = () => {
                         placeholder="Ketik kategori..."
                         value={incomeForm.kategori}
                         onChange={(e) => setIncomeForm(prev => ({ ...prev, kategori: e.target.value }))}
-                        className="w-full bg-slate-900 border border-brand-emerald rounded-lg py-2 px-3 text-white text-sm focus:outline-none"
+                        className="w-full bg-slate-900 border border-brand-emerald rounded-xl py-2 px-3 text-white text-xs md:text-sm focus:outline-none"
                         autoFocus
                       />
                     ) : (
-                      <select
+                      <CustomSelect
                         value={incomeForm.kategori}
-                        onChange={(e) => {
-                          if (e.target.value === '__CUSTOM__') {
+                        onChange={(val) => {
+                          if (val === '__CUSTOM__') {
                             setIsCustomIncomeKategori(true)
                             setIncomeForm(prev => ({ ...prev, kategori: '' }))
                           } else {
-                            setIncomeForm(prev => ({ ...prev, kategori: e.target.value }))
+                            setIncomeForm(prev => ({ ...prev, kategori: val }))
                           }
                         }}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-emerald"
-                      >
-                        {allIncomeKategoriOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                        <option value="__CUSTOM__">✨ + Custom (Ketik Sendiri)...</option>
-                      </select>
+                        options={[
+                          ...availableIncomeCategories.map(o => ({ value: o, label: o })),
+                          { value: '__CUSTOM__', label: '✨ + Custom (Ketik Sendiri)...' }
+                        ]}
+                        size="md"
+                        variant="emerald"
+                        className="w-full"
+                      />
                     )}
                   </div>
 
@@ -2735,13 +3129,14 @@ const Finance = () => {
                     <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                       POS Kas Tujuan
                     </label>
-                    <select
+                    <CustomSelect
                       value={incomeForm.pos}
-                      onChange={(e) => setIncomeForm(prev => ({ ...prev, pos: e.target.value }))}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-emerald"
-                    >
-                      {posOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
+                      onChange={(val) => setIncomeForm(prev => ({ ...prev, pos: val }))}
+                      options={posOptions.map(o => ({ value: o, label: o }))}
+                      size="md"
+                      variant="emerald"
+                      className="w-full"
+                    />
                   </div>
                 </div>
 
@@ -2835,17 +3230,17 @@ const Finance = () => {
                     <label className="block text-xs font-bold text-rose-400 uppercase tracking-wider">
                       1. Dari Pos Kas (Sumber / Asal)
                     </label>
-                    <select
+                    <CustomSelect
                       value={transferForm.pos_asal}
-                      onChange={(e) => setTransferForm(prev => ({ ...prev, pos_asal: e.target.value }))}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-white text-xs font-semibold focus:outline-none focus:border-rose-400"
-                    >
-                      {posOptions.map(p => (
-                        <option key={p} value={p}>
-                          {p} (Saldo: {formatRupiah(posAllTimeBalances[p === 'SALDO CASH' ? 'cash' : p === 'SALDO REKENING Y' ? 'rekY' : p === 'SALDO REKENING N' ? 'rekN' : 'rekR'])})
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setTransferForm(prev => ({ ...prev, pos_asal: val }))}
+                      options={posOptions.map(p => ({
+                        value: p,
+                        label: `${p} (${formatRupiah(posAllTimeBalances[p === 'SALDO CASH' ? 'cash' : p === 'SALDO REKENING Y' ? 'rekY' : p === 'SALDO REKENING N' ? 'rekN' : 'rekR'])})`
+                      }))}
+                      size="sm"
+                      variant="rose"
+                      className="w-full"
+                    />
                     <span className="text-[10px] text-slate-500 block">Saldo akan berkurang (-)</span>
                   </div>
 
@@ -2853,17 +3248,17 @@ const Finance = () => {
                     <label className="block text-xs font-bold text-brand-emerald uppercase tracking-wider">
                       2. Ke Pos Kas (Tujuan)
                     </label>
-                    <select
+                    <CustomSelect
                       value={transferForm.pos_tujuan}
-                      onChange={(e) => setTransferForm(prev => ({ ...prev, pos_tujuan: e.target.value }))}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald"
-                    >
-                      {posOptions.map(p => (
-                        <option key={p} value={p}>
-                          {p} (Saldo: {formatRupiah(posAllTimeBalances[p === 'SALDO CASH' ? 'cash' : p === 'SALDO REKENING Y' ? 'rekY' : p === 'SALDO REKENING N' ? 'rekN' : 'rekR'])})
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setTransferForm(prev => ({ ...prev, pos_tujuan: val }))}
+                      options={posOptions.map(p => ({
+                        value: p,
+                        label: `${p} (${formatRupiah(posAllTimeBalances[p === 'SALDO CASH' ? 'cash' : p === 'SALDO REKENING Y' ? 'rekY' : p === 'SALDO REKENING N' ? 'rekN' : 'rekR'])})`
+                      }))}
+                      size="sm"
+                      variant="emerald"
+                      className="w-full"
+                    />
                     <span className="text-[10px] text-slate-500 block">Saldo akan bertambah (+)</span>
                   </div>
                 </div>
@@ -2993,7 +3388,7 @@ const Finance = () => {
                         <select
                           value={editForm.pos}
                           onChange={(e) => setEditForm(prev => ({ ...prev, pos: e.target.value }))}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs"
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2 px-3 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
                         >
                           {posOptions.map(p => <option key={p} value={p}>{p}</option>)}
                         </select>
@@ -3005,8 +3400,19 @@ const Finance = () => {
                           list="edit-cf-jenis-list"
                           placeholder="Jenis transaksi"
                           value={editForm.jenis || ''}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, jenis: e.target.value }))}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs"
+                          onChange={(e) => {
+                            const newJ = e.target.value
+                            const nextCats = getLockedCategoriesForJenis(newJ, masterCategories, [], parseFloat(editForm.pemasukan || 0) > 0)
+                            setEditForm(prev => {
+                              const isCurrentValid = nextCats.some(c => c.toLowerCase() === (prev.kategori || '').toLowerCase())
+                              return {
+                                ...prev,
+                                jenis: newJ,
+                                kategori: isCurrentValid ? prev.kategori : (nextCats[0] || prev.kategori)
+                              }
+                            })
+                          }}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2 px-3 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald"
                         />
                         <datalist id="edit-cf-jenis-list">
                           {Array.from(new Set([...allJenisOptions, ...allIncomeJenisOptions])).map((opt, i) => (
@@ -3015,17 +3421,17 @@ const Finance = () => {
                         </datalist>
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Kategori</label>
+                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Kategori (Terkunci)</label>
                         <input
                           type="text"
                           list="edit-cf-kategori-list"
                           placeholder="Kategori transaksi"
                           value={editForm.kategori || ''}
                           onChange={(e) => setEditForm(prev => ({ ...prev, kategori: e.target.value }))}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs"
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2 px-3 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald"
                         />
                         <datalist id="edit-cf-kategori-list">
-                          {Array.from(new Set([...allKategoriOptions, ...allIncomeKategoriOptions])).map((opt, i) => (
+                          {editAvailableCategories.map((opt, i) => (
                             <option key={i} value={opt} />
                           ))}
                         </datalist>
@@ -3091,15 +3497,18 @@ const Finance = () => {
                       </div>
                       <div>
                         <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Metode Bayar</label>
-                        <select
+                        <CustomSelect
                           value={editForm.metode_bayar}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, metode_bayar: e.target.value }))}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs"
-                        >
-                          <option value="CASH">CASH</option>
-                          <option value="QRIS">QRIS</option>
-                          <option value="SPLIT">SPLIT</option>
-                        </select>
+                          onChange={(val) => setEditForm(prev => ({ ...prev, metode_bayar: val }))}
+                          options={[
+                            { value: 'CASH', label: 'CASH' },
+                            { value: 'QRIS', label: 'QRIS' },
+                            { value: 'SPLIT', label: 'SPLIT' }
+                          ]}
+                          size="xs"
+                          variant="blue"
+                          className="w-full"
+                        />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
@@ -3115,15 +3524,18 @@ const Finance = () => {
                       </div>
                       <div>
                         <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Status</label>
-                        <select
+                        <CustomSelect
                           value={editForm.status}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, status: e.target.value }))}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs"
-                        >
-                          <option value="Selesai">Selesai</option>
-                          <option value="Proses">Proses</option>
-                          <option value="Antre">Antre</option>
-                        </select>
+                          onChange={(val) => setEditForm(prev => ({ ...prev, status: val }))}
+                          options={[
+                            { value: 'Selesai', label: 'Selesai' },
+                            { value: 'Proses', label: 'Proses' },
+                            { value: 'Antre', label: 'Antre' }
+                          ]}
+                          size="xs"
+                          variant="blue"
+                          className="w-full"
+                        />
                       </div>
                     </div>
                   </>
@@ -3193,32 +3605,33 @@ const Finance = () => {
                         required
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Kategori</label>
+                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Kategori (Terkunci)</label>
                         <input
                           type="text"
                           list="edit-exp-kategori-list"
                           placeholder="Kategori beban"
                           value={editForm.kategori || ''}
                           onChange={(e) => setEditForm(prev => ({ ...prev, kategori: e.target.value }))}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs"
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2 px-3 text-white text-xs font-semibold focus:outline-none focus:border-brand-rose"
                         />
                         <datalist id="edit-exp-kategori-list">
-                          {allKategoriOptions.map((k, i) => (
+                          {editAvailableCategories.map((k, i) => (
                             <option key={i} value={k} />
                           ))}
                         </datalist>
                       </div>
                       <div>
                         <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">POS Kas</label>
-                        <select
+                        <CustomSelect
                           value={editForm.pos}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, pos: e.target.value }))}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs"
-                        >
-                          {posOptions.map(p => <option key={p} value={p}>{p}</option>)}
-                        </select>
+                          onChange={(val) => setEditForm(prev => ({ ...prev, pos: val }))}
+                          options={posOptions.map(p => ({ value: p, label: p }))}
+                          size="xs"
+                          variant="rose"
+                          className="w-full"
+                        />
                       </div>
                     </div>
                     <div>
@@ -3226,8 +3639,8 @@ const Finance = () => {
                       <input
                         type="number"
                         value={editForm.nominal}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, nominal: parseFloat(e.target.value) || 0 }))}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs font-mono font-bold"
+                        onChange={(e) => setEditForm(prev => ({ ...prev, nominal: e.target.value }))}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs font-mono font-bold focus:outline-none focus:border-brand-blue"
                         required
                       />
                     </div>

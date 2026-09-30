@@ -1,0 +1,17 @@
+[
+  {
+    "nama": "CASH",
+    "is_active": true,
+    "created_at": "2026-07-30T18:10:56.895252+00:00"
+  },
+  {
+    "nama": "QRIS",
+    "is_active": true,
+    "created_at": "2026-07-30T18:10:56.895252+00:00"
+  },
+  {
+    "nama": "CUSTOM",
+    "is_active": true,
+    "created_at": "2026-07-30T18:10:56.895252+00:00"
+  }
+]

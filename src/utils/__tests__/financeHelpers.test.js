@@ -8,7 +8,8 @@ import {
   formatPosExpensePayload,
   validateEditCashflowForm,
   generateCSVString,
-  isPindahSaldo
+  isPindahSaldo,
+  getLockedCategoriesForJenis
 } from '../financeHelpers'
 
 describe('Finance Helpers', () => {
@@ -262,6 +263,40 @@ describe('Finance Helpers', () => {
       expect(isPindahSaldo({ jenis: 'pengeluaran Carwash', kategori: 'Operasional', keterangan_transaksi: 'Beli Sabun Cuci' })).toBe(false)
       expect(isPindahSaldo({ jenis: 'Casbon', kategori: 'Casbon', keterangan_transaksi: 'Casbon Staff' })).toBe(false)
       expect(isPindahSaldo(null)).toBe(false)
+    })
+  })
+
+  describe('getLockedCategoriesForJenis (Category Locking by Expense/Income Type)', () => {
+    const sampleMasterCategories = [
+      { id: '1', nama_kategori: 'Bahan Baku F&B', jenis: 'Pengeluaran Cafe', tipe_arus: 'PENGELUARAN', is_active: true },
+      { id: '2', nama_kategori: 'Listrik Cafe', jenis: 'Pengeluaran Cafe', tipe_arus: 'PENGELUARAN', is_active: true },
+      { id: '3', nama_kategori: 'Bahan Cuci & Chemical', jenis: 'Pengeluaran Carwash', tipe_arus: 'PENGELUARAN', is_active: true },
+      { id: '4', nama_kategori: 'Air PAM & Mesin', jenis: 'Pengeluaran Carwash', tipe_arus: 'PENGELUARAN', is_active: true },
+      { id: '5', nama_kategori: 'Sewa Tempat', jenis: 'Pengeluaran Bersama', tipe_arus: 'PENGELUARAN', is_active: true },
+      { id: '6', nama_kategori: 'Casbon Karyawan', jenis: 'Pengeluaran Bersama', tipe_arus: 'PENGELUARAN', is_active: true },
+      { id: '7', nama_kategori: 'Sewa Tenant Luar', jenis: 'Pemasukan Non-POS', tipe_arus: 'PEMASUKAN', is_active: true },
+    ]
+
+    it('should only return Cafe categories when Pengeluaran Cafe is selected and NOT carwash chemical', () => {
+      const cats = getLockedCategoriesForJenis('Pengeluaran Cafe', sampleMasterCategories, [], false)
+      expect(cats).toContain('Bahan Baku F&B')
+      expect(cats).toContain('Listrik Cafe')
+      expect(cats).not.toContain('Bahan Cuci & Chemical')
+      expect(cats).not.toContain('Air PAM & Mesin')
+    })
+
+    it('should only return Carwash categories when Pengeluaran Carwash is selected and NOT Cafe F&B', () => {
+      const cats = getLockedCategoriesForJenis('Pengeluaran Carwash', sampleMasterCategories, [], false)
+      expect(cats).toContain('Bahan Cuci & Chemical')
+      expect(cats).toContain('Air PAM & Mesin')
+      expect(cats).not.toContain('Bahan Baku F&B')
+      expect(cats).not.toContain('Listrik Cafe')
+    })
+
+    it('should return Income categories when Pemasukan type is selected', () => {
+      const cats = getLockedCategoriesForJenis('Pemasukan Non-POS', sampleMasterCategories, [], true)
+      expect(cats).toContain('Sewa Tenant Luar')
+      expect(cats).not.toContain('Bahan Baku F&B')
     })
   })
 })

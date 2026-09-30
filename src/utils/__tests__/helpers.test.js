@@ -4,7 +4,8 @@ import {
   parseDateSafe,
   getShiftForCashier,
   generateUUID,
-  calculateTutupKasirRecap
+  calculateTutupKasirRecap,
+  calculateDailyCashierRecap
 } from '../helpers'
 
 describe('Base Helpers', () => {
@@ -197,6 +198,42 @@ describe('Base Helpers', () => {
       expect(recap.length).toBe(1)
       expect(recap[0].kategori).toBe('Omzet Harian (QRIS)')
       expect(recap[0].pemasukan).toBe(20000)
+    })
+  })
+
+  describe('calculateDailyCashierRecap', () => {
+    it('should accurately calculate cash vs non-cash totals, counts, and percentages for today', () => {
+      const sampleReceipts = [
+        { id_struk: 'S1', tanggal: '2026-09-20', metode_bayar: 'CASH', total_tagihan: 100000, nominal_cash: 100000, nominal_qris: 0, status_bayar: 'Selesai' },
+        { id_struk: 'S2', tanggal: '2026-09-20', metode_bayar: 'QRIS', total_tagihan: 50000, nominal_cash: 0, nominal_qris: 50000, status_bayar: 'Selesai' },
+        { id_struk: 'S3', tanggal: '2026-09-20', metode_bayar: 'SPLIT', total_tagihan: 50000, nominal_cash: 20000, nominal_qris: 30000, status_bayar: 'Selesai' },
+        { id_struk: 'S4', tanggal: '2026-09-20', metode_bayar: 'TRANSFER', total_tagihan: 100000, nominal_cash: 0, nominal_qris: 100000, status_bayar: 'Selesai' },
+        // Transaksi kemarin (harus di-filter keluar)
+        { id_struk: 'S5', tanggal: '2026-09-19', metode_bayar: 'CASH', total_tagihan: 80000, nominal_cash: 80000, nominal_qris: 0, status_bayar: 'Selesai' },
+        // Transaksi batal (harus diabaikan)
+        { id_struk: 'S6', tanggal: '2026-09-20', metode_bayar: 'CASH', total_tagihan: 45000, nominal_cash: 45000, nominal_qris: 0, status_bayar: 'Batal' }
+      ]
+
+      const recap = calculateDailyCashierRecap(sampleReceipts, '2026-09-20')
+      expect(recap.totalCash).toBe(120000) // S1: 100k + S3: 20k
+      expect(recap.totalNonCash).toBe(180000) // S2: 50k + S3: 30k + S4: 100k
+      expect(recap.totalOmzet).toBe(300000)
+      expect(recap.cashPercentage).toBe(40) // 120k / 300k = 40%
+      expect(recap.nonCashPercentage).toBe(60) // 180k / 300k = 60%
+      expect(recap.cashTxCount).toBe(1)
+      expect(recap.nonCashTxCount).toBe(2)
+      expect(recap.splitTxCount).toBe(1)
+      expect(recap.totalTxCount).toBe(4)
+    })
+
+    it('should handle empty receipts gracefully with zero values', () => {
+      const recap = calculateDailyCashierRecap([], '2026-09-20')
+      expect(recap.totalCash).toBe(0)
+      expect(recap.totalNonCash).toBe(0)
+      expect(recap.totalOmzet).toBe(0)
+      expect(recap.cashPercentage).toBe(0)
+      expect(recap.nonCashPercentage).toBe(0)
+      expect(recap.totalTxCount).toBe(0)
     })
   })
 })

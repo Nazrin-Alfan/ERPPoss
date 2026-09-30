@@ -10,14 +10,28 @@ import {
   Trash2, 
   CheckCircle, 
   AlertCircle,
-  Briefcase
+  Briefcase,
+  Shield,
+  UserCheck,
+  Sparkles
 } from 'lucide-react'
 import { formatRupiah } from '../utils/helpers'
+import { syncStaffToKaryawanKantor, getRoleBadgeConfig } from '../utils/staffHelpers'
+import { getTenantFeatures } from '../utils/businessCapabilities'
 import InteractiveCalendar from '../components/InteractiveCalendar'
 
 const Karyawan = () => {
-  const { registerKasir } = useAuth()
-  const [activeTab, setActiveTab] = useState('wages') // 'wages', 'crew', 'office', 'staff'
+  const { registerKasir, activeTenant } = useAuth()
+  const features = getTenantFeatures(activeTenant?.business_type)
+  const defaultTab = features.isCafeOnly ? 'office' : 'wages'
+  const [activeTab, setActiveTab] = useState(defaultTab)
+
+  useEffect(() => {
+    if (!features.hasCarwash && (activeTab === 'wages' || activeTab === 'crew')) {
+      setActiveTab('office')
+    }
+  }, [features.hasCarwash, activeTab])
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -25,6 +39,7 @@ const Karyawan = () => {
   // Database Data Lists
   const [karyawanCuciList, setKaryawanCuciList] = useState([])
   const [karyawanKantorList, setKaryawanKantorList] = useState([])
+  const [staffList, setStaffList] = useState([])
   const [carwashWagesList, setCarwashWagesList] = useState([])
   const [cashflowList, setCashflowList] = useState([])
   const [pengeluaranList, setPengeluaranList] = useState([])
@@ -109,7 +124,7 @@ const Karyawan = () => {
     })
   }
 
-  // Load Initial Karyawan Lists
+  // Load Initial Karyawan Lists & Auto-sync Registered Staff to Karyawan Kantor
   const loadKaryawanData = async () => {
     setLoading(true)
     try {
@@ -123,7 +138,7 @@ const Karyawan = () => {
       }
       setKaryawanCuciList(realKaryawanCuci)
 
-      // 2. Fetch Karyawan Kantor
+      // 2. Fetch Karyawan Kantor Eksisting
       let realKaryawanKantor = []
       try {
         const { data: kk } = await supabase.from('karyawan_kantor').select('*').order('nama', { ascending: true })
@@ -131,7 +146,35 @@ const Karyawan = () => {
       } catch (e) {
         console.warn('karyawan_kantor read error:', e)
       }
-      setKaryawanKantorList(realKaryawanKantor)
+
+      // 3. Fetch Profil Akun Staf (Daftar Staf Baru)
+      let registeredStaff = []
+      try {
+        const { data: profs } = await supabase.from('profiles').select('*').order('created_at', { ascending: false })
+        registeredStaff = profs || []
+        setStaffList(registeredStaff)
+      } catch (e) {
+        console.warn('profiles read error:', e)
+      }
+
+      // 4. Sinkronisasi Otomatis: Karyawan Kantor otomatis terisi jika ada data dari Daftar Staf Baru
+      const { mergedList, newRecordsToInsert } = syncStaffToKaryawanKantor({
+        staffProfiles: registeredStaff,
+        existingKaryawanKantor: realKaryawanKantor
+      })
+
+      // Simpan record baru ke tabel karyawan_kantor agar tersimpan permanen
+      if (newRecordsToInsert.length > 0) {
+        try {
+          for (const newRec of newRecordsToInsert) {
+            await supabase.from('karyawan_kantor').insert(newRec)
+          }
+        } catch (syncErr) {
+          console.warn('Auto-sync insert into karyawan_kantor notice:', syncErr)
+        }
+      }
+
+      setKaryawanKantorList(mergedList)
     } catch (err) {
       console.error('Error loading employee lists:', err)
     } finally {
@@ -488,13 +531,20 @@ const Karyawan = () => {
     setError('')
     setSuccess('')
     try {
+      const cleanName = newKaryawanKantor.trim().toUpperCase()
       const { error: err } = await supabase
         .from('karyawan_kantor')
-        .insert({ nama: newKaryawanKantor.trim().toUpperCase() })
+        .insert({ 
+          id: `kk_man_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          nama: cleanName,
+          role: 'Staff Kantor',
+          source: 'manual',
+          created_at: new Date().toISOString()
+        })
 
       if (err) throw err
       
-      setSuccess(`Karyawan kantor "${newKaryawanKantor.trim().toUpperCase()}" berhasil ditambahkan!`)
+      setSuccess(`Karyawan kantor "${cleanName}" berhasil ditambahkan!`)
       setNewKaryawanKantor('')
       await loadKaryawanData()
     } catch (err) {
@@ -506,20 +556,24 @@ const Karyawan = () => {
   }
 
   const handleDeleteKaryawanKantor = async (id, name) => {
-    const confirmed = await showConfirm(`Apakah Anda yakin ingin menghapus karyawan kantor "${name}"?`, 'Hapus Karyawan Kantor')
+    const confirmed = await showConfirm(`Apakah Anda yakin ingin menghapus karyawan kantor "${name}" dari daftar?`, 'Hapus Karyawan Kantor')
     if (!confirmed) return
     setLoading(true)
     setError('')
     setSuccess('')
     try {
-      const { error: err } = await supabase
-        .from('karyawan_kantor')
-        .delete()
-        .eq('id', id)
+      let err = null
+      if (id) {
+        const res = await supabase.from('karyawan_kantor').delete().eq('id', id)
+        err = res.error
+      } else {
+        const res = await supabase.from('karyawan_kantor').delete().eq('nama', name)
+        err = res.error
+      }
 
       if (err) throw err
 
-      setSuccess(`Karyawan kantor "${name}" berhasil dihapus!`)
+      setSuccess(`Karyawan kantor "${name}" berhasil dihapus dari daftar!`)
       await loadKaryawanData()
     } catch (err) {
       console.error('Error deleting karyawan kantor:', err)
@@ -529,7 +583,7 @@ const Karyawan = () => {
     }
   }
 
-  // 3. Registrasi Staff Baru Handler
+  // 3. Registrasi Staff Baru Handler (Otomatis Mengisi Karyawan Kantor)
   const handleRegisterStaff = async (e) => {
     e.preventDefault()
     setError('')
@@ -539,22 +593,52 @@ const Karyawan = () => {
     }
 
     try {
-      const res = await registerKasir(staffForm.email, staffForm.password, staffForm.nama, staffForm.role)
+      setLoading(true)
+      const cleanNama = staffForm.nama.trim().toUpperCase()
+      const res = await registerKasir(staffForm.email, staffForm.password, cleanNama, staffForm.role)
       if (!res.success) throw new Error(res.error)
 
+      // 1. Jika role Kasir, masukkan ke tabel kasir untuk master dropdown kasir di POS
       if (staffForm.role === 'Kasir') {
         const { error: kasirErr } = await supabase
           .from('kasir')
-          .insert({ nama: staffForm.nama.trim().toUpperCase(), is_active: true })
+          .insert({ nama: cleanNama, is_active: true })
         if (kasirErr) {
           console.warn('Gagal otomatis menambahkan ke tabel kasir:', kasirErr)
         }
       }
 
-      setSuccess(`Staf baru ${staffForm.nama} (${staffForm.role}) berhasil didaftarkan!`)
+      // 2. ARSITEKTUR SINKRONISASI: Otomatis tambahkan juga ke tabel karyawan_kantor
+      try {
+        const { data: existingKk } = await supabase
+          .from('karyawan_kantor')
+          .select('id')
+          .eq('nama', cleanNama)
+          .maybeSingle()
+
+        if (!existingKk) {
+          await supabase.from('karyawan_kantor').insert({
+            id: `kk_auto_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            nama: cleanNama,
+            role: staffForm.role,
+            email: staffForm.email.trim(),
+            source: 'staff_registration',
+            created_at: new Date().toISOString()
+          })
+        }
+      } catch (kkSyncErr) {
+        console.warn('Auto-insert to karyawan_kantor notice:', kkSyncErr)
+      }
+
+      setSuccess(`Staf baru "${cleanNama}" (${staffForm.role}) berhasil didaftarkan dan otomatis tercatat di section Karyawan Kantor!`)
       setStaffForm({ email: '', password: '', nama: '', role: 'Kasir' })
+      
+      // Muat ulang data agar tampilan Karyawan Kantor dan Staf langsung ter-update
+      await loadKaryawanData()
     } catch (err) {
       setError(err.message || 'Gagal mendaftarkan staff.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -563,7 +647,7 @@ const Karyawan = () => {
       {/* Header */}
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-500 bg-clip-text text-transparent flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-3">
             <Users size={32} className="text-brand-blue" />
             Kelola Karyawan
           </h1>
@@ -586,31 +670,35 @@ const Karyawan = () => {
         </div>
       )}
 
-      {/* Navigation Tab */}
+      {/* Navigation Tab (Filtered by Tenant Model) */}
       <div className="flex gap-2 overflow-x-auto pb-1.5 border-b border-slate-900 scrollbar-thin">
-        <button
-          onClick={() => { setActiveTab('wages'); setError(''); setSuccess('') }}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-            activeTab === 'wages' ? 'bg-brand-blue text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          Laporan Gaji Cuci
-        </button>
-        <button
-          onClick={() => { setActiveTab('crew'); setError(''); setSuccess('') }}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-            activeTab === 'crew' ? 'bg-brand-blue text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          Karyawan Cuci
-        </button>
+        {features.hasCarwash && (
+          <button
+            onClick={() => { setActiveTab('wages'); setError(''); setSuccess('') }}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+              activeTab === 'wages' ? 'bg-brand-blue text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Laporan Gaji Cuci
+          </button>
+        )}
+        {features.hasCarwash && (
+          <button
+            onClick={() => { setActiveTab('crew'); setError(''); setSuccess('') }}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+              activeTab === 'crew' ? 'bg-brand-blue text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Karyawan Cuci
+          </button>
+        )}
         <button
           onClick={() => { setActiveTab('office'); setError(''); setSuccess('') }}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
             activeTab === 'office' ? 'bg-brand-blue text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          Karyawan Kantor
+          {features.isCafeOnly ? 'Karyawan & Staf Toko' : 'Karyawan Kantor'}
         </button>
         <button
           onClick={() => { setActiveTab('staff'); setError(''); setSuccess('') }}
@@ -618,7 +706,7 @@ const Karyawan = () => {
             activeTab === 'staff' ? 'bg-brand-blue text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          Daftar Staf Baru
+          Akun Kasir & Akses
         </button>
       </div>
 
@@ -973,7 +1061,7 @@ const Karyawan = () => {
 
       {/* CONTENT TAB 3: Daftar Karyawan Kantor */}
       {activeTab === 'office' && (
-        <div className="glass-panel p-6 rounded-2xl border border-slate-800/80 max-w-4xl mx-auto space-y-6 animate-fade-in">
+        <div className="glass-panel p-6 rounded-2xl border border-slate-800/80 max-w-5xl mx-auto space-y-6 animate-fade-in">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -981,15 +1069,40 @@ const Karyawan = () => {
                 <span>Daftar Karyawan Kantor</span>
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                Kelola daftar karyawan bagian kantor atau operasional lainnya.
+                Kelola daftar karyawan bagian kantor & staf operasional. Terintegrasi langsung dengan data registrasi staf baru.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 font-semibold flex items-center gap-1.5">
+                <Users size={14} className="text-brand-blue" />
+                <span>Total: {karyawanKantorList.length} Orang</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Banner Integrasi Otomatis */}
+          <div className="p-4 rounded-xl bg-brand-blue/10 border border-brand-blue/20 text-brand-blue text-xs flex items-start gap-3">
+            <Sparkles size={18} className="shrink-0 mt-0.5 text-brand-blue" />
+            <div className="space-y-0.5">
+              <p className="font-bold text-white">Sinkronisasi Otomatis Aktif</p>
+              <p className="text-slate-300 leading-relaxed">
+                Section Karyawan Kantor ini <strong>otomatis terisi</strong> jika ada data dari section <strong>Daftar Staf Baru</strong>. Anda juga dapat menambahkan staf operasional kantor non-login secara manual menggunakan form di bawah.
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Form Tambah Karyawan Kantor */}
-            <div className="glass-panel p-5 rounded-xl border border-slate-850 h-fit space-y-4">
-              <h4 className="font-bold text-sm text-white">Tambah Karyawan Kantor</h4>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Form Tambah Karyawan Kantor Manual */}
+            <div className="lg:col-span-4 glass-panel p-5 rounded-xl border border-slate-850 h-fit space-y-4">
+              <div>
+                <h4 className="font-bold text-sm text-white flex items-center gap-2">
+                  <Plus size={16} className="text-brand-blue" />
+                  <span>Tambah Karyawan Manual</span>
+                </h4>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Untuk staf kantor/operasional yang tidak memerlukan akses login aplikasi.
+                </p>
+              </div>
               <form onSubmit={handleAddKaryawanKantor} className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
@@ -1015,43 +1128,72 @@ const Karyawan = () => {
             </div>
 
             {/* List Karyawan Kantor */}
-            <div className="md:col-span-2 overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/40">
-              <table className="w-full min-w-[500px] text-left border-collapse">
+            <div className="lg:col-span-8 overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/40">
+              <table className="w-full min-w-[580px] text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-800 text-slate-500 font-semibold text-[10px] uppercase tracking-wider bg-slate-900/50">
-                    <th className="p-4">Nama Karyawan</th>
-                    <th className="p-4 text-center">Tanggal Terdaftar</th>
-                    <th className="p-4 text-right">Aksi</th>
+                    <th className="p-3.5">Nama Karyawan</th>
+                    <th className="p-3.5">Peran / Jabatan</th>
+                    <th className="p-3.5">Sumber Data</th>
+                    <th className="p-3.5 text-center">Terdaftar</th>
+                    <th className="p-3.5 text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-850">
                   {karyawanKantorList.length === 0 ? (
                     <tr>
-                      <td colSpan="3" className="p-8 text-center text-xs text-slate-600 font-medium italic">
+                      <td colSpan="5" className="p-8 text-center text-xs text-slate-600 font-medium italic">
                         Belum ada karyawan kantor terdaftar.
                       </td>
                     </tr>
                   ) : (
-                    karyawanKantorList.map((k) => (
-                      <tr key={k.id} className="hover:bg-slate-800/10 transition-colors">
-                        <td className="p-4 font-bold text-white text-sm">{k.nama}</td>
-                        <td className="p-4 text-center text-xs text-slate-400 font-mono">
-                          {new Date(k.created_at).toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric'
-                          })}
-                        </td>
-                        <td className="p-4 text-right">
-                          <button
-                            onClick={() => handleDeleteKaryawanKantor(k.id, k.nama)}
-                            className="px-2.5 py-1 bg-slate-900 hover:bg-rose-500/10 text-brand-rose border border-slate-800 hover:border-brand-rose/20 rounded-lg text-[10px] font-bold transition-all active:scale-95"
-                          >
-                            Hapus
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                    karyawanKantorList.map((k, idx) => {
+                      const roleBadge = getRoleBadgeConfig(k.role)
+                      const isAutoSync = k.source === 'staff_registration' || k.email
+                      return (
+                        <tr key={k.id || idx} className="hover:bg-slate-800/10 transition-colors">
+                          <td className="p-3.5">
+                            <div className="font-bold text-white text-sm">{k.nama}</div>
+                            {k.email && (
+                              <div className="text-[11px] text-slate-500 font-mono mt-0.5">{k.email}</div>
+                            )}
+                          </td>
+                          <td className="p-3.5">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${roleBadge.bgClass}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${roleBadge.dotClass}`} />
+                              <span>{roleBadge.label}</span>
+                            </span>
+                          </td>
+                          <td className="p-3.5">
+                            {isAutoSync ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-brand-blue/10 border border-brand-blue/20 text-brand-blue text-[10px] font-medium">
+                                <Sparkles size={11} />
+                                <span>Daftar Staf Baru</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400 text-[10px] font-medium">
+                                <span>Manual</span>
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3.5 text-center text-xs text-slate-400 font-mono">
+                            {k.created_at ? new Date(k.created_at).toLocaleDateString('id-ID', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric'
+                            }) : '-'}
+                          </td>
+                          <td className="p-3.5 text-right">
+                            <button
+                              onClick={() => handleDeleteKaryawanKantor(k.id, k.nama)}
+                              className="px-2.5 py-1 bg-slate-900 hover:bg-rose-500/10 text-brand-rose border border-slate-800 hover:border-brand-rose/20 rounded-lg text-[10px] font-bold transition-all active:scale-95"
+                            >
+                              Hapus
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })
                   )}
                 </tbody>
               </table>
@@ -1062,79 +1204,180 @@ const Karyawan = () => {
 
       {/* CONTENT TAB 4: Registrasi Staff */}
       {activeTab === 'staff' && (
-        <div className="max-w-xl mx-auto glass-panel p-6 rounded-2xl border border-slate-800/80 space-y-6 animate-fade-in">
-          <div>
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <UserPlus className="text-brand-blue" />
-              Daftarkan Staf Baru
-            </h3>
-            <p className="text-xs text-slate-500 mt-1">Buat kredensial login (Email & Password) untuk kasir baru Anda</p>
+        <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
+          {/* Header & Banner Penjelas Integrasi */}
+          <div className="glass-panel p-6 rounded-2xl border border-slate-800/80 space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <UserPlus className="text-brand-blue" />
+                  <span>Daftarkan Staf Baru</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Buat akun login staf dan kasir. Akun staf baru otomatis tercatat ke dalam section Karyawan Kantor.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 font-semibold flex items-center gap-1.5">
+                  <UserCheck size={14} className="text-brand-emerald" />
+                  <span>Staf Terdaftar: {staffList.length} Akun</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-brand-emerald/10 border border-brand-emerald/20 text-brand-emerald text-xs flex items-start gap-3">
+              <Sparkles size={18} className="shrink-0 mt-0.5 text-brand-emerald" />
+              <div className="space-y-0.5">
+                <p className="font-bold text-white">Otomatis Terintegrasi ke Karyawan Kantor</p>
+                <p className="text-slate-300 leading-relaxed">
+                  Setiap staf yang didaftarkan di form ini akan <strong>langsung mengisi section Karyawan Kantor</strong> secara otomatis tanpa perlu penginputan manual berulang.
+                </p>
+              </div>
+            </div>
           </div>
 
-          <form onSubmit={handleRegisterStaff} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                Nama Lengkap Staf
-              </label>
-              <input
-                type="text"
-                placeholder="Ketik nama (misal: Alexa Syafa)"
-                value={staffForm.nama}
-                onChange={(e) => setStaffForm(prev => ({ ...prev, nama: e.target.value }))}
-                className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm"
-                required
-              />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Form Registrasi Staf */}
+            <div className="lg:col-span-5 glass-panel p-6 rounded-2xl border border-slate-800/80 space-y-5 h-fit">
+              <div>
+                <h4 className="font-bold text-sm text-white flex items-center gap-2">
+                  <UserPlus size={16} className="text-brand-blue" />
+                  <span>Form Pendaftaran Akun Staf</span>
+                </h4>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Kredensial login dapat digunakan untuk masuk ke RelayPOS.
+                </p>
+              </div>
+
+              <form onSubmit={handleRegisterStaff} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                    Nama Lengkap Staf
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ketik nama (misal: Alexa Syafa)"
+                    value={staffForm.nama}
+                    onChange={(e) => setStaffForm(prev => ({ ...prev, nama: e.target.value }))}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-blue font-bold tracking-wide"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                    Username / Email Login
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Masukkan username (tanpa spasi)..."
+                    value={staffForm.email}
+                    onChange={(e) => setStaffForm(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-blue font-mono"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                    Kata Sandi
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="Minimal 6 karakter"
+                    value={staffForm.password}
+                    onChange={(e) => setStaffForm(prev => ({ ...prev, password: e.target.value }))}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-blue font-mono"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                    Peran Hak Akses (Role)
+                  </label>
+                  <select
+                    value={staffForm.role}
+                    onChange={(e) => setStaffForm(prev => ({ ...prev, role: e.target.value }))}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-blue"
+                  >
+                    <option value="Kasir">Kasir (Akses Transaksi POS & Antrean)</option>
+                    <option value="Admin">Admin (Supervisor Operasional & Logistik Toko)</option>
+                    <option value="Owner">Owner (Akses Penuh Seluruh Modul & Finansial)</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-2.5 bg-brand-blue hover:bg-cyan-500 active:scale-95 text-slate-950 font-bold rounded-xl shadow-lg shadow-brand-blue/20 transition-all text-sm mt-2 disabled:opacity-50"
+                >
+                  {loading ? 'Mendaftarkan...' : 'Registrasikan Akun Staf'}
+                </button>
+              </form>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                Username Login
-              </label>
-              <input
-                type="text"
-                placeholder="Masukkan username (tanpa spasi)..."
-                value={staffForm.email}
-                onChange={(e) => setStaffForm(prev => ({ ...prev, email: e.target.value }))}
-                className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm"
-                required
-              />
-            </div>
+            {/* Tabel Daftar Akun Staf Terdaftar */}
+            <div className="lg:col-span-7 glass-panel p-6 rounded-2xl border border-slate-800/80 space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h4 className="font-bold text-sm text-white flex items-center gap-2">
+                    <Shield size={16} className="text-brand-emerald" />
+                    <span>Daftar Akun Staf Terdaftar</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Seluruh akun staf yang aktif dan otomatis mengisi section Karyawan Kantor.
+                  </p>
+                </div>
+              </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                Kata Sandi
-              </label>
-              <input
-                type="password"
-                placeholder="Minimal 6 karakter"
-                value={staffForm.password}
-                onChange={(e) => setStaffForm(prev => ({ ...prev, password: e.target.value }))}
-                className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm"
-                required
-              />
+              <div className="overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/40">
+                <table className="w-full min-w-[420px] text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-800 text-slate-500 font-semibold text-[10px] uppercase tracking-wider bg-slate-900/50">
+                      <th className="p-3.5">Nama Staf</th>
+                      <th className="p-3.5">Peran</th>
+                      <th className="p-3.5 text-center">Terdaftar</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-850">
+                    {staffList.length === 0 ? (
+                      <tr>
+                        <td colSpan="3" className="p-8 text-center text-xs text-slate-600 font-medium italic">
+                          Belum ada staf terdaftar di sistem.
+                        </td>
+                      </tr>
+                    ) : (
+                      staffList.map((staf, idx) => {
+                        const badge = getRoleBadgeConfig(staf.role)
+                        return (
+                          <tr key={staf.id || idx} className="hover:bg-slate-800/10 transition-colors">
+                            <td className="p-3.5">
+                              <div className="font-bold text-white text-sm">{staf.nama}</div>
+                              <div className="text-[11px] text-slate-500 font-mono">{staf.email || '-'}</div>
+                            </td>
+                            <td className="p-3.5">
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${badge.bgClass}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${badge.dotClass}`} />
+                                <span>{badge.label}</span>
+                              </span>
+                            </td>
+                            <td className="p-3.5 text-center text-xs text-slate-400 font-mono">
+                              {staf.created_at ? new Date(staf.created_at).toLocaleDateString('id-ID', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                              }) : '-'}
+                            </td>
+                          </tr>
+                        )
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                Peran Hak Akses (Role)
-              </label>
-              <select
-                value={staffForm.role}
-                onChange={(e) => setStaffForm(prev => ({ ...prev, role: e.target.value }))}
-                className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm"
-              >
-                <option value="Kasir">Kasir (Akses Terbatas Transaksi)</option>
-                <option value="Owner">Owner (Akses Penuh)</option>
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-2.5 bg-brand-blue hover:bg-cyan-500 active:bg-cyan-600 text-slate-950 font-bold rounded-xl shadow-lg shadow-brand-blue/20 transition-all text-sm mt-2"
-            >
-              Registrasikan Akun Staf
-            </button>
-          </form>
+          </div>
         </div>
       )}
 

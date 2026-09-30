@@ -3,15 +3,15 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 export const themes = {
   1: {
     id: 1,
-    name: 'Deep Ocean Wave',
-    logo: '/logo_1.jpg',
-    subText: 'Cafe & Carwash',
+    name: 'RelayPOS Obsidian & Deep Blue',
+    logo: '/relaypos-logo.svg',
+    subText: 'Estafet Service & POS',
     colors: {
-      primary: '#10b981', // Premium Emerald
-      secondary: '#06b6d4', // Vibrant Cyan
-      bg: '#040712', // Vantablack deep navy
-      bgLight: '#0b1329', // Deep navy slate
-      textAccent: '#34d399' // Mint Accent
+      primary: '#2563eb', // Executive Deep Slate Blue (not overly bright)
+      secondary: '#1e40af', // Rich Sapphire Navy
+      bg: '#06090e', // Pure Obsidian Black
+      bgLight: '#0d131f', // Deep Midnight Slate
+      textAccent: '#60a5fa' // Soft Crisp Blue Accent
     }
   },
   2: {

@@ -1,4 +1,4 @@
-import { generateUUID } from './helpers'
+import { generateUUID } from './helpers.js'
 
 export const normalizeCategory = (cat) => {
   if (!cat || typeof cat !== 'string') return ''
@@ -21,9 +21,17 @@ export const normalizeCategory = (cat) => {
   if (lower === 'omzet penjualan' || lower === 'omset' || lower === 'omzet' || lower === 'omset harian' || lower === 'omzet harian') return 'Omzet Penjualan'
   if (lower === 'gaji karyawan' || lower === 'gaji') return 'Gaji Karyawan'
 
+  const acronyms = { 'f&b': 'F&B', 'pam': 'PAM', 'atk': 'ATK', 'qris': 'QRIS', 'pos': 'POS', 'hpp': 'HPP', 'wifi': 'WiFi' }
   return trimmed
     .split(/\s+/)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .map(word => {
+      const wLow = word.toLowerCase()
+      if (acronyms[wLow]) return acronyms[wLow]
+      if (wLow.startsWith('(') && wLow.endsWith(')') && acronyms[wLow.slice(1, -1)]) {
+        return `(${acronyms[wLow.slice(1, -1)]})`
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1)
+    })
     .join(' ')
 }
 
@@ -94,7 +102,7 @@ export const formatExpensePayload = ({
 
   const details = isBahanBaku
     ? barangMasukList.map(item => {
-        const matchingBahan = stokBahan.find(b => b.nama_bahan === item.id_bahan_baku)
+        const matchingBahan = stokBahan.find(b => b.id_bahan_baku === item.id_bahan_baku || b.nama_bahan === item.id_bahan_baku || b.nama_produk === item.id_bahan_baku)
         return {
           id_masuk: generateUUID(),
           id_pengeluaran: null,
@@ -102,8 +110,8 @@ export const formatExpensePayload = ({
           id_bahan_baku: item.id_bahan_baku,
           tanggal: txDate,
           nama_produk: matchingBahan ? (matchingBahan.nama_produk || matchingBahan.nama_bahan) : item.id_bahan_baku,
-          jumlah_masuk: parseFloat(item.jumlah),
-          harga_satuan: parseFloat(item.harga_satuan)
+          jumlah_masuk: parseFloat(item.jumlah) || 0,
+          harga_satuan: parseFloat(item.harga_satuan) || 0
         }
       })
     : []
@@ -161,7 +169,11 @@ export const formatPosExpensePayload = ({ form, todayDate, currentTime, newExpId
   const isEmployeeRelated = isCasbon || isPaketan
   const jenisVal = isCasbon ? 'Casbon' : (isPaketan ? 'Ambil Uang Paketan' : normalizeJenis(form.jenis || `Pengeluaran ${form.unit || 'Cafe'}`))
   
-  return {
+  const rawItemId = form.id_barang || form.id_bahan_baku || ''
+  const hasRawMaterial = Boolean(rawItemId)
+  const qtyVal = parseFloat(form.qty || 0)
+
+  const res = {
     id_pengeluaran: newExpId,
     tanggal: form.tanggal || todayDate,
     jam: form.jam || currentTime,
@@ -169,10 +181,16 @@ export const formatPosExpensePayload = ({ form, todayDate, currentTime, newExpId
     kategori: isEmployeeRelated ? `${normKat} - ${form.karyawan}` : normKat,
     nominal: nominalVal,
     nama_pengeluaran: isEmployeeRelated ? `${normKat} ${form.karyawan} (${form.keterangan || 'Tanpa catatan'})` : form.keterangan,
-    apakah_stok: 'Tidak',
-    id_bahan_baku: '',
-    qty: 0
+    apakah_stok: hasRawMaterial ? 'Ya' : 'Tidak',
+    id_bahan_baku: rawItemId,
+    qty: qtyVal
   }
+
+  if (form.id_barang) {
+    res.id_barang = form.id_barang
+  }
+
+  return res
 }
 
 export const validateEditCashflowForm = (form) => {
@@ -224,5 +242,77 @@ export const isPindahSaldo = (item) => {
   const k = String(item.kategori || '').toLowerCase().trim()
   const ket = String(item.keterangan_transaksi || item.keterangan || item.nama_pengeluaran || '').toLowerCase().trim()
   return j.includes('pindah') || k.includes('pindah') || ket.includes('pindah saldo') || ket.includes('transfer saldo') || ket.includes('mutasi saldo')
+}
+
+export const getLockedCategoriesForJenis = (jenis, masterCategories = [], customKategoriList = [], isIncome = false) => {
+  const normJenis = normalizeJenis(jenis || '')
+  const map = new Map()
+
+  // 1. Filter dari Master Categories Database yang terkunci ke jenis terpilih
+  if (masterCategories && Array.isArray(masterCategories)) {
+    masterCategories
+      .filter(c => {
+        if (c.is_active === false) return false
+        if (isIncome && c.tipe_arus !== 'PEMASUKAN') return false
+        if (!isIncome && c.tipe_arus === 'PEMASUKAN') return false
+
+        const cJenis = normalizeJenis(c.jenis || '')
+        if (!normJenis) return true
+
+        // Cocokkan jenis spesifik
+        if (cJenis.toLowerCase() === normJenis.toLowerCase()) return true
+
+        // Relasi saling dukung untuk Bersama & Operasional
+        if (
+          (normJenis.toLowerCase().includes('bersama') || normJenis.toLowerCase() === 'operasional') &&
+          (cJenis.toLowerCase().includes('bersama') || cJenis.toLowerCase() === 'operasional')
+        ) {
+          return true
+        }
+
+        return false
+      })
+      .forEach(c => {
+        const norm = normalizeCategory(c.nama_kategori)
+        if (norm) map.set(norm.toLowerCase(), norm)
+      })
+  }
+
+  // 2. Default standard categories jika di DB belum ada mapping untuk jenis ini
+  if (map.size === 0) {
+    if (isIncome) {
+      if (normJenis.toLowerCase().includes('cafe')) {
+        ['Omzet Penjualan F&B', 'Penjualan Cafe', 'Pemasukan Lain-lain'].forEach(k => map.set(k.toLowerCase(), k))
+      } else if (normJenis.toLowerCase().includes('carwash')) {
+        ['Omzet Penjualan Cuci', 'Penjualan Carwash', 'Pemasukan Lain-lain'].forEach(k => map.set(k.toLowerCase(), k))
+      } else {
+        ['Omzet Penjualan', 'Pendapatan Sewa Tenant', 'Suntikan Modal Pemilik', 'Pelunasan Casbon', 'Pemasukan Lain-lain'].forEach(k => map.set(k.toLowerCase(), k))
+      }
+    } else {
+      if (normJenis === 'Pengeluaran Cafe') {
+        ['Bahan Baku F&B', 'Listrik Cafe', 'Operasional Cafe', 'Servis Mesin Cafe', 'Bahan Baku', 'Operasional'].forEach(k => map.set(k.toLowerCase(), k))
+      } else if (normJenis === 'Pengeluaran Carwash') {
+        ['Bahan Cuci & Chemical', 'Listrik Carwash', 'Air PAM & Perawatan Mesin Air', 'Servis Hidrolik & Kompresor', 'Perlengkapan Cuci Mobil', 'Operasional'].forEach(k => map.set(k.toLowerCase(), k))
+      } else if (normJenis === 'Pengeluaran Bersama') {
+        ['Sewa Tempat Usaha (Bang Awal)', 'Gaji Karyawan Tetap & Leader', 'Listrik, Air & Utilitas', 'Biaya Admin Bank / QRIS', 'Casbon Karyawan'].forEach(k => map.set(k.toLowerCase(), k))
+      } else if (normJenis === 'Casbon') {
+        ['Casbon Karyawan', 'Casbon'].forEach(k => map.set(k.toLowerCase(), k))
+      } else if (normJenis === 'Operasional') {
+        ['Operasional Cafe', 'Operasional Carwash', 'Operasional Bersama', 'Listrik, Air & Utilitas', 'Sewa', 'Lain-lain'].forEach(k => map.set(k.toLowerCase(), k))
+      } else {
+        ['Operasional', 'Bahan Baku', 'Sewa', 'Casbon', 'Lain-lain'].forEach(k => map.set(k.toLowerCase(), k))
+      }
+    }
+  }
+
+  // 3. Tambahkan custom kategori jika ada
+  if (customKategoriList && Array.isArray(customKategoriList)) {
+    customKategoriList.forEach(k => {
+      const norm = normalizeCategory(k)
+      if (norm && !map.has(norm.toLowerCase())) map.set(norm.toLowerCase(), norm)
+    })
+  }
+
+  return Array.from(map.values())
 }
 

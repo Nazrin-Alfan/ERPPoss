@@ -1,0 +1,569 @@
+[
+  {
+    "id_resep": "7795931e-35da-f870-7c82-b52a2428bcc0",
+    "id_bahan_baku": "MB-01",
+    "id_menu": "MN-01",
+    "nama_menu": "Air Mineral",
+    "nama_bahan": "Le Mineral",
+    "jumlah": 1,
+    "satuan": "Btl"
+  },
+  {
+    "id_resep": "aff743c1-804b-d484-3c09-767053c23614",
+    "id_bahan_baku": "MB-02",
+    "id_menu": "MN-02",
+    "nama_menu": "Badak",
+    "nama_bahan": "Badak",
+    "jumlah": 1,
+    "satuan": "Btl"
+  },
+  {
+    "id_resep": "eff88651-06c1-f5f2-135b-40ed2cab2f41",
+    "id_bahan_baku": "MB-02",
+    "id_menu": "MN-03",
+    "nama_menu": "Badak Susu",
+    "nama_bahan": "Badak",
+    "jumlah": 1,
+    "satuan": "Btl"
+  },
+  {
+    "id_resep": "0da8987a-873a-deb3-62fe-ff769dd9d952",
+    "id_bahan_baku": "BK-02",
+    "id_menu": "MN-03",
+    "nama_menu": "Badak Susu",
+    "nama_bahan": "SKM",
+    "jumlah": 30,
+    "satuan": "Gram"
+  },
+  {
+    "id_resep": "51c28e2b-456a-d0aa-6866-ae84daa361c5",
+    "id_bahan_baku": "BK-01",
+    "id_menu": "MN-04-01",
+    "nama_menu": "Americano Dingin",
+    "nama_bahan": "Biji Kopi",
+    "jumlah": 18,
+    "satuan": "Gram"
+  },
+  {
+    "id_resep": "941f867f-6e13-ed3d-0c1a-1404983c7c97",
+    "id_bahan_baku": "BK-01",
+    "id_menu": "MN-04-02",
+    "nama_menu": "Americano Panas",
+    "nama_bahan": "Biji Kopi",
+    "jumlah": 18,
+    "satuan": "Gram"
+  },
+  {
+    "id_resep": "683a5bcc-b332-6eab-ccee-1fa90d39b70e",
+    "id_bahan_baku": "BK-01",
+    "id_menu": "MN-05-01",
+    "nama_menu": "Sanger Dingin",
+    "nama_bahan": "Biji Kopi",
+    "jumlah": 18,
+    "satuan": "Gram"
+  },
+  {
+    "id_resep": "38b7e777-32d3-49ed-ae8f-e3aeeb708cef",
+    "id_bahan_baku": "BK-02",
+    "id_menu": "MN-05-01",
+    "nama_menu": "Sanger Dingin",
+    "nama_bahan": "SKM",
+    "jumlah": 25,
+    "satuan": "Gram/Ml"
+  },
+  {
+    "id_resep": "a5730812-52af-36d2-476f-8b4ae66d269b",
+    "id_bahan_baku": "BK-01",
+    "id_menu": "MN-05-02",
+    "nama_menu": "Sanger Panas",
+    "nama_bahan": "Biji Kopi",
+    "jumlah": 18,
+    "satuan": "Gram"
+  },
+  {
+    "id_resep": "b143c2a5-3416-c6b8-0f33-fbec4a364a7f",
+    "id_bahan_baku": "BK-02",
+    "id_menu": "MN-05-02",
+    "nama_menu": "Sanger Panas",
+    "nama_bahan": "SKM",
+    "jumlah": 25,
+    "satuan": "Gram/Ml"
+  },
+  {
+    "id_resep": "6f5ac929-7d10-81ef-0e34-eb9ec2a499d9",
+    "id_bahan_baku": "BK-01",
+    "id_menu": "MN-06-01",
+    "nama_menu": "Kopi Susu Gula Aren Dingin",
+    "nama_bahan": "Biji Kopi",
+    "jumlah": 18,
+    "satuan": "Gram"
+  },
+  {
+    "id_resep": "443b8f11-6cda-642e-81a9-538585ebff0e",
+    "id_bahan_baku": "BK-05",
+    "id_menu": "MN-06-01",
+    "nama_menu": "Kopi Susu Gula Aren Dingin",
+    "nama_bahan": "Susu UHT",
+    "jumlah": 100,
+    "satuan": "Ml"
+  },
+  {
+    "id_resep": "e8b8dd35-77bb-a502-2959-d6a9c21ad7e1",
+    "id_bahan_baku": "BK-03",
+    "id_menu": "MN-06-01",
+    "nama_menu": "Kopi Susu Gula Aren Dingin",
+    "nama_bahan": "Gula Aren",
+    "jumlah": 35,
+    "satuan": "Gram/Ml"
+  },
+  {
+    "id_resep": "cc7dae6e-4699-4ae3-2d9b-d7e6ea0e8b3f",
+    "id_bahan_baku": "BK-01",
+    "id_menu": "MN-06-02",
+    "nama_menu": "Kopi Susu Gula Aren Panas",
+    "nama_bahan": "Biji Kopi",
+    "jumlah": 18,
+    "satuan": "Gram"
+  },
+  {
+    "id_resep": "7da7e1d9-3a39-fb05-cd3f-abd620fef181",
+    "id_bahan_baku": "BK-03",
+    "id_menu": "MN-06-02",
+    "nama_menu": "Kopi Susu Gula Aren Panas",
+    "nama_bahan": "Gula Aren",
+    "jumlah": 35,
+    "satuan": "Gram/Ml"
+  },
+  {
+    "id_resep": "cfe5122a-851c-d920-5f51-016d39cddc97",
+    "id_bahan_baku": "BK-05",
+    "id_menu": "MN-06-02",
+    "nama_menu": "Kopi Susu Gula Aren Panas",
+    "nama_bahan": "Susu UHT",
+    "jumlah": 100,
+    "satuan": "Ml"
+  },
+  {
+    "id_resep": "995df3b0-0741-7195-9fe1-eb7cd772c6fd",
+    "id_bahan_baku": "BK-01",
+    "id_menu": "MN-07-01",
+    "nama_menu": "Kopi Late Panas",
+    "nama_bahan": "Biji Kopi",
+    "jumlah": 18,
+    "satuan": "Gram"
+  },
+  {
+    "id_resep": "07f28605-a2b8-6fa0-39fb-cc7344c656ee",
+    "id_bahan_baku": "BK-05",
+    "id_menu": "MN-07-01",
+    "nama_menu": "Kopi Late Panas",
+    "nama_bahan": "Susu UHT",
+    "jumlah": 100,
+    "satuan": "Ml"
+  },
+  {
+    "id_resep": "14317e87-4ad7-a0e8-c9f1-4c9c401bff01",
+    "id_bahan_baku": "BK-01",
+    "id_menu": "MN-07-02",
+    "nama_menu": "Kopi Late Dingin",
+    "nama_bahan": "Biji Kopi",
+    "jumlah": 18,
+    "satuan": "Gram"
+  },
+  {
+    "id_resep": "5cea0661-4dd5-a503-cb28-a8e39773b62f",
+    "id_bahan_baku": "BK-05",
+    "id_menu": "MN-07-02",
+    "nama_menu": "Kopi Late Dingin",
+    "nama_bahan": "Susu UHT",
+    "jumlah": 100,
+    "satuan": "Ml"
+  },
+  {
+    "id_resep": "738418c7-d36f-d1e0-072f-8d98cf0c8f36",
+    "id_bahan_baku": "BK-06",
+    "id_menu": "MN-08-01",
+    "nama_menu": "Teh Manis/Tawar Dingin",
+    "nama_bahan": "Teh",
+    "jumlah": 1,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "ebbbd35a-f28c-dc7f-f1c1-e803dece51e2",
+    "id_bahan_baku": "BK-04",
+    "id_menu": "MN-08-01",
+    "nama_menu": "Teh Manis/Tawar Dingin",
+    "nama_bahan": "Gula Putih",
+    "jumlah": 25,
+    "satuan": "Gram"
+  },
+  {
+    "id_resep": "1c24bdca-f054-baba-f510-d01e4ac43e54",
+    "id_bahan_baku": "BK-06",
+    "id_menu": "MN-08-02",
+    "nama_menu": "Teh Manis/Tawar Panas",
+    "nama_bahan": "Teh",
+    "jumlah": 1,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "9beee433-04d9-859a-3164-9d64e2650ca0",
+    "id_bahan_baku": "BK-04",
+    "id_menu": "MN-08-02",
+    "nama_menu": "Teh Manis/Tawar Panas",
+    "nama_bahan": "Gula Putih",
+    "jumlah": 25,
+    "satuan": "Gram"
+  },
+  {
+    "id_resep": "9c22f7a9-ede6-2359-eebf-fc66aea84967",
+    "id_bahan_baku": "BMK-01",
+    "id_menu": "MKN-01",
+    "nama_menu": "Ayam Penyet",
+    "nama_bahan": "Ayam",
+    "jumlah": 1,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "6d27f3ea-ff71-31a1-207a-dcff6d19f122",
+    "id_bahan_baku": "BMK-02",
+    "id_menu": "MKN-01",
+    "nama_menu": "Ayam Penyet",
+    "nama_bahan": "Nasi",
+    "jumlah": 100,
+    "satuan": "Gram"
+  },
+  {
+    "id_resep": "86053f2e-3248-b249-be9e-5d593b82b76d",
+    "id_bahan_baku": "BMK-09",
+    "id_menu": "MKN-01",
+    "nama_menu": "Ayam Penyet",
+    "nama_bahan": "Minyak Goreng",
+    "jumlah": 10,
+    "satuan": "Ml"
+  },
+  {
+    "id_resep": "102b91c0-e065-3deb-a38f-6e321594fe73",
+    "id_bahan_baku": "BMK-01",
+    "id_menu": "MKN-02",
+    "nama_menu": "Ayam Geprek",
+    "nama_bahan": "Ayam",
+    "jumlah": 1,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "b89b9a20-9ed8-9d53-524d-129728c3312f",
+    "id_bahan_baku": "BMK-02",
+    "id_menu": "MKN-03",
+    "nama_menu": "Ayam Geprek",
+    "nama_bahan": "Nasi",
+    "jumlah": 100,
+    "satuan": "Gram"
+  },
+  {
+    "id_resep": "ac0eab04-222a-b1de-2f82-245195d39dfd",
+    "id_bahan_baku": "BMK-05",
+    "id_menu": "CML-02",
+    "nama_menu": "Sosis Goreng",
+    "nama_bahan": "Sosis",
+    "jumlah": 4,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "4864b9a5-3ace-22a9-3103-5a856c231e3d",
+    "id_bahan_baku": "BMK-09",
+    "id_menu": "CML-02",
+    "nama_menu": "Sosis Goreng",
+    "nama_bahan": "Minyak Goreng",
+    "jumlah": 10,
+    "satuan": "Ml"
+  },
+  {
+    "id_resep": "cf6b90ba-038a-74f4-ad6b-63f8bdf39072",
+    "id_bahan_baku": "BMK-04",
+    "id_menu": "CML-03",
+    "nama_menu": "Nugget Goreng",
+    "nama_bahan": "Nugget",
+    "jumlah": 100,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "b748a880-488d-388f-957c-c3e2df53bce1",
+    "id_bahan_baku": "BMK-09",
+    "id_menu": "CML-03",
+    "nama_menu": "Nugget Goreng",
+    "nama_bahan": "Minyak Goreng",
+    "jumlah": 10,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "3c643ad7-bcfe-cc0f-1265-d131153ba134",
+    "id_bahan_baku": "BMK-06",
+    "id_menu": "CML-04",
+    "nama_menu": "Kentang Goreng",
+    "nama_bahan": "Kentang",
+    "jumlah": 100,
+    "satuan": "Gram"
+  },
+  {
+    "id_resep": "8580b0a6-ab54-9c9b-7393-295f40913be5",
+    "id_bahan_baku": "BMK-09",
+    "id_menu": "CML-04",
+    "nama_menu": "Kentang Goreng",
+    "nama_bahan": "Minyak Goreng",
+    "jumlah": 10,
+    "satuan": "Ml"
+  },
+  {
+    "id_resep": "f7f359f8-2a33-4ab7-2d15-2118eaef87f9",
+    "id_bahan_baku": "BMK-09",
+    "id_menu": "MKN-03",
+    "nama_menu": "Nasi Goreng",
+    "nama_bahan": "Minyak Goreng",
+    "jumlah": 10,
+    "satuan": "Ml"
+  },
+  {
+    "id_resep": "c4a21bd0-0eed-c95c-39c1-0d28a46d0a6d",
+    "id_bahan_baku": "BMK-10",
+    "id_menu": "MKN-03",
+    "nama_menu": "Nasi Goreng",
+    "nama_bahan": "Telur",
+    "jumlah": 1,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "e5f235bc-27e7-2f49-a0b6-ee3051eb2e8b",
+    "id_bahan_baku": "BMK-02",
+    "id_menu": "MKN-04",
+    "nama_menu": "Nasi Goreng Spesial",
+    "nama_bahan": "Nasi",
+    "jumlah": 100,
+    "satuan": "Gram"
+  },
+  {
+    "id_resep": "4ee1e2c1-4258-b57c-9882-c1a507bb2a03",
+    "id_bahan_baku": "BMK-09",
+    "id_menu": "MKN-04",
+    "nama_menu": "Nasi Goreng Spesial",
+    "nama_bahan": "Minyak Goreng",
+    "jumlah": 10,
+    "satuan": "Ml"
+  },
+  {
+    "id_resep": "05313271-a056-62b8-ad29-c85faa99cec7",
+    "id_bahan_baku": "BMK-10",
+    "id_menu": "MKN-04",
+    "nama_menu": "Nasi Goreng Spesial",
+    "nama_bahan": "Telur",
+    "jumlah": 1,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "cc3fb23d-e1a5-0b7c-4491-ea5c1c0bdbc1",
+    "id_bahan_baku": "BMK-01",
+    "id_menu": "MKN-04",
+    "nama_menu": "Nasi Goreng Spesial",
+    "nama_bahan": "ayam",
+    "jumlah": 1,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "40ee6ead-51ee-4618-05b6-26ce154a14a1",
+    "id_bahan_baku": "BMK-02",
+    "id_menu": "MKN-05",
+    "nama_menu": "Nasi Goreng Kampung",
+    "nama_bahan": "Nasi",
+    "jumlah": 100,
+    "satuan": "Gram"
+  },
+  {
+    "id_resep": "47f9ca34-acc4-6b01-63e5-e75b1713defb",
+    "id_bahan_baku": "BMK-09",
+    "id_menu": "MKN-05",
+    "nama_menu": "Nasi Goreng Kampung",
+    "nama_bahan": "Minyak Goreng",
+    "jumlah": 10,
+    "satuan": "Gram/Ml"
+  },
+  {
+    "id_resep": "01af78f1-15fd-606b-1d40-99f5a36d8d35",
+    "id_bahan_baku": "BMK-10",
+    "id_menu": "MKN-05",
+    "nama_menu": "Nasi Goreng Kampung",
+    "nama_bahan": "Telur",
+    "jumlah": 1,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "ac043f23-0d1e-1031-1f7f-52b86d2e7407",
+    "id_bahan_baku": "BMK-02",
+    "id_menu": "MKN-06",
+    "nama_menu": "Nasi Goreng Kampung Spesial",
+    "nama_bahan": "Nasi",
+    "jumlah": 100,
+    "satuan": "Gram"
+  },
+  {
+    "id_resep": "6cd6335e-928d-0668-d7af-4ccf8c5f5826",
+    "id_bahan_baku": "BMK-09",
+    "id_menu": "MKN-06",
+    "nama_menu": "Nasi Goreng Kampung Spesial",
+    "nama_bahan": "Minyak Goreng",
+    "jumlah": 10,
+    "satuan": "Gram/Ml"
+  },
+  {
+    "id_resep": "2ed2535e-dee5-cde0-3184-0009bec6fa59",
+    "id_bahan_baku": "BMK-10",
+    "id_menu": "MKN-06",
+    "nama_menu": "Nasi Goreng Kampung Spesial",
+    "nama_bahan": "Telur",
+    "jumlah": 1,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "c39636ee-e5df-5f49-b56c-e5bd8e177614",
+    "id_bahan_baku": "BMK-01",
+    "id_menu": "MKN-06",
+    "nama_menu": "Nasi Goreng Kampung Spesial",
+    "nama_bahan": "ayam",
+    "jumlah": 1,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "c4af3ec3-49f5-9a65-ccc0-c6e7c98667af",
+    "id_bahan_baku": "BMK-07",
+    "id_menu": "MKN-07",
+    "nama_menu": "Indomie kuah",
+    "nama_bahan": "Indomie Kuah",
+    "jumlah": 1,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "0ea349b3-0174-5c93-3247-c029e567d669",
+    "id_bahan_baku": "BMK-09",
+    "id_menu": "MKN-07",
+    "nama_menu": "Indomie kuah",
+    "nama_bahan": "Minyak Goreng",
+    "jumlah": 10,
+    "satuan": "Gram/Ml"
+  },
+  {
+    "id_resep": "005c2a5c-0853-7001-9baf-0c507c457856",
+    "id_bahan_baku": "BMK-10",
+    "id_menu": "MKN-07",
+    "nama_menu": "Indomie kuah",
+    "nama_bahan": "Telur",
+    "jumlah": 1,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "51155d82-3306-43f6-d00f-a16d0903a9e6",
+    "id_bahan_baku": "BMK-07",
+    "id_menu": "MKN-08",
+    "nama_menu": "Indomie kuah jumbo",
+    "nama_bahan": "Indomie Kuah",
+    "jumlah": 2,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "e3636893-872f-a004-46da-c3419b3e952f",
+    "id_bahan_baku": "BMK-09",
+    "id_menu": "MKN-08",
+    "nama_menu": "Indomie kuah jumbo",
+    "nama_bahan": "Minyak Goreng",
+    "jumlah": 10,
+    "satuan": "Gram/Ml"
+  },
+  {
+    "id_resep": "6c1cf650-0901-a5f4-e376-25baa60ff8b1",
+    "id_bahan_baku": "BMK-10",
+    "id_menu": "MKN-08",
+    "nama_menu": "Indomie kuah jumbo",
+    "nama_bahan": "Telur",
+    "jumlah": 1,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "dc3a8abb-9373-2802-357b-2431e6c2f57c",
+    "id_bahan_baku": "BMK-08",
+    "id_menu": "MKN-09",
+    "nama_menu": "Indomie Goreng",
+    "nama_bahan": "Indomie Goreng",
+    "jumlah": 1,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "de43abb0-d5eb-d42d-8bf5-b81c49aa4b18",
+    "id_bahan_baku": "BMK-09",
+    "id_menu": "MKN-09",
+    "nama_menu": "Indomie Goreng",
+    "nama_bahan": "Minyak Goreng",
+    "jumlah": 10,
+    "satuan": "Gram/Ml"
+  },
+  {
+    "id_resep": "e2a9eb6d-ad60-1837-bd1b-cec61dd7d240",
+    "id_bahan_baku": "BMK-10",
+    "id_menu": "MKN-09",
+    "nama_menu": "Indomie Goreng",
+    "nama_bahan": "Telur",
+    "jumlah": 1,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "e11a7e67-f97f-f810-3b98-b97cefbf7c7e",
+    "id_bahan_baku": "BMK-08",
+    "id_menu": "MKN-10",
+    "nama_menu": "Indomie Goreng Jumbo",
+    "nama_bahan": "Indomie Goreng",
+    "jumlah": 2,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "14d5098f-b254-bb5a-a3a8-6ebc3ed4f1b1",
+    "id_bahan_baku": "BMK-09",
+    "id_menu": "MKN-10",
+    "nama_menu": "Indomie Goreng Jumbo",
+    "nama_bahan": "Minyak Goreng",
+    "jumlah": 10,
+    "satuan": "Gram/Ml"
+  },
+  {
+    "id_resep": "7779a033-3e24-6bc2-12a2-38f6c84aaff9",
+    "id_bahan_baku": "BMK-10",
+    "id_menu": "MKN-10",
+    "nama_menu": "Indomie Goreng Jumbo",
+    "nama_bahan": "Telur",
+    "jumlah": 1,
+    "satuan": "Pcs"
+  },
+  {
+    "id_resep": "c86aa68c-a3ce-49fb-8db7-ad92ad6c4645",
+    "id_bahan_baku": "BMK-06",
+    "id_menu": "51580ead",
+    "nama_menu": "Mix pletter",
+    "nama_bahan": "Kentang",
+    "jumlah": 10,
+    "satuan": "Gram"
+  },
+  {
+    "id_resep": "79bee503-3936-4870-90c9-d3d7a123f984",
+    "id_bahan_baku": "BMK-04",
+    "id_menu": "51580ead",
+    "nama_menu": "Mix pletter",
+    "nama_bahan": "Nugget",
+    "jumlah": 10,
+    "satuan": "Gram"
+  },
+  {
+    "id_resep": "69b3eb53-b67d-444f-ac14-b77fafc437ff",
+    "id_bahan_baku": "BMK-05",
+    "id_menu": "51580ead",
+    "nama_menu": "Mix pletter",
+    "nama_bahan": "Sosis",
+    "jumlah": 4,
+    "satuan": "Pcs"
+  }
+]

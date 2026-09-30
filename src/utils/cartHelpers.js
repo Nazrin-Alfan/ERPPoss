@@ -5,7 +5,7 @@ export const addToCart = (cart, menu) => {
       item.nama_menu === menu.nama_menu ? { ...item, qty: item.qty + 1 } : item
     )
   }
-  return [...cart, { ...menu, qty: 1 }]
+  return [...cart, { ...menu, qty: 1, catatan: menu.catatan || '' }]
 }
 
 export const updateQty = (cart, menuName, delta) => {
@@ -16,6 +16,15 @@ export const updateQty = (cart, menuName, delta) => {
     }
     return item
   }).filter(Boolean)
+}
+
+export const updateItemNotes = (cart, menuName, catatan) => {
+  return cart.map(item => {
+    if (item.nama_menu === menuName) {
+      return { ...item, catatan: catatan || '' }
+    }
+    return item
+  })
 }
 
 export const removeFromCart = (cart, menuName) => {
