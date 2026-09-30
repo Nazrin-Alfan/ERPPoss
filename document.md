@@ -2337,6 +2337,17 @@
       - **Verifikasi Kualitas**:
         - 197/197 unit tests PASS (100% GREEN).
         - Vite production build sukses dalam 1.61 detik.
+    27. **Perbaikan Overflow Navigasi Tab Header Stok Gudang (2026-09-30)**:
+      - **Akar Masalah (*Root Cause*)**:
+        - Pada tangkapan layar `Screenshot_2026-09-30_222300.png`, tab navigasi atas `HybridPOSPage.jsx` membungkus 3 grup tombol: Grup Penjualan (Cafe, Carwash, Merchandise), Grup Audit (Bon Pending, Riwayat, Stok Gudang), dan Dropdown (Shift & Kas) di dalam kontainer flex wrap tanpa pembatas horizontal scroll.
+        - Akibatnya pada layar HP dengan lebar terbatas, tombol "Stok Gudang" dan badge nilainya "18" terdorong ke pinggir kanan dan menempel atau meluap dari garis border kartu induknya.
+      - **Solusi Rekayasa**:
+        - Mengubah kontainer tab menjadi scrollable horizontal yang halus dan terkunci: `flex items-center gap-1.5 w-full max-w-full overflow-x-auto no-scrollbar py-0.5 flex-nowrap overscroll-x-contain`.
+        - Setiap grup tombol dan tombol di dalamnya diberi `shrink-0` dan `whitespace-nowrap`, sehingga badge "Stok Gudang" tetap utuh, rapi, dan tidak terpotong atau terdesak ke luar batas kontainer induk.
+        - Baris informasi kasir di sebelah kanan diberi layout responsif mobile: `w-full sm:w-auto justify-between sm:justify-end pt-1 sm:pt-0 border-t border-[#26272d]/50 sm:border-t-0`.
+      - **Verifikasi Kualitas**:
+        - 197/197 unit tests PASS (100% GREEN).
+        - Vite production build sukses dalam 2.68 detik.
 
 
 

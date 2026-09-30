@@ -1967,16 +1967,16 @@ const CafePOS = () => {
     <div className="p-2 sm:p-4 md:pb-6 flex flex-col max-w-7xl mx-auto min-h-[calc(100vh-4rem)] w-full max-w-full min-w-0 overflow-x-hidden space-y-3">
       {/* 1. TOP HEADER FULL-WIDTH (BEBAS DARI SCROLL SAMPING & TAMPIL 100% LEGA) */}
       <div className="glass-panel p-2.5 sm:px-3.5 sm:py-2.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0 relative z-20 w-full max-w-full overflow-hidden">
-        {/* Sisi Kiri: Navigasi Tabs Lengkap Terbuka Tanpa Scroll Samping */}
-        <div className="flex flex-wrap items-center gap-1.5">
+        {/* Sisi Kiri: Navigasi Tabs Lengkap (Scrollable horizontal halus di mobile, wrap di desktop) */}
+        <div className="flex items-center gap-1.5 w-full max-w-full overflow-x-auto no-scrollbar py-0.5 flex-nowrap overscroll-x-contain">
           {/* Grup 1: Penjualan / Transaksi Langsung */}
-          <div className="flex items-center gap-1 bg-[#18181c] p-1 rounded-xl border border-[#26272d]">
+          <div className="flex items-center gap-1 bg-[#18181c] p-1 rounded-xl border border-[#26272d] shrink-0">
             {features.hasCafe && (
               <button
                 onClick={() => setActiveTab('cafe')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
                   activeTab === 'cafe'
-                    ? 'bg-[#00ffff] text-[#0f0f0f] text-slate-950 shadow-sm shadow-brand-emerald/20'
+                    ? 'bg-[#00ffff] text-[#0f0f0f] shadow-sm shadow-[#00ffff]/20'
                     : 'text-[#bbcbb2] hover:text-slate-200'
                 }`}
               >
@@ -1987,9 +1987,9 @@ const CafePOS = () => {
             {features.hasCarwash && (
               <button
                 onClick={() => setActiveTab('carwash')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
                   activeTab === 'carwash'
-                    ? 'bg-[#00ffff] text-[#0f0f0f] text-slate-950 shadow-sm shadow-brand-blue/20'
+                    ? 'bg-[#00ffff] text-[#0f0f0f] shadow-sm shadow-[#00ffff]/20'
                     : 'text-[#bbcbb2] hover:text-slate-200'
                 }`}
               >
@@ -1999,7 +1999,7 @@ const CafePOS = () => {
             )}
             <button
               onClick={() => setActiveTab('merchandise')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
                 activeTab === 'merchandise'
                   ? 'bg-amber-400 text-slate-950 shadow-sm shadow-amber-400/20'
                   : 'text-[#bbcbb2] hover:text-slate-200'
@@ -2010,20 +2010,20 @@ const CafePOS = () => {
             </button>
           </div>
 
-          <span className="text-slate-700 font-mono hidden sm:inline px-0.5">|</span>
+          <span className="text-[#26272d] font-mono px-0.5 shrink-0">|</span>
 
           {/* Grup 2: Audit & Monitoring Lapangan */}
-          <div className="flex items-center gap-1 bg-[#18181c] p-1 rounded-xl border border-[#26272d]">
+          <div className="flex items-center gap-1 bg-[#18181c] p-1 rounded-xl border border-[#26272d] shrink-0">
             <button
               onClick={() => setActiveTab('pending')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
                 activeTab === 'pending'
                   ? 'bg-amber-500 text-slate-950 shadow-sm shadow-amber-500/20'
                   : 'text-[#bbcbb2] hover:text-slate-200'
               }`}
             >
               <ShoppingCart size={13} />
-              <span>Bon Pending</span>
+              <span className="whitespace-nowrap">Bon Pending</span>
               {pendingBills.length > 0 && (
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
                   activeTab === 'pending' ? 'bg-[#18181c] text-amber-400' : 'bg-amber-500/20 text-amber-400'
@@ -2035,14 +2035,14 @@ const CafePOS = () => {
 
             <button
               onClick={() => setActiveTab('history')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
                 activeTab === 'history'
                   ? 'bg-purple-500 text-white shadow-sm shadow-purple-500/20'
                   : 'text-[#bbcbb2] hover:text-slate-200'
               }`}
             >
               <History size={13} />
-              <span>Riwayat</span>
+              <span className="whitespace-nowrap">Riwayat</span>
               <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
                 activeTab === 'history' ? 'bg-[#18181c] text-purple-300' : 'bg-purple-500/20 text-purple-300'
               }`}>
@@ -2052,14 +2052,14 @@ const CafePOS = () => {
 
             <button
               onClick={() => setActiveTab('inventory')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
                 activeTab === 'inventory'
                   ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/20'
                   : 'text-[#bbcbb2] hover:text-slate-200'
               }`}
             >
               <Boxes size={13} />
-              <span>Stok Gudang</span>
+              <span className="whitespace-nowrap">Stok Gudang</span>
               <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
                 activeTab === 'inventory' ? 'bg-[#18181c] text-amber-300' : 'bg-amber-600/20 text-amber-300'
               }`}>
@@ -2068,14 +2068,14 @@ const CafePOS = () => {
             </button>
           </div>
 
-          <span className="text-slate-700 font-mono hidden sm:inline px-0.5">|</span>
+          <span className="text-[#26272d] font-mono px-0.5 shrink-0">|</span>
 
           {/* Grup 3: Dropdown Operasional Kas & Shift */}
-          <div className="relative">
+          <div className="relative shrink-0">
             <button
               type="button"
               onClick={() => setShowCashOpsMenu(!showCashOpsMenu)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all border ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all border shrink-0 ${
                 activeTab === 'expense' || activeTab === 'exchange'
                   ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
                   : 'bg-[#121215] text-slate-200 hover:text-white border-[#26272d] hover:border-[#3f414a]'
@@ -2083,7 +2083,7 @@ const CafePOS = () => {
               title="Operasional Laci Kasir & Pergantian Shift"
             >
               <TrendingDown size={13} className="text-rose-400" />
-              <span>
+              <span className="whitespace-nowrap">
                 {activeTab === 'expense' ? 'Pengeluaran' : activeTab === 'exchange' ? 'Tukar Uang' : 'Shift & Kas'}
               </span>
               <ChevronDown size={12} className={`transition-transform ${showCashOpsMenu ? 'rotate-180' : ''}`} />
@@ -2132,7 +2132,7 @@ const CafePOS = () => {
         </div>
 
         {/* Sisi Kanan: Kasir Aktif & Status Laci Kas Ringkas */}
-        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end pt-1 sm:pt-0 border-t border-[#26272d]/50 sm:border-t-0">
           {/* Status Kasir & Shift */}
           <div className="flex items-center gap-1.5 bg-[#18181c] border border-[#26272d] rounded-xl px-2.5 py-1 text-xs">
             <span className="w-2 h-2 rounded-full bg-[#00ffff] text-[#0f0f0f] animate-pulse shrink-0"></span>
