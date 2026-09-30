@@ -2463,6 +2463,15 @@
       - **Verifikasi Kualitas**:
         - 214/214 unit tests PASS across 37 test files (100% GREEN).
         - Vite production build sukses dalam 1.57 detik.
+    37. **Perbaikan Crash Render pada Modul Gudang & Drilldown Buku Besar (2026-09-30)**:
+      - **Modul Gudang (`src/pages/Gudang.jsx`)**:
+        - Memperbaiki `ReferenceError: Barcode is not defined` dengan mengimpor ikon `Barcode` dari `lucide-react`. Halaman Multi Gudang & Stok kini terbuka normal tanpa crash.
+      - **Modul Buku Besar & Drilldown (`src/components/reports/GeneralLedgerView.jsx`)**:
+        - Memperbaiki ketidaksesuaian tag dan rendering tabel pada Tab Drilldown Buku Besar dan Modal Rincian Akun dengan memigrasikannya secara utuh ke `LedgerTable`.
+        - Mencegah error akses property dengan fallback data array `drilldownLedger?.rows || []` dan penanganan aman `closing_balance`.
+      - **Verifikasi Kualitas**:
+        - 214/214 unit tests PASS across 37 test files (100% GREEN).
+        - Vite production build sukses dalam 1.89 detik.
 
 
 

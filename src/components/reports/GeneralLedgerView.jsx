@@ -1,4 +1,4 @@
-import { LedgerTable } from '../ui/tables'
+import { LedgerTable, OperationalTable } from '../ui/tables'
 import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../supabaseClient'
 import {
@@ -596,84 +596,88 @@ export default function GeneralLedgerView({ tenantId }) {
                 </button>
               </div>
 
-              <TableContainer>
-            <Table>
-                  <thead>
-                    <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400 font-bold uppercase">
-                      <th className="py-3 px-4">Tanggal</th>
-                      <th className="py-3 px-4">No. Bukti / Ref</th>
-                      <th className="py-3 px-4">Keterangan / Memo</th>
-                      <th className="py-3 px-4 text-right">Debit (Rp)</th>
-                      <th className="py-3 px-4 text-right">Kredit (Rp)</th>
-                      <th className="py-3 px-4 text-right">Saldo Berjalan (Rp)</th>
-                      <th className="py-3 px-4 text-right">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/40 font-mono">
-                    {accountLedger.rows.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="py-8 text-center text-slate-500 font-sans">
-                          Belum ada riwayat mutasi untuk akun ini.
-                        </td>
-                      </tr>
-                    ) : (
-                      accountLedger.rows.map((row) => (
-                        <tr key={row.id} className="hover:bg-slate-800/30">
-                          <td className="py-2.5 px-4 text-slate-300">{row.date}</td>
-                          <td className="py-2.5 px-4 font-bold text-brand-emerald">{row.entry_no}</td>
-                          <td className="py-2.5 px-4 font-sans text-slate-200">{row.memo}</td>
-                          <td className="py-2.5 px-4 text-right text-slate-300">{row.debit > 0 ? formatRupiah(row.debit) : '-'}</td>
-                          <td className="py-2.5 px-4 text-right text-slate-300">{row.credit > 0 ? formatRupiah(row.credit) : '-'}</td>
-                          <td className="py-2.5 px-4 text-right font-bold text-white">{formatRupiah(row.running_balance)}</td>
-                          <td className="py-2.5 px-4 text-right">
-                            <div className="flex justify-end gap-1.5 font-sans">
-                              <button
-                                onClick={() => {
-                                  setEditingRow(row)
-                                  setTransForm({
-                                    tipe: row.debit > 0 ? 'Pengeluaran' : 'Pemasukan',
-                                    tanggal: row.date,
-                                    pos: 'SALDO CASH',
-                                    kategori: categoriesList.length > 0 ? categoriesList[0].nama_kategori : 'Operasional',
-                                    nominal: (row.debit || row.credit || 0).toString(),
-                                    keterangan: row.memo,
-                                    nama_karyawan: '',
-                                    plat_nomor: '',
-                                  })
-                                  setDrilldownAccount(accountLedger.account)
-                                  setShowTransModal(true)
-                                }}
-                                className="p-1 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700"
-                                title="Edit Transaksi Sumber"
-                              >
-                                <Edit3 size={12} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteTransaction(row)}
-                                className="p-1 rounded bg-rose-500/10 text-rose-400 hover:bg-rose-500/20"
-                                title="Hapus Transaksi Sumber"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t-2 border-slate-700 bg-slate-950 font-bold font-mono">
-                      <td colSpan={5} className="py-3 px-4 uppercase text-slate-300 font-sans">
-                        Saldo Akhir Akun
-                      </td>
-                      <td className="py-3 px-4 text-right text-brand-emerald text-sm">
-                        {formatRupiah(accountLedger.closing_balance)}
-                      </td>
-                      <td></td>
-                    </tr>
-                  </tfoot>
-                </Table>
-          </TableContainer>
+              <LedgerTable
+                data={accountLedger.rows || []}
+                keyExtractor={(row) => row.id}
+                emptyMessage="Belum ada riwayat mutasi untuk akun ini."
+                footerTotals={{
+                  date: 'Saldo Akhir Akun',
+                  running_balance: formatRupiah(accountLedger.closing_balance || 0),
+                }}
+                columns={[
+                  {
+                    key: 'date',
+                    label: 'Tanggal',
+                    className: 'font-mono text-muted text-xs',
+                  },
+                  {
+                    key: 'entry_no',
+                    label: 'No. Bukti / Ref',
+                    className: 'font-mono font-bold text-primary',
+                  },
+                  {
+                    key: 'memo',
+                    label: 'Keterangan / Memo',
+                    className: 'text-foreground font-medium',
+                  },
+                  {
+                    key: 'debit',
+                    label: 'Debit (Rp)',
+                    numeric: true,
+                    render: (val) => (val > 0 ? formatRupiah(val) : '-'),
+                  },
+                  {
+                    key: 'credit',
+                    label: 'Kredit (Rp)',
+                    numeric: true,
+                    render: (val) => (val > 0 ? formatRupiah(val) : '-'),
+                  },
+                  {
+                    key: 'running_balance',
+                    label: 'Saldo Berjalan (Rp)',
+                    numeric: true,
+                    className: 'font-bold text-foreground',
+                    render: (val) => formatRupiah(val),
+                  },
+                  {
+                    key: 'actions',
+                    label: 'Aksi',
+                    align: 'right',
+                    render: (_, row) => (
+                      <div className="flex justify-end gap-1.5 font-sans">
+                        <button
+                          onClick={() => {
+                            setEditingRow(row)
+                            setTransForm({
+                              tipe: row.debit > 0 ? 'Pengeluaran' : 'Pemasukan',
+                              tanggal: row.date,
+                              pos: 'SALDO CASH',
+                              kategori: categoriesList.length > 0 ? categoriesList[0].nama_kategori : 'Operasional',
+                              nominal: (row.debit || row.credit || 0).toString(),
+                              keterangan: row.memo,
+                              nama_karyawan: '',
+                              plat_nomor: '',
+                            })
+                            setDrilldownAccount(accountLedger.account)
+                            setShowTransModal(true)
+                          }}
+                          className="p-1 rounded bg-subsurface text-muted hover:text-white hover:bg-border transition-colors"
+                          title="Edit Transaksi Sumber"
+                        >
+                          <Edit3 size={12} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTransaction(row)}
+                          className="p-1 rounded bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+                          title="Hapus Transaksi Sumber"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    ),
+                  },
+                ]}
+              />
             </div>
           )}
         </div>
@@ -728,78 +732,83 @@ export default function GeneralLedgerView({ tenantId }) {
               </div>
 
               {/* Tabel Transaksi Pembentuk */}
-              <TableContainer>
-            <Table>
-                  <thead className="sticky top-0 bg-slate-950 border-b border-slate-800 text-slate-400 font-bold uppercase z-10">
-                    <tr>
-                      <th className="py-2.5 px-3">Tanggal</th>
-                      <th className="py-2.5 px-3">No. Bukti / Ref</th>
-                      <th className="py-2.5 px-3">Keterangan Sumber</th>
-                      <th className="py-2.5 px-3 text-right">Debit (Rp)</th>
-                      <th className="py-2.5 px-3 text-right">Kredit (Rp)</th>
-                      <th className="py-2.5 px-3 text-right">Saldo Berjalan</th>
-                      <th className="py-2.5 px-3 text-right">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/40 font-mono">
-                    {(!drilldownLedger || drilldownLedger.rows.length === 0) ? (
-                      <tr>
-                        <td colSpan={7} className="py-8 text-center text-slate-500 font-sans">
-                          Belum ada transaksi pembentuk untuk akun ini.
-                        </td>
-                      </tr>
-                    ) : (
-                      drilldownLedger.rows.map((row) => (
-                        <tr key={row.id} className="hover:bg-slate-800/40">
-                          <td className="py-2 px-3 text-slate-300">{row.date}</td>
-                          <td className="py-2 px-3 font-bold text-brand-emerald">{row.entry_no}</td>
-                          <td className="py-2 px-3 font-sans text-slate-200">{row.memo}</td>
-                          <td className="py-2 px-3 text-right text-slate-300">
-                            {row.debit > 0 ? formatRupiah(row.debit) : '-'}
-                          </td>
-                          <td className="py-2 px-3 text-right text-slate-300">
-                            {row.credit > 0 ? formatRupiah(row.credit) : '-'}
-                          </td>
-                          <td className="py-2 px-3 text-right font-bold text-white">
-                            {formatRupiah(row.running_balance)}
-                          </td>
-                          <td className="py-2 px-3 text-right">
-                            <div className="flex justify-end gap-1.5 font-sans">
-                              <button
-                                onClick={() => {
-                                  setEditingRow(row)
-                                  setTransForm({
-                                    tipe: row.debit > 0 ? 'Pengeluaran' : 'Pemasukan',
-                                    tanggal: row.date,
-                                    pos: 'SALDO CASH',
-                                    kategori: categoriesList.length > 0 ? categoriesList[0].nama_kategori : 'Operasional',
-                                    nominal: (row.debit || row.credit || 0).toString(),
-                                    keterangan: row.memo,
-                                    nama_karyawan: '',
-                                    plat_nomor: '',
-                                  })
-                                  setShowTransModal(true)
-                                }}
-                                className="p-1 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700"
-                                title="Edit Transaksi Sumber"
-                              >
-                                <Edit3 size={12} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteTransaction(row)}
-                                className="p-1 rounded bg-rose-500/10 text-rose-400 hover:bg-rose-500/20"
-                                title="Hapus Transaksi Sumber"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </Table>
-          </TableContainer>
+              <LedgerTable
+                data={drilldownLedger?.rows || []}
+                keyExtractor={(row) => row.id}
+                emptyMessage="Belum ada transaksi pembentuk untuk akun ini."
+                columns={[
+                  {
+                    key: 'date',
+                    label: 'Tanggal',
+                    className: 'font-mono text-muted text-xs',
+                  },
+                  {
+                    key: 'entry_no',
+                    label: 'No. Bukti / Ref',
+                    className: 'font-mono font-bold text-primary',
+                  },
+                  {
+                    key: 'memo',
+                    label: 'Keterangan Sumber',
+                    className: 'text-foreground font-medium',
+                  },
+                  {
+                    key: 'debit',
+                    label: 'Debit (Rp)',
+                    numeric: true,
+                    render: (val) => (val > 0 ? formatRupiah(val) : '-'),
+                  },
+                  {
+                    key: 'credit',
+                    label: 'Kredit (Rp)',
+                    numeric: true,
+                    render: (val) => (val > 0 ? formatRupiah(val) : '-'),
+                  },
+                  {
+                    key: 'running_balance',
+                    label: 'Saldo Berjalan',
+                    numeric: true,
+                    className: 'font-bold text-foreground',
+                    render: (val) => formatRupiah(val),
+                  },
+                  {
+                    key: 'actions',
+                    label: 'Aksi',
+                    align: 'right',
+                    render: (_, row) => (
+                      <div className="flex justify-end gap-1.5 font-sans">
+                        <button
+                          onClick={() => {
+                            setEditingRow(row)
+                            setTransForm({
+                              tipe: row.debit > 0 ? 'Pengeluaran' : 'Pemasukan',
+                              tanggal: row.date,
+                              pos: 'SALDO CASH',
+                              kategori: categoriesList.length > 0 ? categoriesList[0].nama_kategori : 'Operasional',
+                              nominal: (row.debit || row.credit || 0).toString(),
+                              keterangan: row.memo,
+                              nama_karyawan: '',
+                              plat_nomor: '',
+                            })
+                            setShowTransModal(true)
+                          }}
+                          className="p-1 rounded bg-subsurface text-muted hover:text-white hover:bg-border transition-colors"
+                          title="Edit Transaksi Sumber"
+                        >
+                          <Edit3 size={12} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTransaction(row)}
+                          className="p-1 rounded bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+                          title="Hapus Transaksi Sumber"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    ),
+                  },
+                ]}
+              />
             </div>
 
             <div className="flex justify-between items-center pt-3 border-t border-slate-800">

@@ -20,7 +20,8 @@ import {
   SlidersHorizontal,
   DollarSign,
   TrendingUp,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Barcode
 } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
