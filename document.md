@@ -2360,6 +2360,27 @@
       - **Verifikasi Kualitas**:
         - 197/197 unit tests PASS (100% GREEN).
         - Vite production build sukses dalam 1.92 detik.
+    29. **Arsitektur Semantic Design Tokens di Tailwind CSS v4 (2026-09-30)**:
+      - **Prinsip Arsitektur (*Single Source of Truth*)**:
+        - Mendaftarkan token semantik global pada blok `@theme` di `src/index.css`:
+          - `--color-canvas`: `#000000` (Canvas / Ground level)
+          - `--color-surface`: `#121215` (Card / Modal / Table container)
+          - `--color-subsurface`: `#18181c` (Input / Item card / Controls)
+          - `--color-border`: `#26272d` (Sleek dark separator)
+          - `--color-border-hover`: `#3f414a`
+          - `--color-border-active`: `#00ffff`
+          - `--color-primary`: `#00ffff` (Electric Cyan)
+          - `--color-primary-foreground`: `#0f0f0f` (High contrast text for buttons)
+          - `--color-muted`: `#bbcbb2` (Sage gray)
+          - `--color-destructive`: `#ff5102` (Vermilion orange-red)
+          - `--color-warning` / `--color-accent-amber`: `#ffc71f`
+          - `--color-accent-orange`: `#f57733`
+      - **Dampak Pengembangan**:
+        - Pengembang dan sub-agen dapat langsung menggunakan utility class resmi: `bg-primary text-primary-foreground`, `bg-surface border-border`, `bg-subsurface`, `text-primary`, `hover:border-border-hover`.
+        - Mengganti tema di masa depan kini hanya membutuhkan perubahan 1 baris CSS pada token `--color-primary`.
+      - **Verifikasi Kualitas**:
+        - 197/197 unit tests PASS (100% GREEN).
+        - Vite production build sukses dalam 1.94 detik.
 
 
 

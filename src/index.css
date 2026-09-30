@@ -2,6 +2,25 @@
 
 /* Custom utility layers with 21st.dev VRS_2026 Cyan Theme Palette */
 @theme {
+  --color-canvas: #000000;
+  --color-surface: #121215;
+  --color-subsurface: #18181c;
+  --color-border: #26272d;
+  --color-border-hover: #3f414a;
+  --color-border-active: #00ffff;
+
+  --color-primary: #00ffff;
+  --color-primary-foreground: #0f0f0f;
+
+  --color-muted: #bbcbb2;
+  --color-muted-dark: #6b7367;
+
+  --color-destructive: #ff5102;
+  --color-warning: #ffc71f;
+  --color-accent-amber: #ffc71f;
+  --color-accent-orange: #f57733;
+
+  /* Backward Compatibility Aliases for older components */
   --color-brand-cyan: #00ffff;
   --color-brand-emerald: #00ffff;
   --color-brand-blue: #00ffff;
