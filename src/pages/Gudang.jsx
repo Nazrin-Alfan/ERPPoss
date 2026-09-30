@@ -637,37 +637,37 @@ export default function Gudang() {
 
       {/* 4. TABEL DATA STOK GUDANG */}
       <InventoryTable
-        data={filteredBahan}
-        keyExtractor={(item) => item.id_bahan_baku}
-        emptyMessage="Tidak ada data bahan baku ditemukan."
+        data={filteredItems}
+        keyExtractor={(item) => item.id_barang || item.id_bahan_baku}
+        emptyMessage="Tidak ada data barang ditemukan pada gudang ini."
         columns={[
           {
-            key: 'id_bahan_baku',
+            key: 'id_barang',
             label: 'KODE / BARCODE',
             render: (val, item) => (
               <div>
                 <div className="font-mono font-bold text-primary flex items-center gap-1.5">
                   <Barcode className="w-3.5 h-3.5 text-muted" />
-                  {item.barcode || val}
+                  {val || item.id_bahan_baku}
                 </div>
                 {item.barcode && (
                   <span className="text-[10px] text-muted-dark font-mono">
-                    ID: {val}
+                    BARCODE: {item.barcode}
                   </span>
                 )}
               </div>
             ),
           },
           {
-            key: 'nama_produk',
-            label: 'NAMA BAHAN BAKU',
+            key: 'nama_barang',
+            label: 'NAMA BARANG',
             className: 'font-bold text-white',
             render: (val, item) => (
               <div>
-                <div>{val}</div>
+                <div>{val || item.nama_produk}</div>
                 <div className="text-[10px] text-muted-dark font-normal flex items-center gap-2">
                   <span className="uppercase text-muted">{item.kategori || 'BAHAN'}</span>
-                  {item.merk && <span>• {item.merk}</span>}
+                  <span className="px-1.5 py-0.2 rounded bg-subsurface border border-border text-[9px] text-muted font-mono">{item.gudang}</span>
                 </div>
               </div>
             ),
@@ -677,8 +677,8 @@ export default function Gudang() {
             label: 'STOK SISTEM',
             numeric: true,
             render: (val, item) => {
-              const s = Number(val) || 0
-              const min = Number(item.stok_minimum) || 5
+              const s = parseFloat(val) || 0
+              const min = parseFloat(item.min_stok || item.stok_minimum) || 5
               const isSafe = s > min
               const isLow = s > 0 && s <= min
               return (
@@ -705,8 +705,8 @@ export default function Gudang() {
             key: 'status',
             label: 'STATUS AMBANG',
             render: (_, item) => {
-              const s = Number(item.stok) || 0
-              const min = Number(item.stok_minimum) || 5
+              const s = parseFloat(item.stok) || 0
+              const min = parseFloat(item.min_stok || item.stok_minimum) || 5
               const isSafe = s > min
               const isLow = s > 0 && s <= min
               return isSafe ? (
@@ -728,12 +728,12 @@ export default function Gudang() {
             },
           },
           {
-            key: 'harga_satuan',
+            key: 'harga_beli',
             label: 'ESTIMASI HPP',
             numeric: true,
             render: (val, item) => (
               <span className="font-mono text-xs text-muted font-medium">
-                {formatRupiah(val || 0)}/{item.satuan || 'pcs'}
+                {formatRupiah(val || item.harga_satuan || 0)}/{item.satuan || 'pcs'}
               </span>
             ),
           },
@@ -742,10 +742,11 @@ export default function Gudang() {
             label: 'TOTAL NILAI ASET',
             numeric: true,
             render: (_, item) => {
-              const total = (Number(item.stok) || 0) * (Number(item.harga_satuan) || 0)
+              const qty = Math.max(0, parseFloat(item.stok) || 0)
+              const cost = parseFloat(item.harga_beli || item.harga_satuan) || 0
               return (
                 <span className="font-mono text-xs font-bold text-foreground">
-                  {formatRupiah(total)}
+                  {formatRupiah(qty * cost)}
                 </span>
               )
             },
@@ -757,14 +758,21 @@ export default function Gudang() {
             render: (_, item) => (
               <div className="flex items-center justify-center gap-2">
                 <button
-                  onClick={() => handleOpenStockAdjust(item)}
-                  className="px-2.5 py-1 rounded bg-subsurface hover:bg-border text-muted-foreground hover:text-white border border-border text-[11px] font-medium transition-colors"
-                  title="Sesuaikan Stok Fisik"
+                  onClick={() => handleOpenRestock(item)}
+                  className="px-2.5 py-1 rounded bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-[11px] font-bold transition-colors"
+                  title="Restock Masuk"
                 >
-                  Audit
+                  + Masuk
                 </button>
                 <button
-                  onClick={() => handleOpenForm(item)}
+                  onClick={() => handleOpenOpname(item)}
+                  className="px-2.5 py-1 rounded bg-subsurface hover:bg-border text-muted-foreground hover:text-white border border-border text-[11px] font-medium transition-colors"
+                  title="Sesuaikan Stok Fisik (Opname)"
+                >
+                  Opname
+                </button>
+                <button
+                  onClick={() => handleOpenEditModal(item)}
                   className="px-2.5 py-1 rounded bg-subsurface hover:bg-border text-muted-foreground hover:text-white border border-border text-[11px] font-medium transition-colors"
                 >
                   Edit

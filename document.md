@@ -2472,6 +2472,12 @@
       - **Verifikasi Kualitas**:
         - 214/214 unit tests PASS across 37 test files (100% GREEN).
         - Vite production build sukses dalam 1.89 detik.
+    38. **Perbaikan Identifier Scope pada Tabel Multi Gudang (`Gudang.jsx`) (2026-09-30)**:
+      - Memperbaiki `ReferenceError: filteredBahan is not defined` dengan menyelaraskan prop data tabel ke identifier useMemo `filteredItems` yang menangani multi-gudang (Cafe, Carwash, Central).
+      - Menghubungkan fungsi aksi tabel dengan benar: `handleOpenRestock`, `handleOpenOpname` (stock opname fisik), dan `handleOpenEditModal`.
+      - **Verifikasi Kualitas**:
+        - 214/214 unit tests PASS across 37 test files (100% GREEN).
+        - Vite production build sukses dalam 1.97 detik.
 
 
 
