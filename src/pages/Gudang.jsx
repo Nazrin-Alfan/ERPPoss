@@ -1,3 +1,13 @@
+import {
+  TableContainer,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableEmpty,
+} from '../components/ui/Table'
 import React, { useState, useEffect, useMemo } from 'react'
 import { 
   Boxes, 
@@ -405,7 +415,7 @@ export default function Gudang() {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-xl bg-brand-emerald/15 border border-brand-emerald/30 text-brand-emerald">
+            <div className="p-2.5 rounded-xl bg-brand-emerald/15 border border-primary/30 text-brand-emerald">
               <Boxes className="w-6 h-6" />
             </div>
             <div>
@@ -557,7 +567,7 @@ export default function Gudang() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={`Cari di ${activeGudang === 'CAFE' ? 'Gudang Cafe' : activeGudang === 'CARWASH' ? 'Gudang Carwash' : 'Gudang Merchandise'}...`}
-              className="w-full pl-10 pr-4 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs md:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-emerald"
+              className="w-full pl-10 pr-4 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs md:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-primary"
             />
           </div>
 
@@ -565,7 +575,7 @@ export default function Gudang() {
           <select
             value={selectedKategori}
             onChange={(e) => setSelectedKategori(e.target.value)}
-            className="px-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-brand-emerald cursor-pointer"
+            className="px-3 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-primary cursor-pointer"
           >
             {kategoriList.map(cat => (
               <option key={cat} value={cat}>
@@ -634,11 +644,10 @@ export default function Gudang() {
       </div>
 
       {/* 4. TABEL DATA STOK GUDANG */}
-      <div className="glass-panel rounded-2xl border border-slate-800/80 overflow-hidden shadow-2xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs md:text-sm">
+      <TableContainer>
+        <Table dense>
             <thead>
-              <tr className="bg-slate-900/90 text-slate-400 uppercase tracking-wider text-[10px] font-bold border-b border-slate-800">
+              <tr className="bg-subsurface/90 text-muted uppercase tracking-wider text-[10px] font-bold border-b border-border">
                 <th className="py-3 px-4">ID / SKU</th>
                 <th className="py-3 px-4">Nama Barang</th>
                 <th className="py-3 px-4">Kategori</th>
@@ -658,7 +667,7 @@ export default function Gudang() {
               {loading ? (
                 <tr>
                   <td colSpan={activeGudang === 'MERCHANDISE' ? 9 : 8} className="py-12 text-center text-slate-500">
-                    <div className="w-8 h-8 border-2 border-brand-emerald border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
                     Memuat data stok gudang...
                   </td>
                 </tr>
@@ -778,9 +787,8 @@ export default function Gudang() {
                 })
               )}
             </tbody>
-          </table>
-        </div>
-      </div>
+        </Table>
+      </TableContainer>
 
       {/* ========================================================================= */}
       {/* MODAL 1: TAMBAH / EDIT BARANG GUDANG */}
@@ -811,7 +819,7 @@ export default function Gudang() {
                   disabled={!!editingItem}
                   placeholder="Contoh: CF-01, CW-01, MCH-01"
                   required
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono uppercase focus:outline-none focus:border-brand-emerald disabled:opacity-50"
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono uppercase focus:outline-none focus:border-primary disabled:opacity-50"
                 />
               </div>
 
@@ -823,7 +831,7 @@ export default function Gudang() {
                   onChange={(e) => setItemForm({ ...itemForm, nama_barang: e.target.value })}
                   placeholder="Nama barang..."
                   required
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-brand-emerald"
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-primary"
                 />
               </div>
 
@@ -836,7 +844,7 @@ export default function Gudang() {
                     onChange={(e) => setItemForm({ ...itemForm, kategori: e.target.value })}
                     placeholder="Kategori..."
                     required
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-brand-emerald"
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-primary"
                   />
                 </div>
                 <div>
@@ -844,7 +852,7 @@ export default function Gudang() {
                   <select
                     value={itemForm.satuan}
                     onChange={(e) => setItemForm({ ...itemForm, satuan: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-brand-emerald"
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-primary"
                   >
                     <option value="Gram">Gram</option>
                     <option value="Kg">Kg</option>
@@ -867,7 +875,7 @@ export default function Gudang() {
                     onChange={(e) => setItemForm({ ...itemForm, harga_beli: e.target.value })}
                     placeholder="0"
                     required
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono focus:outline-none focus:border-brand-emerald"
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono focus:outline-none focus:border-primary"
                   />
                 </div>
                 <div>
@@ -877,7 +885,7 @@ export default function Gudang() {
                     value={itemForm.min_stok}
                     onChange={(e) => setItemForm({ ...itemForm, min_stok: e.target.value })}
                     placeholder="5"
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono focus:outline-none focus:border-brand-emerald"
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono focus:outline-none focus:border-primary"
                   />
                 </div>
               </div>

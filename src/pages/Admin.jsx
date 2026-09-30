@@ -1,3 +1,13 @@
+import {
+  TableContainer,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableEmpty,
+} from '../components/ui/Table'
 import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
@@ -1581,8 +1591,8 @@ const Admin = () => {
           </div>
 
           <div className="glass-panel rounded-2xl border border-slate-800/80 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[650px] text-left text-sm text-slate-300">
+            <TableContainer>
+              <Table>
                 <thead>
                   <tr className="border-b border-slate-800 text-slate-500 font-semibold text-xs uppercase tracking-wider">
                     <th className="p-4">Foto & Menu</th>
@@ -1662,8 +1672,8 @@ const Admin = () => {
                     )
                   })}
                 </tbody>
-              </table>
-            </div>
+              </Table>
+            </TableContainer>
           </div>
         </div>
       )}
@@ -2137,8 +2147,8 @@ const Admin = () => {
 
           {/* Table of Categories */}
           <div className="glass-panel rounded-2xl border border-slate-800/80 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+            <TableContainer>
+              <Table dense>
                 <thead>
                   <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400 font-bold uppercase tracking-wider">
                     <th className="py-3 px-4">Nama Kategori</th>
@@ -2261,8 +2271,8 @@ const Admin = () => {
                     })
                   )}
                 </tbody>
-              </table>
-            </div>
+              </Table>
+            </TableContainer>
           </div>
         </div>
       )}

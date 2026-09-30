@@ -1,3 +1,13 @@
+import {
+  TableContainer,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableEmpty,
+} from '../ui/Table'
 import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../supabaseClient'
 import {
@@ -250,8 +260,8 @@ export default function GeneralLedgerView({ tenantId }) {
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/40">
-            <table className="w-full text-left text-xs border-collapse">
+          <TableContainer>
+            <Table>
               <thead>
                 <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400 font-bold uppercase tracking-wider">
                   <th className="py-3 px-4">Kode</th>
@@ -303,8 +313,8 @@ export default function GeneralLedgerView({ tenantId }) {
                   </td>
                 </tr>
               </tfoot>
-            </table>
-          </div>
+            </Table>
+          </TableContainer>
         </div>
       )}
 
@@ -585,8 +595,8 @@ export default function GeneralLedgerView({ tenantId }) {
                 </button>
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/40">
-                <table className="w-full text-left text-xs border-collapse">
+              <TableContainer>
+            <Table>
                   <thead>
                     <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400 font-bold uppercase">
                       <th className="py-3 px-4">Tanggal</th>
@@ -661,8 +671,8 @@ export default function GeneralLedgerView({ tenantId }) {
                       <td></td>
                     </tr>
                   </tfoot>
-                </table>
-              </div>
+                </Table>
+          </TableContainer>
             </div>
           )}
         </div>
@@ -717,8 +727,8 @@ export default function GeneralLedgerView({ tenantId }) {
               </div>
 
               {/* Tabel Transaksi Pembentuk */}
-              <div className="overflow-x-auto max-h-[50vh] rounded-xl border border-slate-800 bg-slate-950/50 mb-4">
-                <table className="w-full text-left text-xs border-collapse">
+              <TableContainer>
+            <Table>
                   <thead className="sticky top-0 bg-slate-950 border-b border-slate-800 text-slate-400 font-bold uppercase z-10">
                     <tr>
                       <th className="py-2.5 px-3">Tanggal</th>
@@ -787,8 +797,8 @@ export default function GeneralLedgerView({ tenantId }) {
                       ))
                     )}
                   </tbody>
-                </table>
-              </div>
+                </Table>
+          </TableContainer>
             </div>
 
             <div className="flex justify-between items-center pt-3 border-t border-slate-800">

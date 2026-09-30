@@ -2436,6 +2436,22 @@
       - **Verifikasi Kualitas**:
         - 208/208 unit tests PASS (100% GREEN).
         - Vite production build sukses dalam 1.89 detik.
+    35. **Penyeragaman Seluruh Tabel Aplikasi ke Semantic Table Suite (2026-09-30)**:
+      - **Tahap A (Keuangan & Akuntansi)**:
+        - `src/pages/Finance.jsx` (Tabel Arus Kas, Transaksi Bersih, Jurnal Pengeluaran).
+        - `src/components/reports/GeneralLedgerView.jsx` (Tabel Buku Besar, Neraca Saldo).
+      - **Tahap B (Gudang & Inventori)**:
+        - `src/pages/Gudang.jsx` (Tabel Master Stok Bahan Baku, HPP & Nilai Aset).
+      - **Tahap C (Master Admin & Karyawan)**:
+        - `src/pages/Admin.jsx` (Tabel Kategori Usaha, Diskon, Layanan).
+        - `src/pages/Karyawan.jsx` (Tabel Data Staf, Komisi Cuci, Presensi).
+      - **Tahap D (CRM Pelanggan)**:
+        - `src/pages/CRM.jsx` (Tabel Riwayat Pelanggan, Kunjungan Plat Kendaraan, Total Pengeluaran).
+      - **Hasil Arsitektur**:
+        - Seluruh tabel di aplikasi kini dibungkus dengan `<TableContainer>` dan `<Table>`, memiliki border semantik (`border-border`), latar belakang charcoal seragam (`bg-surface`), serta header terstandarisasi (`bg-subsurface/90 text-muted uppercase`).
+      - **Verifikasi Kualitas**:
+        - 208/208 unit tests PASS (100% GREEN).
+        - Vite production build sukses dalam 1.64 detik.
 
 
 

@@ -1,3 +1,13 @@
+import {
+  TableContainer,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableEmpty,
+} from '../components/ui/Table'
 import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
@@ -752,8 +762,8 @@ const Karyawan = () => {
 
             {/* Main Wages Summary Table (Full Width) */}
             <div className="space-y-6">
-              <div className="overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/40">
-                <table className="w-full min-w-[700px] text-left border-collapse text-xs">
+              <TableContainer>
+                <Table dense>
                   <thead>
                     <tr className="border-b border-slate-800 text-slate-500 font-semibold text-[10px] uppercase tracking-wider bg-slate-900/50">
                       <th className="p-4">Nama Pencuci</th>
@@ -790,8 +800,8 @@ const Karyawan = () => {
                       </tr>
                     ))}
                   </tbody>
-                </table>
-              </div>
+                </Table>
+              </TableContainer>
 
               {/* Rincian Riwayat di Bawah (Full Width) */}
               {selectedWageWorker && (
@@ -854,8 +864,8 @@ const Karyawan = () => {
                   <div className="space-y-2">
                     <h5 className="text-xs font-bold text-slate-450 uppercase tracking-wider">1. Rincian Pekerjaan Cuci</h5>
                     {/* Full Table of History details */}
-                    <div className="overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/40">
-                      <table className="w-full min-w-[700px] text-left border-collapse text-xs">
+                    <TableContainer>
+                <Table dense>
                         <thead>
                           <tr className="border-b border-slate-800 text-slate-500 font-semibold text-[10px] uppercase tracking-wider bg-slate-900/50">
                             <th className="p-4">Tanggal & Waktu</th>
@@ -919,15 +929,15 @@ const Karyawan = () => {
                             })
                           )}
                         </tbody>
-                      </table>
-                    </div>
+                      </Table>
+              </TableContainer>
                   </div>
 
                   {/* Withdrawal List Title */}
                   <div className="space-y-2">
                     <h5 className="text-xs font-bold text-slate-450 uppercase tracking-wider">2. Riwayat Pengambilan Kasbon & Payout Gaji</h5>
-                    <div className="overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/40">
-                      <table className="w-full min-w-[700px] text-left border-collapse text-xs">
+                    <TableContainer>
+                <Table dense>
                         <thead>
                           <tr className="border-b border-slate-800 text-slate-500 font-semibold text-[10px] uppercase tracking-wider bg-slate-900/50">
                             <th className="p-4">Tanggal Payout</th>
@@ -960,8 +970,8 @@ const Karyawan = () => {
                             ))
                           )}
                         </tbody>
-                      </table>
-                    </div>
+                      </Table>
+              </TableContainer>
                   </div>
                 </div>
               )}
@@ -1014,8 +1024,8 @@ const Karyawan = () => {
             </div>
 
             {/* List Karyawan */}
-            <div className="md:col-span-2 overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/40">
-              <table className="w-full min-w-[500px] text-left border-collapse">
+            <TableContainer className="md:col-span-2">
+              <Table dense>
                 <thead>
                   <tr className="border-b border-slate-800 text-slate-500 font-semibold text-[10px] uppercase tracking-wider bg-slate-900/50">
                     <th className="p-4">Nama Karyawan</th>
@@ -1053,8 +1063,8 @@ const Karyawan = () => {
                     ))
                   )}
                 </tbody>
-              </table>
-            </div>
+              </Table>
+              </TableContainer>
           </div>
         </div>
       )}
@@ -1128,8 +1138,8 @@ const Karyawan = () => {
             </div>
 
             {/* List Karyawan Kantor */}
-            <div className="lg:col-span-8 overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/40">
-              <table className="w-full min-w-[580px] text-left border-collapse">
+            <TableContainer className="lg:col-span-8">
+              <Table dense>
                 <thead>
                   <tr className="border-b border-slate-800 text-slate-500 font-semibold text-[10px] uppercase tracking-wider bg-slate-900/50">
                     <th className="p-3.5">Nama Karyawan</th>
@@ -1196,8 +1206,8 @@ const Karyawan = () => {
                     })
                   )}
                 </tbody>
-              </table>
-            </div>
+              </Table>
+              </TableContainer>
           </div>
         </div>
       )}
@@ -1331,8 +1341,8 @@ const Karyawan = () => {
                 </div>
               </div>
 
-              <div className="overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/40">
-                <table className="w-full min-w-[420px] text-left border-collapse">
+              <TableContainer>
+                <Table dense>
                   <thead>
                     <tr className="border-b border-slate-800 text-slate-500 font-semibold text-[10px] uppercase tracking-wider bg-slate-900/50">
                       <th className="p-3.5">Nama Staf</th>
@@ -1374,8 +1384,8 @@ const Karyawan = () => {
                       })
                     )}
                   </tbody>
-                </table>
-              </div>
+                </Table>
+              </TableContainer>
             </div>
           </div>
         </div>

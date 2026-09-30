@@ -1,3 +1,13 @@
+import {
+  TableContainer,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableEmpty,
+} from '../components/ui/Table'
 import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
 import {
@@ -212,13 +222,13 @@ const CRM = () => {
       <div className="flex justify-between items-center flex-wrap gap-4 border-b border-slate-800/80 pb-5">
         <div>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-lg shadow-cyan-500/10">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center text-primary shadow-lg shadow-cyan-500/10">
               <Users size={22} />
             </div>
             <div>
               <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
                 Manajemen Pelanggan & CRM
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-cyan-500/15 text-cyan-400 border border-cyan-500/25 uppercase tracking-wider">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-cyan-500/15 text-primary border border-cyan-500/25 uppercase tracking-wider">
                   Carwash Loyalty
                 </span>
               </h1>
@@ -241,7 +251,7 @@ const CRM = () => {
             onClick={handleExportCSV}
             className="flex items-center gap-2 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95"
           >
-            <Download size={14} className="text-cyan-400" />
+            <Download size={14} className="text-primary" />
             Ekspor CSV
           </button>
         </div>
@@ -252,7 +262,7 @@ const CRM = () => {
         <div className="glass-panel p-5 rounded-2xl border border-slate-800">
           <div className="flex justify-between items-start mb-2">
             <span className="text-xs font-bold text-slate-400 uppercase">Total Pelanggan</span>
-            <span className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <span className="p-2 rounded-lg bg-cyan-500/10 text-primary border border-cyan-500/20">
               <Users size={16} />
             </span>
           </div>
@@ -267,7 +277,7 @@ const CRM = () => {
               <Award size={16} />
             </span>
           </div>
-          <h3 className="text-2xl font-black text-emerald-400">{summaryMetrics.vipCount}</h3>
+          <h3 className="text-2xl font-black text-primary">{summaryMetrics.vipCount}</h3>
           <p className="text-[11px] text-slate-500 mt-1">Kunjungan cuci ≥ 5 kali</p>
         </div>
 
@@ -346,10 +356,10 @@ const CRM = () => {
         </div>
 
         {/* Table Content */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        <TableContainer>
+          <Table dense>
             <thead>
-              <tr className="border-b border-slate-800 text-slate-400 font-bold uppercase">
+              <tr className="border-b border-border text-muted font-bold uppercase text-[10px] bg-subsurface/80">
                 <th className="py-3 px-3">Nomor Plat</th>
                 <th className="py-3 px-3">Model Kendaraan</th>
                 <th className="py-3 px-3">No Telepon</th>
@@ -379,9 +389,9 @@ const CRM = () => {
                     <td className="py-3 px-3 font-mono font-bold text-white uppercase tracking-wider">{c.plat}</td>
                     <td className="py-3 px-3 text-slate-300">{c.model}</td>
                     <td className="py-3 px-3 text-slate-400 font-mono text-[11px]">{c.noTelepon}</td>
-                    <td className="py-3 px-3 text-center font-bold text-cyan-400">{c.totalVisits} kali</td>
+                    <td className="py-3 px-3 text-center font-bold text-primary">{c.totalVisits} kali</td>
                     <td className="py-3 px-3 text-slate-300">{c.favPkg}</td>
-                    <td className="py-3 px-3 text-right font-mono font-bold text-emerald-400">{formatRupiah(c.totalSpent)}</td>
+                    <td className="py-3 px-3 text-right font-mono font-bold text-primary">{formatRupiah(c.totalSpent)}</td>
                     <td className="py-3 px-3 text-center">
                       <span className={`text-[9px] px-2.5 py-0.5 rounded-full font-bold uppercase border ${c.segmentBadge}`}>
                         {c.segment}
@@ -399,8 +409,8 @@ const CRM = () => {
                 ))
               )}
             </tbody>
-          </table>
-        </div>
+          </Table>
+        </TableContainer>
 
         {/* Pagination Bar */}
         {totalPages > 1 && (
@@ -446,7 +456,7 @@ const CRM = () => {
                     href={`https://wa.me/${activeCustomer.noTelepon.replace(/\D/g, '').replace(/^0/, '62')}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all flex items-center gap-1 text-xs font-bold px-2.5"
+                    className="p-1.5 rounded-lg bg-emerald-500/10 text-primary border border-emerald-500/20 hover:bg-emerald-500/20 transition-all flex items-center gap-1 text-xs font-bold px-2.5"
                   >
                     <MessageCircle size={14} />
                     Kirim WA
@@ -464,11 +474,11 @@ const CRM = () => {
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
                 <span className="text-slate-500 font-medium">Total Kunjungan Cuci</span>
-                <p className="text-lg font-black text-cyan-400 mt-0.5">{activeCustomer.totalVisits} kali</p>
+                <p className="text-lg font-black text-primary mt-0.5">{activeCustomer.totalVisits} kali</p>
               </div>
               <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
                 <span className="text-slate-500 font-medium">Total Akumulasi Belanja</span>
-                <p className="text-lg font-black text-emerald-400 mt-0.5">{formatRupiah(activeCustomer.totalSpent)}</p>
+                <p className="text-lg font-black text-primary mt-0.5">{formatRupiah(activeCustomer.totalSpent)}</p>
               </div>
             </div>
 
@@ -481,7 +491,7 @@ const CRM = () => {
                       <p className="font-bold text-white">{v.paket} ({v.ukuran})</p>
                       <p className="text-[10px] text-slate-400">{v.tanggal} {v.jam ? `• Jam ${v.jam}` : ''} • Kru: {v.pencuci || '-'}</p>
                     </div>
-                    <span className="font-mono font-bold text-emerald-400">{formatRupiah(v.harga)}</span>
+                    <span className="font-mono font-bold text-primary">{formatRupiah(v.harga)}</span>
                   </div>
                 ))}
               </div>

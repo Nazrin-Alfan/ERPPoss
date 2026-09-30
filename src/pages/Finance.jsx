@@ -1,3 +1,13 @@
+import {
+  TableContainer,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableEmpty,
+} from '../components/ui/Table'
 import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
@@ -1494,7 +1504,7 @@ const Finance = () => {
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-            <DollarSign size={28} className="text-brand-emerald" />
+            <DollarSign size={28} className="text-primary" />
             Monitoring Keuangan
           </h1>
           <p className="text-slate-400 text-xs md:text-sm mt-0.5">
@@ -1513,7 +1523,7 @@ const Finance = () => {
           </button>
           <button
             onClick={() => setShowIncomeModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-brand-emerald hover:bg-emerald-400 active:bg-emerald-500 text-slate-950 font-bold rounded-xl shadow-lg shadow-brand-emerald/20 transition-all text-xs"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-primary hover:bg-emerald-400 active:bg-emerald-500 text-slate-950 font-bold rounded-xl shadow-lg shadow-brand-emerald/20 transition-all text-xs"
           >
             <Plus size={15} />
             + Pemasukan
@@ -1537,7 +1547,7 @@ const Finance = () => {
 
       {/* Alert Notices */}
       {success && (
-        <div className="p-3.5 rounded-xl bg-brand-emerald/10 border border-brand-emerald/20 text-brand-emerald text-xs flex items-center gap-2.5 animate-fade-in">
+        <div className="p-3.5 rounded-xl bg-primary/10 border border-brand-emerald/20 text-primary text-xs flex items-center gap-2.5 animate-fade-in">
           <CheckCircle size={16} />
           <span>{success}</span>
         </div>
@@ -1558,7 +1568,7 @@ const Finance = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
           <div className="glass-panel p-4.5 rounded-2xl border border-slate-800/80 hover:border-slate-700 transition-colors">
             <p className="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Total Kas Bersih (All-time)</p>
-            <h3 className={`text-2xl font-black mt-1.5 ${allTimeSummary.totalBalance >= 0 ? 'text-brand-emerald' : 'text-rose-400'}`}>
+            <h3 className={`text-2xl font-black mt-1.5 ${allTimeSummary.totalBalance >= 0 ? 'text-primary' : 'text-rose-400'}`}>
               {formatRupiah(allTimeSummary.totalBalance)}
             </h3>
             <span className="text-[10px] text-slate-500 mt-1 block">Net akumulasi seluruh pemasukan riil - pengeluaran riil</span>
@@ -1566,7 +1576,7 @@ const Finance = () => {
           <div className="glass-panel p-4.5 rounded-2xl border border-slate-800/80 hover:border-slate-700 transition-colors">
             <div className="flex justify-between items-center">
               <p className="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Total Pemasukan Riil (All-time)</p>
-              <ArrowUpRight size={16} className="text-brand-emerald" />
+              <ArrowUpRight size={16} className="text-primary" />
             </div>
             <h3 className="text-2xl font-bold text-white mt-1.5">{formatRupiah(allTimeSummary.totalIncome)}</h3>
             <span className="text-[10px] text-slate-500 mt-1 block">Akumulasi struk lunas & kas masuk (di luar pindah saldo)</span>
@@ -1604,7 +1614,7 @@ const Finance = () => {
           <div className="glass-panel p-3.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-slate-700 transition-colors">
             <div>
               <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Mandiri Utama (Rek Y)</span>
-              <h4 className={`text-base md:text-lg font-black mt-0.5 ${posAllTimeBalances.rekY >= 0 ? 'text-brand-emerald' : 'text-rose-400'}`}>
+              <h4 className={`text-base md:text-lg font-black mt-0.5 ${posAllTimeBalances.rekY >= 0 ? 'text-primary' : 'text-rose-400'}`}>
                 {formatRupiah(posAllTimeBalances.rekY)}
               </h4>
             </div>
@@ -1776,14 +1786,14 @@ const Finance = () => {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-3 font-bold text-xs md:text-sm border-b-2 transition-all whitespace-nowrap ${
                 isActive 
-                  ? 'border-brand-emerald text-brand-emerald bg-brand-emerald/5' 
+                  ? 'border-brand-emerald text-primary bg-primary/5' 
                   : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
               }`}
             >
               <Icon size={16} />
               <span>{tab.label}</span>
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
-                isActive ? 'bg-brand-emerald text-slate-950' : 'bg-slate-800 text-slate-400'
+                isActive ? 'bg-primary text-slate-950' : 'bg-slate-800 text-slate-400'
               }`}>
                 {tab.count}
               </span>
@@ -1799,7 +1809,7 @@ const Finance = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
               <span className="text-[10px] text-slate-500 font-bold uppercase">Pemasukan Periode</span>
-              <p className="text-sm md:text-base font-black text-brand-emerald mt-1">{formatRupiah(cashflowKpis.totalInc)}</p>
+              <p className="text-sm md:text-base font-black text-primary mt-1">{formatRupiah(cashflowKpis.totalInc)}</p>
             </div>
             <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
               <span className="text-[10px] text-slate-500 font-bold uppercase">Pengeluaran Periode</span>
@@ -1813,7 +1823,7 @@ const Finance = () => {
             </div>
             <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
               <span className="text-[10px] text-slate-500 font-bold uppercase">Net Rekening Y</span>
-              <p className={`text-sm md:text-base font-black mt-1 ${cashflowKpis.rekYNet >= 0 ? 'text-brand-emerald' : 'text-rose-400'}`}>
+              <p className={`text-sm md:text-base font-black mt-1 ${cashflowKpis.rekYNet >= 0 ? 'text-primary' : 'text-rose-400'}`}>
                 {formatRupiah(cashflowKpis.rekYNet)}
               </p>
             </div>
@@ -1906,16 +1916,16 @@ const Finance = () => {
                 onClick={handleExportCSV}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl text-xs font-bold border border-slate-700 transition-colors"
               >
-                <Download size={14} className="text-brand-emerald" />
+                <Download size={14} className="text-primary" />
                 Unduh CSV
               </button>
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px] text-left text-xs text-slate-300">
+            <TableContainer>
+              <Table>
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[10px] bg-slate-950/40">
+                  <tr className="bg-subsurface/90 border-b border-border text-muted font-bold uppercase text-[10px] sm:text-xs">
                     <th 
                       className="p-3 cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
                       onClick={() => handleSortToggle('tanggal')}
@@ -1925,9 +1935,9 @@ const Finance = () => {
                         <span>Tanggal</span>
                         {sortKey === 'tanggal' ? (
                           sortOrder === 'desc' ? (
-                            <ArrowDown size={14} className="text-brand-emerald" />
+                            <ArrowDown size={14} className="text-primary" />
                           ) : (
-                            <ArrowUp size={14} className="text-brand-emerald" />
+                            <ArrowUp size={14} className="text-primary" />
                           )
                         ) : (
                           <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
@@ -1938,7 +1948,7 @@ const Finance = () => {
                       <div className="flex items-center gap-1.5">
                         <span>Jenis / Kategori</span>
                         {(filterCashflowJenis !== 'all' || filterCashflowKategori !== 'all') && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-brand-emerald animate-pulse" title="Filter Jenis/Kategori Aktif" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" title="Filter Jenis/Kategori Aktif" />
                         )}
                       </div>
                     </th>
@@ -1953,9 +1963,9 @@ const Finance = () => {
                         <span>Nominal</span>
                         {sortKey === 'nominal' ? (
                           sortOrder === 'desc' ? (
-                            <ArrowDown size={14} className="text-brand-emerald" />
+                            <ArrowDown size={14} className="text-primary" />
                           ) : (
-                            <ArrowUp size={14} className="text-brand-emerald" />
+                            <ArrowUp size={14} className="text-primary" />
                           )
                         ) : (
                           <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
@@ -1968,7 +1978,7 @@ const Finance = () => {
                 <tbody className="divide-y divide-slate-800/40">
                   {paginatedList.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="p-10 text-center text-slate-400">
+                      <td colSpan={6} className="py-10 text-center text-muted">
                         <DollarSign size={32} className="mx-auto text-slate-600 mb-2 opacity-60" />
                         <p className="font-bold text-sm text-slate-300">Tidak ada log cashflow pada periode ini ({activePeriodLabel})</p>
                         <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
@@ -1976,7 +1986,7 @@ const Finance = () => {
                         </p>
                         <button
                           onClick={() => { setFilterPeriodMode('quick'); setQuickPreset('all'); }}
-                          className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-brand-emerald/10 hover:bg-brand-emerald/20 text-brand-emerald border border-brand-emerald/30 text-xs font-bold transition-all"
+                          className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-brand-emerald/30 text-xs font-bold transition-all"
                         >
                           Tampilkan Semua Waktu ({cashflowList.length} Transaksi)
                         </button>
@@ -1997,7 +2007,7 @@ const Finance = () => {
                               </span>
                             ) : (
                               <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                                isInc ? 'bg-brand-emerald/10 text-brand-emerald' : 'bg-brand-rose/10 text-brand-rose'
+                                isInc ? 'bg-primary/10 text-primary' : 'bg-brand-rose/10 text-brand-rose'
                               }`}>
                                 {item.jenis || (isInc ? 'Pemasukan' : 'Pengeluaran')}
                               </span>
@@ -2011,7 +2021,7 @@ const Finance = () => {
                             </span>
                           </td>
                           <td className={`p-3 text-right font-mono font-bold ${
-                            isPindah ? 'text-sky-300' : (isInc ? 'text-brand-emerald' : 'text-rose-400')
+                            isPindah ? 'text-sky-300' : (isInc ? 'text-primary' : 'text-rose-400')
                           }`}>
                             {isInc ? '+' : '-'} {formatRupiah(nominal)}
                             {isPindah && <span className="text-[9px] text-slate-500 block font-sans font-normal">[Mutasi Kas/Bank]</span>}
@@ -2039,8 +2049,8 @@ const Finance = () => {
                     })
                   )}
                 </tbody>
-              </table>
-            </div>
+              </Table>
+            </TableContainer>
 
             {/* Pagination Controls */}
             <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2 text-xs text-slate-400 border-t border-slate-800">
@@ -2094,7 +2104,7 @@ const Finance = () => {
             </div>
             <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
               <span className="text-[10px] text-slate-500 font-bold uppercase">Total Omzet Kotor</span>
-              <p className="text-base md:text-lg font-black text-brand-emerald mt-1">{formatRupiah(carwashKpis.grossRev)}</p>
+              <p className="text-base md:text-lg font-black text-primary mt-1">{formatRupiah(carwashKpis.grossRev)}</p>
             </div>
             <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
               <span className="text-[10px] text-slate-500 font-bold uppercase">Total Diskon Diberikan</span>
@@ -2141,15 +2151,15 @@ const Finance = () => {
                 onClick={handleExportCSV}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl text-xs font-bold border border-slate-700 transition-colors"
               >
-                <Download size={14} className="text-brand-emerald" />
+                <Download size={14} className="text-primary" />
                 Unduh CSV
               </button>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[750px] text-left text-xs text-slate-300">
+            <TableContainer>
+              <Table>
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[10px] bg-slate-950/40">
+                  <tr className="bg-subsurface/90 border-b border-border text-muted font-bold uppercase text-[10px] sm:text-xs">
                     <th 
                       className="p-3 cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
                       onClick={() => handleSortToggle('tanggal')}
@@ -2159,9 +2169,9 @@ const Finance = () => {
                         <span>Tanggal & Jam</span>
                         {sortKey === 'tanggal' ? (
                           sortOrder === 'desc' ? (
-                            <ArrowDown size={14} className="text-brand-emerald" />
+                            <ArrowDown size={14} className="text-primary" />
                           ) : (
-                            <ArrowUp size={14} className="text-brand-emerald" />
+                            <ArrowUp size={14} className="text-primary" />
                           )
                         ) : (
                           <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
@@ -2181,9 +2191,9 @@ const Finance = () => {
                         <span>Harga Bersih</span>
                         {sortKey === 'nominal' ? (
                           sortOrder === 'desc' ? (
-                            <ArrowDown size={14} className="text-brand-emerald" />
+                            <ArrowDown size={14} className="text-primary" />
                           ) : (
-                            <ArrowUp size={14} className="text-brand-emerald" />
+                            <ArrowUp size={14} className="text-primary" />
                           )
                         ) : (
                           <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
@@ -2196,7 +2206,7 @@ const Finance = () => {
                 <tbody className="divide-y divide-slate-800/40">
                   {paginatedList.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-10 text-center text-slate-400">
+                      <td colSpan={7} className="py-10 text-center text-muted">
                         <Car size={32} className="mx-auto text-slate-600 mb-2 opacity-60" />
                         <p className="font-bold text-sm text-slate-300">Tidak ada log carwash pada periode ini ({activePeriodLabel})</p>
                         <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
@@ -2204,7 +2214,7 @@ const Finance = () => {
                         </p>
                         <button
                           onClick={() => { setFilterPeriodMode('quick'); setQuickPreset('all'); }}
-                          className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-brand-emerald/10 hover:bg-brand-emerald/20 text-brand-emerald border border-brand-emerald/30 text-xs font-bold transition-all"
+                          className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-brand-emerald/30 text-xs font-bold transition-all"
                         >
                           Tampilkan Semua Waktu ({carwashList.length} Kendaraan)
                         </button>
@@ -2228,12 +2238,12 @@ const Finance = () => {
                         </td>
                         <td className="p-3">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                            item.status === 'Selesai' ? 'bg-brand-emerald/10 text-brand-emerald' : 'bg-amber-500/10 text-amber-400'
+                            item.status === 'Selesai' ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-400'
                           }`}>
                             {item.status}
                           </span>
                         </td>
-                        <td className="p-3 text-right font-mono font-bold text-brand-emerald">
+                        <td className="p-3 text-right font-mono font-bold text-primary">
                           {formatRupiah(item.harga)}
                           {parseFloat(item.diskon) > 0 && (
                             <span className="text-[10px] text-slate-500 block font-normal line-through">
@@ -2263,8 +2273,8 @@ const Finance = () => {
                     ))
                   )}
                 </tbody>
-              </table>
-            </div>
+              </Table>
+            </TableContainer>
 
             {/* Pagination Controls */}
             <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2 text-xs text-slate-400 border-t border-slate-800">
@@ -2314,7 +2324,7 @@ const Finance = () => {
             </div>
             <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
               <span className="text-[10px] text-slate-500 font-bold uppercase">Total Omzet Cafe (F&B)</span>
-              <p className="text-base md:text-lg font-black text-brand-emerald mt-1">{formatRupiah(cafeKpis.totalRev)}</p>
+              <p className="text-base md:text-lg font-black text-primary mt-1">{formatRupiah(cafeKpis.totalRev)}</p>
             </div>
           </div>
 
@@ -2340,15 +2350,15 @@ const Finance = () => {
                 onClick={handleExportCSV}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl text-xs font-bold border border-slate-700 transition-colors"
               >
-                <Download size={14} className="text-brand-emerald" />
+                <Download size={14} className="text-primary" />
                 Unduh CSV
               </button>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px] text-left text-xs text-slate-300">
+            <TableContainer>
+              <Table>
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[10px] bg-slate-950/40">
+                  <tr className="bg-subsurface/90 border-b border-border text-muted font-bold uppercase text-[10px] sm:text-xs">
                     <th 
                       className="p-3 cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
                       onClick={() => handleSortToggle('tanggal')}
@@ -2358,9 +2368,9 @@ const Finance = () => {
                         <span>Waktu & Struk</span>
                         {sortKey === 'tanggal' ? (
                           sortOrder === 'desc' ? (
-                            <ArrowDown size={14} className="text-brand-emerald" />
+                            <ArrowDown size={14} className="text-primary" />
                           ) : (
-                            <ArrowUp size={14} className="text-brand-emerald" />
+                            <ArrowUp size={14} className="text-primary" />
                           )
                         ) : (
                           <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
@@ -2372,7 +2382,7 @@ const Finance = () => {
                       <div className="flex items-center gap-1.5">
                         <span>Kategori</span>
                         {filterCafeCategory !== 'all' && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-brand-emerald animate-pulse" title="Filter Kategori Aktif" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" title="Filter Kategori Aktif" />
                         )}
                       </div>
                     </th>
@@ -2387,9 +2397,9 @@ const Finance = () => {
                         <span>Total Tagihan</span>
                         {sortKey === 'nominal' ? (
                           sortOrder === 'desc' ? (
-                            <ArrowDown size={14} className="text-brand-emerald" />
+                            <ArrowDown size={14} className="text-primary" />
                           ) : (
-                            <ArrowUp size={14} className="text-brand-emerald" />
+                            <ArrowUp size={14} className="text-primary" />
                           )
                         ) : (
                           <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
@@ -2402,7 +2412,7 @@ const Finance = () => {
                 <tbody className="divide-y divide-slate-800/40">
                   {paginatedList.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-10 text-center text-slate-400">
+                      <td colSpan={7} className="py-10 text-center text-muted">
                         <Coffee size={32} className="mx-auto text-slate-600 mb-2 opacity-60" />
                         <p className="font-bold text-sm text-slate-300">Tidak ada log cafe pada periode ini ({activePeriodLabel})</p>
                         <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
@@ -2431,7 +2441,7 @@ const Finance = () => {
                         </td>
                         <td className="p-3 text-center font-mono font-bold text-brand-blue">{item.qty || item.jumlah || 1}x</td>
                         <td className="p-3 text-right font-mono text-slate-300">{formatRupiah(item.harga_satuan)}</td>
-                        <td className="p-3 text-right font-mono font-bold text-brand-emerald">
+                        <td className="p-3 text-right font-mono font-bold text-primary">
                           {formatRupiah(item.subtotal || item.total_harga || ((item.qty || item.jumlah || 1) * (item.harga_satuan || 0)))}
                         </td>
                         <td className="p-3 text-center">
@@ -2456,8 +2466,8 @@ const Finance = () => {
                     ))
                   )}
                 </tbody>
-              </table>
-            </div>
+              </Table>
+            </TableContainer>
 
             {/* Pagination Controls */}
             <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2 text-xs text-slate-400 border-t border-slate-800">
@@ -2576,15 +2586,15 @@ const Finance = () => {
                 onClick={handleExportCSV}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl text-xs font-bold border border-slate-700 transition-colors"
               >
-                <Download size={14} className="text-brand-emerald" />
+                <Download size={14} className="text-primary" />
                 Unduh CSV
               </button>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px] text-left text-xs text-slate-300">
+            <TableContainer>
+              <Table>
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase text-[10px] bg-slate-950/40">
+                  <tr className="bg-subsurface/90 border-b border-border text-muted font-bold uppercase text-[10px] sm:text-xs">
                     <th 
                       className="p-3 cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
                       onClick={() => handleSortToggle('tanggal')}
@@ -2637,7 +2647,7 @@ const Finance = () => {
                 <tbody className="divide-y divide-slate-800/40">
                   {paginatedList.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="p-10 text-center text-slate-400">
+                      <td colSpan={6} className="py-10 text-center text-muted">
                         <Receipt size={32} className="mx-auto text-slate-600 mb-2 opacity-60" />
                         <p className="font-bold text-sm text-slate-300">Tidak ada log pengeluaran pada periode ini ({activePeriodLabel})</p>
                         <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
@@ -2695,8 +2705,8 @@ const Finance = () => {
                     ))
                   )}
                 </tbody>
-              </table>
-            </div>
+              </Table>
+            </TableContainer>
 
             {/* Pagination Controls */}
             <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2 text-xs text-slate-400 border-t border-slate-800">
@@ -2779,7 +2789,7 @@ const Finance = () => {
                       <button
                         type="button"
                         onClick={() => setIsCustomExpenseJenis(!isCustomExpenseJenis)}
-                        className="text-[11px] text-brand-emerald hover:underline font-medium"
+                        className="text-[11px] text-primary hover:underline font-medium"
                       >
                         {isCustomExpenseJenis ? '← List' : '+ Custom'}
                       </button>
@@ -2823,7 +2833,7 @@ const Finance = () => {
                       <button
                         type="button"
                         onClick={() => setIsCustomExpenseKategori(!isCustomExpenseKategori)}
-                        className="text-[11px] text-brand-emerald hover:underline font-medium"
+                        className="text-[11px] text-primary hover:underline font-medium"
                       >
                         {isCustomExpenseKategori ? '← List' : '+ Custom'}
                       </button>
@@ -3009,7 +3019,7 @@ const Finance = () => {
             <div>
               <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Plus className="text-brand-emerald" />
+                  <Plus className="text-primary" />
                   Catat Pemasukan Baru
                 </h3>
                 <button onClick={() => setShowIncomeModal(false)} className="text-slate-400 hover:text-slate-200">✕</button>
@@ -3045,7 +3055,7 @@ const Finance = () => {
                       <button
                         type="button"
                         onClick={() => setIsCustomIncomeJenis(!isCustomIncomeJenis)}
-                        className="text-[11px] text-brand-emerald hover:underline font-medium"
+                        className="text-[11px] text-primary hover:underline font-medium"
                       >
                         {isCustomIncomeJenis ? '← List' : '+ Custom'}
                       </button>
@@ -3089,7 +3099,7 @@ const Finance = () => {
                       <button
                         type="button"
                         onClick={() => setIsCustomIncomeKategori(!isCustomIncomeKategori)}
-                        className="text-[11px] text-brand-emerald hover:underline font-medium"
+                        className="text-[11px] text-primary hover:underline font-medium"
                       >
                         {isCustomIncomeKategori ? '← List' : '+ Custom'}
                       </button>
@@ -3180,7 +3190,7 @@ const Finance = () => {
                 type="submit"
                 onClick={handleSaveIncome}
                 disabled={submitting}
-                className="px-4 py-2 bg-brand-emerald hover:bg-emerald-400 active:bg-emerald-500 text-slate-950 font-bold rounded-xl text-sm disabled:opacity-50"
+                className="px-4 py-2 bg-primary hover:bg-emerald-400 active:bg-emerald-500 text-slate-950 font-bold rounded-xl text-sm disabled:opacity-50"
               >
                 {submitting ? 'Menyimpan...' : 'Simpan Transaksi'}
               </button>
@@ -3245,7 +3255,7 @@ const Finance = () => {
                   </div>
 
                   <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
-                    <label className="block text-xs font-bold text-brand-emerald uppercase tracking-wider">
+                    <label className="block text-xs font-bold text-primary uppercase tracking-wider">
                       2. Ke Pos Kas (Tujuan)
                     </label>
                     <CustomSelect
@@ -3709,7 +3719,7 @@ const Finance = () => {
                 className={`px-4 py-2 font-bold rounded-xl text-xs w-24 ${
                   customAlert.title.includes('Hapus') || customAlert.title === 'Error'
                     ? 'bg-rose-500 hover:bg-rose-600 text-white'
-                    : 'bg-brand-emerald hover:bg-emerald-500 text-slate-950'
+                    : 'bg-primary hover:bg-emerald-500 text-slate-950'
                 }`}
               >
                 {customAlert.type === 'confirm' ? 'Ya' : 'OK'}
