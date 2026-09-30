@@ -456,7 +456,7 @@ export const CafePOSPage = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen lg:h-[calc(100vh-4rem)] bg-[#000000] text-white overflow-x-hidden">
+    <div className="flex flex-col min-h-screen lg:h-[calc(100vh-4rem)] w-full max-w-full bg-[#000000] text-white overflow-x-hidden">
       {/* TOP BAR: Kasir, Meja, Status Shift */}
       <header className="flex flex-wrap items-center justify-between px-3 sm:px-4 py-2.5 bg-[#121215] border-b border-[#26272d] gap-3 shrink-0">
         <div className="flex items-center gap-2.5">
@@ -526,7 +526,7 @@ export const CafePOSPage = () => {
       {/* WORKSPACE DUA KOLOM */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-x-hidden min-h-0">
         {/* KOLOM KIRI: KATALOG MENU */}
-        <section className="flex-1 flex flex-col min-w-0 bg-[#000000] overflow-hidden">
+        <section className="flex-1 flex flex-col min-w-0 w-full max-w-full bg-[#000000] overflow-hidden">
           {/* SEARCH & DYNAMIC CATEGORY FILTER BADGES */}
           <div className="p-3 sm:p-4 border-b border-[#26272d] space-y-2.5 bg-[#121215] shrink-0">
             {/* Search Input */}
@@ -542,7 +542,7 @@ export const CafePOSPage = () => {
             </div>
 
             {/* Dynamic Category Badges from Admin Settings */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 w-full max-w-full flex-nowrap">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 w-full max-w-full flex-nowrap overscroll-x-contain">
               {categories.map(cat => (
                 <button
                   key={cat}
@@ -560,7 +560,7 @@ export const CafePOSPage = () => {
           </div>
 
           {/* MENU GRID */}
-          <div className="flex-1 p-2.5 sm:p-4 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-3 w-full max-w-full">
+          <div className="flex-1 p-2 sm:p-4 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 w-full max-w-full min-w-0">
             {filteredMenu.length === 0 ? (
               <div className="col-span-full py-16 flex flex-col items-center justify-center text-[#bbcbb2] gap-2">
                 <Coffee className="w-10 h-10 text-[#6b7367]" />
@@ -610,7 +610,7 @@ export const CafePOSPage = () => {
         </section>
 
         {/* KOLOM KANAN: ORDER SUMMARY & CART */}
-        <aside className="w-full lg:w-80 xl:w-96 flex flex-col bg-[#121215] border-t lg:border-t-0 lg:border-l border-[#26272d] shrink-0 h-full">
+        <aside className="w-full lg:w-80 xl:w-96 max-w-full flex flex-col bg-[#121215] border-t lg:border-t-0 lg:border-l border-[#26272d] shrink-0 h-full">
           {/* HEADER CART */}
           <div className="p-3 border-b border-[#26272d] flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">

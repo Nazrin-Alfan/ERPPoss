@@ -2311,6 +2311,17 @@
       - **Verifikasi Kualitas**:
         - 197/197 unit tests PASS (100% GREEN).
         - Vite production build sukses dalam 2.46 detik.
+    25. **Eliminasi Ukuran Fix & Penerapan Fluid Viewport Boundaries (2026-09-29)**:
+      - **Akar Masalah (*Root Cause*)**:
+        - Terdapat pembatas lebar kaku yang tidak dibatasi `max-w-full` pada hierarki DOM root: `index.html` `<body>`, `App.jsx` root wrapper, dan kontainer kolom katalog/aside POS.
+        - Ketika dibuka di layar mobile (< 640px), browser mengizinkan child element tertentu memperlebar total scrollable width melebihi viewport (`window.innerWidth`).
+      - **Solusi Rekayasa**:
+        - Menambahkan `overflow-x-hidden w-full max-w-full min-w-0` pada `body` di `index.html` dan wrapper utama `App.jsx`.
+        - Menerapkan `w-full max-w-full min-w-0` secara konsisten pada seluruh level kontainer POS: `CafePOSPage.jsx` dan `CarwashPOSPage.jsx` (baik section katalog, grid menu, maupun aside order summary).
+        - Mengatur `overscroll-x-contain` pada baris scrollable kategori agar geseran jari horizontal tetap terkunci dalam kontainer baris dan tidak merembet menggeser viewport halaman.
+      - **Verifikasi Kualitas**:
+        - 197/197 unit tests PASS (100% GREEN).
+        - Vite production build sukses dalam 2.02 detik.
 
 
 

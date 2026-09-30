@@ -136,7 +136,7 @@ const AppContent = () => {
   }
 
   return (
-    <div className="h-[100dvh] w-full bg-[#000000] text-white flex flex-col md:flex-row overflow-hidden">
+    <div className="h-[100dvh] w-full max-w-full bg-[#000000] text-white flex flex-col md:flex-row overflow-x-hidden">
       {/* Render Sidebar jika sudah login dan bukan di halaman mandiri */}
       {showSidebar && <Sidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />}
 

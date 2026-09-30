@@ -325,7 +325,7 @@ export const CarwashPOSPage = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen lg:h-[calc(100vh-4rem)] bg-[#000000] text-white overflow-x-hidden">
+    <div className="flex flex-col min-h-screen lg:h-[calc(100vh-4rem)] w-full max-w-full bg-[#000000] text-white overflow-x-hidden">
       {/* TOP HEADER */}
       <header className="flex flex-wrap items-center justify-between px-3 sm:px-4 py-2.5 bg-[#121215] border-b border-[#26272d] gap-3 shrink-0">
         <div className="flex items-center gap-2.5">
@@ -606,7 +606,7 @@ export const CarwashPOSPage = () => {
         </section>
 
         {/* KOLOM KANAN: ORDER SUMMARY & CHECKOUT */}
-        <aside className="w-full lg:w-80 xl:w-96 flex flex-col bg-[#121215] border-t lg:border-t-0 lg:border-l border-[#26272d] shrink-0 h-full">
+        <aside className="w-full lg:w-80 xl:w-96 max-w-full flex flex-col bg-[#121215] border-t lg:border-t-0 lg:border-l border-[#26272d] shrink-0 h-full">
           {/* HEADER SUMMARY */}
           <div className="p-3 border-b border-[#26272d] flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
