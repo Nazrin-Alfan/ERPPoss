@@ -38,6 +38,7 @@ import {
   recordLoyaltyClaim,
   upsertCRMCustomerProfile
 } from '../../services/crmService'
+import { OperationalTable } from '../../components/ui/tables'
 import {
   TableContainer,
   Table,

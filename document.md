@@ -2720,4 +2720,14 @@
         - Vitest: **246/246 unit tests PASS across 41 test files (100% GREEN)**.
         - Vite production build sukses dalam 2.02 detik.
 
+    53. **Perbaikan ReferenceError OperationalTable pada Tab Pengeluaran POS (`HybridPOSPage.jsx`) (2026-10-03)**:
+      - **Akar Masalah (Root Cause)**:
+        - Tab Pengeluaran Kasir (`activeTab === 'expense'`) dan Tab Stok Gudang Kasir (`activeTab === 'inventory'`) menggunakan komponen tabel semantik `<OperationalTable>`, namun modul tersebut belum diimpor pada baris atas `HybridPOSPage.jsx` sehingga menimbulkan runtime error `ReferenceError: OperationalTable is not defined`.
+      - **Solusi**:
+        - Menambahkan `import { OperationalTable } from '../../components/ui/tables'` pada `src/pages/pos/HybridPOSPage.jsx`.
+        - Memperluas suite pengujian integritas modul `src/pages/__tests__/pageIntegrity.test.jsx` untuk memverifikasi modul `HybridPOSPage` bersama dengan `Gudang` dan `CRM`.
+      - **Verifikasi Kualitas**:
+        - Vitest: **246/246 unit tests PASS across 41 test files (100% GREEN)**.
+        - Vite production build sukses dalam 1.83 detik.
+
 
