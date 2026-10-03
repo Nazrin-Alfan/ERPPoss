@@ -2730,4 +2730,28 @@
         - Vitest: **246/246 unit tests PASS across 41 test files (100% GREEN)**.
         - Vite production build sukses dalam 1.83 detik.
 
+    54. **Eksekusi Total Overhaul Batch 3 (Operasional Inti Lapangan: Antrean Kanban, Multi-Gudang/BOM & Hub CRM) (2026-10-03)**:
+      - **Cakupan Modul**:
+        1. **Antrean Carwash Live Kanban Bay (`src/pages/CarwashQueue.jsx`)**:
+           - Penyelarasan penuh ke desain token 21st.dev VRS_2026 Cyan Master (`#000000` pitch black canvas, `#121215` solid deep charcoal card, `#18181c` input/subsurface, border `#26272d`).
+           - Restrukturisasi Kolom Kanban:
+             - Kolom 1 (*Antrean Masuk*): Aksen hangat `#ffc71f` (Warm Gold/Amber) untuk status tunggu, estimasi waktu tunggu, dan tombol aksi taktil `active:scale-[0.98]`.
+             - Kolom 2 (*Sedang Dicuci / Bay*): Aksen `#f57733` (Coral / Bay Accent), eliminasi border navy/blue generik, tombol aksi transisi ke Quality Control.
+             - Kolom 3 (*Siap Diambil / Selesai QC*): Aksen `#00ffff` (Electric Cyan), eliminasi hijau generik, integrasi tombol notifikasi WhatsApp otomatis ke pelanggan.
+           - Dialog Quality Control (QC): Verifikasi 4 poin checklist kebersihan (Eksterior Kering, Interior Vakum, Kaca Bening, Semir Ban) berlatar gelap `#121215` kontras tinggi tanpa residu styling legacy.
+           - Mode Tampilan Ganda: Transisi mulus antara `Kanban Bay` (3 kolom) dan `Daftar Tab` (Pending vs Selesai).
+        2. **Manajemen Multi-Gudang & Inventori BOM (`src/pages/Gudang.jsx`)**:
+           - Penyelarasan pemilih tab 3 gudang (`Gudang Cafe (F&B)`, `Gudang Carwash`, `Gudang Merchandise`) berlatar `#121215` dan border `#26272d`.
+           - Penyeragaman kartu KPI Metrik Inventori (Total Item Barang, Total Nilai Inventori berformat Rupiah font-mono, Stok Menipis `#ffc71f`, dan Stok Habis/Kritis `#ff5102`).
+           - Modal Operasional Inventori: Modal Tambah/Edit Barang/Bahan Baku, Modal Restock Barang Masuk, dan Modal Penyesuaian Fisik Stok Opname terstandardisasi dengan input gelap `#18181c`, label `#bbcbb2`, dan tombol aksi Electric Cyan `#00ffff`.
+        3. **Customer Relationship Management Hub (`src/pages/CRM.jsx`) & POS Banner (`CustomerLoyaltyBanner.jsx`)**:
+           - Penyelarasan kartu metrik RFM pelanggan (Total Pelanggan, VIP, Perlu Perhatian, Berisiko Churn).
+           - Tab segmentasi pelanggan (Semua, VIP, Loyal, Perlu Perhatian, Berisiko Churn, Baru) dengan status badge berkontras tinggi anti-AI slop.
+           - Modal WhatsApp template kustom & konfigurasi program loyalitas kartu stamp digital.
+           - Penyelarasan komponen banner loyalitas pelanggan (`CustomerLoyaltyBanner.jsx`) di layar kasir POS.
+      - **Verifikasi Kualitas**:
+        - Vitest: **246/246 unit tests PASS across 41 test files (100% GREEN)**.
+        - Vite production build sukses dalam 2.17 detik (286 kB gzip).
+        - AST & Runtime Integrity: Zero syntax error, zero missing identifiers.
+
 

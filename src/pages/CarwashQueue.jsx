@@ -285,7 +285,7 @@ const CarwashQueue = () => {
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-[#121215] border border-[#26272d] p-4 sm:p-5 rounded-xl">
         <div>
           <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-3">
-            <span className="p-2 bg-[#00ffff] text-[#0f0f0f]/15 text-[#00ffff] rounded-xl border border-blue-500/20">
+            <span className="p-2 bg-[#00ffff]/15 text-[#00ffff] rounded-xl border border-[#00ffff]/30">
               <Car size={22} strokeWidth={1.75} />
             </span>
             Antrean Carwash
@@ -305,7 +305,7 @@ const CarwashQueue = () => {
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 tap-tactile ${
                 viewMode === 'kanban'
                   ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-xs'
-                  : 'text-[#bbcbb2] hover:text-slate-200'
+                  : 'text-[#bbcbb2] hover:text-white'
               }`}
             >
               <Columns3 size={13} strokeWidth={1.75} />
@@ -317,7 +317,7 @@ const CarwashQueue = () => {
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 tap-tactile ${
                 viewMode === 'list'
                   ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-xs'
-                  : 'text-[#bbcbb2] hover:text-slate-200'
+                  : 'text-[#bbcbb2] hover:text-white'
               }`}
             >
               <List size={13} strokeWidth={1.75} />
@@ -325,7 +325,7 @@ const CarwashQueue = () => {
             </button>
           </div>
 
-          <div className="flex items-center gap-2 bg-[#18181c] px-3 py-1.5 rounded-xl border border-[#26272d] text-xs text-slate-200">
+          <div className="flex items-center gap-2 bg-[#18181c] px-3 py-1.5 rounded-xl border border-[#26272d] text-xs text-white">
             <Calendar size={14} strokeWidth={1.75} className="text-[#00ffff] shrink-0" />
             <input
               type="date"
@@ -338,7 +338,7 @@ const CarwashQueue = () => {
           {!isToday && (
             <button
               onClick={() => setSelectedDate(new Date().toLocaleDateString('en-CA'))}
-              className="px-3 py-1.5 bg-[#00ffff] text-[#0f0f0f]/20 hover:bg-[#00ffff] text-[#0f0f0f]/30 text-[#00ffff] border border-blue-500/30 rounded-xl text-xs font-bold transition-all tap-tactile"
+              className="px-3 py-1.5 bg-[#00ffff]/15 hover:bg-[#00ffff]/25 text-[#00ffff] border border-[#00ffff]/30 rounded-xl text-xs font-bold transition-all tap-tactile"
             >
               Hari Ini
             </button>
@@ -347,7 +347,7 @@ const CarwashQueue = () => {
           <button
             onClick={fetchQueue}
             disabled={loading}
-            className="p-2.5 bg-[#18181c] hover:bg-slate-800 border border-[#26272d] hover:border-[#3f414a] text-slate-200 rounded-xl transition-all tap-tactile disabled:opacity-50"
+            className="p-2.5 bg-[#18181c] hover:bg-[#26272d] border border-[#26272d] hover:border-[#3f414a] text-white rounded-xl transition-all tap-tactile disabled:opacity-50"
             title="Refresh Antrean"
           >
             <RefreshCw size={16} strokeWidth={1.75} className={loading ? 'animate-spin text-[#00ffff]' : ''} />
@@ -364,7 +364,7 @@ const CarwashQueue = () => {
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all tap-tactile ${
               filterType === 'ALL' 
                 ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-xs' 
-                : 'text-[#bbcbb2] hover:text-slate-200'
+                : 'text-[#bbcbb2] hover:text-white'
             }`}
           >
             Semua ({queue.length})
@@ -374,7 +374,7 @@ const CarwashQueue = () => {
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all tap-tactile ${
               filterType === 'TUNGGU' 
                 ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-xs' 
-                : 'text-[#bbcbb2] hover:text-slate-200'
+                : 'text-[#bbcbb2] hover:text-white'
             }`}
           >
             Ditunggu ({queue.filter((q) => q.kehadiran === 'TUNGGU').length})
@@ -384,7 +384,7 @@ const CarwashQueue = () => {
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all tap-tactile ${
               filterType === 'TINGGAL' 
                 ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-xs' 
-                : 'text-[#bbcbb2] hover:text-slate-200'
+                : 'text-[#bbcbb2] hover:text-white'
             }`}
           >
             Ditinggal ({queue.filter((q) => q.kehadiran === 'TINGGAL').length})
@@ -399,7 +399,7 @@ const CarwashQueue = () => {
             placeholder="Cari plat nomor, paket, atau kru..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-[#00ffff] text-xs transition-colors"
+            className="w-full pl-9 pr-4 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-white placeholder-[#6b7367] focus:outline-none focus:border-[#00ffff] text-xs transition-colors"
           />
         </div>
       </div>
@@ -423,9 +423,9 @@ const CarwashQueue = () => {
 
             {waitingQueue.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#6b7367]">
-                <Clock size={28} strokeWidth={1.5} className="mb-2 text-slate-600" />
+                <Clock size={28} strokeWidth={1.5} className="mb-2 text-[#6b7367]" />
                 <p className="text-xs font-semibold text-[#bbcbb2]">Tidak ada antrean baru</p>
-                <p className="text-[10px] text-slate-600 mt-0.5">Semua mobil sudah berada di bay cuci.</p>
+                <p className="text-[10px] text-[#6b7367] mt-0.5">Semua mobil sudah berada di bay cuci.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -441,14 +441,14 @@ const CarwashQueue = () => {
                       <span className={`text-[9px] px-2 py-0.5 rounded-md font-bold uppercase border ${
                         item.kehadiran === 'TUNGGU'
                           ? 'bg-amber-500/15 text-[#ffc71f] border-amber-500/30'
-                          : 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30'
+                          : 'bg-[#00ffff]/10 text-[#00ffff] border-[#00ffff]/30'
                       }`}>
                         {item.kehadiran}
                       </span>
                     </div>
 
-                    <div className="text-xs text-slate-200 space-y-0.5">
-                      <p className="font-bold text-slate-200">{item.paket}</p>
+                    <div className="text-xs text-white space-y-0.5">
+                      <p className="font-bold text-white">{item.paket}</p>
                       <p className="text-[11px] text-[#bbcbb2]">{item.model} • {item.ukuran}</p>
                     </div>
 
@@ -461,7 +461,7 @@ const CarwashQueue = () => {
                       type="button"
                       disabled={updatingId === item.id}
                       onClick={() => handleStartWashing(item)}
-                      className="w-full py-2 bg-[#00ffff] text-[#0f0f0f] hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 tap-tactile disabled:opacity-50"
+                      className="w-full py-2 bg-[#ffc71f] hover:bg-[#ffc71f]/90 text-[#0f0f0f] font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 active:scale-[0.98] disabled:opacity-50"
                     >
                       <Play size={13} strokeWidth={2} />
                       <span>Masuk Bay Cuci</span>
@@ -473,44 +473,44 @@ const CarwashQueue = () => {
           </div>
 
           {/* KOLOM 2: 🔵 SEDANG DICUCI (BAY SLOTS) */}
-          <div className="bg-[#080C14] border border-blue-900/30 rounded-xl p-3.5 flex flex-col space-y-3 min-h-[400px]">
-            <div className="flex items-center justify-between pb-2.5 border-b border-blue-900/40">
+          <div className="bg-[#121215] border border-[#26272d] rounded-xl p-3.5 flex flex-col space-y-3 min-h-[400px]">
+            <div className="flex items-center justify-between pb-2.5 border-b border-[#26272d]">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
-                <h3 className="font-bold text-xs uppercase tracking-wider text-blue-300">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#f57733]"></span>
+                <h3 className="font-bold text-xs uppercase tracking-wider text-[#f57733]">
                   Sedang Dicuci (Bay)
                 </h3>
               </div>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#f57733]/15 text-[#f57733] border border-[#f57733]/30">
                 {washingQueue.length} unit
               </span>
             </div>
 
             {washingQueue.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#6b7367]">
-                <Car size={28} strokeWidth={1.5} className="mb-2 text-slate-600" />
+                <Car size={28} strokeWidth={1.5} className="mb-2 text-[#6b7367]" />
                 <p className="text-xs font-semibold text-[#bbcbb2]">Bay cuci kosong</p>
-                <p className="text-[10px] text-slate-600 mt-0.5">Siap menerima kendaraan dari antrean masuk.</p>
+                <p className="text-[10px] text-[#6b7367] mt-0.5">Siap menerima kendaraan dari antrean masuk.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {washingQueue.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-[#121215] p-3.5 rounded-xl border border-blue-500/30 hover:border-blue-500/50 transition-all flex flex-col space-y-2.5"
+                    className="bg-[#18181c] p-3.5 rounded-xl border border-[#26272d] hover:border-[#f57733]/40 transition-all flex flex-col space-y-2.5"
                   >
                     <div className="flex items-start justify-between">
                       <span className="font-mono text-lg font-black text-white tracking-wider">
                         {item.platNomor}
                       </span>
-                      <span className="text-[9px] px-2 py-0.5 rounded-md font-bold uppercase bg-blue-500/20 text-blue-300 border border-blue-500/40">
+                      <span className="text-[9px] px-2 py-0.5 rounded-md font-bold uppercase bg-[#f57733]/20 text-[#f57733] border border-[#f57733]/40">
                         {item.paket}
                       </span>
                     </div>
 
-                    <div className="text-xs text-slate-200 space-y-0.5">
+                    <div className="text-xs text-white space-y-0.5">
                       <p className="text-[11px] text-[#bbcbb2]">{item.model} • {item.ukuran}</p>
-                      <p className="text-[11px] text-slate-200 flex items-center gap-1">
+                      <p className="text-[11px] text-white flex items-center gap-1">
                         <Users size={12} strokeWidth={1.75} className="text-[#bbcbb2]" />
                         <span>Kru: {item.anggota1} {item.anggota2 ? `+ ${item.anggota2}` : ''}</span>
                       </p>
@@ -533,7 +533,7 @@ const CarwashQueue = () => {
                           tireShine: true
                         })
                       }}
-                      className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 tap-tactile disabled:opacity-50"
+                      className="w-full py-2 bg-[#f57733] hover:bg-[#f57733]/90 text-white font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 active:scale-[0.98] disabled:opacity-50"
                     >
                       <ShieldCheck size={13} strokeWidth={1.75} />
                       <span>Selesaikan Cuci (QC)</span>
@@ -545,31 +545,31 @@ const CarwashQueue = () => {
           </div>
 
           {/* KOLOM 3: 🟢 SELESAI DICUCI & SIAP DIAMBIL */}
-          <div className="bg-[#080C14] border border-emerald-900/30 rounded-xl p-3.5 flex flex-col space-y-3 min-h-[400px]">
-            <div className="flex items-center justify-between pb-2.5 border-b border-emerald-900/40">
+          <div className="bg-[#121215] border border-[#26272d] rounded-xl p-3.5 flex flex-col space-y-3 min-h-[400px]">
+            <div className="flex items-center justify-between pb-2.5 border-b border-[#26272d]">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                <h3 className="font-bold text-xs uppercase tracking-wider text-emerald-300">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#00ffff]"></span>
+                <h3 className="font-bold text-xs uppercase tracking-wider text-[#00ffff]">
                   Siap Diambil
                 </h3>
               </div>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30">
                 {readyQueue.length} unit
               </span>
             </div>
 
             {readyQueue.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#6b7367]">
-                <CheckCircle2 size={28} strokeWidth={1.5} className="mb-2 text-slate-600" />
+                <CheckCircle2 size={28} strokeWidth={1.5} className="mb-2 text-[#6b7367]" />
                 <p className="text-xs font-semibold text-[#bbcbb2]">Belum ada mobil selesai</p>
-                <p className="text-[10px] text-slate-600 mt-0.5">Mobil yang selesai QC akan muncul di sini.</p>
+                <p className="text-[10px] text-[#6b7367] mt-0.5">Mobil yang selesai QC akan muncul di sini.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {readyQueue.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-[#121215] p-3.5 rounded-xl border border-emerald-500/30 hover:border-emerald-500/50 transition-all flex flex-col space-y-2.5"
+                    className="bg-[#18181c] p-3.5 rounded-xl border border-[#26272d] hover:border-[#00ffff]/40 transition-all flex flex-col space-y-2.5"
                   >
                     <div className="flex items-start justify-between">
                       <span className="font-mono text-lg font-black text-white tracking-wider">
@@ -577,28 +577,28 @@ const CarwashQueue = () => {
                       </span>
                       <span className={`text-[9px] px-2 py-0.5 rounded-md font-bold uppercase border ${
                         item.statusBayar === 'Selesai'
-                          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                          ? 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30'
                           : 'bg-amber-500/15 text-[#ffc71f] border-amber-500/30'
                       }`}>
                         {item.statusBayar === 'Selesai' ? 'Lunas' : 'Belum Bayar'}
                       </span>
                     </div>
 
-                    <div className="text-xs text-slate-200 space-y-0.5">
-                      <p className="font-bold text-slate-200">{item.paket}</p>
+                    <div className="text-xs text-white space-y-0.5">
+                      <p className="font-bold text-white">{item.paket}</p>
                       <p className="text-[11px] text-[#bbcbb2]">{item.model} • {item.ukuran}</p>
                     </div>
 
                     <div className="pt-2 border-t border-[#26272d]/80 flex items-center justify-between text-[11px] text-[#bbcbb2]">
                       <span>Kru: {item.anggota1}</span>
-                      <span className="text-emerald-400 font-mono font-bold">✓ Selesai</span>
+                      <span className="text-[#00ffff] font-mono font-bold">✓ Selesai QC</span>
                     </div>
 
                     {item.noTelepon && (
                       <button
                         type="button"
                         onClick={() => handleSendWhatsAppNotification(item)}
-                        className="w-full py-1.5 px-2 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-400 border border-emerald-800/60 font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 tap-tactile"
+                        className="w-full py-1.5 px-2 bg-[#00ffff]/15 hover:bg-[#00ffff]/25 text-[#00ffff] border border-[#00ffff]/40 font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 active:scale-[0.98]"
                       >
                         <MessageCircle size={13} strokeWidth={1.75} />
                         <span>Kirim Notifikasi WA</span>
@@ -620,7 +620,7 @@ const CarwashQueue = () => {
               className={`pb-3 px-3 font-bold text-sm transition-all border-b-2 flex items-center gap-2.5 relative tap-tactile ${
                 statusTab === 'Pending'
                   ? 'text-[#ffc71f] border-amber-500'
-                  : 'text-[#bbcbb2] border-transparent hover:text-slate-200'
+                  : 'text-[#bbcbb2] border-transparent hover:text-white'
               }`}
             >
               <Clock size={16} strokeWidth={1.75} />
@@ -628,7 +628,7 @@ const CarwashQueue = () => {
               <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
                 pendingItems.length > 0 
                   ? 'bg-amber-500/20 text-[#ffc71f] border border-amber-500/30' 
-                  : 'bg-slate-800 text-[#bbcbb2]'
+                  : 'bg-[#18181c] text-[#bbcbb2] border border-[#26272d]'
               }`}>
                 {pendingItems.length}
               </span>
@@ -638,16 +638,16 @@ const CarwashQueue = () => {
               onClick={() => setStatusTab('Selesai')}
               className={`pb-3 px-3 font-bold text-sm transition-all border-b-2 flex items-center gap-2.5 relative tap-tactile ${
                 statusTab === 'Selesai'
-                  ? 'text-emerald-400 border-emerald-500'
-                  : 'text-[#bbcbb2] border-transparent hover:text-slate-200'
+                  ? 'text-[#00ffff] border-emerald-500'
+                  : 'text-[#bbcbb2] border-transparent hover:text-white'
               }`}
             >
               <CheckCircle size={16} strokeWidth={1.75} />
               <span>Selesai Dicuci</span>
               <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
                 selesaiItems.length > 0 
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                  : 'bg-slate-800 text-[#bbcbb2]'
+                  ? 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30' 
+                  : 'bg-[#18181c] text-[#bbcbb2] border border-[#26272d]'
               }`}>
                 {selesaiItems.length}
               </span>
@@ -663,7 +663,7 @@ const CarwashQueue = () => {
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
               filterType === 'ALL' 
                 ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-xs' 
-                : 'text-[#bbcbb2] hover:text-slate-200'
+                : 'text-[#bbcbb2] hover:text-white'
             }`}
           >
             Semua ({queue.filter((q) => q.statusBayar === statusTab).length})
@@ -673,7 +673,7 @@ const CarwashQueue = () => {
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
               filterType === 'TUNGGU' 
                 ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-xs' 
-                : 'text-[#bbcbb2] hover:text-slate-200'
+                : 'text-[#bbcbb2] hover:text-white'
             }`}
           >
             Ditunggu ({queue.filter((q) => q.kehadiran === 'TUNGGU' && q.statusBayar === statusTab).length})
@@ -683,7 +683,7 @@ const CarwashQueue = () => {
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
               filterType === 'TINGGAL' 
                 ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-xs' 
-                : 'text-[#bbcbb2] hover:text-slate-200'
+                : 'text-[#bbcbb2] hover:text-white'
             }`}
           >
             Ditinggal ({queue.filter((q) => q.kehadiran === 'TINGGAL' && q.statusBayar === statusTab).length})
@@ -698,7 +698,7 @@ const CarwashQueue = () => {
             placeholder="Cari plat nomor, paket, atau kru..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-[#00ffff] text-xs transition-colors"
+            className="w-full pl-9 pr-4 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-white placeholder-[#6b7367] focus:outline-none focus:border-[#00ffff] text-xs transition-colors"
           />
         </div>
       </div>
@@ -707,24 +707,24 @@ const CarwashQueue = () => {
       {loading ? (
         <div className="bg-[#121215]/40 p-16 rounded-xl flex flex-col items-center justify-center text-[#bbcbb2] border border-[#26272d]/80">
           <RefreshCw size={36} className="animate-spin text-[#00ffff] mb-3" />
-          <p className="text-sm font-semibold text-slate-200">Memuat antrean carwash...</p>
+          <p className="text-sm font-semibold text-white">Memuat antrean carwash...</p>
         </div>
       ) : filteredQueue.length === 0 ? (
         <div className="bg-[#121215]/40 p-12 sm:p-16 rounded-xl flex flex-col items-center justify-center text-center border border-[#26272d]/80">
           {statusTab === 'Pending' && selesaiItems.length > 0 ? (
             <>
-              <div className="w-14 h-14 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center mb-4 border border-emerald-500/20">
+              <div className="w-14 h-14 bg-[#00ffff]/15 text-[#00ffff] rounded-xl flex items-center justify-center mb-4 border border-[#00ffff]/30">
                 <CheckCircle2 size={28} strokeWidth={1.75} />
               </div>
               <h3 className="text-base font-bold text-white mb-1">
                 Semua Kendaraan Sudah Selesai Dicuci
               </h3>
               <p className="text-xs text-[#bbcbb2] max-w-md mb-5">
-                Tidak ada mobil dalam proses antrean saat ini. Sebanyak <strong className="text-emerald-400">{selesaiItems.length} mobil</strong> telah selesai dikerjakan pada {selectedDate}.
+                Tidak ada mobil dalam proses antrean saat ini. Sebanyak <strong className="text-[#00ffff]">{selesaiItems.length} mobil</strong> telah selesai dikerjakan pada {selectedDate}.
               </p>
               <button
                 onClick={() => setStatusTab('Selesai')}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 rounded-xl font-bold text-xs transition-all shadow-lg shadow-emerald-500/20"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#00ffff] hover:bg-[#00ffff]/90 text-[#0f0f0f] rounded-xl font-bold text-xs transition-all active:scale-[0.98]"
               >
                 <span>Lihat Mobil Selesai</span>
                 <ArrowRight size={14} />
@@ -732,7 +732,7 @@ const CarwashQueue = () => {
             </>
           ) : (
             <>
-              <div className="w-14 h-14 bg-slate-800/60 text-[#6b7367] rounded-xl flex items-center justify-center mb-4 border border-[#26272d]">
+              <div className="w-14 h-14 bg-[#18181c] text-[#6b7367] rounded-xl flex items-center justify-center mb-4 border border-[#26272d]">
                 <Car size={28} />
               </div>
               <h3 className="text-base font-bold text-white mb-1">
@@ -744,7 +744,7 @@ const CarwashQueue = () => {
               {!isToday && (
                 <button
                   onClick={() => setSelectedDate(new Date().toLocaleDateString('en-CA'))}
-                  className="mt-3 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-bold text-xs transition-all border border-[#3f414a]"
+                  className="mt-3 px-4 py-2 bg-[#18181c] hover:bg-[#26272d] text-white border border-[#26272d] rounded-xl font-bold text-xs transition-all border border-[#3f414a]"
                 >
                   Kembali ke Hari Ini
                 </button>
@@ -763,7 +763,7 @@ const CarwashQueue = () => {
                 key={item.id}
                 className={`bg-[#121215]/70 p-5 rounded-xl border transition-all duration-300 relative flex flex-col justify-between hover:-translate-y-1 hover:shadow-xl ${
                   isSelesai
-                    ? 'border-emerald-500/30 bg-emerald-950/10 hover:border-emerald-500/50'
+                    ? 'border-[#00ffff]/30 bg-[#00ffff]/5 hover:border-[#00ffff]/50'
                     : isTunggu
                       ? 'border-[#00ffff]/30 bg-[#00ffff]/5 hover:border-[#00ffff]/50'
                       : 'border-[#26272d] hover:border-[#3f414a]'
@@ -775,7 +775,7 @@ const CarwashQueue = () => {
                     className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider border ${
                       isTunggu
                         ? 'bg-amber-500/15 text-[#ffc71f] border-amber-500/30'
-                        : 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30'
+                        : 'bg-[#00ffff]/10 text-[#00ffff] border-[#00ffff]/30'
                     }`}
                   >
                     {item.kehadiran}
@@ -784,7 +784,7 @@ const CarwashQueue = () => {
                   <span
                     className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider flex items-center gap-1 border ${
                       isSelesai
-                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                        ? 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30'
                         : 'bg-amber-500/15 text-[#ffc71f] border-amber-500/30'
                     }`}
                   >
@@ -806,7 +806,7 @@ const CarwashQueue = () => {
                     )}
                   </div>
                   <div className="mt-2 space-y-1">
-                    <p className="text-xs font-bold text-slate-200">{item.paket}</p>
+                    <p className="text-xs font-bold text-white">{item.paket}</p>
                     <p className="text-[11px] text-[#bbcbb2] font-medium">
                       {item.model} • {item.ukuran} • {item.variant}
                     </p>
@@ -824,7 +824,7 @@ const CarwashQueue = () => {
                     <span className="text-[10px] uppercase font-bold text-[#6b7367] tracking-wider">Status Fisik:</span>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${
                       item.statusPengerjaan === 'Siap Diambil'
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                        ? 'bg-emerald-500/20 text-[#00ffff] border border-emerald-500/40'
                         : 'bg-blue-500/20 text-[#00ffff] border border-blue-500/40'
                     }`}>
                       {item.statusPengerjaan === 'Siap Diambil' ? <CheckCircle size={10} /> : <Clock size={10} />}
@@ -845,7 +845,7 @@ const CarwashQueue = () => {
                             tireShine: true
                           })
                         }}
-                        className="flex-1 py-1.5 px-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-slate-950 font-bold text-[11px] rounded-lg transition-all flex items-center justify-center gap-1 shadow-sm active:scale-95"
+                        className="flex-1 py-1.5 px-2 bg-[#00ffff] hover:bg-[#00ffff]/90 text-[#0f0f0f] font-bold text-[11px] rounded-lg transition-all flex items-center justify-center gap-1 active:scale-[0.98]"
                       >
                         <ShieldCheck size={12} />
                         <span>QC & Selesai</span>
@@ -856,7 +856,7 @@ const CarwashQueue = () => {
                       <button
                         type="button"
                         onClick={() => handleSendWhatsAppNotification(item)}
-                        className="py-1.5 px-2.5 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-400 border border-emerald-800/60 font-bold text-[11px] rounded-lg transition-all flex items-center gap-1 active:scale-95"
+                        className="py-1.5 px-2.5 bg-[#00ffff]/15 hover:bg-[#00ffff]/25 text-[#00ffff] border border-[#00ffff]/30 font-bold text-[11px] rounded-lg transition-all flex items-center gap-1 active:scale-[0.98]"
                         title="Kirim Notifikasi Siap Diambil via WA"
                       >
                         <MessageCircle size={12} />
@@ -874,7 +874,7 @@ const CarwashQueue = () => {
                       {item.anggota2 ? <Users size={13} className="text-[#6b7367]" /> : <User size={13} className="text-[#6b7367]" />}
                       Kru Pencuci:
                     </span>
-                    <span className="font-bold text-slate-200">
+                    <span className="font-bold text-white">
                       {item.anggota1} {item.anggota2 ? `+ ${item.anggota2}` : ''}
                     </span>
                   </div>
@@ -904,7 +904,7 @@ const CarwashQueue = () => {
           <div className="glass-panel w-full max-w-md p-6 rounded-xl shadow-2xl border border-[#26272d] animate-pop-in">
             <div className="flex items-center justify-between pb-3 border-b border-[#26272d] mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <div className="p-2 rounded-xl bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30">
                   <ShieldCheck size={20} />
                 </div>
                 <div>
@@ -939,11 +939,11 @@ const CarwashQueue = () => {
                     onClick={() => setQcChecklist(prev => ({ ...prev, [point.id]: !prev[point.id] }))}
                     className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start gap-3 ${
                       isChecked
-                        ? 'bg-emerald-950/20 border-emerald-500/40 text-slate-200'
+                        ? 'bg-[#00ffff]/10 border-[#00ffff]/40 text-white'
                         : 'bg-[#121215] border-[#26272d] text-[#bbcbb2]'
                     }`}
                   >
-                    <button type="button" className="mt-0.5 text-emerald-400">
+                    <button type="button" className="mt-0.5 text-[#00ffff]">
                       {isChecked ? <CheckSquare size={16} /> : <Square size={16} />}
                     </button>
                     <div>
@@ -961,7 +961,7 @@ const CarwashQueue = () => {
               <button
                 type="button"
                 onClick={() => setQcModalItem(null)}
-                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-colors"
+                className="px-4 py-2.5 rounded-xl bg-[#18181c] hover:bg-[#26272d] text-white border border-[#26272d] font-semibold text-xs transition-colors"
               >
                 Batal
               </button>
@@ -969,7 +969,7 @@ const CarwashQueue = () => {
                 type="button"
                 disabled={updatingId === qcModalItem.id}
                 onClick={handleCompleteQc}
-                className="px-5 py-2.5 rounded-xl bg-brand-emerald hover:bg-emerald-500 active:scale-95 text-slate-950 font-black text-xs shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+                className="px-5 py-2.5 rounded-xl bg-[#00ffff] hover:bg-[#00ffff]/90 active:scale-[0.98] text-[#0f0f0f] font-black text-xs shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
               >
                 <CheckCircle size={14} />
                 <span>{updatingId === qcModalItem.id ? 'Memperbarui...' : 'Lolos QC & Siap Diambil'}</span>

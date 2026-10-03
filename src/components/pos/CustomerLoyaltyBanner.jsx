@@ -81,7 +81,7 @@ export const CustomerLoyaltyBanner = ({
   // Loading skeleton
   if (loading) {
     return (
-      <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 animate-pulse flex items-center justify-between gap-3 text-xs text-slate-400">
+      <div className="p-3 rounded-xl bg-[#121215] border border-[#26272d] animate-pulse flex items-center justify-between gap-3 text-xs text-[#bbcbb2]">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded-full bg-slate-800" />
           <span>Memeriksa database CRM & status loyalitas {plateNumber.toUpperCase()}...</span>
@@ -93,8 +93,8 @@ export const CustomerLoyaltyBanner = ({
   // Customer not found in history -> New Customer intake
   if (!customerData) {
     return (
-      <div className="p-3 rounded-xl bg-slate-900/40 border border-slate-800/80 flex items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2 text-slate-300">
+      <div className="p-3 rounded-xl bg-[#121215] border border-[#26272d] flex items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 text-white">
           <Sparkles size={15} className="text-amber-400 shrink-0" />
           <span>
             <strong className="text-white font-mono">{plateNumber.toUpperCase()}</strong> belum tercatat di CRM (Pelanggan Baru). Data yang kasir masukkan akan otomatis didaftarkan.
@@ -117,8 +117,8 @@ export const CustomerLoyaltyBanner = ({
 
   // Segment icon helper
   const renderSegmentIcon = () => {
-    if (segment.code === 'VIP') return <Crown size={14} className="text-emerald-400" />
-    if (segment.code === 'LOYAL') return <Car size={14} className="text-cyan-400" />
+    if (segment.code === 'VIP') return <Crown size={14} className="text-[#00ffff]" />
+    if (segment.code === 'LOYAL') return <Car size={14} className="text-[#00ffff]" />
     if (segment.code === 'AT_RISK') return <AlertTriangle size={14} className="text-rose-400" />
     return <Sparkles size={14} className="text-amber-400" />
   }
@@ -153,7 +153,7 @@ export const CustomerLoyaltyBanner = ({
     <div className={`p-3.5 rounded-xl border transition-all text-xs space-y-2.5 ${
       loyalty?.isRewardReady
         ? 'bg-amber-950/20 border-amber-500/40 shadow-lg shadow-amber-500/5 ring-1 ring-amber-500/20'
-        : 'bg-slate-900/90 border-slate-800'
+        : 'bg-[#121215] border-[#26272d]'
     }`}>
       {/* Top Header: Badge, Segment, Visits */}
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -169,15 +169,15 @@ export const CustomerLoyaltyBanner = ({
           </span>
 
           {/* Visit count */}
-          <span className="text-[11px] text-slate-400 font-mono">
+          <span className="text-[11px] text-[#bbcbb2] font-mono">
             Kunjungan ke-<strong className="text-white font-bold">{totalVisits + 1}</strong> ({totalVisits}x tercatat)
           </span>
         </div>
 
         {/* Loyalty Stamp Pill */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-[11px] font-mono">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#18181c] border border-[#26272d] text-[11px] font-mono">
           <Gift size={13} className="text-amber-400" />
-          <span className="text-slate-400">Loyalty:</span>
+          <span className="text-[#bbcbb2]">Loyalty:</span>
           <span className="font-bold text-amber-300 tabular-nums">
             {loyalty.stamps} / {loyalty.stampTarget} Stamp
           </span>
@@ -185,22 +185,22 @@ export const CustomerLoyaltyBanner = ({
       </div>
 
       {/* Middle Info: Customer Details & Notes */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 py-1.5 px-2.5 rounded-lg bg-slate-950/60 border border-slate-800/60 text-[11px] text-slate-300">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 py-1.5 px-2.5 rounded-lg bg-[#18181c] border border-[#26272d] text-[11px] text-white">
         <div className="flex items-center gap-1.5 truncate">
-          <Car size={13} className="text-slate-500 shrink-0" />
-          <span className="text-slate-400">Model:</span>
+          <Car size={13} className="text-[#6b7367] shrink-0" />
+          <span className="text-[#bbcbb2]">Model:</span>
           <span className="font-semibold text-white truncate">{model || 'Standar'}</span>
         </div>
 
         <div className="flex items-center gap-1.5 truncate">
-          <Phone size={13} className="text-slate-500 shrink-0" />
-          <span className="text-slate-400">WA:</span>
+          <Phone size={13} className="text-[#6b7367] shrink-0" />
+          <span className="text-[#bbcbb2]">WA:</span>
           <span className="font-mono text-white truncate">{noTelepon || 'Belum ada'}</span>
         </div>
 
         <div className="flex items-center gap-1.5 truncate sm:col-span-1">
-          <FileText size={13} className="text-slate-500 shrink-0" />
-          <span className="text-slate-400">Catatan:</span>
+          <FileText size={13} className="text-[#6b7367] shrink-0" />
+          <span className="text-[#bbcbb2]">Catatan:</span>
           <span className="text-amber-200 truncate italic">{catatanKhusus || 'Tidak ada catatan'}</span>
         </div>
       </div>
@@ -214,7 +214,7 @@ export const CustomerLoyaltyBanner = ({
               <span className="text-xs font-black text-amber-300 block">
                 🎁 REWARD LOYALTY SIAP DIKLAIM!
               </span>
-              <span className="text-[11px] text-slate-300">
+              <span className="text-[11px] text-white">
                 Hak Hadiah: <strong className="text-white underline">{loyalty.rewardTitle}</strong>
               </span>
             </div>
@@ -225,8 +225,8 @@ export const CustomerLoyaltyBanner = ({
             onClick={handleToggleReward}
             className={`px-3 py-1.5 rounded-lg font-black text-xs transition-all flex items-center gap-1.5 active:scale-[0.98] ${
               isRewardClaimed
-                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30'
-                : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-md shadow-amber-500/20'
+                ? 'bg-[#00ffff] hover:bg-[#00ffff]/90 text-[#0f0f0f] font-bold shadow-sm active:scale-[0.98]'
+                : 'bg-[#ffc71f] hover:bg-[#ffc71f]/90 text-[#0f0f0f] font-bold shadow-sm active:scale-[0.98]'
             }`}
           >
             {isRewardClaimed ? (
@@ -246,8 +246,8 @@ export const CustomerLoyaltyBanner = ({
 
       {/* Action Strip: 1-Click Auto Fill */}
       <div className="flex items-center justify-between pt-1">
-        <span className="text-[10px] text-slate-500">
-          Total Belanja Tercatat: <strong className="text-slate-300 font-mono">{formatRupiah(totalSpent)}</strong>
+        <span className="text-[10px] text-[#6b7367]">
+          Total Belanja Tercatat: <strong className="text-white font-mono">{formatRupiah(totalSpent)}</strong>
         </span>
 
         {(model !== 'Mobil' || noTelepon || catatanKhusus) && (
@@ -257,18 +257,18 @@ export const CustomerLoyaltyBanner = ({
             disabled={applied}
             className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1.5 active:scale-[0.98] ${
               applied
-                ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
-                : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200 hover:text-white'
+                ? 'bg-[#00ffff]/20 border-[#00ffff]/40 text-[#00ffff]'
+                : 'bg-[#18181c] hover:bg-[#26272d] border-[#26272d] text-white'
             }`}
           >
             {applied ? (
               <>
-                <CheckCircle2 size={13} className="text-emerald-400" />
+                <CheckCircle2 size={13} className="text-[#00ffff]" />
                 <span>Data Profil Diterapkan!</span>
               </>
             ) : (
               <>
-                <UserCheck size={13} className="text-cyan-400" />
+                <UserCheck size={13} className="text-[#00ffff]" />
                 <span>Gunakan Data Profil</span>
               </>
             )}
