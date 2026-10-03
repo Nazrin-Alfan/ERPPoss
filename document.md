@@ -2776,4 +2776,16 @@
         - Vite production build sukses dalam 2.02 detik (283 kB gzip).
         - AST & Runtime Integrity: Zero syntax error, zero missing identifiers, zero breaking changes.
 
+    56. **Perbaikan Posisi Logo & Avatar Profil di Navbar/Sidebar Tablet (`Sidebar.jsx`) (2026-10-03)**:
+      - **Akar Masalah (Root Cause)**:
+        - Pada viewport tablet (`window.innerWidth < 1280`), sidebar secara otomatis berada pada mode *collapsed* (lebar `w-[72px]`).
+        - Tombol trigger profil sebelumnya menggunakan kelas `w-full p-2.5` dan membungkus avatar di dalam kontainer flex dengan margin/gap bawaan (`gap-2.5 min-w-0`), sehingga avatar profil tidak berada di sumbu tengah (*off-center*) dan bergeser ke kiri kolom 72px.
+      - **Solusi Rekayasa Antarmuka**:
+        - Mengubah tombol trigger profil saat `isCollapsed` menjadi bujur sangkar presisi `w-10 h-10 mx-auto justify-center p-0`, selaras dengan komponen `TenantSwitcher` (`w-10 h-10 mx-auto`).
+        - Menghilangkan wrapper dengan gap horizontal saat mode *collapsed* sehingga avatar bulat (`w-7 h-7`) berada tepat di titik tengah (dead-center).
+        - Menyelaraskan tombol Holding HQ (`w-10 h-10 mx-auto p-0`) dan item tautan navigasi (`w-10 h-10 mx-auto justify-center px-0`) agar seluruh elemen vertikal berada pada garis sumbu simetris yang sama.
+      - **Verifikasi Kualitas**:
+        - Vitest: **246/246 unit tests PASS across 41 test files (100% GREEN)**.
+        - Vite production build sukses dalam 2.03 detik.
+
 

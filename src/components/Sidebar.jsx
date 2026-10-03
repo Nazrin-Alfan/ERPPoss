@@ -277,8 +277,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       {/* Sidebar untuk Desktop & Tablet */}
       <aside className={`hidden md:flex flex-col ${isCollapsed ? 'w-[72px]' : 'w-64'} h-full shrink-0 bg-[#000000] border-r border-[#26272d] text-white z-30 transition-[width] duration-200 ease-in-out`}>
         {/* Logo/Header */}
-        <div className={`p-3.5 border-b border-[#26272d] flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} gap-3 relative shrink-0`}>
-          <div className="flex items-center gap-2.5">
+        <div className={`p-3.5 border-b border-[#26272d] flex items-center ${isCollapsed ? 'justify-center' : 'justify-between gap-3'} relative shrink-0`}>
+          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2.5'}`}>
             <div className="w-8 h-8 rounded-md bg-[#1b1b1d] border border-[#26272d] flex items-center justify-center shrink-0 shadow-xs">
               <span className="font-bold text-sm text-[#00ffff]">R</span>
             </div>
@@ -315,28 +315,32 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           {(currentRole === 'Owner' || currentRole === 'Super Admin') && (
             <Link
               to="/konsolidasi"
-              className={`w-full p-2.5 rounded-xl bg-[#121215] hover:bg-[#18181c] border border-[#26272d] hover:border-[#3f414a] text-left flex items-center ${
-                isCollapsed ? 'justify-center px-0' : 'justify-between'
+              className={`rounded-xl bg-[#121215] hover:bg-[#18181c] border border-[#26272d] hover:border-[#3f414a] text-left flex items-center ${
+                isCollapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full p-2.5 justify-between'
               } transition-all group shadow-xs tap-tactile`}
               title="Kembali ke Portal Eksekutif Holding HQ"
             >
-              <div className="flex items-center gap-2.5 min-w-0">
+              {isCollapsed ? (
                 <div className="w-6 h-6 rounded-lg bg-[#18181c] text-[#00ffff] flex items-center justify-center font-bold shrink-0 border border-[#26272d]">
                   <Building2 size={12} strokeWidth={1.75} />
                 </div>
-                {!isCollapsed && (
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-semibold text-white group-hover:text-[#00ffff] transition-colors truncate">
-                      Portal Holding HQ
-                    </p>
-                    <p className="text-[9px] text-[#bbcbb2] font-medium uppercase tracking-wider">
-                      Konsolidasi Multi-Outlet
-                    </p>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-6 h-6 rounded-lg bg-[#18181c] text-[#00ffff] flex items-center justify-center font-bold shrink-0 border border-[#26272d]">
+                      <Building2 size={12} strokeWidth={1.75} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-semibold text-white group-hover:text-[#00ffff] transition-colors truncate">
+                        Portal Holding HQ
+                      </p>
+                      <p className="text-[9px] text-[#bbcbb2] font-medium uppercase tracking-wider">
+                        Konsolidasi Multi-Outlet
+                      </p>
+                    </div>
                   </div>
-                )}
-              </div>
-              {!isCollapsed && (
-                <ChevronRight size={13} strokeWidth={1.75} className="text-[#bbcbb2] group-hover:translate-x-0.5 transition-transform shrink-0" />
+                  <ChevronRight size={13} strokeWidth={1.75} className="text-[#bbcbb2] group-hover:translate-x-0.5 transition-transform shrink-0" />
+                </>
               )}
             </Link>
           )}
@@ -345,8 +349,10 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           <div className="relative shrink-0" ref={profileMenuRef}>
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className={`w-full p-2.5 rounded-xl bg-[#121215] border transition-all duration-150 flex items-center cursor-pointer tap-tactile ${
-                isCollapsed ? 'justify-center' : 'justify-between'
+              className={`rounded-xl bg-[#121215] border transition-all duration-150 flex items-center cursor-pointer tap-tactile ${
+                isCollapsed 
+                  ? 'w-10 h-10 mx-auto justify-center p-0' 
+                  : 'w-full p-2.5 justify-between'
               } ${
                 showProfileMenu 
                   ? 'border-[#00ffff] bg-[#18181c]' 
@@ -354,19 +360,23 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
               }`}
               title={isCollapsed ? `${profile?.nama || 'Pengguna'} (${currentRole}) - Klik untuk Keluar` : 'Klik profil untuk opsi akun / keluar'}
             >
-              <div className="flex items-center gap-2.5 min-w-0">
+              {isCollapsed ? (
                 <div className="w-7 h-7 rounded-full bg-[#18181c] border border-[#26272d] flex items-center justify-center text-[#bbcbb2] shrink-0">
                   <User size={14} strokeWidth={1.75} />
                 </div>
-                {!isCollapsed && (
+              ) : (
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-7 h-7 rounded-full bg-[#18181c] border border-[#26272d] flex items-center justify-center text-[#bbcbb2] shrink-0">
+                    <User size={14} strokeWidth={1.75} />
+                  </div>
                   <div className="overflow-hidden animate-fade-in text-left min-w-0">
                     <h2 className="font-semibold text-xs truncate text-white">{profile?.nama || 'Pengguna'}</h2>
                     <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase inline-block mt-0.5 ${getRoleBadgeStyle(currentRole)}`}>
                       {currentRole}
                     </span>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
               {!isCollapsed && (
                 <ChevronDown 
                   size={13} 
@@ -433,7 +443,11 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                       <Link
                         key={item.name}
                         to={item.path}
-                        className={`flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-2.5 px-3'} py-2 rounded-lg text-xs transition-all duration-150 tap-tactile ${
+                        className={`flex items-center ${
+                          isCollapsed 
+                            ? 'w-10 h-10 mx-auto justify-center px-0' 
+                            : 'w-full gap-2.5 px-3 py-2'
+                        } rounded-lg text-xs transition-all duration-150 tap-tactile ${
                           isActive ? activeClass : inactiveClass
                         }`}
                         title={isCollapsed ? item.name : ''}
