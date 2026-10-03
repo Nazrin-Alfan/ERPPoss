@@ -28,10 +28,16 @@ import {
   Printer,
   Send,
   FileText,
-  ShoppingBag
+  ShoppingBag,
+  Gift
 } from 'lucide-react'
 
 import ThermalReceiptModal from '../../components/pos/ThermalReceiptModal'
+import CustomerLoyaltyBanner from '../../components/pos/CustomerLoyaltyBanner'
+import {
+  recordLoyaltyClaim,
+  upsertCRMCustomerProfile
+} from '../../services/crmService'
 import {
   TableContainer,
   Table,
@@ -259,6 +265,7 @@ const CafePOS = () => {
   const [discounts, setDiscounts] = useState([])
   const [selectedDiskonCarwash, setSelectedDiskonCarwash] = useState(null)
   const [selectedDiskonCafe, setSelectedDiskonCafe] = useState(null)
+  const [claimedLoyaltyReward, setClaimedLoyaltyReward] = useState({ isClaimed: false, title: '', type: '' })
   const [uangDiterima, setUangDiterima] = useState('')
 
   // Receipt & Thermal Print State
@@ -1554,13 +1561,20 @@ const CafePOS = () => {
         : parseFloat(selectedDiskonCarwash.nominal))
     : 0;
 
+  // Potongan Reward Loyalty Carwash (Gratis 100% Layanan Cuci)
+  const loyaltyRewardDiskonNominal = (claimedLoyaltyReward.isClaimed && effectiveHasCarwash)
+    ? carwashTotal
+    : 0;
+
+  const totalDiskonCarwash = Math.min(carwashTotal, diskonCarwashNominal + loyaltyRewardDiskonNominal);
+
   const diskonCafeNominal = selectedDiskonCafe 
     ? (selectedDiskonCafe.tipe === 'Persen' 
         ? (cafeTotal * parseFloat(selectedDiskonCafe.nominal)) / 100 
         : parseFloat(selectedDiskonCafe.nominal))
     : 0;
 
-  const grandTotal = Math.max(0, cafeTotal - diskonCafeNominal) + Math.max(0, carwashTotal - diskonCarwashNominal)
+  const grandTotal = Math.max(0, cafeTotal - diskonCafeNominal) + Math.max(0, carwashTotal - totalDiskonCarwash)
   
   const kembalian = uangDiterima ? parseFloat(uangDiterima) - grandTotal : 0
   const isUangKurang = uangDiterima && kembalian < 0
@@ -1625,7 +1639,7 @@ const CafePOS = () => {
             nominal_qris: nQris,
             status_bayar: paymentStatus,
             kasir: selectedCashier.toUpperCase(),
-            diskon_carwash: diskonCarwashNominal,
+            diskon_carwash: totalDiskonCarwash,
             diskon_cafe: diskonCafeNominal,
             total_tagihan: grandTotal,
             tipe_pesanan: orderType,
@@ -1665,7 +1679,7 @@ const CafePOS = () => {
             nominal_qris: nQris,
             status_bayar: paymentStatus,
             kasir: selectedCashier.toUpperCase(),
-            diskon_carwash: diskonCarwashNominal,
+            diskon_carwash: totalDiskonCarwash,
             diskon_cafe: diskonCafeNominal,
             total_tagihan: grandTotal,
             tipe_pesanan: orderType,
@@ -1753,8 +1767,36 @@ const CafePOS = () => {
 
         if (cwErr) throw cwErr
 
-        // Integrasi WA CRM: Daftarkan kontak & Kirim Kupon jika kunjungan pertama
+        // Sinkronkan data pelanggan ke CRM terpadu & catat klaim reward jika ada
         const cleanPlat = (carwashForm.platNomor || '').replace(/\s+/g, '').toUpperCase();
+        try {
+          if (cleanPlat) {
+            await upsertCRMCustomerProfile(supabase, {
+              tenant_id: effectiveTenantId,
+              plat: cleanPlat,
+              nama_pelanggan: cleanPlat,
+              no_whatsapp: carwashForm.noTelepon || '',
+              model_kendaraan: carwashForm.model || '',
+              catatan_khusus: carwashForm.catatan_kendaraan || ''
+            })
+
+            if (claimedLoyaltyReward.isClaimed) {
+              await recordLoyaltyClaim(supabase, {
+                tenant_id: effectiveTenantId,
+                plat: cleanPlat,
+                nama_pelanggan: cleanPlat,
+                reward_title: claimedLoyaltyReward.title,
+                reward_type: claimedLoyaltyReward.type,
+                id_struk: effectiveStrukId,
+                notes: `Klaim reward ${claimedLoyaltyReward.title} di Kasir Hybrid POS`
+              })
+            }
+          }
+        } catch (crmSyncErr) {
+          console.warn('CRM sync warning in HybridPOS checkout:', crmSyncErr)
+        }
+
+        // Integrasi WA CRM: Daftarkan kontak & Kirim Kupon jika kunjungan pertama
         if (carwashForm.noTelepon && cleanPlat) {
           (async () => {
             try {
@@ -1933,6 +1975,7 @@ const CafePOS = () => {
       setHasCarwash(false)
       setSelectedDiskonCarwash(null)
       setSelectedDiskonCafe(null)
+      setClaimedLoyaltyReward({ isClaimed: false, title: '', type: '' })
       setUangDiterima('')
       setSplitCashAmount('')
       setSplitQrisAmount('')
@@ -1978,111 +2021,113 @@ const CafePOS = () => {
   return (
     <div className="p-2 sm:p-4 md:pb-6 flex flex-col max-w-7xl mx-auto min-h-[calc(100vh-4rem)] w-full max-w-full min-w-0 overflow-x-hidden space-y-3">
       {/* 1. TOP HEADER FULL-WIDTH (BEBAS DARI SCROLL SAMPING & TAMPIL 100% LEGA) */}
-      <div className="glass-panel p-2.5 sm:px-3.5 sm:py-2.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0 relative z-20 w-full max-w-full overflow-hidden">
-        {/* Sisi Kiri: Navigasi Tabs Lengkap (Scrollable horizontal halus di mobile, wrap di desktop) */}
-        <div className="flex items-center gap-1.5 w-full max-w-full overflow-x-auto no-scrollbar py-0.5 flex-nowrap overscroll-x-contain">
-          {/* Grup 1: Penjualan / Transaksi Langsung */}
-          <div className="flex items-center gap-1 bg-subsurface p-1 rounded-xl border border-border shrink-0">
-            {features.hasCafe && (
-              <button
-                onClick={() => setActiveTab('cafe')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
-                  activeTab === 'cafe'
-                    ? 'bg-primary text-primary-foreground shadow-sm shadow-[#00ffff]/20'
-                    : 'text-muted hover:text-slate-200'
-                }`}
-              >
-                <Coffee size={14} />
-                <span>Cafe</span>
-              </button>
-            )}
-            {features.hasCarwash && (
-              <button
-                onClick={() => setActiveTab('carwash')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
-                  activeTab === 'carwash'
-                    ? 'bg-primary text-primary-foreground shadow-sm shadow-[#00ffff]/20'
-                    : 'text-muted hover:text-slate-200'
-                }`}
-              >
-                <Car size={14} />
-                <span>Carwash</span>
-              </button>
-            )}
-            <button
-              onClick={() => setActiveTab('merchandise')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
-                activeTab === 'merchandise'
-                  ? 'bg-amber-400 text-slate-950 shadow-sm shadow-amber-400/20'
-                  : 'text-muted hover:text-slate-200'
-              }`}
-            >
-              <ShoppingBag size={14} />
-              <span>Merchandise</span>
-            </button>
-          </div>
-
-          <span className="text-[#26272d] font-mono px-0.5 shrink-0">|</span>
-
-          {/* Grup 2: Audit & Monitoring Lapangan */}
-          <div className="flex items-center gap-1 bg-subsurface p-1 rounded-xl border border-border shrink-0">
-            <button
-              onClick={() => setActiveTab('pending')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
-                activeTab === 'pending'
-                  ? 'bg-amber-500 text-slate-950 shadow-sm shadow-amber-500/20'
-                  : 'text-muted hover:text-slate-200'
-              }`}
-            >
-              <ShoppingCart size={13} />
-              <span className="whitespace-nowrap">Bon Pending</span>
-              {pendingBills.length > 0 && (
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                  activeTab === 'pending' ? 'bg-subsurface text-amber-400' : 'bg-amber-500/20 text-amber-400'
-                }`}>
-                  {pendingBills.length}
-                </span>
+      <div className="glass-panel p-2.5 sm:px-3.5 sm:py-2.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0 relative z-30 w-full max-w-full">
+        {/* Sisi Kiri: Navigasi Tabs Lengkap */}
+        <div className="flex items-center gap-1.5 w-full sm:w-auto min-w-0">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 flex-nowrap overscroll-x-contain shrink min-w-0">
+            {/* Grup 1: Penjualan / Transaksi Langsung */}
+            <div className="flex items-center gap-1 bg-subsurface p-1 rounded-xl border border-border shrink-0">
+              {features.hasCafe && (
+                <button
+                  onClick={() => setActiveTab('cafe')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
+                    activeTab === 'cafe'
+                      ? 'bg-primary text-primary-foreground shadow-sm shadow-[#00ffff]/20'
+                      : 'text-muted hover:text-slate-200'
+                  }`}
+                >
+                  <Coffee size={14} />
+                  <span>Cafe</span>
+                </button>
               )}
-            </button>
+              {features.hasCarwash && (
+                <button
+                  onClick={() => setActiveTab('carwash')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
+                    activeTab === 'carwash'
+                      ? 'bg-primary text-primary-foreground shadow-sm shadow-[#00ffff]/20'
+                      : 'text-muted hover:text-slate-200'
+                  }`}
+                >
+                  <Car size={14} />
+                  <span>Carwash</span>
+                </button>
+              )}
+              <button
+                onClick={() => setActiveTab('merchandise')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
+                  activeTab === 'merchandise'
+                    ? 'bg-amber-400 text-slate-950 shadow-sm shadow-amber-400/20'
+                    : 'text-muted hover:text-slate-200'
+                }`}
+              >
+                <ShoppingBag size={14} />
+                <span>Merchandise</span>
+              </button>
+            </div>
 
-            <button
-              onClick={() => setActiveTab('history')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
-                activeTab === 'history'
-                  ? 'bg-purple-500 text-white shadow-sm shadow-purple-500/20'
-                  : 'text-muted hover:text-slate-200'
-              }`}
-            >
-              <History size={13} />
-              <span className="whitespace-nowrap">Riwayat</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                activeTab === 'history' ? 'bg-subsurface text-purple-300' : 'bg-purple-500/20 text-purple-300'
-              }`}>
-                {todayTransactions.length}
-              </span>
-            </button>
+            <span className="text-[#26272d] font-mono px-0.5 shrink-0">|</span>
 
-            <button
-              onClick={() => setActiveTab('inventory')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
-                activeTab === 'inventory'
-                  ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/20'
-                  : 'text-muted hover:text-slate-200'
-              }`}
-            >
-              <Boxes size={13} />
-              <span className="whitespace-nowrap">Stok Gudang</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                activeTab === 'inventory' ? 'bg-subsurface text-amber-300' : 'bg-amber-600/20 text-amber-300'
-              }`}>
-                {inventoryList.length}
-              </span>
-            </button>
+            {/* Grup 2: Audit & Monitoring Lapangan */}
+            <div className="flex items-center gap-1 bg-subsurface p-1 rounded-xl border border-border shrink-0">
+              <button
+                onClick={() => setActiveTab('pending')}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
+                  activeTab === 'pending'
+                    ? 'bg-amber-500 text-slate-950 shadow-sm shadow-amber-500/20'
+                    : 'text-muted hover:text-slate-200'
+                }`}
+              >
+                <ShoppingCart size={13} />
+                <span className="whitespace-nowrap">Bon Pending</span>
+                {pendingBills.length > 0 && (
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                    activeTab === 'pending' ? 'bg-subsurface text-amber-400' : 'bg-amber-500/20 text-amber-400'
+                  }`}>
+                    {pendingBills.length}
+                  </span>
+                )}
+              </button>
+
+              <button
+                onClick={() => setActiveTab('history')}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
+                  activeTab === 'history'
+                    ? 'bg-purple-500 text-white shadow-sm shadow-purple-500/20'
+                    : 'text-muted hover:text-slate-200'
+                }`}
+              >
+                <History size={13} />
+                <span className="whitespace-nowrap">Riwayat</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                  activeTab === 'history' ? 'bg-subsurface text-purple-300' : 'bg-purple-500/20 text-purple-300'
+                }`}>
+                  {todayTransactions.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('inventory')}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
+                  activeTab === 'inventory'
+                    ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/20'
+                    : 'text-muted hover:text-slate-200'
+                }`}
+              >
+                <Boxes size={13} />
+                <span className="whitespace-nowrap">Stok Gudang</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                  activeTab === 'inventory' ? 'bg-subsurface text-amber-300' : 'bg-amber-600/20 text-amber-300'
+                }`}>
+                  {inventoryList.length}
+                </span>
+              </button>
+            </div>
           </div>
 
-          <span className="text-[#26272d] font-mono px-0.5 shrink-0">|</span>
+          <span className="text-[#26272d] font-mono px-0.5 shrink-0 hidden sm:inline">|</span>
 
-          {/* Grup 3: Dropdown Operasional Kas & Shift */}
+          {/* Grup 3: Dropdown Operasional Kas & Shift (DI LUAR overflow-x-auto) */}
           <div className="relative shrink-0">
             <button
               type="button"
@@ -2103,8 +2148,8 @@ const CafePOS = () => {
 
             {showCashOpsMenu && (
               <>
-                <div className="fixed inset-0 z-20 bg-transparent" onClick={() => setShowCashOpsMenu(false)} />
-                <div className="absolute left-0 top-full mt-2 w-52 bg-surface backdrop-blur-md border border-border rounded-xl p-1.5 shadow-2xl z-30 space-y-1 animate-slide-up">
+                <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setShowCashOpsMenu(false)} />
+                <div className="absolute left-0 top-full mt-2 w-52 bg-surface backdrop-blur-md border border-border rounded-xl p-1.5 shadow-2xl z-50 space-y-1 animate-slide-up">
                   <button
                     type="button"
                     onClick={() => { setActiveTab('expense'); setShowCashOpsMenu(false); }}
@@ -2142,7 +2187,6 @@ const CafePOS = () => {
             )}
           </div>
         </div>
-
         {/* Sisi Kanan: Kasir Aktif & Status Laci Kas Ringkas */}
         <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end pt-1 sm:pt-0 border-t border-border/50 sm:border-t-0">
           {/* Status Kasir & Shift */}
@@ -2186,10 +2230,10 @@ const CafePOS = () => {
             {showCashDrawerDetail && (
               <>
                 <div
-                  className="fixed inset-0 z-20 bg-black/20 backdrop-blur-[0.5px]"
+                  className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[0.5px]"
                   onClick={() => setShowCashDrawerDetail(false)}
                 />
-                <div className="absolute right-0 top-full mt-2 w-72 bg-surface backdrop-blur-md border border-border rounded-xl p-3.5 shadow-2xl z-30 space-y-2.5 animate-slide-up">
+                <div className="absolute right-0 top-full mt-2 w-72 bg-surface backdrop-blur-md border border-border rounded-xl p-3.5 shadow-2xl z-50 space-y-2.5 animate-slide-up">
                   <div className="flex items-center justify-between border-b border-border pb-2">
                     <span className="text-xs font-bold text-white flex items-center gap-1.5">
                       <Wallet size={14} className="text-purple-400" />
@@ -2446,6 +2490,26 @@ const CafePOS = () => {
                     value={carwashForm.noTelepon}
                     onChange={(e) => setCarwashForm(prev => ({ ...prev, noTelepon: e.target.value }))}
                     className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-primary text-sm"
+                  />
+                </div>
+
+                {/* REACTIVE CRM & LOYALTY LOOKUP BANNER */}
+                <div className="col-span-1 md:col-span-2">
+                  <CustomerLoyaltyBanner
+                    db={supabase}
+                    tenantId={activeTenant?.id || profile?.tenant_id || DEFAULT_TENANT_ID}
+                    plateNumber={carwashForm.platNomor}
+                    onApplyProfile={({ model, noTelepon, catatan_kendaraan }) => {
+                      setCarwashForm(prev => ({
+                        ...prev,
+                        model: model || prev.model,
+                        noTelepon: noTelepon || prev.noTelepon,
+                        catatan_kendaraan: catatan_kendaraan || prev.catatan_kendaraan
+                      }))
+                    }}
+                    onClaimReward={(reward) => setClaimedLoyaltyReward(reward)}
+                    isRewardClaimed={claimedLoyaltyReward.isClaimed}
+                    claimedRewardTitle={claimedLoyaltyReward.title}
                   />
                 </div>
 
@@ -3934,6 +3998,12 @@ const CafePOS = () => {
                  {diskonCarwashNominal > 0 && (
                    <span className="text-[10px] text-primary font-semibold block">Potongan: -{formatRupiah(diskonCarwashNominal)}</span>
                  )}
+                 {claimedLoyaltyReward.isClaimed && (
+                   <div className="flex items-center justify-between text-amber-300 bg-amber-500/15 p-1.5 rounded border border-amber-500/30 text-[11px] my-1">
+                     <span className="font-bold truncate">🎁 Hadiah: {claimedLoyaltyReward.title}</span>
+                     <span className="font-mono font-bold">-{formatRupiah(loyaltyRewardDiskonNominal)}</span>
+                   </div>
+                 )}
                </div>
              )}
 
@@ -4320,6 +4390,12 @@ const CafePOS = () => {
                     />
                     {diskonCarwashNominal > 0 && (
                       <span className="text-[10px] text-primary font-semibold block">Potongan: -{formatRupiah(diskonCarwashNominal)}</span>
+                    )}
+                    {claimedLoyaltyReward.isClaimed && (
+                      <div className="flex items-center justify-between text-amber-300 bg-amber-500/15 p-1.5 rounded border border-amber-500/30 text-[11px] my-1">
+                        <span className="font-bold truncate">🎁 Hadiah: {claimedLoyaltyReward.title}</span>
+                        <span className="font-mono font-bold">-{formatRupiah(loyaltyRewardDiskonNominal)}</span>
+                      </div>
                     )}
                   </div>
                 )}

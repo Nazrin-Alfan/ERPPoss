@@ -406,8 +406,12 @@ export const MODULAR_DATA_GROUPS = [
     color: 'sky',
     blocks: [
       { id: 'crm_cohorts', label: 'Segmentasi Tamu: VIP (≥5x), Reguler (2-4x), Baru (1x)', defaultChecked: true },
-      { id: 'crm_churn_risk', label: 'Deteksi Risiko Churn (>45 Hari Tidak Berkunjung)', defaultChecked: true },
-      { id: 'crm_repeat_rate', label: 'Repeat Customer Rate (%) & Rata-rata Customer LTV', defaultChecked: true }
+      { id: 'crm_repeat_rate', label: 'Repeat Customer Rate (%) & Rata-rata Customer LTV', defaultChecked: true },
+      { id: 'crm_churn_risk', label: 'Deteksi Risiko Churn (>30 Hari Pasif) & Revenue at Risk', defaultChecked: true },
+      { id: 'crm_stamps_reward', label: 'Progress Stamp Digital & Kesiapan Reward Loyalitas', defaultChecked: true },
+      { id: 'crm_at_risk_list', label: 'Daftar Profil Pelanggan Berisiko Churn (Durasi Inaktif & Nilai LTV)', defaultChecked: false },
+      { id: 'crm_cross_spending', label: 'Belanja Silang Pelanggan (Carwash Spent vs Cafe Spent & High-Yield)', defaultChecked: false },
+      { id: 'crm_service_affinity', label: 'Preferensi Paket Layanan & Komposisi Kendaraan Favorit', defaultChecked: false }
     ]
   },
   {
@@ -1081,10 +1085,12 @@ export class AIContextBuilder {
       lines.push('### 👥 DATA KOHORT PELANGGAN & RETENSI (ZERO-PII)')
       lines.push(`- Total Pelanggan Unik : ${crm.totalUniqueCustomers || 0} orang/kendaraan`)
       lines.push(`- Segmentasi Frekuensi : VIP (≥5x): ${crm.vipCount || 0} | Reguler (2-4x): ${crm.regularCount || 0} | Baru (1x): ${crm.newCount || 0}`)
-      lines.push(`- Repeat Customer Rate : ${crm.repeatCustomerRate || 0}%`)
-      lines.push(`- Rata-rata Customer LTV: ${formatRp(crm.avgLTV)}`)
+      lines.push(`- Repeat Customer Rate : ${crm.repeatCustomerRate || 0}% | Rata-rata Customer LTV: ${formatRp(crm.avgLTV)}`)
+      if (crm.rewardReadyCount > 0 || crm.nearRewardCount > 0) {
+        lines.push(`- Digital Stamp Loyalty: **${crm.rewardReadyCount || 0} pelanggan berhak reward gratis**, ${crm.nearRewardCount || 0} pelanggan sisa 1 stamp`)
+      }
       if (crm.churnRiskCount > 0) {
-        lines.push(`- Deteksi Risiko Churn (>45 hari): **${crm.churnRiskCount || 0} pelanggan berisiko hilang**`)
+        lines.push(`- Deteksi Risiko Churn (>30 hari): **${crm.churnRiskCount || 0} pelanggan pasif** (Estimasi Revenue at Risk: **${formatRp(crm.revenueAtRisk)}**)`)
       }
       lines.push('')
     }
@@ -1288,17 +1294,43 @@ export class AIContextBuilder {
     }
 
     // 3.10 CRM
-    if (this.isBlockActive('crm_cohorts') || this.isBlockActive('crm_churn_risk') || this.isBlockActive('crm_repeat_rate')) {
-      lines.push('### 👥 KOHORT PELANGGAN (ZERO-PII)')
+    const isCrmActive = this.isBlockActive('crm_cohorts') ||
+      this.isBlockActive('crm_churn_risk') ||
+      this.isBlockActive('crm_repeat_rate') ||
+      this.isBlockActive('crm_stamps_reward') ||
+      this.isBlockActive('crm_at_risk_list') ||
+      this.isBlockActive('crm_cross_spending') ||
+      this.isBlockActive('crm_service_affinity')
+
+    if (isCrmActive) {
+      lines.push('### 👥 KOHORT PELANGGAN & CRM (ZERO-PII)')
       if (this.isBlockActive('crm_cohorts')) {
         lines.push(`- Total Pelanggan Unik : ${crm.totalUniqueCustomers || 0}`)
         lines.push(`- Segmentasi Frekuensi : VIP: ${crm.vipCount || 0} | Reguler: ${crm.regularCount || 0} | Baru: ${crm.newCount || 0}`)
       }
       if (this.isBlockActive('crm_repeat_rate')) {
-        lines.push(`- Repeat Customer Rate : ${crm.repeatCustomerRate || 0}% | Rata-rata LTV: ${formatRp(crm.avgLTV)}`)
+        lines.push(`- Repeat Customer Rate : ${crm.repeatCustomerRate || 0}% | Rata-rata Customer LTV: ${formatRp(crm.avgLTV)}`)
+      }
+      if (this.isBlockActive('crm_stamps_reward')) {
+        lines.push(`- Digital Stamp Loyalty: **${crm.rewardReadyCount || 0} pelanggan berhak reward gratis**, ${crm.nearRewardCount || 0} pelanggan sisa 1 stamp`)
       }
       if (this.isBlockActive('crm_churn_risk')) {
-        lines.push(`- Risiko Churn (>45 hari): **${crm.churnRiskCount || 0} pelanggan pasif**`)
+        lines.push(`- Risiko Churn (>30 hari): **${crm.churnRiskCount || 0} pelanggan pasif** (Estimasi Revenue at Risk: **${formatRp(crm.revenueAtRisk)}**)`)
+      }
+      if (this.isBlockActive('crm_at_risk_list') && crm.topAtRiskCustomers && crm.topAtRiskCustomers.length > 0) {
+        lines.push('- Daftar Pelanggan Berisiko Churn (Prioritas Win-Back):')
+        crm.topAtRiskCustomers.forEach((c, idx) => {
+          lines.push(`  ${idx + 1}. [${c.platMasked}] ${c.model} — ${c.visits}x cuci (Histori: ${formatRp(c.totalSpent)}) [Inaktif: ${c.daysInactive} hari]`)
+        })
+      }
+      if (this.isBlockActive('crm_cross_spending') && crm.highYieldCustomers && crm.highYieldCustomers.length > 0) {
+        lines.push('- Top Pelanggan Bernilai Tinggi (Cross-Spending Breakdown):')
+        crm.highYieldCustomers.forEach((c, idx) => {
+          lines.push(`  ${idx + 1}. [${c.platMasked}] ${c.model} — Total: ${formatRp(c.totalSpent)} (${c.visits}x kunjungan | Cuci: ${formatRp(c.carwashSpent)}, F&B: ${formatRp(c.cafeSpent)})`)
+        })
+      }
+      if (this.isBlockActive('crm_service_affinity') && crm.serviceAffinity && crm.serviceAffinity.length > 0) {
+        lines.push(`- Preferensi Paket Favorit: ${crm.serviceAffinity.map((p) => `${p.packageName} (${p.count}x / ${p.percentage}%)`).join(', ')}`)
       }
       lines.push('')
     }
@@ -1394,7 +1426,13 @@ export class AIContextBuilder {
         new_customers_count: this.metrics.crm?.newCount || 0,
         repeat_customer_rate_percent: this.metrics.crm?.repeatCustomerRate || 0,
         churn_risk_count: this.metrics.crm?.churnRiskCount || 0,
-        average_ltv: this.metrics.crm?.avgLTV || 0
+        revenue_at_risk: this.metrics.crm?.revenueAtRisk || 0,
+        reward_ready_count: this.metrics.crm?.rewardReadyCount || 0,
+        near_reward_count: this.metrics.crm?.nearRewardCount || 0,
+        average_ltv: this.metrics.crm?.avgLTV || 0,
+        top_at_risk_customers: this.metrics.crm?.topAtRiskCustomers || [],
+        high_yield_customers: this.metrics.crm?.highYieldCustomers || [],
+        service_affinity: this.metrics.crm?.serviceAffinity || []
       },
       pricing_elasticity: {
         weekday_avg_daily_revenue: this.metrics.elasticity?.avgWeekdayDaily || 0,

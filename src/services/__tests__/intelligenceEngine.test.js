@@ -568,4 +568,48 @@ describe('RelayPOS AI Context Builder (Vendor-Neutral, Zero-PII & Unlimited Quer
     expect(promptText).not.toContain('pesanan meja')
     expect(promptText).not.toContain('THE RELAY EFFECT')
   })
+
+  it('12. Correctly calculates rich CRM metrics (Stamps, Revenue at Risk, High-Yield Spenders, Affinity)', () => {
+    const customCw = [
+      { id: 'cw-1', plat: 'B 1111 AAA', model: 'Fortuner', paket: 'CUCI KOMPLIT', harga: 100000, tanggal: '2026-09-01' },
+      { id: 'cw-2', plat: 'B 1111 AAA', model: 'Fortuner', paket: 'CUCI KOMPLIT', harga: 100000, tanggal: '2026-09-05' },
+      { id: 'cw-3', plat: 'B 1111 AAA', model: 'Fortuner', paket: 'CUCI KOMPLIT', harga: 100000, tanggal: '2026-09-10' },
+      { id: 'cw-4', plat: 'B 1111 AAA', model: 'Fortuner', paket: 'CUCI KOMPLIT', harga: 100000, tanggal: '2026-09-15' },
+      { id: 'cw-5', plat: 'B 1111 AAA', model: 'Fortuner', paket: 'CUCI KOMPLIT', harga: 100000, tanggal: '2026-09-20' }, // 5 visits -> Reward Ready!
+      { id: 'cw-6', plat: 'B 2222 BBB', model: 'Innova', paket: 'CUCI SALJU', harga: 50000, tanggal: '2026-08-01' },
+      { id: 'cw-7', plat: 'B 2222 BBB', model: 'Innova', paket: 'CUCI SALJU', harga: 50000, tanggal: '2026-08-10' } // Inactive > 30 days -> Churn Risk!
+    ]
+
+    const engine = new IntelligenceEngineService({
+      carwash: customCw,
+      tenantBusinessType: 'CARWASH',
+      referenceDate: '2026-09-28'
+    })
+
+    const crm = engine.calculateCustomerCohorts()
+    expect(crm.totalUniqueCustomers).toBe(2)
+    expect(crm.vipCount).toBe(1)
+    expect(crm.rewardReadyCount).toBe(1)
+    expect(crm.churnRiskCount).toBe(1)
+    expect(crm.revenueAtRisk).toBe(100000)
+    expect(crm.highYieldCustomers.length).toBe(2)
+    expect(crm.highYieldCustomers[0].totalSpent).toBe(500000)
+    expect(crm.serviceAffinity.length).toBe(2)
+
+    // Test Standalone Prompt generation with new CRM blocks
+    const builder = new AIContextBuilder({
+      metrics: { crm },
+      tenantBusinessType: 'CARWASH',
+      tenantName: 'Autoglaze',
+      selectedBlocks: ['crm_stamps_reward', 'crm_at_risk_list', 'crm_cross_spending', 'crm_service_affinity'],
+      interactiveFeedback: false
+    })
+
+    const promptText = builder.buildStandaloneBlocksPrompt({ dataOnly: true })
+    expect(promptText).toContain('Digital Stamp Loyalty:')
+    expect(promptText).toContain('1 pelanggan berhak reward gratis')
+    expect(promptText).toContain('Daftar Pelanggan Berisiko Churn')
+    expect(promptText).toContain('Top Pelanggan Bernilai Tinggi')
+    expect(promptText).toContain('Preferensi Paket Favorit')
+  })
 })

@@ -21,11 +21,18 @@ import {
   CreditCard,
   Sparkles,
   Check,
-  CheckCircle2
+  CheckCircle2,
+  Gift,
+  X
 } from 'lucide-react'
 
 import ThermalReceiptModal from '../../components/pos/ThermalReceiptModal'
 import CustomSelect from '../../components/common/CustomSelect'
+import CustomerLoyaltyBanner from '../../components/pos/CustomerLoyaltyBanner'
+import {
+  recordLoyaltyClaim,
+  upsertCRMCustomerProfile
+} from '../../services/crmService'
 import {
   buildOrderReceiptData,
   getReceiptConfig
@@ -95,6 +102,7 @@ export const CarwashPOSPage = () => {
   // Pembayaran & Diskon
   const [selectedDiskonId, setSelectedDiskonId] = useState('')
   const [nominalBayar, setNominalBayar] = useState('')
+  const [claimedLoyaltyReward, setClaimedLoyaltyReward] = useState({ isClaimed: false, title: '', type: '' })
 
   // Daftar Kendaraan Sedang Dikerjakan (Antrean Aktif)
   const [activeQueue, setActiveQueue] = useState([])
@@ -199,7 +207,18 @@ export const CarwashPOSPage = () => {
     return Math.min(subtotal, Number(selectedDiskon.nilai || 0))
   }, [subtotal, selectedDiskon])
 
-  const grandTotal = Math.max(0, subtotal - diskonAmount)
+  // Hitung Potongan Loyalty Hadiah (jika diklaim kasir di transaksi ini)
+  const loyaltyDiskonAmount = useMemo(() => {
+    if (!claimedLoyaltyReward.isClaimed) return 0
+    // Gratis Layanan Cuci 100%
+    return subtotal
+  }, [claimedLoyaltyReward, subtotal])
+
+  const totalEffectiveDiskon = useMemo(() => {
+    return Math.min(subtotal, diskonAmount + loyaltyDiskonAmount)
+  }, [subtotal, diskonAmount, loyaltyDiskonAmount])
+
+  const grandTotal = Math.max(0, subtotal - totalEffectiveDiskon)
   const kembalian = Math.max(0, (Number(nominalBayar) || 0) - grandTotal)
 
   // Submit Intake & Bayar
@@ -232,7 +251,7 @@ export const CarwashPOSPage = () => {
         kasir: selectedCashier,
         metode_pembayaran: selectedPayment,
         subtotal: subtotal,
-        diskon: diskonAmount,
+        diskon: totalEffectiveDiskon,
         total: grandTotal,
         nominal_bayar: isBayarBelakangan ? 0 : (Number(nominalBayar) || grandTotal),
         kembalian: isBayarBelakangan ? 0 : kembalian,
@@ -267,7 +286,34 @@ export const CarwashPOSPage = () => {
       const { error: cwErr } = await supabase.from('carwash').insert([carwashPayload])
       if (cwErr) throw cwErr
 
-      // 3. Struk data
+      // 3. Sinkronkan profil pelanggan ke CRM secara otomatis
+      try {
+        await upsertCRMCustomerProfile(supabase, {
+          tenant_id: effectiveTenantId,
+          plat: carwashForm.platNomor.toUpperCase(),
+          nama_pelanggan: carwashForm.platNomor.toUpperCase(),
+          no_whatsapp: carwashForm.noTelepon || '',
+          model_kendaraan: carwashForm.model || '',
+          catatan_khusus: carwashForm.catatan_kendaraan || ''
+        })
+
+        // 4. Jika reward loyalty diklaim, catat ke crm_loyalty_logs
+        if (claimedLoyaltyReward.isClaimed) {
+          await recordLoyaltyClaim(supabase, {
+            tenant_id: effectiveTenantId,
+            plat: carwashForm.platNomor.toUpperCase(),
+            nama_pelanggan: carwashForm.platNomor.toUpperCase(),
+            reward_title: claimedLoyaltyReward.title,
+            reward_type: claimedLoyaltyReward.type,
+            id_struk: orderId,
+            notes: `Klaim hadiah loyalty di Kasir POS (${claimedLoyaltyReward.title})`
+          })
+        }
+      } catch (crmSyncErr) {
+        console.warn('CRM sync warning during checkout:', crmSyncErr)
+      }
+
+      // 5. Struk data
       const receiptData = buildOrderReceiptData({
         orderNumber: orderId,
         kasir: selectedCashier,
@@ -276,7 +322,7 @@ export const CarwashPOSPage = () => {
         cart: [],
         hasCarwash: true,
         carwashForm: carwashForm,
-        effectiveDiskonNominal: diskonAmount,
+        effectiveDiskonNominal: totalEffectiveDiskon,
         selectedDiskon: selectedDiskon,
         total: grandTotal,
         paymentMethod: selectedPayment,
@@ -287,13 +333,14 @@ export const CarwashPOSPage = () => {
 
       setActiveReceipt(receiptData)
       setSuccess(true)
-      // Reset form
+      // Reset form & reward state
       setCarwashForm(prev => ({
         ...prev,
         platNomor: '',
         noTelepon: '',
         catatan_kendaraan: ''
       }))
+      setClaimedLoyaltyReward({ isClaimed: false, title: '', type: '' })
       setNominalBayar('')
       setSelectedDiskonId('')
       setSettlingVehicle(null)
@@ -461,6 +508,24 @@ export const CarwashPOSPage = () => {
                 />
               </div>
             </div>
+
+            {/* REACTIVE CRM & LOYALTY LOOKUP BANNER */}
+            <CustomerLoyaltyBanner
+              db={supabase}
+              tenantId={effectiveTenantId}
+              plateNumber={carwashForm.platNomor}
+              onApplyProfile={({ model, noTelepon, catatan_kendaraan }) => {
+                setCarwashForm(prev => ({
+                  ...prev,
+                  model: model || prev.model,
+                  noTelepon: noTelepon || prev.noTelepon,
+                  catatan_kendaraan: catatan_kendaraan || prev.catatan_kendaraan
+                }))
+              }}
+              onClaimReward={(reward) => setClaimedLoyaltyReward(reward)}
+              isRewardClaimed={claimedLoyaltyReward.isClaimed}
+              claimedRewardTitle={claimedLoyaltyReward.title}
+            />
 
             {/* UKURAN KENDARAAN & PENUGASAN KRU */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border">
@@ -682,6 +747,25 @@ export const CarwashPOSPage = () => {
                 <div className="flex justify-between text-primary font-medium">
                   <span>Potongan Promo</span>
                   <span className="font-mono">-{formatRupiah(diskonAmount)}</span>
+                </div>
+              )}
+              {claimedLoyaltyReward.isClaimed && (
+                <div className="flex items-center justify-between text-amber-300 bg-amber-500/15 p-2 rounded-lg border border-amber-500/30 text-xs">
+                  <div className="flex items-center gap-1.5 truncate">
+                    <Gift className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span className="font-bold truncate">Hadiah Loyalty ({claimedLoyaltyReward.title})</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="font-mono font-bold text-amber-400">-{formatRupiah(loyaltyDiskonAmount)}</span>
+                    <button
+                      type="button"
+                      onClick={() => setClaimedLoyaltyReward({ isClaimed: false, title: '', type: '' })}
+                      className="p-1 hover:bg-amber-500/20 rounded text-amber-300"
+                      title="Batal klaim hadiah"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               )}
               <div className="flex justify-between text-sm font-bold pt-1.5 border-t border-border">

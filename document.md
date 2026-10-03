@@ -2493,39 +2493,231 @@
       - **Verifikasi Kualitas**:
         - 215/215 unit tests PASS across 38 test files (100% GREEN).
         - Vite production build sukses dalam 1.53 detik.
+    41. **Ekspansi Modul CRM Terpadu Kelas Enterprise (2026-10-01)**:
+      - **Arsitektur & Konsep**:
+        - Mengembangkan modul CRM terpadu RelayPOS berbasis single-database terpadu multi-tenant (`tenant_id`), menggabungkan data transaksi Carwash dan Struk Cafe POS.
+        - Membangun `src/services/crmService.js`:
+          1. **RFM Scoring Engine & Churn Risk**: Klasifikasi otomatis pelanggan (`VIP` [≥5x cuci & aktif ≤21 hari], `LOYAL` [3-4x cuci], `NEED_ATTENTION` [14-30 hari belum cuci], `AT_RISK` [>30 hari tidak berkunjung / churn], dan `NEW` [kunjungan perdana]).
+          2. **Digital Stamp Loyalty Card**: Penghitungan siklus 5 stamp cuci mobil, status reward ready (`is_reward_ready`), dan pencatatan klaim reward (`redeemCustomerReward`) ke tabel `crm_loyalty_logs`.
+          3. **Smart WhatsApp Retention Engine**: Evaluasi template Spintax dinamis (`{Halo|Hai|Selamat pagi}`) dengan substitusi variabel (`{{nama}}`, `{{model}}`, `{{plat}}`, `{{hari_lalu}}`, `{{total_kunjungan}}`), generator variasi kata acak, dan tombol kirim langsung via WhatsApp Web/App (`wa.me`).
+          4. **Konsolidasi Multi-Sektor (Carwash ⇄ Cafe)**: Agregasi pengeluaran cuci mobil dan konsumsi cafe per pelanggan/plat mobil secara real-time.
+          5. **Profil & Catatan Khusus Pelanggan**: Persistensi catatan handling kendaraan (misal: *AC jangan disemprot parfum*, *velg custom doff*) ke tabel `crm_customers`.
+      - **Pembaruan Antarmuka (`src/pages/CRM.jsx`)**:
+        - Memperbarui halaman CRM dengan Bento Metrics Grid: Total Pelanggan, Pelanggan Setia (VIP), Perlu Follow-Up (14-30 hari), dan Berisiko Churn (>30 hari).
+        - Filter tab interaktif untuk setiap segmen RFM dan filter khusus "Siap Klaim Reward".
+        - Modal interaktif Loyalty Stamp Card dengan slot visual 5 stamp, banner siap klaim, dan tombol klaim reward.
+        - Modal Smart WhatsApp Retention dengan selector 4 template bawaan, editor teks langsung, pratinjau pesan hasil compile Spintax, tombol salin ke clipboard, dan pengiriman pesan via WhatsApp.
+        - Pematuhan standar Humanize-UI, WCAG 2.2, tabular nums untuk nilai moneter, dan penanganan 4 state (loading skeleton, empty state actionable, error feedback, dan success toast).
+      - **Verifikasi Kualitas**:
+        - Unit test service baru `src/services/__tests__/crmService.test.js` (13 tests PASS).
+        - Unit test halaman baru `src/pages/__tests__/CRM.test.jsx` (1 test PASS).
+        - Total pengujian: **229/229 unit tests PASS across 40 test files (100% GREEN)**.
+        - Vite production build sukses dalam 2.00 detik.
+    42. **Kustomisasi Program Loyalty & Hadiah Klaim Dinamis (2026-10-01)**:
+      - **Kebutuhan Bisnis**:
+        - Memberikan kebebasan penuh kepada admin/owner outlet untuk menentukan berapa jumlah stamp yang dibutuhkan sebelum pelanggan dapat mengklaim hadiah (misal: 3, 5, 8, atau 10 stamp), serta menentukan jenis dan nama hadiah klaim secara spesifik (misal: Kopi Gratis di Cafe, Gratis Cuci Salju, Diskon 50% Detailing, atau hadiah kustom lainnya).
+      - **Arsitektur & Backend (`src/services/crmService.js`)**:
+        - Menambahkan tabel konfigurasi multi-tenant `crm_loyalty_programs` (`tenant_id`, `target_stamps`, `reward_type`, `reward_title`, `reward_description`, `is_active`).
+        - Mengimplementasikan `getLoyaltyProgramSettings(db, tenantId)` dan `saveLoyaltyProgramSettings(db, settings)` untuk persistensi pengaturan per tenant.
+        - Memperbarui `calculateLoyaltyStamps(totalVisits, stampTarget, rewardTitle)` agar secara dinamis menghitung siklus stamp, sisa stamp, dan kesiapan klaim berbasis target dan nama hadiah kustom.
+        - Memperbarui `redeemCustomerReward` untuk mencatat nama reward spesifik (`reward_title`) ke log transaksi `crm_loyalty_logs`.
+      - **Pembaruan Antarmuka (`src/pages/CRM.jsx`)**:
+        - Menambahkan tombol aksi header **"Atur Program Loyalty"** dengan icon gift elegan.
+        - Membangun Modal Kustomisasi Program:
+          - Stepper target stamp (2 s/d 20 stamp) dengan chip rekomendasi cepat (3, 5, 8, 10 Stamp).
+          - Pemilihan kategori hadiah (Cuci/Detailing, F&B Cafe, Diskon %, Kustom Bebas).
+          - Preset pilihan cepat hadiah populer (Gratis Cuci Salju, Kopi Susu Senja Gratis, Camilan/Snack Cafe Gratis, Diskon 50% Detailing, Fogging Interior).
+          - Pratinjau interaktif real-time kartu stamp pelanggan di dalam modal konfigurasi.
+        - Menyesuaikan tampilan kartu stamp di modal pelanggan dan kolom tabel agar otomatis me-render jumlah slot stamp secara dinamis sesuai target yang dikonfigurasi admin.
+        - Menghubungkan variabel dinamis `{{target_stamps}}` dan `{{reward_title}}` ke generator pesan retensi WhatsApp.
+      - **Verifikasi Kualitas**:
+        - Unit test bertambah pada `src/services/__tests__/crmService.test.js` dan `src/pages/__tests__/CRM.test.jsx`.
+        - **Total Pengujian**: **231/231 unit tests PASS across 40 test files (100% GREEN)**.
+        - Vite production build sukses dalam 2.00 detik.
+    43. **Perbaikan Viewport & Pinned Sticky Header Modal CRM (`src/pages/CRM.jsx`) (2026-10-01)**:
+      - **Akar Masalah (Root Cause)**:
+        - Pada pelanggan segmen VIP dengan riwayat kunjungan panjang dan reward aktif, isi modal detail pelanggan memiliki konten vertikal tinggi (>850px).
+        - Pembungkus modal sebelumnya menggunakan `flex items-center justify-center` tanpa pembagian sticky header yang tegas, sehingga modal di-center secara vertikal dan ujung atas (termasuk tombol silang / close `X`) terdorong keluar batas atas layar (`top < 0`).
+      - **Solusi Arsitektur & Rekayasa Antarmuka**:
+        - **Pinned Sticky Header**: Memisahkan Header modal ke dalam kontainer tersendiri dengan `sticky top-0 z-10 shrink-0 bg-slate-900/95 border-b border-slate-800` sehingga tombol close `X` dan judul modal selalu terlihat dan tidak pernah terdorong keluar viewport.
+        - **Scrollable Content Body**: Menempatkan seluruh elemen interaktif (kartu stamp, ringkasan pengeluaran, form preferensi, dan riwayat kunjungan) ke dalam pembungkus internal `flex-1 overflow-y-auto`.
+        - **Responsif Viewport & Backdrop Scroll**: Menambahkan `items-start sm:items-center p-3 sm:p-5 overflow-y-auto` pada overlay backdrop, serta batasan tinggi `max-h-[85vh] sm:max-h-[88vh] overflow-hidden` pada kartu modal.
+        - **Aksesibilitas & Multi-Exit Handling**: Menambahkan dukungan tutup modal via klik di luar area modal (backdrop click) dan pintasan keyboard tombol `Escape` (`Esc`).
+        - Menerapkan perbaikan serupa pada seluruh modal CRM (Modal Detail Pelanggan, Modal WhatsApp Assistant, dan Modal Konfigurasi Program Loyalty).
+      - **Verifikasi Kualitas**:
+        - Vitest: **231/231 unit tests PASS across 40 test files (100% GREEN)**.
+        - Vite production build sukses dalam 2.05 detik.
+    44. **Eliminasi Void/Kekosongan Bawah & Restrukturisasi Sub-Tab Modal CRM (`src/pages/CRM.jsx`) (2026-10-01)**:
+      - **Akar Masalah (Root Cause)**:
+        - Penggunaan `items-start` pada overlay backdrop sebelumnya menyebabkan modal menempel di plafon/atas layar pada viewport desktop/tablet, menciptakan kekosongan hitam masif di bagian bawah layar.
+        - Pada kartu modal tidak terdapat footer visual yang mengunci bagian bawah (*grounded footer*), sehingga akhir konten tampak terpotong canggung.
+        - Penumpukan 4 seksi vertikal sekaligus (Stamp, Finansial, Catatan Preferensi Kru, dan Histori Kunjungan) menciptakan pergeseran proporsi modal.
+      - **Solusi Rekayasa Antarmuka & Craftsmanship**:
+        - **Vertical Centering Seimbang**: Mengembalikan overlay backdrop ke `flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto` dengan kartu modal `max-h-[90vh] overflow-hidden my-auto`, sehingga modal selalu berada persis di tengah vertikal layar secara simetris tanpa clipping atas maupun kekosongan bawah.
+        - **Sistem Sub-Navigasi Tab Interaktif**:
+          - Tab 1: **"Histori Transaksi Cuci (N)"** dengan visual scroll daftar cuci terisolasi rapi.
+          - Tab 2: **"Profil & Catatan Kru"** dengan form Nama Pemilik, WhatsApp, dan catatan handling bay/alergi parfum.
+        - **Pinned Sticky Footer Berkelas**:
+          - Menambahkan footer permanen di bagian bawah modal berisi indikator status segmen CRM live, tombol aksi cepat **"Kirim WhatsApp"**, dan tombol **"Tutup"**.
+        - Standar ini diterapkan konsisten pada Modal Detail Pelanggan, Modal Retention Assistant, dan Modal Konfigurasi Program Loyalty.
+      - **Hasil Pengujian**:
+        - Vitest: **231/231 unit tests PASS across 40 test files (100% GREEN)**.
+        - Vite production build sukses dalam 1.93 detik.
+    45. **Implementasi Pure Dead-Center Viewport Window untuk Seluruh Modal CRM (`src/pages/CRM.jsx`) (2026-10-01)**:
+      - **Kebutuhan Pengguna**:
+        - Memastikan seluruh popup modal (Detail Pelanggan & Loyalty, WhatsApp Retention Assistant, dan Konfigurasi Program) selalu muncul **tepat di titik tengah matematis jendela layar (dead-center of window)** tanpa bias margin, pergeseran scroll backdrop, atau kekosongan asimetris.
+      - **Solusi Arsitektur Antarmuka (Standard Radix / Tailwind Dialog Pattern)**:
+        - **Viewport Fixed Inset**: Menggunakan pembungkus terluar `fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in`. Menghapus `overflow-y-auto` dari overlay luar agar tidak merusak kalkulasi flex center browser.
+        - **Card Clamping & Zero-Margin Bias**: Menghapus kelas `my-auto` pada kartu dialog dan menetapkan batas tinggi kaku `max-h-[85vh]` dengan animasi `animate-pop-in`. Ini menjamin modal berada di 50% koordinat X dan 50% koordinat Y layar dengan batas aman simetris 7.5vh di atas dan 7.5vh di bawah.
+        - **Internal Scrolling Terisolasi**: Scrolling hanya terjadi di dalam kontainer konten `overflow-y-auto flex-1` di antara Pinned Sticky Header dan Pinned Sticky Footer.
+      - **Hasil Pengujian**:
+        - Vitest: **231/231 unit tests PASS across 40 test files (100% GREEN)**.
+        - Vite production build sukses dalam 1.93 detik.
+    46. **Bedah Visual Komparasi Dua Tangkapan Layar & Penyempurnaan Intrinsic Height + `min-h-0` (`src/pages/CRM.jsx`) (2026-10-01)**:
+      - **Temuan Analisis Gambar**:
+        1. *Gambar 1 (Fortuner BK1968LNA - Reguler)*: Menampilkan bagian atas modal (Header, Plat, Tombol Close `X`), namun bagian bawah (Footer, Tombol Kirim WA/Tutup) terdorong ke luar batas bawah layar akibat tinggi intrinsik konten melebihi tinggi layar.
+        2. *Gambar 2 (Xpander - VIP 6x Cuci)*: Menampilkan bagian bawah modal (Footer utuh), namun bagian atas modal (Plat nomor, badge VIP, dan tombol close `X`) terdorong ke luar batas atas viewport (`top < 0`), hanya tersisa teks `Model: Xpander...`.
+        3. *Akar Masalah Bersama*: Kontainer flexbox child pada browser secara default memiliki properti `min-height: auto`. Tanpa deklarasi `min-h-0`, elemen anak menolak mengecil di bawah tinggi kontennya, sehingga modal membengkak melebihi `max-h` dan flexbox centering mendorong ujung atas keluar layar.
+      - **Solusi Rekayasa Sistem**:
+        1. *Flexbox Clamping (`min-h-0`)*: Menambahkan `min-h-0` pada seluruh kontainer scrollable body (`overflow-y-auto flex-1 min-h-0`), memaksa browser mematuhi batas `max-h-[82vh]`.
+        2. *Kompaksi Spacing & Padding*: Mengoptimalkan padding header (`px-5 py-3.5`), kartu slot stamp (`py-2 rounded-lg`), metrik finansial (`py-2 px-2.5`), dan membatasi tinggi daftar transaksi (`max-h-40 overflow-y-auto`).
+        3. *Hasil Layout*: Total tinggi modal kini hanya ~500px, sehingga pada layar 600px s/d 1080px modal tampil **100% tepat di tengah window**, dengan header (tombol `X`) dan footer (tombol `Tutup`) selalu utuh dan terlihat jelas.
+      - **Hasil Pengujian**:
+        - Vitest: **231/231 unit tests PASS across 40 test files (100% GREEN)**.
+        - Vite production build sukses dalam 1.98 detik.
+    47. **Kustomisasi Multi-Tenant Kriteria VIP & Ambang Batas RFM (`src/services/crmService.js`, `src/pages/CRM.jsx`) (2026-10-01)**:
+      - **Latar Belakang & Filosofi Bisnis**:
+        - Setiap outlet/tenant carwash memiliki profil operasional dan perilaku pelanggan yang berbeda. Outlet carwash kilat express di pusat kota memiliki siklus cuci 7-10 hari (sehingga 20 hari sudah terhitung churn), sedangkan carwash detailing di pinggiran kota memiliki siklus cuci 3-4 minggu.
+        - Selain itu, outlet premium menginginkan status VIP tidak hanya berdasarkan frekuensi kunjungan (≥ 5 kali), melainkan dapat dikombinasikan dengan minimal akumulasi rupiah belanja.
+      - **Arsitektur Rekayasa & Backward Compatibility**:
+        - **Definisi Parameter Dinamis (`DEFAULT_CRM_SETTINGS`)**:
+          - `vip_min_visits`: Minimal total kunjungan cuci mobil untuk menjadi VIP (Default: 5).
+          - `vip_min_spent`: Minimal total akumulasi belanja Carwash + Cafe untuk menjadi VIP (Default: Rp 0 / opsional).
+          - `loyal_min_visits`: Minimal total kunjungan untuk Pelanggan Reguler (Default: 3).
+          - `active_days_threshold`: Batas hari terhitung "Aktif Baru" (Recency) (Default: 14 hari).
+          - `churn_days_threshold`: Batas alarm risiko pelanggan hilang (Churn) (Default: 30 hari).
+          - `vip_retention_mode`: Pilihan perilaku status mantan VIP saat tidak aktif:
+            - `DYNAMIC` (Default Preset): Mengubah status mantan VIP yang tidak datang > churnDays menjadi `Berisiko Churn` agar staf kasir/marketing segera mengirimkan WhatsApp Winback.
+            - `PERMANENT`: Mempertahankan gelar VIP kapan pun pelanggan datang, dengan menyematkan label peringatan `[VIP (Inaktif >N Hari)]`.
+        - **Backend Persistence**:
+          - Memperluas tabel `crm_loyalty_programs` via `getLoyaltyProgramSettings` & `saveLoyaltyProgramSettings` untuk menyimpan dan memuat konfigurasi per `tenant_id`.
+          - `aggregateCustomerCRMData` secara otomatis menginjeksi pengaturan tenant ke mesin `calculateRFMSegment({ settings: loyaltyProgram })`.
+      - **Antarmuka Pengaturan Terpadu (UI/UX Craftsmanship)**:
+        - Memperluas modal menjadi **"Pengaturan Loyalty & Kriteria CRM"** dengan 2 sub-tab:
+          - **Tab 1: Program Stamp & Hadiah** (Target stamp stepper, kategori hadiah, preset nama populer, kartu stamp live preview).
+          - **Tab 2: Kriteria VIP & Ambang RFM** (Stepper kunjungan VIP, input nominal belanja VIP rupiah, input ambang hari aktif vs churn, kartu pilihan mode retensi dinamis vs permanen, live rule summary bento box, dan tombol "Reset ke Standar").
+      - **Hasil Pengujian**:
+        - Vitest: **237/237 unit tests PASS across 40 test files (100% GREEN)**, termasuk uji regresi custom threshold & mode permanen VIP.
+        - Vite production build sukses dalam 2.31 detik tanpa error.
 
+    47. **Integrasi Penuh Dua Arah Mesin CRM & Loyalty Stamp di Layar Kasir POS (`CustomerLoyaltyBanner.jsx`, `CarwashPOSPage.jsx`, `HybridPOSPage.jsx`) (2026-10-01)**:
+      - **Kebutuhan Pengguna & Latar Belakang Bisnis**:
+        - Sebelumnya integrasi CRM hanya bersifat satu arah (transaksi kasir dicatat ke DB, lalu dihitung di halaman CRM). Kasir di lapangan tidak mengetahui apakah kendaraan yang datang adalah VIP, berapa kali sudah berkunjung, atau apakah berhak atas reward cuci gratis.
+        - Kasir membutuhkan *Customer Quick-Lookup* reaktif saat mengetik plat nomor, tombol *Auto-Fill* profil kendaraan (Model, No WA, Catatan kru), serta tombol *Klaim Hadiah Loyalty* langsung memotong tagihan di struk kasir.
+      - **Arsitektur Rekayasa & Komponen Baru**:
+        - **`src/services/crmService.js`**:
+          - `lookupCustomerByPlate(db, tenantId, plateQuery)`: Pencarian reaktif cepat berbasis plat nomor yang mengagregasikan total kunjungan, nominal belanja Carwash + Cafe, kalkulasi RFM segmentasi, dan kesiapan klaim reward stamp digital (`isRewardReady`). Mendukung normalisasi plat nomor dengan spasi maupun tanpa spasi serta kompatibel dengan field `plat` dan `plat_nomor`.
+          - `recordLoyaltyClaim(db, payload)`: Menyimpan log klaim hadiah ke tabel `crm_loyalty_logs` terikat pada `id_struk` dan `plat`.
+          - `upsertCRMCustomerProfile(db, payload)`: Sinkronisasi otomatis data profil pelanggan (nama, nomor WA, model kendaraan, catatan kru) dari intake POS langsung ke tabel `crm_customers`.
+        - **`src/components/pos/CustomerLoyaltyBanner.jsx` (Komponen Reaktif POS)**:
+          - Menampilkan badge segmen dinamis (👑 VIP, 🚗 Loyal, 🚨 Berisiko Churn, ✨ Pelanggan Baru).
+          - Menampilkan indikator kunjungan (`Kunjungan ke-(N+1)`) dan progres stamp (`X / Target Stamp`).
+          - Menampilkan profil cepat: Model mobil, nomor WhatsApp, dan catatan khusus kru (misal: *velg doff jangan chemical keras*).
+          - **Tombol "Gunakan Data Profil"**: Mengisi otomatis form intake dengan 1 klik.
+          - **Banner & Tombol "🎁 Klaim Hadiah ke Transaksi Ini"**: Jika stamp genap kelipatan target, tombol klaim muncul dengan animasi lembut; saat diklik otomatis menerapkan diskon 100% cuci pada struk dan menyediakan tombol batalkan klaim.
+      - **Integrasi di Antarmuka POS Kasir**:
+        - **`src/pages/pos/CarwashPOSPage.jsx`**: Banner terpasang reaktif di bawah input plat kendaraan, kalkulasi total diskon menggabungkan diskon promo dan reward loyalty gratis cuci, serta checkout otomatis melakukan sinkronisasi profil CRM dan pencatatan log klaim reward.
+        - **`src/pages/pos/HybridPOSPage.jsx`**: Banner terpasang pada modul intake Carwash estafet, kalkulasi `grandTotal` dan `struk` otomatis mencakup `loyaltyRewardDiskonNominal`, serta rincian diskon ditampilkan transparan pada panel pembayaran desktop maupun mobile.
+      - **Hasil Pengujian**:
+        - Vitest: **240/240 unit tests PASS across 40 test files (100% GREEN)**.
+        - Vite production build sukses dalam 1.89 detik tanpa peringatan error.
 
+    48. **Kepatuhan Penuh Standard Enterprise Semantic Table Suite pada CRM & Modal Riwayat (`RelationTable.jsx`, `Table.jsx`, `src/pages/CRM.jsx`) (2026-10-01)**:
+      - **Kepatuhan Format Semantik**:
+        - Memastikan tabel CRM utama menggunakan `RelationTable` yang dibangun 100% di atas **Enterprise Semantic Table Suite (VRS_2026 Cyan Master)**:
+          - Wrapper pelindung `TableContainer` dengan border subtle & rounded frame.
+          - Elemen `Table` murni dengan `TableHeader (sticky)` dan `TableBody`.
+          - Header interaktif `TableSortHead` yang terhubung langsung ke hook `useTableSort` (sorting dua arah ascending/descending pada kolom Plat, Model, Loyalty Stamp, dan Akumulasi Belanja).
+          - Sel data `TableCell` dengan penanganan perataan (`align="right"` & `numeric` untuk angka keuangan) dan `tabular-nums font-mono`.
+          - Baris `TableEmpty` elegan saat tidak ada data yang cocok dengan filter segmentasi/pencarian.
+        - **Refactoring Histori Transaksi Cuci pada Modal Detail Pelanggan**:
+          - Menggantikan elemen div sederhana menjadi tabel semantik resmi: `TableContainer`, `Table`, `TableHeader`, `TableRow`, `TableHead`, `TableBody`, `TableCell`, dan `TableEmpty`.
+          - Menampilkan kolom semantik: Layanan Cuci (Paket & Ukuran), Waktu & Kru (Tanggal, Jam, Nama Pencuci), serta Tarif Layanan (Rupiah rata kanan dengan font mono tabular).
+      - **Hasil Pengujian**:
+        - Vitest: **240/240 unit tests PASS across 40 test files (100% GREEN)**.
+        - Vite production build sukses dalam 1.93 detik.
 
+    49. **Integrasi Blok Data CRM Modular Terpadu ke AI Prompt Studio & Intelligence Engine (2026-10-01)**:
+      - **Kebutuhan Pengguna & Latar Belakang Bisnis**:
+        - Memanfaatkan kekayaan data dari tabel CRM baru (`crm_customers`, `crm_loyalty_programs`, `crm_loyalty_logs`) beserta agregasi transaksi lintas sektor (`carwash` & `struk`) ke dalam lapisan intelijen AI.
+      - **Arsitektur Rekayasa & Ekstraksi Data (`src/services/intelligenceEngineService.js`)**:
+        - Memperluas fungsi `calculateCustomerCohorts()` dengan agregasi kaya:
+          - `rewardReadyCount` & `nearRewardCount`: Jumlah pelanggan yang berhak reward digital stamp (misal: 5/5 stamp) dan sisa 1 stamp (4/5 stamp).
+          - `revenueAtRisk`: Total historical monetary value dari seluruh pelanggan yang berstatus `isChurnRisk` (>30 hari inaktif).
+          - `topAtRiskCustomers`: Top 5 pelanggan prioritas win-back dengan durasi inaktif dan histori total belanja.
+          - `highYieldCustomers`: Top 5 pelanggan bernilai belanja tertinggi dengan breakdown belanja silang (`carwashSpent` vs `cafeSpent`).
+          - `serviceAffinity`: Distribusi paket layanan dan persentase popularitas di seluruh basis pelanggan.
+          - Mendukung penyamaran plat nomor anonim (`platMasked`: *B 12** \*\*\**) untuk menjamin standar 100% Zero-PII.
+      - **Penyempurnaan AI Context Builder (`src/services/aiContextBuilder.js`)**:
+        - Menambahkan 4 blok data modular baru ke `MODULAR_DATA_GROUPS` kategori `CRM`:
+          - `crm_stamps_reward`: Progress Stamp Digital & Kesiapan Reward Loyalitas.
+          - `crm_at_risk_list`: Daftar Profil Pelanggan Berisiko Churn (Durasi Inaktif & Nilai LTV).
+          - `crm_cross_spending`: Belanja Silang Pelanggan (Carwash Spent vs Cafe Spent & High-Yield).
+          - `crm_service_affinity`: Preferensi Paket Layanan & Komposisi Kendaraan Favorit.
+        - Mengintegrasikan renderer blok data mandiri dan export JSON deterministik (`exportCleanJSON`).
+      - **Hasil Pengujian**:
+        - Vitest: **241/241 unit tests PASS across 40 test files (100% GREEN)**.
+        - AST Scope Audit: 100% clean scope pass di seluruh 10 halaman.
+        - Vite production build sukses dalam 1.86 detik.
 
+    50. **Simulasi Pengujian Langsung & Verifikasi Fungsionalitas Kanban Bay Carwash (2026-10-02)**:
+      - **Tujuan Pengujian**:
+        - Memverifikasi secara langsung dan mendalam kelayakan operasional sistem Kanban Bay pada modul antrean carwash (`src/pages/CarwashQueue.jsx`).
+      - **Cakupan Pengujian & Skenario Simulasi (`src/pages/__tests__/CarwashQueueKanban.test.jsx`)**:
+        - `SIM-01`: Verifikasi Rendering UI 3 Kolom Kanban Bay (`Antrean Masuk`, `Sedang Dicuci (Bay)`, `Siap Diambil`), kontrol mode view (`Kanban Bay` vs `Daftar Tab`), serta filter kehadiran.
+        - `SIM-02`: Simulasi Pemetaan Data Masuk ke Alur 3 Kolom Kanban (Stream Classification: Waiting, Washing/Bay, Ready/QC).
+        - `SIM-03`: Simulasi Siklus Transisi Alur Pengerjaan (Pemicu Masuk Bay -> Verifikasi 4 Poin Standard Quality Control Checklist -> Selesai Cuci & Siap Diambil).
+        - `SIM-04`: Simulasi Pembuatan Pesan Notifikasi WhatsApp Otomatis Estafet (`wa.me`) dengan nomor plat, model, dan paket cucian.
+        - `SIM-05`: Simulasi Filter Pencarian & Kehadiran (Ditunggu vs Ditinggal).
+      - **Hasil Pengujian**:
+        - Vitest: **246/246 unit tests PASS across 41 test files (100% GREEN)**.
+        - Waktu eksekusi test suite Kanban Bay: ~666ms.
+        - Sistem Kanban Bay terverifikasi 100% siap digunakan untuk operasional live di lapangan.
 
+    51. **Sinkronisasi Ulang Data Riil Supabase Cloud ke Database Lokal Aplikasi (2026-10-02)**:
+      - **Operasi Sinkronisasi**:
+        - Mengunduh ulang seluruh snapshot tabel operasional dan transaksi langsung dari Supabase Cloud (`https://grwvhsqxuypcdxxqshgs.supabase.co`) dengan metode 100% read-only GET requests tanpa mutasi.
+      - **Tabel & Volume Data Terunduh**:
+        - `struk`: 4.609 baris transaksi kasir
+        - `carwash`: 4.690 baris antrean & pengerjaan cuci mobil/motor
+        - `cafe`: 1.601 baris pesanan menu & F&B
+        - `cashflow`: 1.758 baris arus kas masuk/keluar
+        - `pengeluaran`: 860 baris beban operasional
+        - `stok_barang`: 18 master item persediaan
+        - `daftar_harga_menu`: 37 varian menu cafe
+        - `resep`: 63 formula Bill of Materials (BOM)
+        - `barang_keluar`: 2.447 mutasi konsumsi bahan
+        - `kasir`: 8 profil kasir operasional
+        - `metode_bayar`: 3 metode pembayaran
+        - `pos_balances`: 4 log saldo kasir
+        - `profiles`: 12 akun pengguna & role (termasuk owner)
+      - **Target Output**:
+        - `src/services/realSeedData.json` (Database lokal runtime aplikasi)
+        - `pulled_supabase_data/` (Snapshot terisolasi per tabel)
+      - **Verifikasi**:
+        - Vitest: **246/246 unit tests PASS (100% GREEN)** di 41 file test.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    52. **Perbaikan Visibilitas Menu Dropdown 'Shift & Kas' pada POS (`HybridPOSPage.jsx`) (2026-10-03)**:
+      - **Akar Masalah (Root Cause)**:
+        - Container card header POS utama (`glass-panel`) sebelumnya memiliki kelas `overflow-hidden`, dan tombol dropdown "Shift & Kas" berada di dalam pembungkus tab dengan kelas `overflow-x-auto`.
+        - Sesuai spesifikasi CSS, kontainer dengan `overflow-x: auto` secara otomatis mengompilasi `overflow-y` menjadi `auto`/terpotong, dan kontainer terluar dengan `overflow-hidden` memotong setiap elemen anak yang diposisikan `absolute top-full`, sehingga menu popover dropdown tersembunyi/terpotong di luar viewport.
+      - **Solusi Rekayasa Antarmuka**:
+        - Menghilangkan `overflow-hidden` dari container header card utama (`z-30 w-full max-w-full`).
+        - Memisahkan tombol **Grup 3: Dropdown Operasional Kas & Shift** ke luar dari kontainer horizontal scroll `overflow-x-auto`, sehingga berada langsung di kontainer flex header yang ber-overflow visible.
+        - Memperbarui z-index backdrop overlay (`z-40`) dan panel popover (`z-50`) dengan animasi slide-up yang halus.
+        - Memperbaiki popover Saldo Laci Kasir (`showCashDrawerDetail`) dengan z-index `z-50` yang selaras agar tidak terpotong.
+      - **Verifikasi Kualitas**:
+        - Vitest: **246/246 unit tests PASS across 41 test files (100% GREEN)**.
+        - Vite production build sukses dalam 2.02 detik.
 
 

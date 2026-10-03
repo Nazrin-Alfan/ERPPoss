@@ -12789,6 +12789,15 @@
     "status": "Selesai"
   },
   {
+    "id_detail": "e7d2ea3a-c9ed-4554-ad6d-77bab34b8983",
+    "id_struk": "bc77824e-5ebf-474f-b3cf-28d7852d7a03",
+    "nama_menu": "Kopi Susu Gula Aren Dingin",
+    "qty": 1,
+    "harga_satuan": 20000,
+    "subtotal": 20000,
+    "status": "Selesai"
+  },
+  {
     "id_detail": "7953e7b9-e3b3-4019-a0b7-ebfa99906dac",
     "id_struk": "9556e3af-d25e-4f2f-b4dc-59072c8fed4a",
     "nama_menu": "Sanger Dingin",
@@ -12915,6 +12924,15 @@
     "status": "Selesai"
   },
   {
+    "id_detail": "4d0a58d3-9a5c-4f81-a68a-20dd547d8208",
+    "id_struk": "b0a7c421-baf1-4838-a00e-49fd367f2b08",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
     "id_detail": "cc6bddda-1c10-41fd-8a01-162f3c986538",
     "id_struk": "aac4f003-50d4-444a-86a1-b679025335f5",
     "nama_menu": "Sanger Panas",
@@ -12930,6 +12948,1464 @@
     "qty": 1,
     "harga_satuan": 5000,
     "subtotal": 5000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "641580f5-4a30-4443-842c-ab7e7e77824a",
+    "id_struk": "fa74a43f-b63b-4fa2-8d90-f3191da43ee5",
+    "nama_menu": "Teh Manis/Tawar Panas",
+    "qty": 1,
+    "harga_satuan": 8000,
+    "subtotal": 8000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "0c7f1272-6a3c-4175-8850-349230e9e5ee",
+    "id_struk": "97213cee-beac-4a14-8621-93983a451ad8",
+    "nama_menu": "Sanger Dingin",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "0a9e2006-c603-4129-afbc-34efcc9842bc",
+    "id_struk": "cc5cff87-2e03-4077-9f7f-e31f65e5bddc",
+    "nama_menu": "Air Mineral",
+    "qty": 1,
+    "harga_satuan": 5000,
+    "subtotal": 5000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "27806e9c-4fab-415b-9c2f-298ae5af592b",
+    "id_struk": "063bf76d-5f7e-4060-963f-aef4930d8461",
+    "nama_menu": "Air Mineral",
+    "qty": 1,
+    "harga_satuan": 5000,
+    "subtotal": 5000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "b5cf7151-190a-4073-9668-c5720c4a1149",
+    "id_struk": "063bf76d-5f7e-4060-963f-aef4930d8461",
+    "nama_menu": "Kopi Susu Gula Aren Dingin",
+    "qty": 1,
+    "harga_satuan": 20000,
+    "subtotal": 20000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "c253597e-4c21-4cc3-b454-39b74a678e56",
+    "id_struk": "063bf76d-5f7e-4060-963f-aef4930d8461",
+    "nama_menu": "Kentang Goreng",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "0821079a-aa4c-446a-83b5-4a9ba6398e10",
+    "id_struk": "cc5cff87-2e03-4077-9f7f-e31f65e5bddc",
+    "nama_menu": "Nugget Goreng",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "6c67cfc6-42e1-4f0e-8c15-4a53538ad56e",
+    "id_struk": "71b08437-5cd2-48e8-9987-51807876cf9c",
+    "nama_menu": "Indomie kuah",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "bac2e183-0430-406e-9642-428fffaaff34",
+    "id_struk": "71b08437-5cd2-48e8-9987-51807876cf9c",
+    "nama_menu": "Kentang Goreng",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "99deb638-2573-43b0-a148-c27ffe7a5696",
+    "id_struk": "815a6eca-980b-4a3b-8648-57139eaa4875",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "2e033dc2-c9e6-477c-b792-8ed2dfaad5fd",
+    "id_struk": "b630d899-dd11-4263-8709-2de427a57104",
+    "nama_menu": "Air Mineral",
+    "qty": 1,
+    "harga_satuan": 5000,
+    "subtotal": 5000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "f80f193a-fb50-4706-807a-ee2422c9d252",
+    "id_struk": "28827620-4d64-41dd-9114-8b6c3b35814b",
+    "nama_menu": "Sanger Dingin",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "c08c1752-42c2-42bb-b395-ca3e7e3c62a4",
+    "id_struk": "c3a286cf-b74e-4fcc-9158-58c5939fa723",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "f4041564-accc-41b3-bd3c-15c409d55178",
+    "id_struk": "736ecf1c-3291-4fda-9915-f95fc4b96df9",
+    "nama_menu": "Sanger Dingin",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "fbe1e611-0f8a-436e-9b23-f086a0bc073c",
+    "id_struk": "3913789f-75f0-47a5-928c-3db41b143c2e",
+    "nama_menu": "Kopi Susu Gula Aren Dingin",
+    "qty": 1,
+    "harga_satuan": 20000,
+    "subtotal": 20000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "a228c975-f222-4207-b7d5-3d3358cce59d",
+    "id_struk": "acf4aa74-b5e1-44f3-b101-ce13f1071def",
+    "nama_menu": "Air Mineral",
+    "qty": 1,
+    "harga_satuan": 5000,
+    "subtotal": 5000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "ef2ab80f-2883-4354-87f0-655c39b65c36",
+    "id_struk": "28a27c3e-fc37-42fb-ab6b-fe111a9b8741",
+    "nama_menu": "Kopi Susu Gula Aren Panas",
+    "qty": 1,
+    "harga_satuan": 20000,
+    "subtotal": 20000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "dc941f79-62f3-43ab-a7b4-b6e962868c4c",
+    "id_struk": "28a27c3e-fc37-42fb-ab6b-fe111a9b8741",
+    "nama_menu": "Sanger Panas",
+    "qty": 2,
+    "harga_satuan": 15000,
+    "subtotal": 30000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "3d592cb2-b225-491b-8df8-6219bdc10a70",
+    "id_struk": "acf4aa74-b5e1-44f3-b101-ce13f1071def",
+    "nama_menu": "Sanger Dingin",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "ad4904ec-1ce7-4fde-9d1d-52f60a51c957",
+    "id_struk": "64898583-0b90-44e7-bb3b-97eb11ef0408",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "7d61934b-f67b-462f-a3a9-8d9ee956a1c2",
+    "id_struk": "76c1c7bf-b71b-4944-8afc-2abba650c5c2",
+    "nama_menu": "Sanger Dingin",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "75855931-f906-43bb-a283-3dae15808f37",
+    "id_struk": "6538ae77-61a1-4357-973d-dc81c76304a5",
+    "nama_menu": "Kopi Susu Gula Aren Dingin",
+    "qty": 1,
+    "harga_satuan": 20000,
+    "subtotal": 20000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "a2aa9587-ee35-4f8c-bc25-99230fa388df",
+    "id_struk": "acf4aa74-b5e1-44f3-b101-ce13f1071def",
+    "nama_menu": "Indomie goreng jumbo",
+    "qty": 1,
+    "harga_satuan": 18000,
+    "subtotal": 18000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "e584aa72-81a4-467e-a9e0-777af9c31866",
+    "id_struk": "9a3494c3-91ce-4e45-b0c8-ca85a8c0d5aa",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "aaa125cc-3714-4204-b68b-7eedd7ab0f25",
+    "id_struk": "378cc051-525d-4f61-a0b6-e7091184e17d",
+    "nama_menu": "Americano Panas",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "7a4345f0-e99a-41cb-a07a-0a5b120a7b76",
+    "id_struk": "6e784a6c-37df-4677-a1c3-90fa2447045b",
+    "nama_menu": "Americano Panas",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "af0c7b02-b202-4b21-94ff-df59d7f57f7f",
+    "id_struk": "a1a84f3d-5723-460d-8592-577a57fbbd43",
+    "nama_menu": "Kopi Late Panas",
+    "qty": 1,
+    "harga_satuan": 18000,
+    "subtotal": 18000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "232aa93d-512d-44dd-acce-32af62001d82",
+    "id_struk": "fab4833b-f060-4717-9b4a-02ca7149f5a7",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "007f7ca6-01d3-4a57-938e-835eab22b960",
+    "id_struk": "5e4f774c-3053-430f-8f54-d509b5763e0c",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "df9ff23a-5c78-4c5b-944d-43f63242fd51",
+    "id_struk": "03d40ca2-b8c4-4c50-b57f-58efe5c14d73",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "8775226a-1fc2-4de4-809e-b89d54c1ec62",
+    "id_struk": "0807a8aa-bb90-45df-9d50-c695f93d5603",
+    "nama_menu": "Sanger Dingin",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "e30c64b5-97db-4017-a984-86bc82babca8",
+    "id_struk": "d7e1cf37-b794-4f17-baff-faccbcad951f",
+    "nama_menu": "Americano Panas",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "1975626c-0ba4-4326-977d-ee170e3123db",
+    "id_struk": "96973d38-7d75-4567-877f-2d39c02e9d2b",
+    "nama_menu": "Americano Panas",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "f8447561-742b-4da9-b0c9-b1d7d6445d62",
+    "id_struk": "b0a24da7-8cb4-4b33-8bf6-373ceb58ab2d",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "0552bae8-1605-44b4-af32-9a23724babfe",
+    "id_struk": "71ec541a-3266-4467-8403-f84ff90bdf63",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "ff32b03a-5794-4b3d-acf7-1484aa80887d",
+    "id_struk": "90fa9a67-7def-4054-9804-0c8f1b249cda",
+    "nama_menu": "Kopi Susu Gula Aren Dingin",
+    "qty": 1,
+    "harga_satuan": 20000,
+    "subtotal": 20000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "b80683cf-35db-4ea9-ae76-7b8ae0512e5e",
+    "id_struk": "f3b4f97f-426f-48c3-9b67-45157e5e94b4",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "c0c2e5f2-5d93-45e9-bd8e-4a05af991f75",
+    "id_struk": "5f047e2d-5e92-4a42-b2b0-7491af9e098c",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "c06027e1-bd87-4bbf-8713-901491537f85",
+    "id_struk": "f3b4f97f-426f-48c3-9b67-45157e5e94b4",
+    "nama_menu": "Teh Manis/Tawar Dingin",
+    "qty": 1,
+    "harga_satuan": 8000,
+    "subtotal": 8000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "f786f210-0108-467d-b815-28f89aeba518",
+    "id_struk": "825f4edc-a322-4ba7-a1fc-8e35dd61845a",
+    "nama_menu": "Air Mineral",
+    "qty": 1,
+    "harga_satuan": 5000,
+    "subtotal": 5000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "f24a3305-1ec2-4b07-b7dc-236ba37c5295",
+    "id_struk": "89d22d5a-b2b2-426d-920e-c5aae64f43f9",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "feadd909-f587-44a7-8c96-cf2affd8485b",
+    "id_struk": "37ca1e6b-4da9-4289-8a28-128c329cf91d",
+    "nama_menu": "Kopi Susu Gula Aren Panas",
+    "qty": 1,
+    "harga_satuan": 20000,
+    "subtotal": 20000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "f9499e46-d38f-487a-bc32-9755d7b5f6e5",
+    "id_struk": "9c5c510e-04f8-464c-94dd-9b09afe70cd0",
+    "nama_menu": "Badak Susu",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "f1bb4a5e-1cf0-4b7b-ae31-8c713fab1959",
+    "id_struk": "b59d211a-2c49-44e2-ad98-7644124db012",
+    "nama_menu": "Air Mineral",
+    "qty": 1,
+    "harga_satuan": 5000,
+    "subtotal": 5000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "c012f9e4-d3b8-4e5a-a1ab-8355fbf2b250",
+    "id_struk": "b59d211a-2c49-44e2-ad98-7644124db012",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "09419583-c440-4c7d-b794-7bbce6625599",
+    "id_struk": "ff320682-60f7-461c-8aba-8ba68c02ff6b",
+    "nama_menu": "Americano Panas",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "f22dcf19-1c16-406f-8ee0-6a3458aed681",
+    "id_struk": "247c1ec4-32b5-40b2-8006-b988d93c1d87",
+    "nama_menu": "Air Mineral",
+    "qty": 1,
+    "harga_satuan": 5000,
+    "subtotal": 5000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "872cef3f-f775-4dd9-8b53-61c8cbbd5853",
+    "id_struk": "6be3b1cd-6cdd-4945-8228-6256ec17cf39",
+    "nama_menu": "Air Mineral",
+    "qty": 1,
+    "harga_satuan": 5000,
+    "subtotal": 5000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "17736a1b-cff1-4852-b5e7-16bd1909a6ab",
+    "id_struk": "9df899e5-b9ec-4d53-afc5-9379874d56a8",
+    "nama_menu": "Air Mineral",
+    "qty": 1,
+    "harga_satuan": 5000,
+    "subtotal": 5000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "273790d1-3537-4184-93fe-7d9eee48dd78",
+    "id_struk": "c3d42521-9407-453f-bcbe-540e1a4217f2",
+    "nama_menu": "Kopi Late Panas",
+    "qty": 1,
+    "harga_satuan": 18000,
+    "subtotal": 18000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "cedda1bc-7f6b-4573-adf5-413603265814",
+    "id_struk": "139c51e3-e485-437a-b41e-160b60687401",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "f1e6071c-a0f5-4d57-ac06-7d2f9f4763b8",
+    "id_struk": "ba2fa689-1c6e-4ea2-9e7c-0a8a3598a757",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "24fd0e4e-2154-4e71-81ec-28e5a7b5808f",
+    "id_struk": "b4fc4882-0e98-4e5b-8a3d-633b74f22202",
+    "nama_menu": "Americano Panas",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "e5cfa675-f903-440c-8294-97842942a500",
+    "id_struk": "cdf5dcf4-b671-42ac-b941-9e4759daf7b9",
+    "nama_menu": "Sanger Dingin",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "0d990589-8524-48d0-9d0e-21c916a7b433",
+    "id_struk": "5f461d35-2687-495f-99dd-89ed76c9dcd2",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "8d31abfc-de16-40ab-ac20-72797db69fad",
+    "id_struk": "82e06704-ef35-46ec-a262-1beeedfd84d6",
+    "nama_menu": "Americano Panas",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "facba505-4e41-4cb2-a6f1-c2986eb5b864",
+    "id_struk": "f0d65121-ba9a-4a1c-ad11-14eeba014ffb",
+    "nama_menu": "Americano Panas",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "e676d9c5-08f9-45fd-8798-fc0826ab6e8b",
+    "id_struk": "8bd561db-1df2-464b-9d33-32ccae11e19a",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "22f4d292-1f0d-4cda-9aad-756aca40d91c",
+    "id_struk": "7efb620a-d957-4384-9da4-90e5a6078f4f",
+    "nama_menu": "Americano Panas",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "fd53c1d3-cc83-425d-bc09-c3f14147b3e1",
+    "id_struk": "8880aad4-1825-47a2-8608-48376038c364",
+    "nama_menu": "Badak Susu",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "cb9359e6-0202-48b3-89d5-cb15d742b16b",
+    "id_struk": "946dbcd3-58a5-4149-a0b2-c17de1efa030",
+    "nama_menu": "Sanger Panas",
+    "qty": 2,
+    "harga_satuan": 15000,
+    "subtotal": 30000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "b5e4ffc2-dfc4-4bbc-8911-fe24ee5c9dab",
+    "id_struk": "10ceb39c-7559-4d68-be86-0e94ae8f2871",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "df1c9b52-bfd7-4770-a8d9-45ff318b8035",
+    "id_struk": "10ceb39c-7559-4d68-be86-0e94ae8f2871",
+    "nama_menu": "Air Mineral",
+    "qty": 2,
+    "harga_satuan": 5000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "f640dc6a-d394-48bc-88e9-e952e4a76b82",
+    "id_struk": "16925f6c-c140-40c7-ac14-361ea620c2c2",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Pending"
+  },
+  {
+    "id_detail": "b0e006c5-3a7a-44db-b8e2-613fd2a87ffb",
+    "id_struk": "5649f6b4-7d23-4623-bb59-a23e34f53c57",
+    "nama_menu": "Americano Panas",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "7b140813-4938-435f-a87a-a72e78b10522",
+    "id_struk": "2bb961f8-c5fc-467f-a187-58db06962d42",
+    "nama_menu": "Air Mineral",
+    "qty": 1,
+    "harga_satuan": 5000,
+    "subtotal": 5000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "b91304d9-8d39-4671-bd11-0c3cbeab3b94",
+    "id_struk": "478f0432-a7c2-4c4a-b14a-097018763128",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "6a795aff-8c5b-46ef-846e-9376e97cca1c",
+    "id_struk": "584e63f0-e67b-45a4-8557-1c598fa6fe8f",
+    "nama_menu": "Sanger Dingin",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "a4cfbc07-b562-4c36-a855-ae734cb27995",
+    "id_struk": "e073f752-048c-4262-8f89-92d37a9e2115",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "248e3740-cab2-48dc-94c7-80a7a61126b3",
+    "id_struk": "5b91b1f3-8ab8-4a9c-8038-78c26b512679",
+    "nama_menu": "Teh Manis/Tawar Panas",
+    "qty": 1,
+    "harga_satuan": 8000,
+    "subtotal": 8000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "e599e0f9-6db4-42cf-a0eb-f4c47f249ee6",
+    "id_struk": "ba21b6ee-eaf4-483b-ab39-1154aebbb2ea",
+    "nama_menu": "Sanger Panas",
+    "qty": 2,
+    "harga_satuan": 15000,
+    "subtotal": 30000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "50bf99cc-9993-452d-8690-f9be60bfb2ec",
+    "id_struk": "8ee80a5f-b50b-41de-bdfa-5ef94ca73f8c",
+    "nama_menu": "Americano Dingin",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "b0bd4ede-3bd4-41de-b6c5-a025c4d6ff92",
+    "id_struk": "a72c80b9-5717-4d3a-b624-0f26c1561f25",
+    "nama_menu": "Air Mineral",
+    "qty": 1,
+    "harga_satuan": 5000,
+    "subtotal": 5000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "15ed5163-5bfb-4257-8d36-7996ff00e408",
+    "id_struk": "92852f1f-ae59-45bb-8c62-0b2972f38d94",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "6242abe6-3955-401f-b1ab-0a46f2fa2808",
+    "id_struk": "f9cdf047-968c-4f42-83ee-f25882905735",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "569705f4-c2ec-4c12-9a46-bdb9a67f8ae7",
+    "id_struk": "5b91b1f3-8ab8-4a9c-8038-78c26b512679",
+    "nama_menu": "Kentang Goreng",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "c47b6fd8-06ba-4b0b-ad6f-40df4a7c3891",
+    "id_struk": "e5bea98f-3ea8-45bf-b353-219579b3c681",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Pending"
+  },
+  {
+    "id_detail": "53ad9851-7056-42b5-b93f-efce6e016b9b",
+    "id_struk": "ac170e6a-b78c-416d-a57b-c2c3850d837f",
+    "nama_menu": "Americano Panas",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "c43cf762-56e5-480c-b354-efa2e45c037a",
+    "id_struk": "a18bfc5b-4e34-43af-94b0-034b3b42d542",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "8026eb80-e13c-411c-b7fb-6a311fe4c763",
+    "id_struk": "a18bfc5b-4e34-43af-94b0-034b3b42d542",
+    "nama_menu": "Badak Susu",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "3f0b580f-793a-4a98-84be-4f59dd890acf",
+    "id_struk": "a18bfc5b-4e34-43af-94b0-034b3b42d542",
+    "nama_menu": "Mix pletter",
+    "qty": 1,
+    "harga_satuan": 16000,
+    "subtotal": 16000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "8cb3a839-e147-4e26-9bdf-5c6fb86bd8d6",
+    "id_struk": "b3e862a7-ccd0-4f70-bf10-d1b1070ea5a0",
+    "nama_menu": "Sanger Dingin",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "4ea9e3e5-5198-48ee-bd30-87987fa8f053",
+    "id_struk": "9cbd02d8-7569-49a9-97c2-38ee0e1c6a76",
+    "nama_menu": "Teh Manis/Tawar Panas",
+    "qty": 1,
+    "harga_satuan": 8000,
+    "subtotal": 8000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "40e846df-7e78-4524-9719-3702e572f2ac",
+    "id_struk": "c49b6ccf-f0cb-4864-be52-b9c13977fd16",
+    "nama_menu": "Air Mineral",
+    "qty": 2,
+    "harga_satuan": 5000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "e79808e5-b688-4d69-a1fa-5b42b7267f22",
+    "id_struk": "4af738ba-0319-44ed-91e9-c4b0038ec691",
+    "nama_menu": "Badak Susu",
+    "qty": 2,
+    "harga_satuan": 15000,
+    "subtotal": 30000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "a1c0b1dd-3314-4a5b-a491-9f310c798ff4",
+    "id_struk": "4af738ba-0319-44ed-91e9-c4b0038ec691",
+    "nama_menu": "Kentang Goreng",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "cbdc2db0-6c4d-4310-b927-1d2d91dc65c0",
+    "id_struk": "cf957c5a-32df-4b5a-ac64-811f05d897c6",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "0faef8b8-ec0f-416a-bc41-f0cdabf1e9ea",
+    "id_struk": "46853d47-ca29-48aa-8c89-6d10adb50219",
+    "nama_menu": "Americano Dingin",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "8fc2fed0-9955-484d-81a9-ee412320430f",
+    "id_struk": "46853d47-ca29-48aa-8c89-6d10adb50219",
+    "nama_menu": "Sanger Panas",
+    "qty": 2,
+    "harga_satuan": 15000,
+    "subtotal": 30000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "43ea8857-d18c-4518-9e4d-5ec2cc5c5b76",
+    "id_struk": "c0a5ad2b-3699-40ff-8da0-c65358090332",
+    "nama_menu": "Kopi Susu Gula Aren Dingin",
+    "qty": 1,
+    "harga_satuan": 20000,
+    "subtotal": 20000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "3cb02d8c-61c5-4e21-b13e-1a4572fe2264",
+    "id_struk": "18627945-b33a-4e64-a5ea-9d69a2eb6220",
+    "nama_menu": "Americano Panas",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "47bde4cd-d859-4fcf-ac98-29b868065cd1",
+    "id_struk": "6634b8b5-d344-455e-bf3b-c6f6a5e8c455",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "4f165e38-57ab-45c0-8447-88365e00b319",
+    "id_struk": "436012d2-90f0-462c-a67c-61a62d8b6c67",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "4b2b591b-3650-4ce0-a91f-4fe5a137554b",
+    "id_struk": "66538775-9a7e-44ed-9797-34d1e432702c",
+    "nama_menu": "Air Mineral",
+    "qty": 1,
+    "harga_satuan": 5000,
+    "subtotal": 5000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "8fc52d4c-0a2a-428d-b746-54088c0faf2c",
+    "id_struk": "d2c8ad1a-6751-410d-b5fc-20e100a558eb",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "f30952c8-bd99-4c14-b216-e410e2fe3445",
+    "id_struk": "d2c8ad1a-6751-410d-b5fc-20e100a558eb",
+    "nama_menu": "Kopi Susu Gula Aren Dingin",
+    "qty": 1,
+    "harga_satuan": 20000,
+    "subtotal": 20000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "1d259b02-5838-48fa-84f4-0eb06bbd3d88",
+    "id_struk": "d2c8ad1a-6751-410d-b5fc-20e100a558eb",
+    "nama_menu": "Indomie Goreng",
+    "qty": 2,
+    "harga_satuan": 15000,
+    "subtotal": 30000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "f4902096-5654-4984-bad1-fdfd97873852",
+    "id_struk": "66538775-9a7e-44ed-9797-34d1e432702c",
+    "nama_menu": "Sanger Dingin",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "4a8e0350-3354-4ae6-b4f5-acf54446ffef",
+    "id_struk": "31b1332b-ffeb-49dd-b782-197de42d4b9f",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "2542d214-cee6-4d22-8a62-342ac33245c9",
+    "id_struk": "6b4998a8-9da4-4c46-83fe-1ff67a57e679",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "27e41245-0a39-4611-b9b5-243b05a07803",
+    "id_struk": "656e9b3c-198d-4b1e-bfca-7bd2c0f73075",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "59528231-b75e-44cd-b090-52832aeab36d",
+    "id_struk": "656e9b3c-198d-4b1e-bfca-7bd2c0f73075",
+    "nama_menu": "Air Mineral",
+    "qty": 1,
+    "harga_satuan": 5000,
+    "subtotal": 5000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "e9dba52d-52bd-44b3-8123-9393c86e6c4c",
+    "id_struk": "656e9b3c-198d-4b1e-bfca-7bd2c0f73075",
+    "nama_menu": "Nugget Goreng",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "27aa50b9-24f0-44fd-a055-d14f261c1cc7",
+    "id_struk": "656e9b3c-198d-4b1e-bfca-7bd2c0f73075",
+    "nama_menu": "Kentang Goreng",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "3780e9d6-aa29-4620-b829-914fa0b57ee1",
+    "id_struk": "c9bb95e1-4b82-478c-8736-014191a226fd",
+    "nama_menu": "Americano Panas",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "b4d68357-5159-400a-972d-b32df0e22462",
+    "id_struk": "188ef0e1-72ef-4b18-bfd7-8d08dfdaba6e",
+    "nama_menu": "Badak Susu",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "789280d5-85b3-4146-9a68-b7e1bb9b017d",
+    "id_struk": "53f5f2ce-1c84-48a6-af63-b0a7144d88f8",
+    "nama_menu": "Kopi Late Panas",
+    "qty": 1,
+    "harga_satuan": 18000,
+    "subtotal": 18000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "0c88080f-aea7-47df-80c9-c90718ac24cb",
+    "id_struk": "a5edc289-a267-4a3d-a981-7098daf021dc",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "4374ef5b-291b-4a01-ab75-ce0a008dcd15",
+    "id_struk": "a4c669a3-91c5-4ac1-8762-fc5d76588658",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "2b633ba2-44c1-463d-802a-ada97e452766",
+    "id_struk": "18810a3d-2d00-4a38-a03c-df2b7a1c00cf",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "2d21b5ee-d570-41fa-a647-9e7c153c2037",
+    "id_struk": "2018d85c-9360-40c1-b9f1-ff2ac06ce4cc",
+    "nama_menu": "Sanger Dingin",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "8a723451-1ff1-44ad-867d-6d19665f59f8",
+    "id_struk": "76254e67-e1b8-4828-817b-1a8702a5acc1",
+    "nama_menu": "Americano Dingin",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "33ce8647-a08e-4b78-9d1a-4adba4ed8edf",
+    "id_struk": "fe3a895d-1c88-499e-9eb1-a82d53a64a57",
+    "nama_menu": "Sanger Dingin",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "2ea86814-d8ae-44d4-9d54-a8af6741367d",
+    "id_struk": "a6dde5c8-af6e-434d-833f-47044070d371",
+    "nama_menu": "Teh Manis/Tawar Dingin",
+    "qty": 1,
+    "harga_satuan": 8000,
+    "subtotal": 8000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "aaea35c0-76f7-4e8f-b181-92dfe18cc3f2",
+    "id_struk": "a6dde5c8-af6e-434d-833f-47044070d371",
+    "nama_menu": "Indomie goreng jumbo",
+    "qty": 1,
+    "harga_satuan": 18000,
+    "subtotal": 18000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "85a25f4e-6f3b-4ad8-aaa3-71defdfee159",
+    "id_struk": "9ce7dc8a-d123-4e1b-aa63-e9a36a5cb79d",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "af38fb1b-d2de-4c3b-9ede-6bf824e97905",
+    "id_struk": "e06db51c-85fb-4770-ada8-6a0c821db128",
+    "nama_menu": "Americano Panas",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "323d75a8-fe22-49e5-a430-ebbeb288aa82",
+    "id_struk": "e06db51c-85fb-4770-ada8-6a0c821db128",
+    "nama_menu": "Air Mineral",
+    "qty": 1,
+    "harga_satuan": 5000,
+    "subtotal": 5000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "5c19860d-3125-4a1a-b2a7-e407415440a5",
+    "id_struk": "31fad970-53a7-4b80-93b0-b7e2f47f7492",
+    "nama_menu": "Americano Dingin",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "43b8d924-eb55-4a96-b040-04d6d31533f7",
+    "id_struk": "31fad970-53a7-4b80-93b0-b7e2f47f7492",
+    "nama_menu": "Indomie Goreng",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "d726a193-74a0-497b-9a07-cc9467e4e846",
+    "id_struk": "ac6843b5-7f8f-4269-99db-e08cbbbc4295",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "ef41b5d4-9ce9-4435-9a5d-d43500bfbb67",
+    "id_struk": "d6d4c98b-51c9-4ba6-b714-713fded2cd33",
+    "nama_menu": "Kopi Susu Gula Aren Dingin",
+    "qty": 2,
+    "harga_satuan": 20000,
+    "subtotal": 40000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "e5273297-875e-4b74-bce9-e5f48912ced5",
+    "id_struk": "6f743cc0-eee0-4b39-8f7f-03396ca79e04",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "4c3a19df-0472-4946-b768-10457572557a",
+    "id_struk": "6f743cc0-eee0-4b39-8f7f-03396ca79e04",
+    "nama_menu": "Nugget Goreng",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "2b3660eb-1949-4257-9208-286ee09e5a74",
+    "id_struk": "e25d5c2f-705f-4af1-912a-095c9e499b66",
+    "nama_menu": "Sanger Dingin",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "84f05e84-88eb-4da1-87ac-67b74294ed5e",
+    "id_struk": "58938c59-cee9-4033-ba88-268fb0b2e151",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "551e70d6-bb90-474c-b4ae-0b8f6a08b06e",
+    "id_struk": "03fc84f3-2933-4317-b26a-68d62c3750e5",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "5c1702b3-0245-4b08-86ea-83e0766eead1",
+    "id_struk": "8b4148f5-a527-4bde-83e8-0e7272469894",
+    "nama_menu": "Kopi Susu Gula Aren Dingin",
+    "qty": 1,
+    "harga_satuan": 20000,
+    "subtotal": 20000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "6cdcea3c-4501-449f-b582-8c82f9741918",
+    "id_struk": "4307eaea-1605-4adb-953c-e8b46fdcd400",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "2a03a321-9afc-4638-a29f-91841235d2d2",
+    "id_struk": "424dd8c8-ae9a-42f9-9e61-42fe768a4512",
+    "nama_menu": "Sanger Dingin",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "b2ff992f-9baf-4251-bed4-02a5e1313477",
+    "id_struk": "70f9816d-64c8-49f7-80fb-eaf30ea4ca0e",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "fc7b8936-79b7-445f-8bd3-ed5ead5fa713",
+    "id_struk": "b4a13eff-f96f-430c-b7bf-0f000ed6bb28",
+    "nama_menu": "Kopi Susu Gula Aren Dingin",
+    "qty": 1,
+    "harga_satuan": 20000,
+    "subtotal": 20000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "93f5632b-7cda-4cba-94e6-a58657a8bb68",
+    "id_struk": "cb73d5d3-46f1-40c4-aa85-a509d615a87b",
+    "nama_menu": "Sanger Dingin",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "c4313f08-aeb3-4061-9c3d-70c3f0778d7d",
+    "id_struk": "15758323-397d-4a63-9fab-0c8ec802a840",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "4d85c158-bd34-475b-be43-0d4344da9b16",
+    "id_struk": "be7bf4d9-a70c-4b5e-9767-6031d3acb3e5",
+    "nama_menu": "Sanger Dingin",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "d5734a84-f880-441f-9a08-d9b59fe4a48d",
+    "id_struk": "62fd00cc-b720-4bcd-87b4-9fd39dc5efc3",
+    "nama_menu": "Kopi Late Panas",
+    "qty": 1,
+    "harga_satuan": 18000,
+    "subtotal": 18000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "509cbc71-975b-4f1d-a003-c008a47831b1",
+    "id_struk": "62fd00cc-b720-4bcd-87b4-9fd39dc5efc3",
+    "nama_menu": "Nugget Goreng",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "f589408f-ce13-47cb-a456-18b96875d28c",
+    "id_struk": "e9837b8e-d51b-4230-9ab8-042ed80b95cc",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "b86d1e23-2724-4a29-83d7-dd311ea646ab",
+    "id_struk": "b2b8092f-6985-4e62-8c33-03ba1eb61ce9",
+    "nama_menu": "Sanger Dingin",
+    "qty": 2,
+    "harga_satuan": 15000,
+    "subtotal": 30000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "64d3ab6e-bee4-4f5f-9be5-6ceb6ac63abb",
+    "id_struk": "6905e8a6-461f-4783-862d-d96de4b13a70",
+    "nama_menu": "Americano Panas",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "bcedbd40-f859-4c56-91a0-eb33228c7f4a",
+    "id_struk": "f35c33e1-dabc-45dd-bdf8-c7863bb84d34",
+    "nama_menu": "Sosis Goreng",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "d2f6cad6-8574-4230-842f-62cf8192e8a9",
+    "id_struk": "c95a08d1-d7d9-4e9f-9430-2dcf59fd66f2",
+    "nama_menu": "Indomie goreng jumbo",
+    "qty": 1,
+    "harga_satuan": 18000,
+    "subtotal": 18000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "a4586b6a-6db8-46ba-8462-8961c025c832",
+    "id_struk": "c62caa49-9ac8-4ab3-bff8-11572bba654a",
+    "nama_menu": "Americano Panas",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "5d9bfbfe-e537-4071-ae3e-2ef60d59bd04",
+    "id_struk": "c62caa49-9ac8-4ab3-bff8-11572bba654a",
+    "nama_menu": "Teh Manis/Tawar Panas",
+    "qty": 1,
+    "harga_satuan": 8000,
+    "subtotal": 8000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "68569f7e-1438-42d3-8c54-0f28deb7c21c",
+    "id_struk": "9c7efc08-af67-4418-a544-f75bfdb764a8",
+    "nama_menu": "Americano Dingin",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "71d18054-e942-4ca3-b2e7-e72d04b0a1bd",
+    "id_struk": "5f4b6c73-3dc8-4140-8633-6186bccceda0",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "b809e788-a568-4ebe-b00e-9c3f71f6ab29",
+    "id_struk": "dd0ce824-95ca-444e-bf00-b4905e1cb177",
+    "nama_menu": "Air Mineral",
+    "qty": 1,
+    "harga_satuan": 5000,
+    "subtotal": 5000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "163704ad-3f66-4ce7-8415-5aef6f2f0d6c",
+    "id_struk": "8f9bf162-28e0-439b-819f-80311d6591d8",
+    "nama_menu": "Kopi Susu Gula Aren Dingin",
+    "qty": 1,
+    "harga_satuan": 20000,
+    "subtotal": 20000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "46b2d3ed-9bc9-4eb4-9d86-7a756bdbc80f",
+    "id_struk": "ed52cd1b-431e-4285-b9e7-08815cc98fae",
+    "nama_menu": "Teh Manis/Tawar Dingin",
+    "qty": 1,
+    "harga_satuan": 8000,
+    "subtotal": 8000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "371795e5-4f78-49b8-a5cd-b0e584a5b415",
+    "id_struk": "caf2d4d3-5c93-4803-bc64-7f3a9fe70f9c",
+    "nama_menu": "Sanger Panas",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "38a75e25-e5ad-4520-bea8-70d88e837848",
+    "id_struk": "da7e7e11-29e6-4244-ad0d-71dea0c556ce",
+    "nama_menu": "Air Mineral",
+    "qty": 1,
+    "harga_satuan": 5000,
+    "subtotal": 5000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "3bec1584-3e2a-4f6f-ab45-e3623b0420eb",
+    "id_struk": "da7e7e11-29e6-4244-ad0d-71dea0c556ce",
+    "nama_menu": "Americano Dingin",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "7036cba2-ca02-4139-947c-64dd45eafa7f",
+    "id_struk": "df312011-52cb-4b13-b9da-5e0f82d2c33f",
+    "nama_menu": "Air Mineral",
+    "qty": 1,
+    "harga_satuan": 5000,
+    "subtotal": 5000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "09988bff-4c35-407c-9a98-8419e4daefce",
+    "id_struk": "8e78584c-d5f4-45df-bbcf-40261304d4ad",
+    "nama_menu": "Teh Manis/Tawar Dingin",
+    "qty": 1,
+    "harga_satuan": 8000,
+    "subtotal": 8000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "ece11547-a284-49c0-8458-80d22c66f0dd",
+    "id_struk": "97147b61-665a-493a-aa83-369a70e6ab70",
+    "nama_menu": "Americano Dingin",
+    "qty": 3,
+    "harga_satuan": 12000,
+    "subtotal": 36000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "7adbe306-970f-4e43-a8ba-fc9548e5dfe6",
+    "id_struk": "f7693caa-01fc-42e9-83d7-4c144016f60f",
+    "nama_menu": "Americano Panas",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "1d8eaf83-23b0-4f83-96c0-d0e1cb7bbb8f",
+    "id_struk": "9eaae984-0c0d-49c6-961c-095c136d1526",
+    "nama_menu": "Badak",
+    "qty": 1,
+    "harga_satuan": 10000,
+    "subtotal": 10000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "fbf7e580-d86a-4ffc-b1cd-75084e33656a",
+    "id_struk": "e33b3678-5f5f-44b7-b6c6-aa844c71e976",
+    "nama_menu": "Americano Dingin",
+    "qty": 1,
+    "harga_satuan": 12000,
+    "subtotal": 12000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "d9c90621-6e6e-4950-9776-2e0dce223968",
+    "id_struk": "cae9772b-6b95-4180-9036-2287d2a1db73",
+    "nama_menu": "Badak",
+    "qty": 2,
+    "harga_satuan": 10000,
+    "subtotal": 20000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "1deb3a46-02be-4c00-b4f8-e68dfd42e32a",
+    "id_struk": "7f962d85-d563-4b6a-8f2d-b7868d27e590",
+    "nama_menu": "Air Mineral",
+    "qty": 1,
+    "harga_satuan": 5000,
+    "subtotal": 5000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "03cfde26-f12a-4756-94cf-94a28ade0f1a",
+    "id_struk": "4bff2377-bbd4-4b65-95fc-31938b32b319",
+    "nama_menu": "Kopi Susu Gula Aren Dingin",
+    "qty": 1,
+    "harga_satuan": 20000,
+    "subtotal": 20000,
+    "status": "Selesai"
+  },
+  {
+    "id_detail": "4d7c8f88-317c-43bb-a99e-9e17fbd9c5cf",
+    "id_struk": "07ce21fa-b8ce-446d-bb4b-865b3a613c66",
+    "nama_menu": "Badak Susu",
+    "qty": 1,
+    "harga_satuan": 15000,
+    "subtotal": 15000,
     "status": "Selesai"
   }
 ]

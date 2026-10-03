@@ -471,45 +471,189 @@ export class IntelligenceEngineService {
    */
   calculateCustomerCohorts() {
     const validCw = this.getValidCarwash()
+    const validCafe = this.getValidCafe()
+    const validStruk = this.getValidStruk()
     const customerMap = {}
 
-    validCw.forEach((cw) => {
-      if (!cw.plat || !cw.plat.trim()) return
-      const plat = cw.plat.trim().toUpperCase().replace(/\s+/g, '')
-
-      if (!customerMap[plat]) {
-        customerMap[plat] = {
-          plat,
-          visits: 0,
-          totalSpent: 0,
-          lastDate: cw.tanggal || cw.created_at
-        }
-      }
-      customerMap[plat].visits++
-      customerMap[plat].totalSpent += (parseFloat(cw.harga) || 0)
-      if (cw.tanggal && cw.tanggal > customerMap[plat].lastDate) {
-        customerMap[plat].lastDate = cw.tanggal
+    // Map struk to cafe subtotal
+    const strukCafeSpentMap = {}
+    validCafe.forEach((c) => {
+      if (c.id_struk) {
+        const sub = parseFloat(c.subtotal || (c.harga_satuan * c.qty) || 0)
+        strukCafeSpentMap[c.id_struk] = (strukCafeSpentMap[c.id_struk] || 0) + sub
       }
     })
+
+    // 1. Process Carwash visits
+    validCw.forEach((cw) => {
+      if (!cw.plat || !cw.plat.trim()) return
+      const rawPlat = cw.plat.trim().toUpperCase().replace(/\s+/g, ' ')
+      const platKey = rawPlat.replace(/\s+/g, '')
+
+      if (!customerMap[platKey]) {
+        customerMap[platKey] = {
+          plat: rawPlat,
+          visits: 0,
+          carwashSpent: 0,
+          cafeSpent: 0,
+          totalSpent: 0,
+          lastDate: cw.tanggal || cw.created_at || '',
+          models: {},
+          packages: {}
+        }
+      }
+
+      const c = customerMap[platKey]
+      c.visits++
+      const cwPrice = parseFloat(cw.harga || 0)
+      c.carwashSpent += cwPrice
+      c.totalSpent += cwPrice
+
+      // Check linked cafe spending from same struk
+      if (cw.id_struk && strukCafeSpentMap[cw.id_struk]) {
+        c.cafeSpent += strukCafeSpentMap[cw.id_struk]
+        c.totalSpent += strukCafeSpentMap[cw.id_struk]
+        delete strukCafeSpentMap[cw.id_struk] // Avoid double counting
+      }
+
+      const dStr = cw.tanggal || cw.created_at || ''
+      if (dStr && (!c.lastDate || dStr > c.lastDate)) {
+        c.lastDate = dStr
+      }
+
+      const mdl = (cw.model && cw.model.trim()) ? cw.model.trim() : 'Mobil'
+      c.models[mdl] = (c.models[mdl] || 0) + 1
+
+      const pkt = (cw.paket && cw.paket.trim()) ? cw.paket.trim() : 'Cuci Reguler'
+      c.packages[pkt] = (c.packages[pkt] || 0) + 1
+    })
+
+    // 2. If Cafe only or remaining struk with customer names
+    if (this.tenantBusinessType === 'CAFE' || Object.keys(customerMap).length === 0) {
+      validStruk.forEach((s) => {
+        const custName = (s.nama_pelanggan && s.nama_pelanggan.trim()) ? s.nama_pelanggan.trim().toUpperCase() : ''
+        if (!custName) return
+        const custKey = custName.replace(/\s+/g, '')
+
+        if (!customerMap[custKey]) {
+          customerMap[custKey] = {
+            plat: custName,
+            visits: 0,
+            carwashSpent: 0,
+            cafeSpent: 0,
+            totalSpent: 0,
+            lastDate: s.tanggal || s.created_at || '',
+            models: { 'Pelanggan Meja': 1 },
+            packages: { 'Order F&B': 1 }
+          }
+        }
+
+        const c = customerMap[custKey]
+        c.visits++
+        const tot = parseFloat(s.total_tagihan || 0)
+        c.cafeSpent += tot
+        c.totalSpent += tot
+
+        const dStr = s.tanggal || s.created_at || ''
+        if (dStr && (!c.lastDate || dStr > c.lastDate)) {
+          c.lastDate = dStr
+        }
+      })
+    }
 
     const allCustomers = Object.values(customerMap)
     const totalUnique = allCustomers.length
+    const refTime = parseDateSafe(this.referenceDate).getTime()
+
+    // Enrich customers with computed fields
+    allCustomers.forEach((c) => {
+      // Primary model
+      let topMdl = 'Mobil'
+      let maxMdlCount = 0
+      Object.entries(c.models).forEach(([m, cnt]) => {
+        if (cnt > maxMdlCount) { maxMdlCount = cnt; topMdl = m }
+      })
+      c.primaryModel = topMdl
+
+      // Primary package
+      let topPkt = 'Cuci Reguler'
+      let maxPktCount = 0
+      Object.entries(c.packages).forEach(([p, cnt]) => {
+        if (cnt > maxPktCount) { maxPktCount = cnt; topPkt = p }
+      })
+      c.primaryPackage = topPkt
+
+      // Days inactive
+      const lastTime = c.lastDate ? parseDateSafe(c.lastDate).getTime() : refTime
+      c.daysInactive = Math.max(0, Math.floor((refTime - lastTime) / (1000 * 60 * 60 * 24)))
+
+      // Masked plate (Zero PII, e.g. "B 12** ***" or "Tamu #12")
+      if (c.plat.length > 5) {
+        c.platMasked = c.plat.slice(0, 4) + '*** ' + c.plat.slice(-2)
+      } else {
+        c.platMasked = c.plat
+      }
+
+      // Stamps (target 5)
+      c.stampsInCycle = c.visits % 5
+      c.isRewardReady = c.visits > 0 && c.stampsInCycle === 0
+      c.isNearReward = c.visits > 0 && c.stampsInCycle === 4
+      c.isChurnRisk = c.visits >= 2 && c.daysInactive > 30
+    })
+
     const vipCustomers = allCustomers.filter((c) => c.visits >= 5)
     const regularCustomers = allCustomers.filter((c) => c.visits >= 2 && c.visits < 5)
     const newCustomers = allCustomers.filter((c) => c.visits === 1)
+    const churnRiskCustomers = allCustomers.filter((c) => c.isChurnRisk)
+    const rewardReadyCustomers = allCustomers.filter((c) => c.isRewardReady)
+    const nearRewardCustomers = allCustomers.filter((c) => c.isNearReward)
 
-    // Deteksi Churn (> 45 hari dari referenceDate jika format YYYY-MM-DD)
-    const refTime = parseDateSafe(this.referenceDate).getTime()
-    const churnRiskCustomers = allCustomers.filter((c) => {
-      if (c.visits < 2) return false
-      const lastTime = parseDateSafe(c.lastDate).getTime()
-      const diffDays = Math.floor((refTime - lastTime) / (1000 * 60 * 60 * 24))
-      return diffDays > 45
-    })
-
+    const revenueAtRisk = churnRiskCustomers.reduce((sum, c) => sum + c.totalSpent, 0)
     const repeatRate = totalUnique > 0
       ? Math.round(((allCustomers.filter((c) => c.visits >= 2).length / totalUnique) * 100) * 10) / 10
       : 0
+
+    // Top at-risk customers (sorted by highest historical totalSpent)
+    const topAtRiskCustomers = [...churnRiskCustomers]
+      .sort((a, b) => b.totalSpent - a.totalSpent)
+      .slice(0, 5)
+      .map((c) => ({
+        platMasked: c.platMasked,
+        model: c.primaryModel,
+        visits: c.visits,
+        totalSpent: Math.round(c.totalSpent),
+        daysInactive: c.daysInactive
+      }))
+
+    // High-yield hybrid / top spenders (sorted by totalSpent)
+    const highYieldCustomers = [...allCustomers]
+      .sort((a, b) => b.totalSpent - a.totalSpent)
+      .slice(0, 5)
+      .map((c) => ({
+        platMasked: c.platMasked,
+        model: c.primaryModel,
+        carwashSpent: Math.round(c.carwashSpent),
+        cafeSpent: Math.round(c.cafeSpent),
+        totalSpent: Math.round(c.totalSpent),
+        visits: c.visits
+      }))
+
+    // Package affinity across customer base
+    const packageCountMap = {}
+    allCustomers.forEach((c) => {
+      Object.entries(c.packages).forEach(([pkg, cnt]) => {
+        packageCountMap[pkg] = (packageCountMap[pkg] || 0) + cnt
+      })
+    })
+
+    const serviceAffinity = Object.entries(packageCountMap)
+      .map(([packageName, count]) => ({
+        packageName,
+        count,
+        percentage: totalUnique > 0 ? Math.round((count / allCustomers.reduce((s, x) => s + x.visits, 0)) * 1000) / 10 : 0
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
 
     return {
       totalUniqueCustomers: totalUnique,
@@ -518,6 +662,12 @@ export class IntelligenceEngineService {
       newCount: newCustomers.length,
       repeatCustomerRate: repeatRate,
       churnRiskCount: churnRiskCustomers.length,
+      revenueAtRisk: Math.round(revenueAtRisk),
+      rewardReadyCount: rewardReadyCustomers.length,
+      nearRewardCount: nearRewardCustomers.length,
+      topAtRiskCustomers,
+      highYieldCustomers,
+      serviceAffinity,
       avgLTV: totalUnique > 0 ? Math.round(allCustomers.reduce((s, c) => s + c.totalSpent, 0) / totalUnique) : 0
     }
   }

@@ -2,153 +2,145 @@
   {
     "id_bahan_baku": "BK-06",
     "nama_produk": "Teh",
-    "satuan": "Pcs",
-    "stok": -177,
+    "satuan": "Gram",
+    "stok": 493,
     "updated_at": "2026-07-30T18:10:53.271288+00:00",
-    "harga_satuan": 0
+    "harga_satuan": 22
   },
   {
     "id_bahan_baku": "BK-04",
     "nama_produk": "Gula Putih",
     "satuan": "Gram/Ml",
-    "stok": 34333,
-    "updated_at": "2026-07-30T18:10:53.271288+00:00",
-    "harga_satuan": 0
+    "stok": 64,
+    "updated_at": "2026-09-18T08:33:30.46+00:00",
+    "harga_satuan": 19
   },
   {
     "id_bahan_baku": "MB-02",
     "nama_produk": "Badak",
     "satuan": "Btl",
-    "stok": -125,
-    "updated_at": "2026-07-30T18:10:53.271288+00:00",
-    "harga_satuan": 0
-  },
-  {
-    "id_bahan_baku": "BK-02",
-    "nama_produk": "SKM",
-    "satuan": "Gram/Ml",
-    "stok": -14962,
-    "updated_at": "2026-07-30T18:10:53.271288+00:00",
-    "harga_satuan": 0
+    "stok": -12,
+    "updated_at": "2026-09-18T08:32:34.005+00:00",
+    "harga_satuan": 5625
   },
   {
     "id_bahan_baku": "BK-01",
     "nama_produk": "Biji Kopi",
     "satuan": "Gram/Ml",
-    "stok": -3630,
-    "updated_at": "2026-07-30T18:10:53.271288+00:00",
+    "stok": -742,
+    "updated_at": "2026-09-18T08:32:45.468+00:00",
+    "harga_satuan": 205
+  },
+  {
+    "id_bahan_baku": "BK-02",
+    "nama_produk": "SKM",
+    "satuan": "Gram/Ml",
+    "stok": 67,
+    "updated_at": "2026-09-18T08:35:25.562+00:00",
     "harga_satuan": 0
   },
   {
     "id_bahan_baku": "MB-01",
     "nama_produk": "Le Mineral",
     "satuan": "Btl",
-    "stok": -197,
-    "updated_at": "2026-07-30T18:10:53.271288+00:00",
-    "harga_satuan": 0
+    "stok": 2,
+    "updated_at": "2026-09-18T08:34:23.971+00:00",
+    "harga_satuan": 791
   },
   {
     "id_bahan_baku": "BMK-02",
     "nama_produk": "Nasi",
     "satuan": "Gram",
-    "stok": -897,
-    "updated_at": "2026-07-30T18:10:53.271288+00:00",
-    "harga_satuan": 0
-  },
-  {
-    "id_bahan_baku": "BMK-04",
-    "nama_produk": "Nugget",
-    "satuan": "Gram",
-    "stok": 1170,
-    "updated_at": "2026-07-30T18:10:53.271288+00:00",
+    "stok": 0,
+    "updated_at": "2026-09-18T08:34:42.507+00:00",
     "harga_satuan": 0
   },
   {
     "id_bahan_baku": "BMK-06",
     "nama_produk": "Kentang",
     "satuan": "Gram",
-    "stok": 470,
-    "updated_at": "2026-07-30T18:10:53.271288+00:00",
-    "harga_satuan": 0
+    "stok": 29,
+    "updated_at": "2026-09-18T08:34:11.794+00:00",
+    "harga_satuan": 300
   },
   {
-    "id_bahan_baku": "BMK-05",
-    "nama_produk": "Sosis",
-    "satuan": "Pcs",
-    "stok": -10,
-    "updated_at": "2026-07-30T18:10:53.271288+00:00",
-    "harga_satuan": 0
+    "id_bahan_baku": "BMK-04",
+    "nama_produk": "Nugget",
+    "satuan": "Gram",
+    "stok": -310,
+    "updated_at": "2026-09-18T08:34:53.722+00:00",
+    "harga_satuan": 22
   },
   {
     "id_bahan_baku": "BMK-08",
     "nama_produk": "Indomie Goreng",
     "satuan": "Pcs",
-    "stok": 2,
-    "updated_at": "2026-07-30T18:10:53.271288+00:00",
+    "stok": -3,
+    "updated_at": "2026-09-18T08:33:42.516+00:00",
+    "harga_satuan": 3500
+  },
+  {
+    "id_bahan_baku": "BMK-10",
+    "nama_produk": "Telur",
+    "satuan": "Pcs",
+    "stok": 7,
+    "updated_at": "2026-09-18T08:36:39.499+00:00",
+    "harga_satuan": 2000
+  },
+  {
+    "id_bahan_baku": "BMK-05",
+    "nama_produk": "Sosis",
+    "satuan": "Pcs",
+    "stok": -8,
+    "updated_at": "2026-09-18T08:35:36.06+00:00",
     "harga_satuan": 0
   },
   {
     "id_bahan_baku": "BMK-09",
     "nama_produk": "Minyak Goreng",
     "satuan": "Gram/Ml",
-    "stok": -12,
-    "updated_at": "2026-07-30T18:10:53.271288+00:00",
-    "harga_satuan": 0
+    "stok": 533,
+    "updated_at": "2026-09-18T08:34:34.714+00:00",
+    "harga_satuan": 18
   },
   {
-    "id_bahan_baku": "BMK-10",
-    "nama_produk": "Telur",
-    "satuan": "Pcs",
-    "stok": 99,
-    "updated_at": "2026-07-30T18:10:53.271288+00:00",
+    "id_bahan_baku": "BMK-03",
+    "nama_produk": "Bumbu Nasi Goreng",
+    "satuan": "Gram/Ml",
+    "stok": 463,
+    "updated_at": "2026-09-18T08:33:03.972+00:00",
+    "harga_satuan": 100
+  },
+  {
+    "id_bahan_baku": "BK-05",
+    "nama_produk": "Susu UHT",
+    "satuan": "Gram/Ml",
+    "stok": 5000,
+    "updated_at": "2026-09-18T08:35:50.091+00:00",
     "harga_satuan": 0
   },
   {
     "id_bahan_baku": "BK-03",
     "nama_produk": "Gula Aren",
     "satuan": "Gram/Ml",
-    "stok": 508,
-    "updated_at": "2026-07-30T18:10:53.271288+00:00",
-    "harga_satuan": 0
-  },
-  {
-    "id_bahan_baku": "BK-05",
-    "nama_produk": "Susu UHT",
-    "satuan": "Gram/Ml",
-    "stok": -3200,
-    "updated_at": "2026-07-30T18:10:53.271288+00:00",
-    "harga_satuan": 0
-  },
-  {
-    "id_bahan_baku": "BM-01",
-    "nama_produk": "Segala Tempe",
-    "satuan": "Pcs",
-    "stok": 0,
-    "updated_at": "2026-07-30T18:10:53.271288+00:00",
-    "harga_satuan": 0
-  },
-  {
-    "id_bahan_baku": "BMK-03",
-    "nama_produk": "Bumbu Nasi Goreng",
-    "satuan": "Gram/Ml",
-    "stok": 0,
-    "updated_at": "2026-07-30T18:10:53.271288+00:00",
+    "stok": -280,
+    "updated_at": "2026-09-18T08:33:14.46+00:00",
     "harga_satuan": 0
   },
   {
     "id_bahan_baku": "BMK-01",
     "nama_produk": "Ayam",
     "satuan": "Pcs",
-    "stok": 12,
-    "updated_at": "2026-07-30T18:10:53.271288+00:00",
+    "stok": 0,
+    "updated_at": "2026-09-18T08:32:11.393+00:00",
     "harga_satuan": 0
   },
   {
     "id_bahan_baku": "BMK-07",
     "nama_produk": "Indomie Kuah",
     "satuan": "Pcs",
-    "stok": 13,
-    "updated_at": "2026-07-30T18:10:53.271288+00:00",
-    "harga_satuan": 0
+    "stok": 3,
+    "updated_at": "2026-09-18T08:33:56.77+00:00",
+    "harga_satuan": 3500
   }
 ]

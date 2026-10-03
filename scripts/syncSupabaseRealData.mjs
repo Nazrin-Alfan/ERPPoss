@@ -49,6 +49,7 @@ async function runSync() {
     'karyawan_cuci',
     'kasir',
     'metode_bayar',
+    'diskon',
     'pos_balances',
     'barang_masuk',
     'barang_keluar',

@@ -19582,5 +19582,2444 @@
     "nama_bahan_baku": "Le Mineral",
     "jumlah_keluar": 1,
     "created_at": "2026-09-11T08:43:07.853169+00:00"
+  },
+  {
+    "id_keluar": "b743ba78-15b4-4165-b9d5-6c64f28754f3",
+    "id_detail": "641580f5-4a30-4443-842c-ab7e7e77824a",
+    "id_bahan_baku": "BK-06",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Teh",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-12T02:16:26.470646+00:00"
+  },
+  {
+    "id_keluar": "7dbf8520-07ec-4576-869b-9a66f9eebd3b",
+    "id_detail": "641580f5-4a30-4443-842c-ab7e7e77824a",
+    "id_bahan_baku": "BK-04",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Gula Putih",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-12T02:16:26.470646+00:00"
+  },
+  {
+    "id_keluar": "546e08b8-555f-474e-884e-ff739a9d15ae",
+    "id_detail": "27806e9c-4fab-415b-9c2f-298ae5af592b",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-12T04:24:24.706307+00:00"
+  },
+  {
+    "id_keluar": "7b7c03e7-7883-4277-a633-4f3912cf84ad",
+    "id_detail": "b5cf7151-190a-4073-9668-c5720c4a1149",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-12T04:24:24.706307+00:00"
+  },
+  {
+    "id_keluar": "50269a97-0afd-4ff0-893a-f3c618d51983",
+    "id_detail": "b5cf7151-190a-4073-9668-c5720c4a1149",
+    "id_bahan_baku": "BK-05",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Susu UHT",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-12T04:24:24.706307+00:00"
+  },
+  {
+    "id_keluar": "337e4253-c31d-4e19-b8c0-e4da4dbc7be7",
+    "id_detail": "b5cf7151-190a-4073-9668-c5720c4a1149",
+    "id_bahan_baku": "BK-03",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Gula Aren",
+    "jumlah_keluar": 35,
+    "created_at": "2026-09-12T04:24:24.706307+00:00"
+  },
+  {
+    "id_keluar": "0bb1886c-c42d-4305-9d1f-cac12196c234",
+    "id_detail": "c253597e-4c21-4cc3-b454-39b74a678e56",
+    "id_bahan_baku": "BMK-06",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Kentang",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-12T04:24:24.706307+00:00"
+  },
+  {
+    "id_keluar": "b1562322-440a-41f9-8166-d59ed0582c7a",
+    "id_detail": "c253597e-4c21-4cc3-b454-39b74a678e56",
+    "id_bahan_baku": "BMK-09",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Minyak Goreng",
+    "jumlah_keluar": 10,
+    "created_at": "2026-09-12T04:24:24.706307+00:00"
+  },
+  {
+    "id_keluar": "a8c51e33-c04d-4974-b90c-717910adb18c",
+    "id_detail": "4d0a58d3-9a5c-4f81-a68a-20dd547d8208",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-12T04:39:12.465048+00:00"
+  },
+  {
+    "id_keluar": "f530f01f-b69b-4edb-bc97-4ca6f7a3df96",
+    "id_detail": "4d0a58d3-9a5c-4f81-a68a-20dd547d8208",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-12T04:39:12.465048+00:00"
+  },
+  {
+    "id_keluar": "5ce9abde-9fa7-49bc-a874-09f3d079ce28",
+    "id_detail": "e7d2ea3a-c9ed-4554-ad6d-77bab34b8983",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-12T04:40:23.21277+00:00"
+  },
+  {
+    "id_keluar": "482bc23b-3405-40f2-82cf-1c1f60a5679e",
+    "id_detail": "e7d2ea3a-c9ed-4554-ad6d-77bab34b8983",
+    "id_bahan_baku": "BK-05",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Susu UHT",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-12T04:40:23.21277+00:00"
+  },
+  {
+    "id_keluar": "e79380f8-7838-425b-ac81-b4f1de1033fb",
+    "id_detail": "e7d2ea3a-c9ed-4554-ad6d-77bab34b8983",
+    "id_bahan_baku": "BK-03",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Gula Aren",
+    "jumlah_keluar": 35,
+    "created_at": "2026-09-12T04:40:23.21277+00:00"
+  },
+  {
+    "id_keluar": "b9ccd0e9-acc8-4b2c-9c57-5659d7a97d28",
+    "id_detail": "0a9e2006-c603-4129-afbc-34efcc9842bc",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-12T04:58:35.79536+00:00"
+  },
+  {
+    "id_keluar": "55919148-351b-4a63-8885-6917449bdc8c",
+    "id_detail": "0821079a-aa4c-446a-83b5-4a9ba6398e10",
+    "id_bahan_baku": "BMK-04",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Nugget",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-12T04:58:35.79536+00:00"
+  },
+  {
+    "id_keluar": "53761baa-a627-474f-9cb1-7e87568c5374",
+    "id_detail": "0821079a-aa4c-446a-83b5-4a9ba6398e10",
+    "id_bahan_baku": "BMK-09",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Minyak Goreng",
+    "jumlah_keluar": 10,
+    "created_at": "2026-09-12T04:58:35.79536+00:00"
+  },
+  {
+    "id_keluar": "07a709f5-fd24-4ff3-bd9b-bf2fc82a19ba",
+    "id_detail": "6c67cfc6-42e1-4f0e-8c15-4a53538ad56e",
+    "id_bahan_baku": "BMK-07",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Indomie Kuah",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-12T05:24:30.479972+00:00"
+  },
+  {
+    "id_keluar": "238346a9-00cf-47b3-bd0a-061092f0b852",
+    "id_detail": "6c67cfc6-42e1-4f0e-8c15-4a53538ad56e",
+    "id_bahan_baku": "BMK-09",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Minyak Goreng",
+    "jumlah_keluar": 10,
+    "created_at": "2026-09-12T05:24:30.479972+00:00"
+  },
+  {
+    "id_keluar": "e8b5d602-a75c-4445-8eec-f7df8380d082",
+    "id_detail": "6c67cfc6-42e1-4f0e-8c15-4a53538ad56e",
+    "id_bahan_baku": "BMK-10",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Telur",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-12T05:24:30.479972+00:00"
+  },
+  {
+    "id_keluar": "73147a3e-8d2a-408e-9988-4c18860dadb1",
+    "id_detail": "bac2e183-0430-406e-9642-428fffaaff34",
+    "id_bahan_baku": "BMK-06",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Kentang",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-12T05:24:30.479972+00:00"
+  },
+  {
+    "id_keluar": "1d20a511-0611-49cd-a5ba-539e53ab4f1e",
+    "id_detail": "bac2e183-0430-406e-9642-428fffaaff34",
+    "id_bahan_baku": "BMK-09",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Minyak Goreng",
+    "jumlah_keluar": 10,
+    "created_at": "2026-09-12T05:24:30.479972+00:00"
+  },
+  {
+    "id_keluar": "22593063-c88b-4c79-ad19-da04724e97a4",
+    "id_detail": "99deb638-2573-43b0-a148-c27ffe7a5696",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-12T05:42:32.082076+00:00"
+  },
+  {
+    "id_keluar": "cc967b7e-d1f2-4aef-ad47-4a97fdd78fc3",
+    "id_detail": "0c7f1272-6a3c-4175-8850-349230e9e5ee",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-12T06:46:24.657339+00:00"
+  },
+  {
+    "id_keluar": "9add4a57-a7e8-4a66-af77-47a6e6092c42",
+    "id_detail": "0c7f1272-6a3c-4175-8850-349230e9e5ee",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-12T06:46:24.657339+00:00"
+  },
+  {
+    "id_keluar": "83a46764-82a3-4845-8816-65739d118508",
+    "id_detail": "f80f193a-fb50-4706-807a-ee2422c9d252",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-12T07:03:44.24975+00:00"
+  },
+  {
+    "id_keluar": "039cc482-ae2c-48e4-9482-5c15a0ff4b70",
+    "id_detail": "f80f193a-fb50-4706-807a-ee2422c9d252",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-12T07:03:44.24975+00:00"
+  },
+  {
+    "id_keluar": "b4d35c1d-65dd-4c1f-89c9-42ae2eabf55b",
+    "id_detail": "f4041564-accc-41b3-bd3c-15c409d55178",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-12T07:04:06.082922+00:00"
+  },
+  {
+    "id_keluar": "eef05719-4699-4914-aaad-6e9adde8d0ae",
+    "id_detail": "f4041564-accc-41b3-bd3c-15c409d55178",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-12T07:04:06.082922+00:00"
+  },
+  {
+    "id_keluar": "bc44abb2-4d98-4fa4-8493-2e48483d646a",
+    "id_detail": "fbe1e611-0f8a-436e-9b23-f086a0bc073c",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-12T07:04:32.479527+00:00"
+  },
+  {
+    "id_keluar": "6d41e9ab-9300-44fe-b080-a9588a9b59b9",
+    "id_detail": "fbe1e611-0f8a-436e-9b23-f086a0bc073c",
+    "id_bahan_baku": "BK-05",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Susu UHT",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-12T07:04:32.479527+00:00"
+  },
+  {
+    "id_keluar": "49a74dbb-ea5b-481a-a4b6-ec3a12b97068",
+    "id_detail": "fbe1e611-0f8a-436e-9b23-f086a0bc073c",
+    "id_bahan_baku": "BK-03",
+    "tanggal": "2026-09-12",
+    "nama_bahan_baku": "Gula Aren",
+    "jumlah_keluar": 35,
+    "created_at": "2026-09-12T07:04:32.479527+00:00"
+  },
+  {
+    "id_keluar": "2e4aea03-443c-45f4-9849-df9d93d0a8cc",
+    "id_detail": "c08c1752-42c2-42bb-b395-ca3e7e3c62a4",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-13",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-13T01:58:03.8646+00:00"
+  },
+  {
+    "id_keluar": "9645c4d6-d67a-40a8-ac62-5cee1c5bdab1",
+    "id_detail": "c08c1752-42c2-42bb-b395-ca3e7e3c62a4",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-13",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-13T01:58:03.8646+00:00"
+  },
+  {
+    "id_keluar": "8e3bf04f-6bd5-4cae-852b-f3ef62525e31",
+    "id_detail": "ef2ab80f-2883-4354-87f0-655c39b65c36",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-13",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-13T02:42:38.372163+00:00"
+  },
+  {
+    "id_keluar": "5cd2adf5-df3c-4cb7-aa5e-82270faa5d55",
+    "id_detail": "ef2ab80f-2883-4354-87f0-655c39b65c36",
+    "id_bahan_baku": "BK-03",
+    "tanggal": "2026-09-13",
+    "nama_bahan_baku": "Gula Aren",
+    "jumlah_keluar": 35,
+    "created_at": "2026-09-13T02:42:38.372163+00:00"
+  },
+  {
+    "id_keluar": "59391411-f68b-4fea-b8db-58634fba6b55",
+    "id_detail": "ef2ab80f-2883-4354-87f0-655c39b65c36",
+    "id_bahan_baku": "BK-05",
+    "tanggal": "2026-09-13",
+    "nama_bahan_baku": "Susu UHT",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-13T02:42:38.372163+00:00"
+  },
+  {
+    "id_keluar": "67fe88b6-098a-438d-aa62-9ef3a48258f2",
+    "id_detail": "dc941f79-62f3-43ab-a7b4-b6e962868c4c",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-13",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 36,
+    "created_at": "2026-09-13T02:42:38.372163+00:00"
+  },
+  {
+    "id_keluar": "1b64c0b4-041e-4571-9b4f-6916c1db0dc5",
+    "id_detail": "dc941f79-62f3-43ab-a7b4-b6e962868c4c",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-13",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 50,
+    "created_at": "2026-09-13T02:42:38.372163+00:00"
+  },
+  {
+    "id_keluar": "1067990e-26d2-425f-b40d-a1ecf0c111ef",
+    "id_detail": "2e033dc2-c9e6-477c-b792-8ed2dfaad5fd",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-09-13",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-13T04:08:17.445772+00:00"
+  },
+  {
+    "id_keluar": "b90d670c-00bd-466b-bd73-be60439b94a0",
+    "id_detail": "ad4904ec-1ce7-4fde-9d1d-52f60a51c957",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-13",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-13T05:06:15.592043+00:00"
+  },
+  {
+    "id_keluar": "3bbaaf94-bb1c-4293-b1da-6e5eeecf2df2",
+    "id_detail": "a228c975-f222-4207-b7d5-3d3358cce59d",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-09-13",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-13T06:26:15.972706+00:00"
+  },
+  {
+    "id_keluar": "38f44954-119a-4bed-8cb1-aef7e49e7fc2",
+    "id_detail": "3d592cb2-b225-491b-8df8-6219bdc10a70",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-13",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-13T06:26:15.972706+00:00"
+  },
+  {
+    "id_keluar": "8f16e2bd-bc6b-4037-b01d-73bd278818e7",
+    "id_detail": "3d592cb2-b225-491b-8df8-6219bdc10a70",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-13",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-13T06:26:15.972706+00:00"
+  },
+  {
+    "id_keluar": "b6fbfda6-9660-4295-bf8b-abad37aa8205",
+    "id_detail": "75855931-f906-43bb-a283-3dae15808f37",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-13",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-13T07:15:14.153593+00:00"
+  },
+  {
+    "id_keluar": "5c7ac9e4-0745-49ac-82af-995c96f33a35",
+    "id_detail": "75855931-f906-43bb-a283-3dae15808f37",
+    "id_bahan_baku": "BK-05",
+    "tanggal": "2026-09-13",
+    "nama_bahan_baku": "Susu UHT",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-13T07:15:14.153593+00:00"
+  },
+  {
+    "id_keluar": "6e22af36-c577-4206-b789-84b29952b9cf",
+    "id_detail": "75855931-f906-43bb-a283-3dae15808f37",
+    "id_bahan_baku": "BK-03",
+    "tanggal": "2026-09-13",
+    "nama_bahan_baku": "Gula Aren",
+    "jumlah_keluar": 35,
+    "created_at": "2026-09-13T07:15:14.153593+00:00"
+  },
+  {
+    "id_keluar": "ca1df5d1-7131-4515-9c24-b8f80e974083",
+    "id_detail": "7d61934b-f67b-462f-a3a9-8d9ee956a1c2",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-13",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-13T07:16:11.145043+00:00"
+  },
+  {
+    "id_keluar": "d8d4a4e8-3fcb-49b8-8b1c-7e39994ad875",
+    "id_detail": "7d61934b-f67b-462f-a3a9-8d9ee956a1c2",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-13",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-13T07:16:11.145043+00:00"
+  },
+  {
+    "id_keluar": "35fa3f9e-5c45-44d0-bedb-a3590e5b336d",
+    "id_detail": "e584aa72-81a4-467e-a9e0-777af9c31866",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-14",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-14T04:34:21.637614+00:00"
+  },
+  {
+    "id_keluar": "2541906b-5e47-4740-a218-7c71d085bdc3",
+    "id_detail": "e584aa72-81a4-467e-a9e0-777af9c31866",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-14",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-14T04:34:21.637614+00:00"
+  },
+  {
+    "id_keluar": "0c7e1374-53b9-4cd3-a6d0-51b16e4d9a66",
+    "id_detail": "aaa125cc-3714-4204-b68b-7eedd7ab0f25",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-14",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-14T04:46:42.836977+00:00"
+  },
+  {
+    "id_keluar": "89b95785-99e8-459a-b30f-fffa6775d91c",
+    "id_detail": "7a4345f0-e99a-41cb-a07a-0a5b120a7b76",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-15",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-15T01:55:52.262707+00:00"
+  },
+  {
+    "id_keluar": "96353745-1d10-4e75-9a0e-edc355bf47fc",
+    "id_detail": "af0c7b02-b202-4b21-94ff-df59d7f57f7f",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-15",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-15T02:43:02.603231+00:00"
+  },
+  {
+    "id_keluar": "97692beb-2364-4af0-9343-c45ca0c39b8e",
+    "id_detail": "af0c7b02-b202-4b21-94ff-df59d7f57f7f",
+    "id_bahan_baku": "BK-05",
+    "tanggal": "2026-09-15",
+    "nama_bahan_baku": "Susu UHT",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-15T02:43:02.603231+00:00"
+  },
+  {
+    "id_keluar": "6c886e5c-e99e-47bf-a26c-0c1be436429b",
+    "id_detail": "232aa93d-512d-44dd-acce-32af62001d82",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-15",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-15T03:16:55.266869+00:00"
+  },
+  {
+    "id_keluar": "7cc90ea2-f879-4843-bc05-c8f48a9b3698",
+    "id_detail": "232aa93d-512d-44dd-acce-32af62001d82",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-15",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-15T03:16:55.266869+00:00"
+  },
+  {
+    "id_keluar": "beda20e5-e43b-4fc3-885f-e79a1b883e2d",
+    "id_detail": "007f7ca6-01d3-4a57-938e-835eab22b960",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-15",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-15T04:17:56.404988+00:00"
+  },
+  {
+    "id_keluar": "9487a1a1-4452-4622-aa9c-dcc62153b8ac",
+    "id_detail": "007f7ca6-01d3-4a57-938e-835eab22b960",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-15",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-15T04:17:56.404988+00:00"
+  },
+  {
+    "id_keluar": "7e86b2bb-0572-492e-b8a8-fa313e0ce944",
+    "id_detail": "df9ff23a-5c78-4c5b-944d-43f63242fd51",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-15",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-15T05:22:04.180308+00:00"
+  },
+  {
+    "id_keluar": "961a8a16-7d1e-47ce-a271-6393a494457a",
+    "id_detail": "e30c64b5-97db-4017-a984-86bc82babca8",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-15",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-15T06:25:01.784514+00:00"
+  },
+  {
+    "id_keluar": "c23797f0-8b5d-463e-8516-85fc6e840b52",
+    "id_detail": "8775226a-1fc2-4de4-809e-b89d54c1ec62",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-15",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-15T06:40:31.766755+00:00"
+  },
+  {
+    "id_keluar": "cd2a80c6-4a25-48a5-b2bc-f54f7428a1d9",
+    "id_detail": "8775226a-1fc2-4de4-809e-b89d54c1ec62",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-15",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-15T06:40:31.766755+00:00"
+  },
+  {
+    "id_keluar": "ab87fd94-9f45-4a4c-9dba-129ab8fd8f97",
+    "id_detail": "f8447561-742b-4da9-b0c9-b1d7d6445d62",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-16",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-16T02:34:00.163538+00:00"
+  },
+  {
+    "id_keluar": "94058dc9-08da-4400-bfca-cf2ecda6f219",
+    "id_detail": "ff32b03a-5794-4b3d-acf7-1484aa80887d",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-16",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-16T05:30:55.305321+00:00"
+  },
+  {
+    "id_keluar": "dd290fcd-674f-4ba8-bd37-53cd076f6f3b",
+    "id_detail": "ff32b03a-5794-4b3d-acf7-1484aa80887d",
+    "id_bahan_baku": "BK-05",
+    "tanggal": "2026-09-16",
+    "nama_bahan_baku": "Susu UHT",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-16T05:30:55.305321+00:00"
+  },
+  {
+    "id_keluar": "31df3f65-8fe4-4d50-b665-02c53cbc2916",
+    "id_detail": "ff32b03a-5794-4b3d-acf7-1484aa80887d",
+    "id_bahan_baku": "BK-03",
+    "tanggal": "2026-09-16",
+    "nama_bahan_baku": "Gula Aren",
+    "jumlah_keluar": 35,
+    "created_at": "2026-09-16T05:30:55.305321+00:00"
+  },
+  {
+    "id_keluar": "5689001f-b2bc-42f6-badb-cb9692db1299",
+    "id_detail": "c0c2e5f2-5d93-45e9-bd8e-4a05af991f75",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-16",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-16T06:57:10.703235+00:00"
+  },
+  {
+    "id_keluar": "e6663501-9dcd-483b-a99b-ddf64fb34d4c",
+    "id_detail": "f786f210-0108-467d-b815-28f89aeba518",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-09-16",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-16T07:14:47.629231+00:00"
+  },
+  {
+    "id_keluar": "0ec99de7-5415-46e4-a9d5-b70661677275",
+    "id_detail": "f24a3305-1ec2-4b07-b7dc-236ba37c5295",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-16",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-16T10:17:26.58665+00:00"
+  },
+  {
+    "id_keluar": "6cbb87a5-5ae5-4aba-bc9e-c7ea1dc599f1",
+    "id_detail": "f24a3305-1ec2-4b07-b7dc-236ba37c5295",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-16",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-16T10:17:26.58665+00:00"
+  },
+  {
+    "id_keluar": "1bb8c9b3-1ca8-4eb4-ac3a-1659fe627bac",
+    "id_detail": "feadd909-f587-44a7-8c96-cf2affd8485b",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-17",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-17T01:59:52.814156+00:00"
+  },
+  {
+    "id_keluar": "a18c49a0-62e4-4a24-9a5e-203472fed003",
+    "id_detail": "feadd909-f587-44a7-8c96-cf2affd8485b",
+    "id_bahan_baku": "BK-03",
+    "tanggal": "2026-09-17",
+    "nama_bahan_baku": "Gula Aren",
+    "jumlah_keluar": 35,
+    "created_at": "2026-09-17T01:59:52.814156+00:00"
+  },
+  {
+    "id_keluar": "1b8eb1ee-6b63-40bd-8cd3-9a3c4433a055",
+    "id_detail": "feadd909-f587-44a7-8c96-cf2affd8485b",
+    "id_bahan_baku": "BK-05",
+    "tanggal": "2026-09-17",
+    "nama_bahan_baku": "Susu UHT",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-17T01:59:52.814156+00:00"
+  },
+  {
+    "id_keluar": "ed4707a1-ee43-459a-929b-7690cab19558",
+    "id_detail": "f1bb4a5e-1cf0-4b7b-ae31-8c713fab1959",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-09-17",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-17T02:33:04.948116+00:00"
+  },
+  {
+    "id_keluar": "33b57278-2160-4442-856e-a98733b2c521",
+    "id_detail": "c012f9e4-d3b8-4e5a-a1ab-8355fbf2b250",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-17",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-17T02:33:04.948116+00:00"
+  },
+  {
+    "id_keluar": "c76131d5-92cd-443e-b523-4cedf5f4f67c",
+    "id_detail": "c012f9e4-d3b8-4e5a-a1ab-8355fbf2b250",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-17",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-17T02:33:04.948116+00:00"
+  },
+  {
+    "id_keluar": "546af27d-14a8-4d9a-a6ba-6dbd7c6c8e21",
+    "id_detail": "f22dcf19-1c16-406f-8ee0-6a3458aed681",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-09-17",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-17T05:49:40.063229+00:00"
+  },
+  {
+    "id_keluar": "9853b3c6-38bf-4e4b-990c-aaa0e14fd340",
+    "id_detail": "872cef3f-f775-4dd9-8b53-61c8cbbd5853",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-09-17",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-17T06:58:59.798589+00:00"
+  },
+  {
+    "id_keluar": "e601a9ff-0d06-49b1-b447-e0bafb14cd02",
+    "id_detail": "273790d1-3537-4184-93fe-7d9eee48dd78",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-18",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-18T04:32:40.198999+00:00"
+  },
+  {
+    "id_keluar": "55ff03ba-20b4-4fb2-9672-1430ea2e6ae3",
+    "id_detail": "273790d1-3537-4184-93fe-7d9eee48dd78",
+    "id_bahan_baku": "BK-05",
+    "tanggal": "2026-09-18",
+    "nama_bahan_baku": "Susu UHT",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-18T04:32:40.198999+00:00"
+  },
+  {
+    "id_keluar": "799b4793-6458-4bab-a5fb-9f8546b08fd4",
+    "id_detail": "cedda1bc-7f6b-4573-adf5-413603265814",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-18",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-18T06:50:02.215424+00:00"
+  },
+  {
+    "id_keluar": "1fefea7d-577e-4df6-b27d-efc171e535dd",
+    "id_detail": "cedda1bc-7f6b-4573-adf5-413603265814",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-18",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-18T06:50:02.215424+00:00"
+  },
+  {
+    "id_keluar": "64fad903-4d8d-441c-9138-69be3c38c46a",
+    "id_detail": "24fd0e4e-2154-4e71-81ec-28e5a7b5808f",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-19",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-19T01:48:50.133535+00:00"
+  },
+  {
+    "id_keluar": "7b345e97-badb-4b31-b487-16ef93fb1380",
+    "id_detail": "b80683cf-35db-4ea9-ae76-7b8ae0512e5e",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-19",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-19T02:26:33.759454+00:00"
+  },
+  {
+    "id_keluar": "f1a21c5c-0824-4dd9-b57c-054daff73763",
+    "id_detail": "b80683cf-35db-4ea9-ae76-7b8ae0512e5e",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-19",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-19T02:26:33.759454+00:00"
+  },
+  {
+    "id_keluar": "901af005-9c5d-481f-91cb-50eeba0533ba",
+    "id_detail": "c06027e1-bd87-4bbf-8713-901491537f85",
+    "id_bahan_baku": "BK-06",
+    "tanggal": "2026-09-19",
+    "nama_bahan_baku": "Teh",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-19T02:26:33.759454+00:00"
+  },
+  {
+    "id_keluar": "041cfcf0-ab04-4729-a31f-11a00f0fe8b4",
+    "id_detail": "c06027e1-bd87-4bbf-8713-901491537f85",
+    "id_bahan_baku": "BK-04",
+    "tanggal": "2026-09-19",
+    "nama_bahan_baku": "Gula Putih",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-19T02:26:33.759454+00:00"
+  },
+  {
+    "id_keluar": "71f2a33a-9616-4a52-b5bf-566950cc0656",
+    "id_detail": "f1e6071c-a0f5-4d57-ac06-7d2f9f4763b8",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-19",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-19T02:27:11.130977+00:00"
+  },
+  {
+    "id_keluar": "ea03114d-4131-4140-ae80-b5ed176495c6",
+    "id_detail": "f1e6071c-a0f5-4d57-ac06-7d2f9f4763b8",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-19",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-19T02:27:11.130977+00:00"
+  },
+  {
+    "id_keluar": "3a44812e-6700-4117-9163-17c5d661fde0",
+    "id_detail": "17736a1b-cff1-4852-b5e7-16bd1909a6ab",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-09-19",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-19T02:44:57.991262+00:00"
+  },
+  {
+    "id_keluar": "18773fb7-4f9b-4c49-93d9-335c63043036",
+    "id_detail": "09419583-c440-4c7d-b794-7bbce6625599",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-19",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-19T02:55:08.612134+00:00"
+  },
+  {
+    "id_keluar": "63ba2340-8b6a-40a1-b3a6-dd74e19390f7",
+    "id_detail": "0d990589-8524-48d0-9d0e-21c916a7b433",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-19",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-19T03:42:19.805925+00:00"
+  },
+  {
+    "id_keluar": "2081e8d6-0a67-42d3-92ca-bf54b0d4d349",
+    "id_detail": "facba505-4e41-4cb2-a6f1-c2986eb5b864",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-19",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-19T03:51:35.306496+00:00"
+  },
+  {
+    "id_keluar": "8437ca1e-3a95-4649-a2fc-a308c6ba93e3",
+    "id_detail": "b5e4ffc2-dfc4-4bbc-8911-fe24ee5c9dab",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-19",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-19T04:55:59.201307+00:00"
+  },
+  {
+    "id_keluar": "a7c40903-9991-45e8-bf8e-e9d7aa81071b",
+    "id_detail": "b5e4ffc2-dfc4-4bbc-8911-fe24ee5c9dab",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-19",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-19T04:55:59.201307+00:00"
+  },
+  {
+    "id_keluar": "107660cd-fbe6-4688-98e7-233e9eb82677",
+    "id_detail": "df1c9b52-bfd7-4770-a8d9-45ff318b8035",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-09-19",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 2,
+    "created_at": "2026-09-19T04:55:59.201307+00:00"
+  },
+  {
+    "id_keluar": "b22239c3-8501-4c7c-9797-9ec07a2c095b",
+    "id_detail": "e676d9c5-08f9-45fd-8798-fc0826ab6e8b",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-19",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-19T05:17:04.274016+00:00"
+  },
+  {
+    "id_keluar": "7da971ec-b2bb-497e-a934-7994475adfad",
+    "id_detail": "22f4d292-1f0d-4cda-9aad-756aca40d91c",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-19",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-19T06:02:47.701831+00:00"
+  },
+  {
+    "id_keluar": "e02c01ff-e1c8-4974-a8fa-9263ef9b8261",
+    "id_detail": "f9499e46-d38f-487a-bc32-9755d7b5f6e5",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-20",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-20T01:56:02.639847+00:00"
+  },
+  {
+    "id_keluar": "aff29ddb-4299-49b5-95e6-cfbc2d77ec65",
+    "id_detail": "f9499e46-d38f-487a-bc32-9755d7b5f6e5",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-20",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 30,
+    "created_at": "2026-09-20T01:56:02.639847+00:00"
+  },
+  {
+    "id_keluar": "113f3630-3abf-4089-95fe-5d429f2ce424",
+    "id_detail": "1975626c-0ba4-4326-977d-ee170e3123db",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-20",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-20T01:59:35.840449+00:00"
+  },
+  {
+    "id_keluar": "5223ae59-493f-47fa-8f4c-20539dc61d28",
+    "id_detail": "8d31abfc-de16-40ab-ac20-72797db69fad",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-20",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-20T04:42:16.244639+00:00"
+  },
+  {
+    "id_keluar": "2d883f75-c716-45d8-9af7-a0faff438827",
+    "id_detail": "cb9359e6-0202-48b3-89d5-cb15d742b16b",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-20",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 36,
+    "created_at": "2026-09-20T06:15:36.683146+00:00"
+  },
+  {
+    "id_keluar": "c1049a32-b8ff-4ab0-b3da-9f225fbdd78c",
+    "id_detail": "cb9359e6-0202-48b3-89d5-cb15d742b16b",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-20",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 50,
+    "created_at": "2026-09-20T06:15:36.683146+00:00"
+  },
+  {
+    "id_keluar": "a65e1929-18c0-4ffe-bab2-9e03f016e606",
+    "id_detail": "f640dc6a-d394-48bc-88e9-e952e4a76b82",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-21",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-21T04:09:48.954847+00:00"
+  },
+  {
+    "id_keluar": "54c82db4-0756-4f0e-a4d0-70ec4ab40fdb",
+    "id_detail": "b0e006c5-3a7a-44db-b8e2-613fd2a87ffb",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-21",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-21T04:45:59.588342+00:00"
+  },
+  {
+    "id_keluar": "61eee44f-08bf-4b82-b08e-82df0f49203a",
+    "id_detail": "fd53c1d3-cc83-425d-bc09-c3f14147b3e1",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-21",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-21T05:54:56.639432+00:00"
+  },
+  {
+    "id_keluar": "8cf0ddce-6452-4984-8336-704e6a875355",
+    "id_detail": "fd53c1d3-cc83-425d-bc09-c3f14147b3e1",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-21",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 30,
+    "created_at": "2026-09-21T05:54:56.639432+00:00"
+  },
+  {
+    "id_keluar": "37ba8cc6-03b0-438a-9e12-b64b09c451b6",
+    "id_detail": "e5cfa675-f903-440c-8294-97842942a500",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-21",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-21T06:32:04.207287+00:00"
+  },
+  {
+    "id_keluar": "d8fee453-7049-4fbf-a1cd-5783fdc657e3",
+    "id_detail": "e5cfa675-f903-440c-8294-97842942a500",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-21",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-21T06:32:04.207287+00:00"
+  },
+  {
+    "id_keluar": "22070767-b83e-4f9d-8af5-8fc8a575a4fc",
+    "id_detail": "a4cfbc07-b562-4c36-a855-ae734cb27995",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-21",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-21T06:32:26.684843+00:00"
+  },
+  {
+    "id_keluar": "d4238b15-da39-4dc7-a0aa-2e523e272caa",
+    "id_detail": "6a795aff-8c5b-46ef-846e-9376e97cca1c",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-21",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-21T06:47:30.986607+00:00"
+  },
+  {
+    "id_keluar": "6976ce97-be0d-49d3-9598-482a5ea3d09e",
+    "id_detail": "6a795aff-8c5b-46ef-846e-9376e97cca1c",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-21",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-21T06:47:30.986607+00:00"
+  },
+  {
+    "id_keluar": "6b7062b9-db5c-42b6-b268-84507fb9f2c5",
+    "id_detail": "7b140813-4938-435f-a87a-a72e78b10522",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-09-21",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-21T07:00:26.113219+00:00"
+  },
+  {
+    "id_keluar": "6c6f3e8f-040a-4ee0-baf8-251f1369eae4",
+    "id_detail": "0552bae8-1605-44b4-af32-9a23724babfe",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-21",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-21T07:16:02.858849+00:00"
+  },
+  {
+    "id_keluar": "d6ad07ce-49c1-4863-8ea7-d885a3ff3439",
+    "id_detail": "0552bae8-1605-44b4-af32-9a23724babfe",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-21",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-21T07:16:02.858849+00:00"
+  },
+  {
+    "id_keluar": "c0cf4ee9-ec3a-41e5-8348-465f6a2c8e42",
+    "id_detail": "e599e0f9-6db4-42cf-a0eb-f4c47f249ee6",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-22",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 36,
+    "created_at": "2026-09-22T04:56:19.998712+00:00"
+  },
+  {
+    "id_keluar": "d46f8b45-0436-4cdc-ba0b-a2db83d8c82b",
+    "id_detail": "e599e0f9-6db4-42cf-a0eb-f4c47f249ee6",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-22",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 50,
+    "created_at": "2026-09-22T04:56:19.998712+00:00"
+  },
+  {
+    "id_keluar": "48264b3e-ba6c-424e-8db7-1e23a71abc59",
+    "id_detail": "b91304d9-8d39-4671-bd11-0c3cbeab3b94",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-22",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-22T06:58:46.204299+00:00"
+  },
+  {
+    "id_keluar": "2059cd99-f5d4-47a2-aec5-2183356934f6",
+    "id_detail": "b91304d9-8d39-4671-bd11-0c3cbeab3b94",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-22",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-22T06:58:46.204299+00:00"
+  },
+  {
+    "id_keluar": "f17b84a2-f103-4097-9239-3612a57b599d",
+    "id_detail": "b0bd4ede-3bd4-41de-b6c5-a025c4d6ff92",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-09-22",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-22T10:45:54.246138+00:00"
+  },
+  {
+    "id_keluar": "7a86e094-468d-459c-b5db-c4179510ca8f",
+    "id_detail": "50bf99cc-9993-452d-8690-f9be60bfb2ec",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-23",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-23T02:58:31.677131+00:00"
+  },
+  {
+    "id_keluar": "7062907b-874b-4d2f-b84a-493f2de2eaa7",
+    "id_detail": "6242abe6-3955-401f-b1ab-0a46f2fa2808",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-23",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-23T05:12:10.89251+00:00"
+  },
+  {
+    "id_keluar": "670ef59f-b5ae-4f76-a766-05a3d79b7af5",
+    "id_detail": "6242abe6-3955-401f-b1ab-0a46f2fa2808",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-23",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-23T05:12:10.89251+00:00"
+  },
+  {
+    "id_keluar": "1121cece-badf-4a95-b1d0-e7777f57315e",
+    "id_detail": "15ed5163-5bfb-4257-8d36-7996ff00e408",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-24T02:07:15.414218+00:00"
+  },
+  {
+    "id_keluar": "5e406a40-14a3-4f22-9298-6a2344b93f86",
+    "id_detail": "15ed5163-5bfb-4257-8d36-7996ff00e408",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-24T02:07:15.414218+00:00"
+  },
+  {
+    "id_keluar": "5326cf38-8604-4c43-ad19-ea5f8606cffa",
+    "id_detail": "248e3740-cab2-48dc-94c7-80a7a61126b3",
+    "id_bahan_baku": "BK-06",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "Teh",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-24T03:25:32.63287+00:00"
+  },
+  {
+    "id_keluar": "12f676d2-3028-492b-b451-349731a79081",
+    "id_detail": "248e3740-cab2-48dc-94c7-80a7a61126b3",
+    "id_bahan_baku": "BK-04",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "Gula Putih",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-24T03:25:32.63287+00:00"
+  },
+  {
+    "id_keluar": "1c96e9bc-7358-4130-a0e8-0ad7604c2fb0",
+    "id_detail": "569705f4-c2ec-4c12-9a46-bdb9a67f8ae7",
+    "id_bahan_baku": "BMK-06",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "Kentang",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-24T03:25:32.63287+00:00"
+  },
+  {
+    "id_keluar": "0a68595b-7787-46b8-8b7e-dcc487daeb5e",
+    "id_detail": "569705f4-c2ec-4c12-9a46-bdb9a67f8ae7",
+    "id_bahan_baku": "BMK-09",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "Minyak Goreng",
+    "jumlah_keluar": 10,
+    "created_at": "2026-09-24T03:25:32.63287+00:00"
+  },
+  {
+    "id_keluar": "be16d07b-8713-4ae3-bcd7-f5a6d8f06c02",
+    "id_detail": "c43cf762-56e5-480c-b354-efa2e45c037a",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-24T04:49:45.101185+00:00"
+  },
+  {
+    "id_keluar": "c1fd6617-5e1d-41ad-9a4f-f390e56a635b",
+    "id_detail": "8026eb80-e13c-411c-b7fb-6a311fe4c763",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-24T04:49:45.101185+00:00"
+  },
+  {
+    "id_keluar": "1103984e-59d3-4df4-b7f4-25ad1244ea47",
+    "id_detail": "8026eb80-e13c-411c-b7fb-6a311fe4c763",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 30,
+    "created_at": "2026-09-24T04:49:45.101185+00:00"
+  },
+  {
+    "id_keluar": "d777458b-6465-44e5-820e-905cc72f3999",
+    "id_detail": "3f0b580f-793a-4a98-84be-4f59dd890acf",
+    "id_bahan_baku": "BMK-06",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "Kentang",
+    "jumlah_keluar": 10,
+    "created_at": "2026-09-24T04:49:45.101185+00:00"
+  },
+  {
+    "id_keluar": "6625990b-a15a-4b8c-af41-cb22347de57e",
+    "id_detail": "3f0b580f-793a-4a98-84be-4f59dd890acf",
+    "id_bahan_baku": "BMK-04",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "Nugget",
+    "jumlah_keluar": 10,
+    "created_at": "2026-09-24T04:49:45.101185+00:00"
+  },
+  {
+    "id_keluar": "4efa0541-1918-4a4d-ad8d-f9157866340c",
+    "id_detail": "3f0b580f-793a-4a98-84be-4f59dd890acf",
+    "id_bahan_baku": "BMK-05",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "Sosis",
+    "jumlah_keluar": 4,
+    "created_at": "2026-09-24T04:49:45.101185+00:00"
+  },
+  {
+    "id_keluar": "10eafa9f-a81c-4327-9d07-268ba0a80c53",
+    "id_detail": "53ad9851-7056-42b5-b93f-efce6e016b9b",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-24T04:52:33.918406+00:00"
+  },
+  {
+    "id_keluar": "970fdf53-e49b-4d15-97c3-c1607a146efb",
+    "id_detail": "8cb3a839-e147-4e26-9bdf-5c6fb86bd8d6",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-24T06:34:32.424854+00:00"
+  },
+  {
+    "id_keluar": "7eddcf0e-e5f9-49e0-807c-9fc2856d3800",
+    "id_detail": "8cb3a839-e147-4e26-9bdf-5c6fb86bd8d6",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-24T06:34:32.424854+00:00"
+  },
+  {
+    "id_keluar": "9837fdaf-a002-42ee-9031-a82f058afdf9",
+    "id_detail": "c47b6fd8-06ba-4b0b-ad6f-40df4a7c3891",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-24T08:28:34.134512+00:00"
+  },
+  {
+    "id_keluar": "00e6c70c-0100-4a5c-836e-16c880916544",
+    "id_detail": "4ea9e3e5-5198-48ee-bd30-87987fa8f053",
+    "id_bahan_baku": "BK-06",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "Teh",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-24T10:20:56.146447+00:00"
+  },
+  {
+    "id_keluar": "99303541-8617-465d-a533-f2174e8b3d6d",
+    "id_detail": "4ea9e3e5-5198-48ee-bd30-87987fa8f053",
+    "id_bahan_baku": "BK-04",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "Gula Putih",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-24T10:20:56.146447+00:00"
+  },
+  {
+    "id_keluar": "0fbeae3c-0663-4919-acef-81af4c59bb59",
+    "id_detail": "e79808e5-b688-4d69-a1fa-5b42b7267f22",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 2,
+    "created_at": "2026-09-24T10:41:57.056277+00:00"
+  },
+  {
+    "id_keluar": "2583424a-f7dd-4972-beee-20fc8ab11892",
+    "id_detail": "e79808e5-b688-4d69-a1fa-5b42b7267f22",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 60,
+    "created_at": "2026-09-24T10:41:57.056277+00:00"
+  },
+  {
+    "id_keluar": "ed526a3e-120a-4ca0-9c12-988453e88691",
+    "id_detail": "a1c0b1dd-3314-4a5b-a491-9f310c798ff4",
+    "id_bahan_baku": "BMK-06",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "Kentang",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-24T10:41:57.056277+00:00"
+  },
+  {
+    "id_keluar": "b36fcd53-d377-47d2-b28e-fddf961bbb8c",
+    "id_detail": "a1c0b1dd-3314-4a5b-a491-9f310c798ff4",
+    "id_bahan_baku": "BMK-09",
+    "tanggal": "2026-09-24",
+    "nama_bahan_baku": "Minyak Goreng",
+    "jumlah_keluar": 10,
+    "created_at": "2026-09-24T10:41:57.056277+00:00"
+  },
+  {
+    "id_keluar": "b81a79fa-407e-4258-b30f-b0703cd3afe4",
+    "id_detail": "43ea8857-d18c-4518-9e4d-5ec2cc5c5b76",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-25T03:14:54.130436+00:00"
+  },
+  {
+    "id_keluar": "8d781ee4-05bb-430e-98da-4f91ee1b8229",
+    "id_detail": "43ea8857-d18c-4518-9e4d-5ec2cc5c5b76",
+    "id_bahan_baku": "BK-05",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Susu UHT",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-25T03:14:54.130436+00:00"
+  },
+  {
+    "id_keluar": "00e38171-c244-44ec-9a1c-2e4778ecee1b",
+    "id_detail": "43ea8857-d18c-4518-9e4d-5ec2cc5c5b76",
+    "id_bahan_baku": "BK-03",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Gula Aren",
+    "jumlah_keluar": 35,
+    "created_at": "2026-09-25T03:14:54.130436+00:00"
+  },
+  {
+    "id_keluar": "2fcab99a-62aa-4e9c-8167-1c0e0540d589",
+    "id_detail": "3cb02d8c-61c5-4e21-b13e-1a4572fe2264",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-25T03:24:30.604011+00:00"
+  },
+  {
+    "id_keluar": "b284d283-0a28-4a05-8dab-9942dd142f13",
+    "id_detail": "0faef8b8-ec0f-416a-bc41-f0cdabf1e9ea",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-25T03:30:19.383757+00:00"
+  },
+  {
+    "id_keluar": "8f5ce670-acc2-40b8-871a-accc0c318b30",
+    "id_detail": "8fc2fed0-9955-484d-81a9-ee412320430f",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 36,
+    "created_at": "2026-09-25T03:30:19.383757+00:00"
+  },
+  {
+    "id_keluar": "c18f3d82-c1c5-4c7d-95ee-789c507513df",
+    "id_detail": "8fc2fed0-9955-484d-81a9-ee412320430f",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 50,
+    "created_at": "2026-09-25T03:30:19.383757+00:00"
+  },
+  {
+    "id_keluar": "3b491dc0-04a0-4707-aa99-f4e89eb4244c",
+    "id_detail": "47bde4cd-d859-4fcf-ac98-29b868065cd1",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-25T03:42:51.263677+00:00"
+  },
+  {
+    "id_keluar": "0cf75375-91c1-494e-acf8-79a0c0f90ad5",
+    "id_detail": "8fc52d4c-0a2a-428d-b746-54088c0faf2c",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-25T04:11:06.558594+00:00"
+  },
+  {
+    "id_keluar": "1ffc3b63-0dd9-4e3c-beda-e66dff6bc023",
+    "id_detail": "f30952c8-bd99-4c14-b216-e410e2fe3445",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-25T04:11:06.558594+00:00"
+  },
+  {
+    "id_keluar": "83a366a7-c6f3-4dae-99da-11271b89994a",
+    "id_detail": "f30952c8-bd99-4c14-b216-e410e2fe3445",
+    "id_bahan_baku": "BK-05",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Susu UHT",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-25T04:11:06.558594+00:00"
+  },
+  {
+    "id_keluar": "1c21b872-8b4e-4005-b444-c1a0a65945cc",
+    "id_detail": "f30952c8-bd99-4c14-b216-e410e2fe3445",
+    "id_bahan_baku": "BK-03",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Gula Aren",
+    "jumlah_keluar": 35,
+    "created_at": "2026-09-25T04:11:06.558594+00:00"
+  },
+  {
+    "id_keluar": "ee0ca687-7057-4059-915e-8bb4aa5bcf52",
+    "id_detail": "1d259b02-5838-48fa-84f4-0eb06bbd3d88",
+    "id_bahan_baku": "BMK-08",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Indomie Goreng",
+    "jumlah_keluar": 2,
+    "created_at": "2026-09-25T04:11:06.558594+00:00"
+  },
+  {
+    "id_keluar": "e4831fa9-6326-4c03-ab5a-4dcbb26f2a1f",
+    "id_detail": "1d259b02-5838-48fa-84f4-0eb06bbd3d88",
+    "id_bahan_baku": "BMK-09",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Minyak Goreng",
+    "jumlah_keluar": 20,
+    "created_at": "2026-09-25T04:11:06.558594+00:00"
+  },
+  {
+    "id_keluar": "9c4afb95-4e59-48c4-9ecd-2917102dc934",
+    "id_detail": "1d259b02-5838-48fa-84f4-0eb06bbd3d88",
+    "id_bahan_baku": "BMK-10",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Telur",
+    "jumlah_keluar": 2,
+    "created_at": "2026-09-25T04:11:06.558594+00:00"
+  },
+  {
+    "id_keluar": "d58097b6-53fe-44cd-ae1a-117b8e94afde",
+    "id_detail": "27e41245-0a39-4611-b9b5-243b05a07803",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-25T07:49:51.503174+00:00"
+  },
+  {
+    "id_keluar": "3b8de93d-89d1-4ba4-863c-d13c5989c04b",
+    "id_detail": "59528231-b75e-44cd-b090-52832aeab36d",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-25T07:49:51.503174+00:00"
+  },
+  {
+    "id_keluar": "e65837fa-0604-46d5-9391-f7ccd2b30ed1",
+    "id_detail": "e9dba52d-52bd-44b3-8123-9393c86e6c4c",
+    "id_bahan_baku": "BMK-04",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Nugget",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-25T07:49:51.503174+00:00"
+  },
+  {
+    "id_keluar": "2436f429-a581-462f-a8f6-dddbc92c6c5a",
+    "id_detail": "e9dba52d-52bd-44b3-8123-9393c86e6c4c",
+    "id_bahan_baku": "BMK-09",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Minyak Goreng",
+    "jumlah_keluar": 10,
+    "created_at": "2026-09-25T07:49:51.503174+00:00"
+  },
+  {
+    "id_keluar": "54b6cbfd-44ab-4e72-a663-a679b51d3fd7",
+    "id_detail": "27aa50b9-24f0-44fd-a055-d14f261c1cc7",
+    "id_bahan_baku": "BMK-06",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Kentang",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-25T07:49:51.503174+00:00"
+  },
+  {
+    "id_keluar": "10d539a2-6ce7-4572-9430-bd47e45a589a",
+    "id_detail": "27aa50b9-24f0-44fd-a055-d14f261c1cc7",
+    "id_bahan_baku": "BMK-09",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Minyak Goreng",
+    "jumlah_keluar": 10,
+    "created_at": "2026-09-25T07:49:51.503174+00:00"
+  },
+  {
+    "id_keluar": "231967eb-ca94-40f2-af20-4984acfabbe9",
+    "id_detail": "b4d68357-5159-400a-972d-b32df0e22462",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-25T09:04:01.193979+00:00"
+  },
+  {
+    "id_keluar": "dff6f17b-f285-4250-80b1-b561ceb525d6",
+    "id_detail": "b4d68357-5159-400a-972d-b32df0e22462",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 30,
+    "created_at": "2026-09-25T09:04:01.193979+00:00"
+  },
+  {
+    "id_keluar": "2eefe434-961c-4b30-8992-f8517f5f5774",
+    "id_detail": "40e846df-7e78-4524-9719-3702e572f2ac",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-09-25",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 2,
+    "created_at": "2026-09-25T10:04:28.470077+00:00"
+  },
+  {
+    "id_keluar": "0b4de1a8-0305-47a3-a12d-d7756e950de6",
+    "id_detail": "cbdc2db0-6c4d-4310-b927-1d2d91dc65c0",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-26",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-26T03:17:04.168948+00:00"
+  },
+  {
+    "id_keluar": "933298ae-cbf9-421f-a08f-eeb1a89cf6bd",
+    "id_detail": "cbdc2db0-6c4d-4310-b927-1d2d91dc65c0",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-26",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-26T03:17:04.168948+00:00"
+  },
+  {
+    "id_keluar": "d0d66f49-385b-425b-9af7-8c53af811b66",
+    "id_detail": "789280d5-85b3-4146-9a68-b7e1bb9b017d",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-26",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-26T03:21:02.377042+00:00"
+  },
+  {
+    "id_keluar": "3f9dc446-d760-40cb-81e6-9c76767f1ea5",
+    "id_detail": "789280d5-85b3-4146-9a68-b7e1bb9b017d",
+    "id_bahan_baku": "BK-05",
+    "tanggal": "2026-09-26",
+    "nama_bahan_baku": "Susu UHT",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-26T03:21:02.377042+00:00"
+  },
+  {
+    "id_keluar": "dee94488-febb-4188-9c54-66d320bf0636",
+    "id_detail": "4b2b591b-3650-4ce0-a91f-4fe5a137554b",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-09-26",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-26T03:23:10.855257+00:00"
+  },
+  {
+    "id_keluar": "06bbb048-08da-4763-ba39-ac1246d0da6c",
+    "id_detail": "f4902096-5654-4984-bad1-fdfd97873852",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-26",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-26T03:23:10.855257+00:00"
+  },
+  {
+    "id_keluar": "fa7fcac6-95a3-4123-80a4-052a454df6d5",
+    "id_detail": "f4902096-5654-4984-bad1-fdfd97873852",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-26",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-26T03:23:10.855257+00:00"
+  },
+  {
+    "id_keluar": "e63dee05-bbf7-4eea-9840-ddd457e5d717",
+    "id_detail": "2542d214-cee6-4d22-8a62-342ac33245c9",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-26",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-26T03:29:23.424295+00:00"
+  },
+  {
+    "id_keluar": "802c4bc2-b62b-4d78-ad00-a00d5ac39c31",
+    "id_detail": "2542d214-cee6-4d22-8a62-342ac33245c9",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-26",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-26T03:29:23.424295+00:00"
+  },
+  {
+    "id_keluar": "c2c3e2f4-81a7-40cf-85fc-673c3d50fa4b",
+    "id_detail": "0c88080f-aea7-47df-80c9-c90718ac24cb",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-26",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-26T03:51:19.324775+00:00"
+  },
+  {
+    "id_keluar": "abc44902-e75d-441d-81d9-0db969f209b0",
+    "id_detail": "4374ef5b-291b-4a01-ab75-ce0a008dcd15",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-26",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-26T04:34:59.373523+00:00"
+  },
+  {
+    "id_keluar": "3a8a6a30-06b8-45ef-9003-a90d295cbdd0",
+    "id_detail": "4374ef5b-291b-4a01-ab75-ce0a008dcd15",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-26",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-26T04:34:59.373523+00:00"
+  },
+  {
+    "id_keluar": "298e7aed-a4d5-4214-9218-ba8e1e75e113",
+    "id_detail": "4f165e38-57ab-45c0-8447-88365e00b319",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-26",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-26T06:19:50.243085+00:00"
+  },
+  {
+    "id_keluar": "56c83359-8f87-48f3-b30f-fa0a8db60e1c",
+    "id_detail": "2d21b5ee-d570-41fa-a647-9e7c153c2037",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-26",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-26T06:40:26.195019+00:00"
+  },
+  {
+    "id_keluar": "256bebb1-aea0-42fe-be2e-ad06b4d96f3c",
+    "id_detail": "2d21b5ee-d570-41fa-a647-9e7c153c2037",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-26",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-26T06:40:26.195019+00:00"
+  },
+  {
+    "id_keluar": "a25e2673-c31e-4c21-8d87-d5a516e5697c",
+    "id_detail": "2ea86814-d8ae-44d4-9d54-a8af6741367d",
+    "id_bahan_baku": "BK-06",
+    "tanggal": "2026-09-26",
+    "nama_bahan_baku": "Teh",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-26T06:41:49.739358+00:00"
+  },
+  {
+    "id_keluar": "a25211c7-5dbc-4fd8-9fcd-23ac18c89c49",
+    "id_detail": "2ea86814-d8ae-44d4-9d54-a8af6741367d",
+    "id_bahan_baku": "BK-04",
+    "tanggal": "2026-09-26",
+    "nama_bahan_baku": "Gula Putih",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-26T06:41:49.739358+00:00"
+  },
+  {
+    "id_keluar": "5cb38ef7-d1c0-46d4-9a98-10702a9d4232",
+    "id_detail": "3780e9d6-aa29-4620-b829-914fa0b57ee1",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-26",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-26T08:51:52.5985+00:00"
+  },
+  {
+    "id_keluar": "1f8a0a31-4a7e-4e68-ac99-53b0fcb05ea7",
+    "id_detail": "33ce8647-a08e-4b78-9d1a-4adba4ed8edf",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-27T04:11:55.148308+00:00"
+  },
+  {
+    "id_keluar": "8edb045f-a62b-49c8-93b8-f5dc1bdec933",
+    "id_detail": "33ce8647-a08e-4b78-9d1a-4adba4ed8edf",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-27T04:11:55.148308+00:00"
+  },
+  {
+    "id_keluar": "5a7bfbb7-8a0c-4e54-b1b8-fca9616135e1",
+    "id_detail": "2b633ba2-44c1-463d-802a-ada97e452766",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-27T04:12:12.724345+00:00"
+  },
+  {
+    "id_keluar": "f878e667-8330-4cb2-85bf-f74285c371b5",
+    "id_detail": "2b633ba2-44c1-463d-802a-ada97e452766",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-27T04:12:12.724345+00:00"
+  },
+  {
+    "id_keluar": "d40da36b-3dfd-46d2-b1ae-cf106edeb141",
+    "id_detail": "85a25f4e-6f3b-4ad8-aaa3-71defdfee159",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-27T05:47:32.513015+00:00"
+  },
+  {
+    "id_keluar": "e258dc22-9b47-44b2-be6a-6306ab7a74f8",
+    "id_detail": "af38fb1b-d2de-4c3b-9ede-6bf824e97905",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-27T07:24:15.398188+00:00"
+  },
+  {
+    "id_keluar": "b4bcc979-13c9-425f-a634-f329fc06d4da",
+    "id_detail": "323d75a8-fe22-49e5-a430-ebbeb288aa82",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-27T07:24:15.398188+00:00"
+  },
+  {
+    "id_keluar": "f6224705-fd75-4271-99ec-d070ee181b18",
+    "id_detail": "8a723451-1ff1-44ad-867d-6d19665f59f8",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-27T07:24:46.259688+00:00"
+  },
+  {
+    "id_keluar": "98e4910a-fffe-4107-9cbe-1d7b5ecde5c7",
+    "id_detail": "4a8e0350-3354-4ae6-b4f5-acf54446ffef",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-27T07:38:43.010521+00:00"
+  },
+  {
+    "id_keluar": "69035db0-0eb7-40b8-8b8b-e4ea2dacdb7c",
+    "id_detail": "5c19860d-3125-4a1a-b2a7-e407415440a5",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-27T08:58:55.408082+00:00"
+  },
+  {
+    "id_keluar": "ef302e18-19cc-4a9f-90e3-bf31566b7727",
+    "id_detail": "43b8d924-eb55-4a96-b040-04d6d31533f7",
+    "id_bahan_baku": "BMK-08",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Indomie Goreng",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-27T08:58:55.408082+00:00"
+  },
+  {
+    "id_keluar": "627317d3-b4bb-4be0-813f-e97f5b7542d3",
+    "id_detail": "43b8d924-eb55-4a96-b040-04d6d31533f7",
+    "id_bahan_baku": "BMK-09",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Minyak Goreng",
+    "jumlah_keluar": 10,
+    "created_at": "2026-09-27T08:58:55.408082+00:00"
+  },
+  {
+    "id_keluar": "262ab0d4-c8df-492b-9a96-9c5cbda66b9c",
+    "id_detail": "43b8d924-eb55-4a96-b040-04d6d31533f7",
+    "id_bahan_baku": "BMK-10",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Telur",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-27T08:58:55.408082+00:00"
+  },
+  {
+    "id_keluar": "f6fd58c9-df7f-41fe-90f1-78f0a1385632",
+    "id_detail": "ef41b5d4-9ce9-4435-9a5d-d43500bfbb67",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 36,
+    "created_at": "2026-09-27T09:53:48.765111+00:00"
+  },
+  {
+    "id_keluar": "54587686-5089-4b89-b13d-3703260e168a",
+    "id_detail": "ef41b5d4-9ce9-4435-9a5d-d43500bfbb67",
+    "id_bahan_baku": "BK-05",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Susu UHT",
+    "jumlah_keluar": 200,
+    "created_at": "2026-09-27T09:53:48.765111+00:00"
+  },
+  {
+    "id_keluar": "c3a4805b-5012-433d-9ed8-6d1994380a50",
+    "id_detail": "ef41b5d4-9ce9-4435-9a5d-d43500bfbb67",
+    "id_bahan_baku": "BK-03",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Gula Aren",
+    "jumlah_keluar": 70,
+    "created_at": "2026-09-27T09:53:48.765111+00:00"
+  },
+  {
+    "id_keluar": "8b36eea5-caa6-4266-9d91-22cbc458ba4c",
+    "id_detail": "551e70d6-bb90-474c-b4ae-0b8f6a08b06e",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-27T09:55:03.004077+00:00"
+  },
+  {
+    "id_keluar": "d7ea87db-8f64-4cf2-96a7-d306918faa91",
+    "id_detail": "551e70d6-bb90-474c-b4ae-0b8f6a08b06e",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-27T09:55:03.004077+00:00"
+  },
+  {
+    "id_keluar": "fe9cd4ee-4a8b-4197-89e6-97521f97e3f8",
+    "id_detail": "e5273297-875e-4b74-bce9-e5f48912ced5",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-27T10:19:05.724505+00:00"
+  },
+  {
+    "id_keluar": "6dff6668-035f-49fc-9cdb-ba9e2eeaaa40",
+    "id_detail": "e5273297-875e-4b74-bce9-e5f48912ced5",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-27T10:19:05.724505+00:00"
+  },
+  {
+    "id_keluar": "1616f292-2da1-44e7-aa89-9742eca6bded",
+    "id_detail": "4c3a19df-0472-4946-b768-10457572557a",
+    "id_bahan_baku": "BMK-04",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Nugget",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-27T10:19:05.724505+00:00"
+  },
+  {
+    "id_keluar": "5dd199d6-0efa-469a-ab10-dbf835bdf031",
+    "id_detail": "4c3a19df-0472-4946-b768-10457572557a",
+    "id_bahan_baku": "BMK-09",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Minyak Goreng",
+    "jumlah_keluar": 10,
+    "created_at": "2026-09-27T10:19:05.724505+00:00"
+  },
+  {
+    "id_keluar": "27d32119-46a0-4d0e-9ae7-396152540a6b",
+    "id_detail": "84f05e84-88eb-4da1-87ac-67b74294ed5e",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-27T10:23:45.248119+00:00"
+  },
+  {
+    "id_keluar": "632cd26a-3a6d-4b6e-b754-d1edd2a96228",
+    "id_detail": "d726a193-74a0-497b-9a07-cc9467e4e846",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-27",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-27T10:40:03.530244+00:00"
+  },
+  {
+    "id_keluar": "e45a79ca-e198-4f26-9a9d-764df851468d",
+    "id_detail": "2b3660eb-1949-4257-9208-286ee09e5a74",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-28T02:50:12.524567+00:00"
+  },
+  {
+    "id_keluar": "07ba8bd0-0ab5-4291-a608-89faf29ef0f2",
+    "id_detail": "2b3660eb-1949-4257-9208-286ee09e5a74",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-28T02:50:12.524567+00:00"
+  },
+  {
+    "id_keluar": "86d50d58-8467-49a5-b083-117962f7fc1c",
+    "id_detail": "5c1702b3-0245-4b08-86ea-83e0766eead1",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-28T02:50:36.129256+00:00"
+  },
+  {
+    "id_keluar": "da01d1e6-75a6-4fd9-b8ba-34dcbecd9d15",
+    "id_detail": "5c1702b3-0245-4b08-86ea-83e0766eead1",
+    "id_bahan_baku": "BK-05",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Susu UHT",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-28T02:50:36.129256+00:00"
+  },
+  {
+    "id_keluar": "760360d1-f978-4c23-a27e-e08184955b59",
+    "id_detail": "5c1702b3-0245-4b08-86ea-83e0766eead1",
+    "id_bahan_baku": "BK-03",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Gula Aren",
+    "jumlah_keluar": 35,
+    "created_at": "2026-09-28T02:50:36.129256+00:00"
+  },
+  {
+    "id_keluar": "9302f3fa-e21a-402f-96b0-43aa4159dad8",
+    "id_detail": "6cdcea3c-4501-449f-b582-8c82f9741918",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-28T03:15:19.651362+00:00"
+  },
+  {
+    "id_keluar": "88c9e32d-712b-42fa-8d33-8206e2d2dd60",
+    "id_detail": "6cdcea3c-4501-449f-b582-8c82f9741918",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-28T03:15:19.651362+00:00"
+  },
+  {
+    "id_keluar": "b1d43b38-4976-427d-beb2-edbfd12f3d90",
+    "id_detail": "2a03a321-9afc-4638-a29f-91841235d2d2",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-28T03:27:35.132745+00:00"
+  },
+  {
+    "id_keluar": "a91676d9-766a-4594-869e-7f4a26575e4d",
+    "id_detail": "2a03a321-9afc-4638-a29f-91841235d2d2",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-28T03:27:35.132745+00:00"
+  },
+  {
+    "id_keluar": "3f102c76-f7ee-4ae7-9ca3-7ddcfddd76d0",
+    "id_detail": "b2ff992f-9baf-4251-bed4-02a5e1313477",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-28T03:54:23.845561+00:00"
+  },
+  {
+    "id_keluar": "ad68c31c-cbe6-4586-84f5-c53cbe1a6f2e",
+    "id_detail": "93f5632b-7cda-4cba-94e6-a58657a8bb68",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-28T05:29:37.991513+00:00"
+  },
+  {
+    "id_keluar": "3e26cf7e-d29e-4501-9f63-a64ebe1e29ff",
+    "id_detail": "93f5632b-7cda-4cba-94e6-a58657a8bb68",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-28T05:29:37.991513+00:00"
+  },
+  {
+    "id_keluar": "f8d8cf1e-d8aa-4cd4-8504-f435b172b84c",
+    "id_detail": "fc7b8936-79b7-445f-8bd3-ed5ead5fa713",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-28T05:29:49.522281+00:00"
+  },
+  {
+    "id_keluar": "121ee878-35b7-4bb7-bf21-2a7705ed90b1",
+    "id_detail": "fc7b8936-79b7-445f-8bd3-ed5ead5fa713",
+    "id_bahan_baku": "BK-05",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Susu UHT",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-28T05:29:49.522281+00:00"
+  },
+  {
+    "id_keluar": "365775d3-36f2-4f37-816d-6683798ba1e5",
+    "id_detail": "fc7b8936-79b7-445f-8bd3-ed5ead5fa713",
+    "id_bahan_baku": "BK-03",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Gula Aren",
+    "jumlah_keluar": 35,
+    "created_at": "2026-09-28T05:29:49.522281+00:00"
+  },
+  {
+    "id_keluar": "7237548c-fecc-4039-9c14-5bcb1217b267",
+    "id_detail": "c4313f08-aeb3-4061-9c3d-70c3f0778d7d",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-28T05:30:13.732226+00:00"
+  },
+  {
+    "id_keluar": "c3b650fe-6f53-4f22-b86a-40739f2045ec",
+    "id_detail": "c4313f08-aeb3-4061-9c3d-70c3f0778d7d",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-28T05:30:13.732226+00:00"
+  },
+  {
+    "id_keluar": "815711a0-d26e-49ce-a981-0ee8129002c3",
+    "id_detail": "d5734a84-f880-441f-9a08-d9b59fe4a48d",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-28T06:54:05.386261+00:00"
+  },
+  {
+    "id_keluar": "9882f42a-8d92-470b-8ee7-531947afbe58",
+    "id_detail": "d5734a84-f880-441f-9a08-d9b59fe4a48d",
+    "id_bahan_baku": "BK-05",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Susu UHT",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-28T06:54:05.386261+00:00"
+  },
+  {
+    "id_keluar": "5dfadf13-741a-4cb2-a177-499f494e5876",
+    "id_detail": "509cbc71-975b-4f1d-a003-c008a47831b1",
+    "id_bahan_baku": "BMK-04",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Nugget",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-28T06:54:05.386261+00:00"
+  },
+  {
+    "id_keluar": "e61e926c-2739-4f56-a7d1-9405fe186701",
+    "id_detail": "509cbc71-975b-4f1d-a003-c008a47831b1",
+    "id_bahan_baku": "BMK-09",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Minyak Goreng",
+    "jumlah_keluar": 10,
+    "created_at": "2026-09-28T06:54:05.386261+00:00"
+  },
+  {
+    "id_keluar": "e097ac55-af20-4fbe-ad64-734144bac4ae",
+    "id_detail": "4d85c158-bd34-475b-be43-0d4344da9b16",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-28T06:58:22.013222+00:00"
+  },
+  {
+    "id_keluar": "b851ddc0-aba9-47fa-bc3e-93bc5dcbba18",
+    "id_detail": "4d85c158-bd34-475b-be43-0d4344da9b16",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-28T06:58:22.013222+00:00"
+  },
+  {
+    "id_keluar": "212101e4-3097-405a-b33b-cb60d69b4768",
+    "id_detail": "b86d1e23-2724-4a29-83d7-dd311ea646ab",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 36,
+    "created_at": "2026-09-28T07:45:20.297465+00:00"
+  },
+  {
+    "id_keluar": "c97a7fc6-1d00-408f-802f-2bfab06ad642",
+    "id_detail": "b86d1e23-2724-4a29-83d7-dd311ea646ab",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 50,
+    "created_at": "2026-09-28T07:45:20.297465+00:00"
+  },
+  {
+    "id_keluar": "a487716f-c757-48c7-965a-3511bdb82077",
+    "id_detail": "64d3ab6e-bee4-4f5f-9be5-6ceb6ac63abb",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-28T08:12:39.319987+00:00"
+  },
+  {
+    "id_keluar": "8a70810b-6b9f-465d-b253-7c8ae1058c1c",
+    "id_detail": "a4586b6a-6db8-46ba-8462-8961c025c832",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-28T09:09:23.668768+00:00"
+  },
+  {
+    "id_keluar": "710d5604-444e-4536-b942-ebefb5c5acb6",
+    "id_detail": "5d9bfbfe-e537-4071-ae3e-2ef60d59bd04",
+    "id_bahan_baku": "BK-06",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Teh",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-28T09:09:23.668768+00:00"
+  },
+  {
+    "id_keluar": "62b8f565-7922-4e52-9fde-f81355ee6e7b",
+    "id_detail": "5d9bfbfe-e537-4071-ae3e-2ef60d59bd04",
+    "id_bahan_baku": "BK-04",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Gula Putih",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-28T09:09:23.668768+00:00"
+  },
+  {
+    "id_keluar": "6dcdae63-e151-40a4-b811-fa5cbd0af880",
+    "id_detail": "68569f7e-1438-42d3-8c54-0f28deb7c21c",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-28",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-28T10:43:55.853425+00:00"
+  },
+  {
+    "id_keluar": "4566350c-c0dd-4348-b3a3-5403647d8afa",
+    "id_detail": "b809e788-a568-4ebe-b00e-9c3f71f6ab29",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-09-29",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-29T03:12:38.734673+00:00"
+  },
+  {
+    "id_keluar": "f29cc967-4c08-49c1-ac22-9200d751c279",
+    "id_detail": "163704ad-3f66-4ce7-8415-5aef6f2f0d6c",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-29",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-29T03:38:10.388531+00:00"
+  },
+  {
+    "id_keluar": "53806a73-adea-41db-b4d1-0a151554a9a3",
+    "id_detail": "163704ad-3f66-4ce7-8415-5aef6f2f0d6c",
+    "id_bahan_baku": "BK-05",
+    "tanggal": "2026-09-29",
+    "nama_bahan_baku": "Susu UHT",
+    "jumlah_keluar": 100,
+    "created_at": "2026-09-29T03:38:10.388531+00:00"
+  },
+  {
+    "id_keluar": "e397a73b-181b-4b8c-97e5-a547ecfbca02",
+    "id_detail": "163704ad-3f66-4ce7-8415-5aef6f2f0d6c",
+    "id_bahan_baku": "BK-03",
+    "tanggal": "2026-09-29",
+    "nama_bahan_baku": "Gula Aren",
+    "jumlah_keluar": 35,
+    "created_at": "2026-09-29T03:38:10.388531+00:00"
+  },
+  {
+    "id_keluar": "bf65958c-a94a-47c3-a3aa-02e56f0936d8",
+    "id_detail": "46b2d3ed-9bc9-4eb4-9d86-7a756bdbc80f",
+    "id_bahan_baku": "BK-06",
+    "tanggal": "2026-09-29",
+    "nama_bahan_baku": "Teh",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-29T05:05:22.616849+00:00"
+  },
+  {
+    "id_keluar": "41332668-9d07-4514-b2f1-0216da91d360",
+    "id_detail": "46b2d3ed-9bc9-4eb4-9d86-7a756bdbc80f",
+    "id_bahan_baku": "BK-04",
+    "tanggal": "2026-09-29",
+    "nama_bahan_baku": "Gula Putih",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-29T05:05:22.616849+00:00"
+  },
+  {
+    "id_keluar": "54884f74-031c-46eb-a169-ac8934787958",
+    "id_detail": "38a75e25-e5ad-4520-bea8-70d88e837848",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-09-29",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-29T05:42:33.329222+00:00"
+  },
+  {
+    "id_keluar": "85f7d896-65b6-4fc7-befa-a24ca9960f54",
+    "id_detail": "3bec1584-3e2a-4f6f-ab45-e3623b0420eb",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-29",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-29T05:42:33.329222+00:00"
+  },
+  {
+    "id_keluar": "37907223-c636-46cb-9468-4196040bd806",
+    "id_detail": "09988bff-4c35-407c-9a98-8419e4daefce",
+    "id_bahan_baku": "BK-06",
+    "tanggal": "2026-09-29",
+    "nama_bahan_baku": "Teh",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-29T10:26:30.177252+00:00"
+  },
+  {
+    "id_keluar": "74819863-f20c-4f61-b071-115c0d18ef0e",
+    "id_detail": "09988bff-4c35-407c-9a98-8419e4daefce",
+    "id_bahan_baku": "BK-04",
+    "tanggal": "2026-09-29",
+    "nama_bahan_baku": "Gula Putih",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-29T10:26:30.177252+00:00"
+  },
+  {
+    "id_keluar": "24929c69-ff82-43b6-a579-bab03ed4bcce",
+    "id_detail": "7036cba2-ca02-4139-947c-64dd45eafa7f",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-09-29",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 1,
+    "created_at": "2026-09-29T11:05:11.113598+00:00"
+  },
+  {
+    "id_keluar": "c1b32f92-2788-4412-be52-c854da450884",
+    "id_detail": "7adbe306-970f-4e43-a8ba-fc9548e5dfe6",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-30",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-30T06:36:33.419053+00:00"
+  },
+  {
+    "id_keluar": "f4f3a9fa-6a75-4d35-9cae-d6bb23f3da9c",
+    "id_detail": "f589408f-ce13-47cb-a456-18b96875d28c",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-09-30",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-09-30T07:53:48.401892+00:00"
+  },
+  {
+    "id_keluar": "40a511fc-fac7-402d-b1f4-947d051eba3f",
+    "id_detail": "f589408f-ce13-47cb-a456-18b96875d28c",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-09-30",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-09-30T07:53:48.401892+00:00"
+  },
+  {
+    "id_keluar": "01a06868-de3a-4fc5-97de-db3acac1e079",
+    "id_detail": "bcedbd40-f859-4c56-91a0-eb33228c7f4a",
+    "id_bahan_baku": "BMK-05",
+    "tanggal": "2026-09-30",
+    "nama_bahan_baku": "Sosis",
+    "jumlah_keluar": 4,
+    "created_at": "2026-09-30T10:46:25.288402+00:00"
+  },
+  {
+    "id_keluar": "415ce663-2b8d-4c8f-84f1-38fc93834e5e",
+    "id_detail": "bcedbd40-f859-4c56-91a0-eb33228c7f4a",
+    "id_bahan_baku": "BMK-09",
+    "tanggal": "2026-09-30",
+    "nama_bahan_baku": "Minyak Goreng",
+    "jumlah_keluar": 10,
+    "created_at": "2026-09-30T10:46:25.288402+00:00"
+  },
+  {
+    "id_keluar": "a2d548c4-fb20-44ff-a066-3788b2fc3862",
+    "id_detail": "71d18054-e942-4ca3-b2e7-e72d04b0a1bd",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-10-01",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-10-01T01:31:12.699795+00:00"
+  },
+  {
+    "id_keluar": "e51d14a9-b273-4bfb-9b44-0d545663ce1a",
+    "id_detail": "371795e5-4f78-49b8-a5cd-b0e584a5b415",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-10-01",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-10-01T03:38:43.239448+00:00"
+  },
+  {
+    "id_keluar": "354a5426-184d-448e-b9e2-c3144933ecc0",
+    "id_detail": "371795e5-4f78-49b8-a5cd-b0e584a5b415",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-10-01",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 25,
+    "created_at": "2026-10-01T03:38:43.239448+00:00"
+  },
+  {
+    "id_keluar": "83d3a154-1432-4ccc-894a-2b14c78f6156",
+    "id_detail": "ece11547-a284-49c0-8458-80d22c66f0dd",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-10-01",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 54,
+    "created_at": "2026-10-01T05:04:12.484776+00:00"
+  },
+  {
+    "id_keluar": "fad34641-747b-4d3b-9ad5-b3f35a723204",
+    "id_detail": "1d8eaf83-23b0-4f83-96c0-d0e1cb7bbb8f",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-10-01",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-10-01T07:19:09.387751+00:00"
+  },
+  {
+    "id_keluar": "179464e7-56fd-4250-a591-39b34e5e7613",
+    "id_detail": "fbf7e580-d86a-4ffc-b1cd-75084e33656a",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-10-01",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-10-01T07:31:31.856922+00:00"
+  },
+  {
+    "id_keluar": "77d4fe93-bd92-4fca-9be9-efff0d5b1d19",
+    "id_detail": "d9c90621-6e6e-4950-9776-2e0dce223968",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-10-01",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 2,
+    "created_at": "2026-10-01T09:21:32.85789+00:00"
+  },
+  {
+    "id_keluar": "8c885555-a924-4153-bf1a-ad2b8769c35e",
+    "id_detail": "1deb3a46-02be-4c00-b4f8-e68dfd42e32a",
+    "id_bahan_baku": "MB-01",
+    "tanggal": "2026-10-01",
+    "nama_bahan_baku": "Le Mineral",
+    "jumlah_keluar": 1,
+    "created_at": "2026-10-01T09:36:31.419919+00:00"
+  },
+  {
+    "id_keluar": "faa6ce29-586a-485e-948b-e0b71e5e9bf8",
+    "id_detail": "03cfde26-f12a-4756-94cf-94a28ade0f1a",
+    "id_bahan_baku": "BK-01",
+    "tanggal": "2026-10-02",
+    "nama_bahan_baku": "Biji Kopi",
+    "jumlah_keluar": 18,
+    "created_at": "2026-10-02T03:11:33.767581+00:00"
+  },
+  {
+    "id_keluar": "35ea6220-9611-4ef2-bd24-2ba9228980e8",
+    "id_detail": "03cfde26-f12a-4756-94cf-94a28ade0f1a",
+    "id_bahan_baku": "BK-05",
+    "tanggal": "2026-10-02",
+    "nama_bahan_baku": "Susu UHT",
+    "jumlah_keluar": 100,
+    "created_at": "2026-10-02T03:11:33.767581+00:00"
+  },
+  {
+    "id_keluar": "db004d95-5ee5-40e6-94a3-e6dd0373f286",
+    "id_detail": "03cfde26-f12a-4756-94cf-94a28ade0f1a",
+    "id_bahan_baku": "BK-03",
+    "tanggal": "2026-10-02",
+    "nama_bahan_baku": "Gula Aren",
+    "jumlah_keluar": 35,
+    "created_at": "2026-10-02T03:11:33.767581+00:00"
+  },
+  {
+    "id_keluar": "9bad7423-19c9-4df8-8d8a-185f1fa71e3b",
+    "id_detail": "4d7c8f88-317c-43bb-a99e-9e17fbd9c5cf",
+    "id_bahan_baku": "MB-02",
+    "tanggal": "2026-10-02",
+    "nama_bahan_baku": "Badak",
+    "jumlah_keluar": 1,
+    "created_at": "2026-10-02T03:54:46.320709+00:00"
+  },
+  {
+    "id_keluar": "73851b9a-2e55-49e4-b19b-e03733dfc290",
+    "id_detail": "4d7c8f88-317c-43bb-a99e-9e17fbd9c5cf",
+    "id_bahan_baku": "BK-02",
+    "tanggal": "2026-10-02",
+    "nama_bahan_baku": "SKM",
+    "jumlah_keluar": 30,
+    "created_at": "2026-10-02T03:54:46.320709+00:00"
   }
 ]

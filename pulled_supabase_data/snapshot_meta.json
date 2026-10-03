@@ -1,30 +1,30 @@
 {
-  "pulled_at": "2026-09-11T13:30:45.291Z",
+  "pulled_at": "2026-10-02T08:27:46.737Z",
   "source_url": "https://grwvhsqxuypcdxxqshgs...",
   "tables": [
     {
       "table": "struk",
-      "count": 4035
+      "count": 4609
     },
     {
       "table": "carwash",
-      "count": 4157
+      "count": 4690
     },
     {
       "table": "cafe",
-      "count": 1437
+      "count": 1601
     },
     {
       "table": "cashflow",
-      "count": 1698
+      "count": 1758
     },
     {
       "table": "pengeluaran",
-      "count": 743
+      "count": 860
     },
     {
       "table": "stok_barang",
-      "count": 19
+      "count": 18
     },
     {
       "table": "daftar_harga_menu",
@@ -60,7 +60,7 @@
     },
     {
       "table": "barang_keluar",
-      "count": 2176
+      "count": 2447
     },
     {
       "table": "profiles",
