@@ -166,8 +166,8 @@ export default function GeneralLedgerView({ tenantId }) {
 
   if (loading && !trialBalance) {
     return (
-      <div className="p-8 text-center text-slate-400">
-        <div className="w-8 h-8 border-2 border-brand-emerald border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+      <div className="p-8 text-center text-[#bbcbb2]">
+        <div className="w-8 h-8 border-2 border-[#00ffff] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
         <p className="text-xs uppercase tracking-wider font-semibold">Menghitung Buku Besar & Neraca Saldo...</p>
       </div>
     )
@@ -176,12 +176,12 @@ export default function GeneralLedgerView({ tenantId }) {
   return (
     <div className="space-y-6">
       {/* Sub-Navigation Tabs */}
-      <div className="flex items-center justify-between flex-wrap gap-3 border-b border-slate-800 pb-3">
-        <div className="flex items-center gap-2 bg-slate-900/80 p-1 rounded-xl border border-slate-800 text-xs">
+      <div className="flex items-center justify-between flex-wrap gap-3 border-b border-[#26272d] pb-3">
+        <div className="flex items-center gap-2 bg-[#18181c]/80 p-1 rounded-xl border border-[#26272d] text-xs">
           <button
             onClick={() => setActiveGlTab('trial_balance')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all ${
-              activeGlTab === 'trial_balance' ? 'bg-brand-emerald text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+              activeGlTab === 'trial_balance' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
             }`}
           >
             <Scale size={14} />
@@ -190,7 +190,7 @@ export default function GeneralLedgerView({ tenantId }) {
           <button
             onClick={() => setActiveGlTab('balance_sheet')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all ${
-              activeGlTab === 'balance_sheet' ? 'bg-brand-emerald text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+              activeGlTab === 'balance_sheet' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
             }`}
           >
             <PieChart size={14} />
@@ -199,7 +199,7 @@ export default function GeneralLedgerView({ tenantId }) {
           <button
             onClick={() => setActiveGlTab('income_statement')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all ${
-              activeGlTab === 'income_statement' ? 'bg-brand-emerald text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+              activeGlTab === 'income_statement' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
             }`}
           >
             <DollarSign size={14} />
@@ -208,7 +208,7 @@ export default function GeneralLedgerView({ tenantId }) {
           <button
             onClick={() => setActiveGlTab('ledger_drilldown')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all ${
-              activeGlTab === 'ledger_drilldown' ? 'bg-brand-emerald text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+              activeGlTab === 'ledger_drilldown' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
             }`}
           >
             <BookOpen size={14} />
@@ -217,9 +217,9 @@ export default function GeneralLedgerView({ tenantId }) {
         </div>
 
         {/* Balance Invariant Indicator */}
-        <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-xs">
+        <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-[#18181c] border border-[#26272d] text-xs">
           {trialBalance?.is_balanced ? (
-            <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+            <div className="flex items-center gap-1.5 text-[#00ffff] font-semibold">
               <CheckCircle2 size={15} />
               <span>Buku Besar: 100% Seimbang (Debit = Kredit)</span>
             </div>
@@ -237,16 +237,16 @@ export default function GeneralLedgerView({ tenantId }) {
         <div className="space-y-4">
           <div className="flex justify-between items-center gap-3">
             <div className="relative w-64">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b7367]" />
               <input
                 type="text"
                 placeholder="Cari kode / nama akun..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-emerald"
+                className="w-full bg-[#18181c]/90 border border-[#26272d] rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00ffff]"
               />
             </div>
-            <div className="text-xs text-slate-400">
+            <div className="text-xs text-[#bbcbb2]">
               Total {filteredAccounts.length} Akun Terdaftar
             </div>
           </div>
@@ -324,13 +324,13 @@ export default function GeneralLedgerView({ tenantId }) {
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* SISI KIRI: TOTAL ASET */}
-            <div className="glass-panel p-5 rounded-2xl border border-slate-800 bg-slate-900/30 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="bg-[#121215] border border-[#26272d] p-5 rounded-2xl border border-[#26272d] bg-[#18181c]/30 space-y-4">
+              <div className="flex items-center justify-between border-b border-[#26272d] pb-3">
                 <div className="flex items-center gap-2 text-brand-blue font-bold">
                   <Building2 size={18} />
                   <span className="uppercase tracking-wider text-xs">ASET (HARTA PERUSAHAAN)</span>
                 </div>
-                <span className="font-mono text-xs font-bold text-slate-400">Akun 1xxx</span>
+                <span className="font-mono text-xs font-bold text-[#bbcbb2]">Akun 1xxx</span>
               </div>
 
               <div className="space-y-2">
@@ -340,7 +340,7 @@ export default function GeneralLedgerView({ tenantId }) {
                     onClick={() => handleOpenDrilldown(item)}
                     className="flex justify-between items-center py-2 px-3 rounded-lg hover:bg-slate-800/50 cursor-pointer text-xs group transition-colors"
                   >
-                    <span className="text-slate-300 group-hover:text-white">
+                    <span className="text-white group-hover:text-white">
                       <strong className="text-brand-blue mr-2 font-mono group-hover:underline">{item.code}</strong>
                       {item.name}
                     </span>
@@ -349,8 +349,8 @@ export default function GeneralLedgerView({ tenantId }) {
                 ))}
               </div>
 
-              <div className="pt-3 border-t-2 border-slate-800 flex justify-between items-center">
-                <span className="font-extrabold text-sm uppercase text-slate-200">TOTAL ASET</span>
+              <div className="pt-3 border-t-2 border-[#26272d] flex justify-between items-center">
+                <span className="font-extrabold text-sm uppercase text-white">TOTAL ASET</span>
                 <span className="font-mono text-base font-black text-brand-blue">
                   {formatRupiah(balanceSheet.total_assets)}
                 </span>
@@ -358,15 +358,15 @@ export default function GeneralLedgerView({ tenantId }) {
             </div>
 
             {/* SISI KANAN: LIABILITAS & EKUITAS */}
-            <div className="glass-panel p-5 rounded-2xl border border-slate-800 bg-slate-900/30 space-y-5">
+            <div className="bg-[#121215] border border-[#26272d] p-5 rounded-2xl border border-[#26272d] bg-[#18181c]/30 space-y-5">
               {/* LIABILITAS */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <div className="flex items-center justify-between border-b border-[#26272d] pb-2">
                   <div className="flex items-center gap-2 text-amber-400 font-bold">
                     <ShieldCheck size={18} />
                     <span className="uppercase tracking-wider text-xs">LIABILITAS (KEWAJIBAN & HUTANG)</span>
                   </div>
-                  <span className="font-mono text-xs font-bold text-slate-400">Akun 2xxx</span>
+                  <span className="font-mono text-xs font-bold text-[#bbcbb2]">Akun 2xxx</span>
                 </div>
 
                 <div className="space-y-1.5">
@@ -376,7 +376,7 @@ export default function GeneralLedgerView({ tenantId }) {
                       onClick={() => handleOpenDrilldown(item)}
                       className="flex justify-between items-center py-1.5 px-3 rounded-lg hover:bg-slate-800/50 cursor-pointer text-xs group transition-colors"
                     >
-                      <span className="text-slate-300 group-hover:text-white">
+                      <span className="text-white group-hover:text-white">
                         <strong className="text-amber-400 mr-2 font-mono group-hover:underline">{item.code}</strong>
                         {item.name}
                       </span>
@@ -385,20 +385,20 @@ export default function GeneralLedgerView({ tenantId }) {
                   ))}
                 </div>
 
-                <div className="flex justify-between items-center pt-2 text-xs font-bold text-slate-400">
+                <div className="flex justify-between items-center pt-2 text-xs font-bold text-[#bbcbb2]">
                   <span>Subtotal Liabilitas</span>
                   <span className="font-mono text-white">{formatRupiah(balanceSheet.total_liabilities)}</span>
                 </div>
               </div>
 
               {/* EKUITAS */}
-              <div className="space-y-3 pt-3 border-t border-slate-800">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <div className="space-y-3 pt-3 border-t border-[#26272d]">
+                <div className="flex items-center justify-between border-b border-[#26272d] pb-2">
                   <div className="flex items-center gap-2 text-purple-400 font-bold">
                     <PieChart size={18} />
                     <span className="uppercase tracking-wider text-xs">EKUITAS (MODAL & LABA)</span>
                   </div>
-                  <span className="font-mono text-xs font-bold text-slate-400">Akun 3xxx</span>
+                  <span className="font-mono text-xs font-bold text-[#bbcbb2]">Akun 3xxx</span>
                 </div>
 
                 <div className="space-y-1.5">
@@ -408,29 +408,29 @@ export default function GeneralLedgerView({ tenantId }) {
                       onClick={() => handleOpenDrilldown(item)}
                       className="flex justify-between items-center py-1.5 px-3 rounded-lg hover:bg-slate-800/50 cursor-pointer text-xs group transition-colors"
                     >
-                      <span className="text-slate-300 group-hover:text-white">
+                      <span className="text-white group-hover:text-white">
                         <strong className="text-purple-400 mr-2 font-mono group-hover:underline">{item.code}</strong>
                         {item.name}
                       </span>
                       <span className="font-mono font-semibold text-white">{formatRupiah(item.amount)}</span>
                     </div>
                   ))}
-                  <div className="flex justify-between items-center py-1.5 px-3 rounded-lg text-xs bg-brand-emerald/10 border border-brand-emerald/20 text-emerald-300">
+                  <div className="flex justify-between items-center py-1.5 px-3 rounded-lg text-xs bg-brand-emerald/10 border border-[#00ffff]/20 text-white">
                     <span className="font-semibold">Laba Bersih Periode Berjalan</span>
-                    <span className="font-mono font-bold text-emerald-400">
+                    <span className="font-mono font-bold text-[#00ffff]">
                       {formatRupiah(balanceSheet.current_net_profit)}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center pt-2 text-xs font-bold text-slate-400">
+                <div className="flex justify-between items-center pt-2 text-xs font-bold text-[#bbcbb2]">
                   <span>Subtotal Ekuitas</span>
                   <span className="font-mono text-white">{formatRupiah(balanceSheet.total_equity)}</span>
                 </div>
               </div>
 
-              <div className="pt-3 border-t-2 border-slate-800 flex justify-between items-center">
-                <span className="font-extrabold text-sm uppercase text-slate-200">TOTAL LIABILITAS & EKUITAS</span>
+              <div className="pt-3 border-t-2 border-[#26272d] flex justify-between items-center">
+                <span className="font-extrabold text-sm uppercase text-white">TOTAL LIABILITAS & EKUITAS</span>
                 <span className="font-mono text-base font-black text-purple-400">
                   {formatRupiah(balanceSheet.total_liabilities_and_equity)}
                 </span>
@@ -442,15 +442,15 @@ export default function GeneralLedgerView({ tenantId }) {
 
       {/* 3. TAB: LABA RUGI AKUNTANSI (INCOME STATEMENT) */}
       {activeGlTab === 'income_statement' && incomeStatement && (
-        <div className="glass-panel p-6 rounded-2xl border border-slate-800 bg-slate-900/40 space-y-6 max-w-4xl mx-auto">
-          <div className="border-b border-slate-800 pb-4">
+        <div className="bg-[#121215] border border-[#26272d] p-6 rounded-2xl border border-[#26272d] bg-[#18181c]/40 space-y-6 max-w-4xl mx-auto">
+          <div className="border-b border-[#26272d] pb-4">
             <h4 className="text-lg font-black text-white uppercase tracking-wider">Laporan Laba Rugi Akuntansi (General Ledger P&L)</h4>
-            <p className="text-xs text-slate-400 mt-0.5">Dihitung otomatis berdasarkan jurnal mutasi pendapatan, HPP Moving Average, dan beban terverifikasi.</p>
+            <p className="text-xs text-[#bbcbb2] mt-0.5">Dihitung otomatis berdasarkan jurnal mutasi pendapatan, HPP Moving Average, dan beban terverifikasi.</p>
           </div>
 
           {/* REVENUE */}
           <div className="space-y-3">
-            <h5 className="text-xs font-bold uppercase tracking-wider text-brand-emerald flex items-center gap-2">
+            <h5 className="text-xs font-bold uppercase tracking-wider text-[#00ffff] flex items-center gap-2">
               <ArrowUpRight size={16} />
               1. Pendapatan Usaha
             </h5>
@@ -459,17 +459,17 @@ export default function GeneralLedgerView({ tenantId }) {
                 <div
                   key={r.id}
                   onClick={() => handleOpenDrilldown(r)}
-                  className="flex justify-between items-center py-1.5 border-b border-slate-800/40 text-xs font-mono hover:bg-slate-800/40 px-2 rounded cursor-pointer group transition-colors"
+                  className="flex justify-between items-center py-1.5 border-b border-[#26272d]/40 text-xs font-mono hover:bg-slate-800/40 px-2 rounded cursor-pointer group transition-colors"
                 >
-                  <span className="font-sans text-slate-300 group-hover:text-white group-hover:underline">
+                  <span className="font-sans text-white group-hover:text-white group-hover:underline">
                     {r.name}
                   </span>
-                  <span className="text-emerald-400 font-semibold">{formatRupiah(r.amount)}</span>
+                  <span className="text-[#00ffff] font-semibold">{formatRupiah(r.amount)}</span>
                 </div>
               ))}
               <div className="flex justify-between items-center pt-2 text-xs font-bold font-mono">
-                <span className="font-sans uppercase text-slate-200">Total Pendapatan</span>
-                <span className="text-brand-emerald text-sm">{formatRupiah(incomeStatement.total_revenue)}</span>
+                <span className="font-sans uppercase text-white">Total Pendapatan</span>
+                <span className="text-[#00ffff] text-sm">{formatRupiah(incomeStatement.total_revenue)}</span>
               </div>
             </div>
           </div>
@@ -485,23 +485,23 @@ export default function GeneralLedgerView({ tenantId }) {
                 <div
                   key={c.id}
                   onClick={() => handleOpenDrilldown(c)}
-                  className="flex justify-between items-center py-1.5 border-b border-slate-800/40 text-xs font-mono hover:bg-slate-800/40 px-2 rounded cursor-pointer group transition-colors"
+                  className="flex justify-between items-center py-1.5 border-b border-[#26272d]/40 text-xs font-mono hover:bg-slate-800/40 px-2 rounded cursor-pointer group transition-colors"
                 >
-                  <span className="font-sans text-slate-300 group-hover:text-white group-hover:underline">
+                  <span className="font-sans text-white group-hover:text-white group-hover:underline">
                     {c.name}
                   </span>
                   <span className="text-amber-400 font-semibold">{formatRupiah(c.amount)}</span>
                 </div>
               ))}
               <div className="flex justify-between items-center pt-2 text-xs font-bold font-mono">
-                <span className="font-sans uppercase text-slate-200">Total HPP</span>
+                <span className="font-sans uppercase text-white">Total HPP</span>
                 <span className="text-amber-400 text-sm">({formatRupiah(incomeStatement.total_cogs)})</span>
               </div>
             </div>
           </div>
 
           {/* GROSS PROFIT */}
-          <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center font-mono">
+          <div className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] flex justify-between items-center font-mono">
             <span className="font-sans font-bold uppercase text-xs text-white">LABA KOTOR (GROSS PROFIT)</span>
             <span className="text-base font-black text-white">{formatRupiah(incomeStatement.gross_profit)}</span>
           </div>
@@ -517,32 +517,32 @@ export default function GeneralLedgerView({ tenantId }) {
                 <div
                   key={e.id}
                   onClick={() => handleOpenDrilldown(e)}
-                  className="flex justify-between items-center py-1.5 border-b border-slate-800/40 text-xs font-mono hover:bg-slate-800/40 px-2 rounded cursor-pointer group transition-colors"
+                  className="flex justify-between items-center py-1.5 border-b border-[#26272d]/40 text-xs font-mono hover:bg-slate-800/40 px-2 rounded cursor-pointer group transition-colors"
                 >
-                  <span className="font-sans text-slate-300 group-hover:text-white group-hover:underline">
+                  <span className="font-sans text-white group-hover:text-white group-hover:underline">
                     {e.name}
                   </span>
                   <span className="text-rose-400 font-semibold">{formatRupiah(e.amount)}</span>
                 </div>
               ))}
               <div className="flex justify-between items-center pt-2 text-xs font-bold font-mono">
-                <span className="font-sans uppercase text-slate-200">Total Beban Operasional</span>
+                <span className="font-sans uppercase text-white">Total Beban Operasional</span>
                 <span className="text-rose-400 text-sm">({formatRupiah(incomeStatement.total_expenses)})</span>
               </div>
             </div>
           </div>
 
           {/* NET PROFIT */}
-          <div className="p-4 rounded-xl bg-brand-emerald/15 border border-brand-emerald/30 flex justify-between items-center font-mono">
+          <div className="p-4 rounded-xl bg-brand-emerald/15 border border-[#00ffff]/30 flex justify-between items-center font-mono">
             <div>
-              <span className="font-sans font-black uppercase text-sm text-emerald-300 block">
+              <span className="font-sans font-black uppercase text-sm text-white block">
                 LABA BERSIH BERJALAN (NET INCOME)
               </span>
-              <span className="text-[10px] text-emerald-400/80 font-sans">
+              <span className="text-[10px] text-[#00ffff]/80 font-sans">
                 Laba Kotor dikurangi Total Beban Operasional
               </span>
             </div>
-            <span className="text-xl font-black text-brand-emerald">
+            <span className="text-xl font-black text-[#00ffff]">
               {formatRupiah(incomeStatement.net_profit)}
             </span>
           </div>
@@ -553,11 +553,11 @@ export default function GeneralLedgerView({ tenantId }) {
       {activeGlTab === 'ledger_drilldown' && (
         <div className="space-y-4">
           <div className="flex items-center gap-4 flex-wrap">
-            <label className="text-xs text-slate-400 font-bold uppercase tracking-wider">Pilih Akun Buku Besar:</label>
+            <label className="text-xs text-[#bbcbb2] font-bold uppercase tracking-wider">Pilih Akun Buku Besar:</label>
             <select
               value={selectedAccountId}
               onChange={(e) => setSelectedAccountId(e.target.value)}
-              className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-brand-emerald"
+              className="bg-[#18181c] border border-[#26272d] rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-[#00ffff]"
             >
               {trialBalance?.accounts.map((a) => (
                 <option key={a.id} value={a.id}>
@@ -569,8 +569,8 @@ export default function GeneralLedgerView({ tenantId }) {
 
           {accountLedger && (
             <div className="space-y-3">
-              <div className="flex justify-between items-center bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-                <div className="text-xs text-slate-300">
+              <div className="flex justify-between items-center bg-[#18181c]/60 p-3 rounded-xl border border-[#26272d]">
+                <div className="text-xs text-white">
                   Total Transaksi: <strong className="text-white font-mono">{accountLedger.rows.length} baris</strong>
                 </div>
                 <button
@@ -684,21 +684,21 @@ export default function GeneralLedgerView({ tenantId }) {
       )}
       {/* MODAL 1: DRILLDOWN RINCIAN TRANSAKSI (CLICKABLE ROW) */}
       {showDrilldownModal && drilldownAccount && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="glass-panel w-full max-w-4xl p-6 rounded-2xl shadow-2xl border border-slate-800 bg-slate-900 text-slate-200 max-h-[90vh] flex flex-col justify-between">
+        <div className="fixed inset-0 bg-[#18181c]/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-[#121215] border border-[#26272d] w-full max-w-4xl p-6 rounded-2xl shadow-2xl border border-[#26272d] bg-[#18181c] text-white max-h-[90vh] flex flex-col justify-between">
             <div>
-              <div className="flex justify-between items-start border-b border-slate-800 pb-4 mb-4">
+              <div className="flex justify-between items-start border-b border-[#26272d] pb-4 mb-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono px-2.5 py-0.5 rounded bg-brand-emerald/20 text-brand-emerald font-black text-sm">
+                    <span className="font-mono px-2.5 py-0.5 rounded bg-brand-emerald/20 text-[#00ffff] font-black text-sm">
                       {drilldownAccount.code}
                     </span>
                     <h3 className="text-base font-bold text-white">
                       {drilldownAccount.name}
                     </h3>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Kategori: <strong className="text-slate-200">{drilldownAccount.category}</strong> • Saldo Normal: <strong className="text-slate-200">{drilldownAccount.normal_balance}</strong>
+                  <p className="text-xs text-[#bbcbb2] mt-1">
+                    Kategori: <strong className="text-white">{drilldownAccount.category}</strong> • Saldo Normal: <strong className="text-white">{drilldownAccount.normal_balance}</strong>
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -724,7 +724,7 @@ export default function GeneralLedgerView({ tenantId }) {
                   </button>
                   <button
                     onClick={() => setShowDrilldownModal(false)}
-                    className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+                    className="p-1.5 rounded-lg bg-slate-800 text-[#bbcbb2] hover:text-white"
                   >
                     <X size={16} />
                   </button>
@@ -811,8 +811,8 @@ export default function GeneralLedgerView({ tenantId }) {
               />
             </div>
 
-            <div className="flex justify-between items-center pt-3 border-t border-slate-800">
-              <div className="text-xs text-slate-400">
+            <div className="flex justify-between items-center pt-3 border-t border-[#26272d]">
+              <div className="text-xs text-[#bbcbb2]">
                 Saldo Terhitung: <strong className="font-mono text-white text-sm">{formatRupiah(drilldownLedger?.closing_balance || 0)}</strong>
               </div>
               <button
@@ -828,16 +828,16 @@ export default function GeneralLedgerView({ tenantId }) {
 
       {/* MODAL 2: FORM CREATE / EDIT TRANSAKSI (TWO-WAY SYNC) */}
       {showTransModal && (
-        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 z-60 overflow-y-auto">
-          <div className="glass-panel w-full max-w-lg p-6 rounded-2xl shadow-2xl border border-slate-800 bg-slate-900 text-slate-200">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+        <div className="fixed inset-0 bg-[#18181c]/85 backdrop-blur-sm flex items-center justify-center p-4 z-60 overflow-y-auto">
+          <div className="bg-[#121215] border border-[#26272d] w-full max-w-lg p-6 rounded-2xl shadow-2xl border border-[#26272d] bg-[#18181c] text-white">
+            <div className="flex justify-between items-center border-b border-[#26272d] pb-3 mb-4">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <DollarSign className="text-brand-emerald" size={18} />
+                <DollarSign className="text-[#00ffff]" size={18} />
                 <span>{editingRow ? 'Koreksi / Edit Transaksi Sumber' : 'Catat Transaksi Baru (Two-Way Sync)'}</span>
               </h3>
               <button
                 onClick={() => setShowTransModal(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-[#bbcbb2] hover:text-white"
               >
                 ✕
               </button>
@@ -846,14 +846,14 @@ export default function GeneralLedgerView({ tenantId }) {
             <form onSubmit={handleSaveTransaction} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Jenis Arus
                   </label>
                   <select
                     value={transForm.tipe}
                     onChange={(e) => setTransForm(prev => ({ ...prev, tipe: e.target.value }))}
                     disabled={!!editingRow}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-emerald disabled:opacity-50"
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#00ffff] disabled:opacity-50"
                   >
                     <option value="Pengeluaran">Pengeluaran (Beban)</option>
                     <option value="Pemasukan">Pemasukan (Pendapatan)</option>
@@ -861,27 +861,27 @@ export default function GeneralLedgerView({ tenantId }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Tanggal
                   </label>
                   <input
                     type="date"
                     value={transForm.tanggal}
                     onChange={(e) => setTransForm(prev => ({ ...prev, tanggal: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-emerald"
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#00ffff]"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                   Pos Uang / Rekening
                 </label>
                 <select
                   value={transForm.pos}
                   onChange={(e) => setTransForm(prev => ({ ...prev, pos: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-emerald"
+                  className="w-full bg-[#18181c] border border-[#26272d] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#00ffff]"
                 >
                   <option value="SALDO CASH">SALDO CASH (Laci Tunai)</option>
                   <option value="SALDO BANK / QRIS">SALDO BANK / QRIS (Rekening)</option>
@@ -889,13 +889,13 @@ export default function GeneralLedgerView({ tenantId }) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                   Kategori
                 </label>
                 <select
                   value={transForm.kategori}
                   onChange={(e) => setTransForm(prev => ({ ...prev, kategori: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-emerald"
+                  className="w-full bg-[#18181c] border border-[#26272d] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#00ffff]"
                 >
                   {categoriesList.map(c => (
                     <option key={c.id} value={c.nama_kategori}>{c.nama_kategori} ({c.jenis})</option>
@@ -912,7 +912,7 @@ export default function GeneralLedgerView({ tenantId }) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                   Nominal (Rp)
                 </label>
                 <input
@@ -920,13 +920,13 @@ export default function GeneralLedgerView({ tenantId }) {
                   placeholder="0"
                   value={transForm.nominal}
                   onChange={(e) => setTransForm(prev => ({ ...prev, nominal: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-brand-emerald"
+                  className="w-full bg-[#18181c] border border-[#26272d] rounded-xl px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-[#00ffff]"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                   Keterangan / Memo
                 </label>
                 <input
@@ -934,16 +934,16 @@ export default function GeneralLedgerView({ tenantId }) {
                   placeholder="Contoh: Belanja bahan dapur tambahan, bayar teknisi carwash"
                   value={transForm.keterangan}
                   onChange={(e) => setTransForm(prev => ({ ...prev, keterangan: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-emerald"
+                  className="w-full bg-[#18181c] border border-[#26272d] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#00ffff]"
                   required
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#26272d]">
                 <button
                   type="button"
                   onClick={() => setShowTransModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-[#bbcbb2] hover:text-white"
                 >
                   Batal
                 </button>

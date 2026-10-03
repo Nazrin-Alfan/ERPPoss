@@ -1424,15 +1424,15 @@ const Admin = () => {
       {/* Top Header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-          <Settings size={32} className="text-brand-blue" />
+          <Settings size={32} className="text-[#00ffff]" />
           Kelola Admin
         </h1>
-        <p className="text-slate-400 text-sm mt-1">Konfigurasi menu cafe, stok bahan baku, kasir/metode bayar, & hak akses staf</p>
+        <p className="text-[#bbcbb2] text-sm mt-1">Konfigurasi menu cafe, stok bahan baku, kasir/metode bayar, & hak akses staf</p>
       </div>
 
       {/* Popups Alert */}
       {success && (
-        <div className="p-4 rounded-xl bg-brand-emerald/10 border border-brand-emerald/20 text-brand-emerald text-sm flex items-center gap-3">
+        <div className="p-4 rounded-xl bg-[#00ffff]/10 border border-brand-emerald/20 text-[#00ffff] text-sm flex items-center gap-3">
           <CheckCircle size={18} />
           <span>{success}</span>
         </div>
@@ -1446,12 +1446,12 @@ const Admin = () => {
       )}
 
       {/* Navigation Sub-Tabs */}
-      <div className="glass-panel p-2 rounded-xl flex flex-wrap gap-2 border border-slate-800/80 shrink-0">
+      <div className="bg-[#121215] border border-[#26272d] p-2 rounded-xl flex flex-wrap gap-2 border border-[#26272d] shrink-0">
         {features.hasMenuCatalog && (
           <button
             onClick={() => setActiveTab('menu')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
-              activeTab === 'menu' ? 'bg-brand-blue text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
+              activeTab === 'menu' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
             }`}
           >
             <Utensils size={14} />
@@ -1462,7 +1462,7 @@ const Admin = () => {
           <button
             onClick={() => setActiveTab('carwash-packages')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
-              activeTab === 'carwash-packages' ? 'bg-cyan-400 text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
+              activeTab === 'carwash-packages' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
             }`}
           >
             <Sparkles size={14} />
@@ -1472,7 +1472,7 @@ const Admin = () => {
         <button
           onClick={() => setActiveTab('merchandise')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
-            activeTab === 'merchandise' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
+            activeTab === 'merchandise' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
           }`}
         >
           <ShoppingBag size={14} />
@@ -1481,7 +1481,7 @@ const Admin = () => {
         <button
           onClick={() => setActiveTab('cashier-pay')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
-            activeTab === 'cashier-pay' ? 'bg-brand-blue text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
+            activeTab === 'cashier-pay' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
           }`}
         >
           <CreditCard size={14} />
@@ -1490,7 +1490,7 @@ const Admin = () => {
         <button
           onClick={() => setActiveTab('calibration')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
-            activeTab === 'calibration' ? 'bg-brand-blue text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
+            activeTab === 'calibration' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
           }`}
         >
           <Wallet size={14} />
@@ -1499,7 +1499,7 @@ const Admin = () => {
         <button
           onClick={() => setActiveTab('discounts')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
-            activeTab === 'discounts' ? 'bg-brand-blue text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
+            activeTab === 'discounts' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
           }`}
         >
           <Percent size={14} />
@@ -1508,7 +1508,7 @@ const Admin = () => {
         <button
           onClick={() => setActiveTab('categories')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
-            activeTab === 'categories' ? 'bg-brand-emerald text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
+            activeTab === 'categories' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
           }`}
         >
           <Tag size={14} />
@@ -1517,7 +1517,7 @@ const Admin = () => {
         <button
           onClick={() => setActiveTab('manual-eod')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
-            activeTab === 'manual-eod' ? 'bg-amber-400 text-slate-950 shadow-md' : 'text-amber-400/80 hover:text-amber-300'
+            activeTab === 'manual-eod' ? 'bg-[#ffc71f] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#ffc71f] hover:text-white'
           }`}
         >
           <CalendarCheck size={14} />
@@ -1526,7 +1526,7 @@ const Admin = () => {
         <button
           onClick={() => setActiveTab('receipt-settings')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
-            activeTab === 'receipt-settings' ? 'bg-cyan-400 text-slate-950 shadow-md ring-2 ring-cyan-400/30' : 'text-cyan-400 hover:text-cyan-200 hover:bg-slate-800/60'
+            activeTab === 'receipt-settings' ? 'bg-cyan-400 text-[#0f0f0f] shadow-md ring-2 ring-cyan-400/30' : 'text-cyan-400 hover:text-cyan-200 hover:bg-[#26272d]/60'
           }`}
         >
           <Printer size={14} />
@@ -1535,7 +1535,7 @@ const Admin = () => {
         <button
           onClick={() => setActiveTab('license')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
-            activeTab === 'license' ? 'bg-amber-400 text-slate-950 shadow-md' : 'text-amber-400/90 hover:text-amber-300'
+            activeTab === 'license' ? 'bg-[#ffc71f] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#ffc71f] hover:text-white'
           }`}
         >
           <ShieldCheck size={14} />
@@ -1549,11 +1549,11 @@ const Admin = () => {
           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
             <div>
               <h3 className="text-lg font-bold text-white">Daftar Menu F&B & Resep Cafe</h3>
-              <p className="text-xs text-slate-400">Kelola katalog makanan, minuman, snack, dan formulasi resep bahan baku (BOM).</p>
+              <p className="text-xs text-[#bbcbb2]">Kelola katalog makanan, minuman, snack, dan formulasi resep bahan baku (BOM).</p>
             </div>
             <button
               onClick={openAddMenuModal}
-              className="flex items-center gap-1.5 px-4 py-2 bg-brand-emerald hover:bg-emerald-500 active:bg-emerald-600 text-slate-950 font-bold rounded-lg text-xs self-start sm:self-auto shadow-sm"
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#00ffff] hover:bg-[#00ffff]/90 active:scale-[0.98] text-[#0f0f0f] font-bold rounded-lg text-xs self-start sm:self-auto shadow-sm"
             >
               <Plus size={14} />
               Tambah Menu F&B
@@ -1561,20 +1561,20 @@ const Admin = () => {
           </div>
 
           {/* Quick Category Manager Bar (Admin Filter & Overview) */}
-          <div className="glass-panel p-3 rounded-2xl border border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
+          <div className="bg-[#121215] border border-[#26272d] p-3 rounded-2xl border border-[#26272d] flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full scrollbar-none">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
-                <Tag size={13} className="text-brand-emerald" /> Kategori:
+              <span className="text-[11px] font-bold text-[#bbcbb2] uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
+                <Tag size={13} className="text-[#00ffff]" /> Kategori:
               </span>
               {cafeCategories.map((cat) => {
                 const count = menuItems.filter(m => m.kategori === cat).length
                 return (
                   <span
                     key={cat}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-200 shrink-0"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#18181c] border border-[#26272d] text-xs font-bold text-white shrink-0"
                   >
                     <span>{cat}</span>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 text-brand-emerald font-mono">
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#18181c] text-[#00ffff] font-mono">
                       {count}
                     </span>
                   </span>
@@ -1590,11 +1590,11 @@ const Admin = () => {
             </button>
           </div>
 
-          <div className="glass-panel rounded-2xl border border-slate-800/80 overflow-hidden">
+          <div className="bg-[#121215] border border-[#26272d] rounded-2xl border border-[#26272d] overflow-hidden">
             <TableContainer>
               <Table>
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-500 font-semibold text-xs uppercase tracking-wider">
+                  <tr className="border-b border-[#26272d] text-[#6b7367] font-semibold text-xs uppercase tracking-wider">
                     <th className="p-4">Foto & Menu</th>
                     <th className="p-4">Kategori</th>
                     <th className="p-4">Harga</th>
@@ -1607,17 +1607,17 @@ const Admin = () => {
                   {menuItems.map((item) => {
                     const menuRecipes = resepList.filter(r => r.nama_menu === item.nama_menu)
                     return (
-                      <tr key={item.nama_menu} className="hover:bg-slate-800/20 transition-colors">
+                      <tr key={item.nama_menu} className="hover:bg-[#26272d]/20 transition-colors">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
                             {item.foto_url ? (
                               <img
                                 src={item.foto_url}
                                 alt={item.nama_menu}
-                                className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
+                                className="w-10 h-10 rounded-xl object-cover border border-[#26272d] shrink-0"
                               />
                             ) : (
-                              <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-base shrink-0">
+                              <div className="w-10 h-10 rounded-xl bg-[#18181c] border border-[#26272d] flex items-center justify-center text-base shrink-0">
                                 ☕
                               </div>
                             )}
@@ -1626,13 +1626,13 @@ const Admin = () => {
                         </td>
                         <td className="p-4">
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                            item.is_bundling ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-800 text-slate-400'
+                            item.is_bundling ? 'bg-rose-500/20 text-rose-400' : 'bg-[#18181c] text-[#bbcbb2]'
                           }`}>
                             {item.is_bundling ? 'Promo/Bundling' : item.kategori}
                           </span>
                         </td>
-                        <td className="p-4 font-semibold text-brand-emerald">{formatRupiah(item.harga)}</td>
-                        <td className="p-4 text-xs text-slate-400 max-w-xs truncate">
+                        <td className="p-4 font-semibold text-[#00ffff]">{formatRupiah(item.harga)}</td>
+                        <td className="p-4 text-xs text-[#bbcbb2] max-w-xs truncate">
                           {menuRecipes.length > 0 ? (
                             menuRecipes.map((r, i) => (
                               <span key={i} className="block">
@@ -1640,12 +1640,12 @@ const Admin = () => {
                               </span>
                             ))
                           ) : (
-                            <span className="text-slate-600 font-medium italic">Tidak ada bahan baku</span>
+                            <span className="text-[#6b7367] font-medium italic">Tidak ada bahan baku</span>
                           )}
                         </td>
                         <td className="p-4">
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${
-                            item.is_active ? 'bg-brand-emerald/15 text-brand-emerald' : 'bg-slate-800 text-slate-500'
+                            item.is_active ? 'bg-[#00ffff]/15 text-[#00ffff]' : 'bg-[#18181c] text-[#6b7367]'
                           }`}>
                             {item.is_active ? 'AKTIF' : 'NONAKTIF'}
                           </span>
@@ -1654,14 +1654,14 @@ const Admin = () => {
                           <div className="flex justify-center gap-2">
                             <button
                               onClick={() => openEditMenuModal(item)}
-                              className="p-1.5 bg-slate-850 hover:bg-slate-800 text-brand-blue rounded-lg transition-colors"
+                              className="p-1.5 bg-slate-850 hover:bg-[#26272d] text-[#00ffff] rounded-lg transition-colors"
                               title="Edit Menu & Resep"
                             >
                               <Edit3 size={14} />
                             </button>
                             <button
                               onClick={() => handleDeleteMenu(item.nama_menu)}
-                              className="p-1.5 bg-slate-850 hover:bg-slate-800 text-brand-rose rounded-lg transition-colors"
+                              className="p-1.5 bg-slate-850 hover:bg-[#26272d] text-brand-rose rounded-lg transition-colors"
                               title="Hapus Menu"
                             >
                               <Trash2 size={14} />
@@ -1706,7 +1706,7 @@ const Admin = () => {
       {activeTab === 'cashier-pay' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Kelola Nama Kasir */}
-          <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 space-y-4">
+          <div className="bg-[#121215] border border-[#26272d] p-5 rounded-2xl border border-[#26272d] space-y-4">
             <h3 className="text-base font-bold text-white">Daftar Pilihan Kasir Aktif</h3>
             
             <form onSubmit={handleAddCashier} className="flex gap-2">
@@ -1715,11 +1715,11 @@ const Admin = () => {
                 placeholder="Tambah nama kasir (misal: RISA)"
                 value={newCashier}
                 onChange={(e) => setNewCashier(e.target.value)}
-                className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-white text-xs uppercase focus:outline-none focus:border-brand-blue"
+                className="flex-1 bg-[#18181c] border border-[#26272d] rounded-lg px-3 py-1.5 text-white text-xs uppercase focus:outline-none focus:border-[#00ffff]"
               />
               <button
                 type="submit"
-                className="px-4 py-1.5 bg-brand-blue text-slate-950 font-bold rounded-lg text-xs"
+                className="px-4 py-1.5 bg-[#00ffff] text-[#0f0f0f] font-bold rounded-lg text-xs"
               >
                 + Tambah
               </button>
@@ -1728,13 +1728,13 @@ const Admin = () => {
             <div className="divide-y divide-slate-800/50 pt-2">
               {cashiers.map(c => (
                 <div key={c.nama} className="flex justify-between items-center py-2.5">
-                  <span className="text-sm font-bold text-slate-200">{c.nama}</span>
+                  <span className="text-sm font-bold text-white">{c.nama}</span>
                   <button
                     onClick={() => toggleCashierActive(c.nama, c.is_active)}
                     className={`text-[10px] px-3 py-1 rounded font-bold border transition-colors ${
                       c.is_active 
-                        ? 'bg-brand-emerald/10 text-brand-emerald border-brand-emerald/20' 
-                        : 'bg-slate-950 text-slate-500 border-slate-800'
+                        ? 'bg-[#00ffff]/10 text-[#00ffff] border-brand-emerald/20' 
+                        : 'bg-[#18181c] text-[#6b7367] border-[#26272d]'
                     }`}
                   >
                     {c.is_active ? '✓ AKTIF' : 'NONAKTIF'}
@@ -1745,7 +1745,7 @@ const Admin = () => {
           </div>
 
           {/* Kelola Metode Pembayaran */}
-          <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 space-y-4">
+          <div className="bg-[#121215] border border-[#26272d] p-5 rounded-2xl border border-[#26272d] space-y-4">
             <h3 className="text-base font-bold text-white">Daftar Pilihan Metode Bayar</h3>
             
             <form onSubmit={handleAddPayment} className="flex gap-2">
@@ -1754,11 +1754,11 @@ const Admin = () => {
                 placeholder="Tambah metode bayar (misal: SHOPEEPAY)"
                 value={newPayment}
                 onChange={(e) => setNewPayment(e.target.value)}
-                className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-white text-xs uppercase focus:outline-none focus:border-brand-blue"
+                className="flex-1 bg-[#18181c] border border-[#26272d] rounded-lg px-3 py-1.5 text-white text-xs uppercase focus:outline-none focus:border-[#00ffff]"
               />
               <button
                 type="submit"
-                className="px-4 py-1.5 bg-brand-blue text-slate-950 font-bold rounded-lg text-xs"
+                className="px-4 py-1.5 bg-[#00ffff] text-[#0f0f0f] font-bold rounded-lg text-xs"
               >
                 + Tambah
               </button>
@@ -1767,13 +1767,13 @@ const Admin = () => {
             <div className="divide-y divide-slate-800/50 pt-2">
               {paymentMethods.map(p => (
                 <div key={p.nama} className="flex justify-between items-center py-2.5">
-                  <span className="text-sm font-bold text-slate-200">{p.nama}</span>
+                  <span className="text-sm font-bold text-white">{p.nama}</span>
                   <button
                     onClick={() => togglePaymentActive(p.nama, p.is_active)}
                     className={`text-[10px] px-3 py-1 rounded font-bold border transition-colors ${
                       p.is_active 
-                        ? 'bg-brand-emerald/10 text-brand-emerald border-brand-emerald/20' 
-                        : 'bg-slate-950 text-slate-500 border-slate-800'
+                        ? 'bg-[#00ffff]/10 text-[#00ffff] border-brand-emerald/20' 
+                        : 'bg-[#18181c] text-[#6b7367] border-[#26272d]'
                     }`}
                   >
                     {p.is_active ? '✓ AKTIF' : 'NONAKTIF'}
@@ -1791,20 +1791,20 @@ const Admin = () => {
       {activeTab === 'calibration' && (
         <div className="space-y-6">
           {/* Section 1: Master Rekening & Akun Likuiditas */}
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800/80 space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-800 pb-4">
+          <div className="bg-[#121215] border border-[#26272d] p-6 rounded-2xl border border-[#26272d] space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-[#26272d] pb-4">
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Wallet className="text-brand-blue" size={20} />
+                  <Wallet className="text-[#00ffff]" size={20} />
                   <span>Master Rekening & Akun Likuiditas (Kas & Bank)</span>
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-[#bbcbb2] mt-0.5">
                   Atur daftar kas fisik dan rekening bank yang dipantau di dashboard eksekutif dan laporan keuangan.
                 </p>
               </div>
               <button
                 onClick={handleOpenAddAccount}
-                className="flex items-center gap-1.5 px-4 py-2 bg-brand-blue hover:bg-cyan-500 active:bg-cyan-600 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-md shadow-brand-blue/10"
+                className="flex items-center gap-1.5 px-4 py-2 bg-[#00ffff] hover:bg-cyan-500 active:bg-cyan-600 text-[#0f0f0f] font-bold rounded-xl text-xs transition-all shadow-md shadow-brand-blue/10"
               >
                 <Plus size={15} />
                 Tambah Akun Rekening / Kas
@@ -1819,7 +1819,7 @@ const Admin = () => {
                   : acc.color === 'purple' ? 'border-purple-500/30'
                   : 'border-amber-500/30'
                 const colorText = acc.color === 'emerald' ? 'text-emerald-400'
-                  : acc.color === 'blue' ? 'text-brand-blue'
+                  : acc.color === 'blue' ? 'text-[#00ffff]'
                   : acc.color === 'cyan' ? 'text-cyan-400'
                   : acc.color === 'purple' ? 'text-purple-400'
                   : 'text-amber-400'
@@ -1827,24 +1827,24 @@ const Admin = () => {
                 const isProtected = acc.pos === 'SALDO CASH'
 
                 return (
-                  <div key={acc.pos || idx} className={`p-4 rounded-xl bg-slate-900/60 border ${colorBorder} flex flex-col justify-between space-y-3 transition-all hover:bg-slate-900/90`}>
+                  <div key={acc.pos || idx} className={`p-4 rounded-xl bg-[#18181c]/60 border ${colorBorder} flex flex-col justify-between space-y-3 transition-all hover:bg-[#18181c]/90`}>
                     <div className="flex justify-between items-start gap-2">
                       <div>
                         <div className="flex items-center gap-2">
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase ${
-                            acc.tipe === 'CASH' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-brand-blue/10 text-brand-blue border-brand-blue/20'
+                            acc.tipe === 'CASH' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-[#00ffff]/10 text-[#00ffff] border-brand-blue/20'
                           }`}>
                             {acc.tipe || (acc.pos === 'SALDO CASH' ? 'CASH' : 'BANK')}
                           </span>
-                          <span className="text-[10px] text-slate-500 font-mono">{acc.pos}</span>
+                          <span className="text-[10px] text-[#6b7367] font-mono">{acc.pos}</span>
                         </div>
                         <h4 className="font-bold text-white text-sm mt-1.5">{acc.label || acc.pos}</h4>
-                        <p className="text-[11px] text-slate-400 mt-0.5">{acc.keterangan || (acc.pos === 'SALDO CASH' ? 'Uang fisik di kasir' : 'Rekening bank operasional')}</p>
+                        <p className="text-[11px] text-[#bbcbb2] mt-0.5">{acc.keterangan || (acc.pos === 'SALDO CASH' ? 'Uang fisik di kasir' : 'Rekening bank operasional')}</p>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={() => handleOpenEditAccount(acc)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all"
+                          className="p-1.5 rounded-lg bg-[#18181c] hover:bg-slate-700 text-white hover:text-white transition-all"
                           title="Edit Akun"
                         >
                           <Edit3 size={13} />
@@ -1861,8 +1861,8 @@ const Admin = () => {
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-800/80 flex justify-between items-center">
-                      <span className="text-[10px] text-slate-500 uppercase font-bold">Saldo Berjalan</span>
+                    <div className="pt-2 border-t border-[#26272d] flex justify-between items-center">
+                      <span className="text-[10px] text-[#6b7367] uppercase font-bold">Saldo Berjalan</span>
                       <span className={`font-mono font-black text-base ${colorText}`}>
                         {formatRupiah(balances[acc.pos] ?? acc.balance ?? 0)}
                       </span>
@@ -1874,13 +1874,13 @@ const Admin = () => {
           </div>
 
           {/* Section 2: Form Sinkronisasi & Kalibrasi Saldo */}
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800/80 max-w-2xl mx-auto space-y-6">
+          <div className="bg-[#121215] border border-[#26272d] p-6 rounded-2xl border border-[#26272d] max-w-2xl mx-auto space-y-6">
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Settings className="text-brand-emerald" size={20} />
+                <Settings className="text-[#00ffff]" size={20} />
                 <span>Sinkronisasi & Kalibrasi Saldo Fisik</span>
               </h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-[#bbcbb2] mt-1">
                 Gunakan form ini untuk menyinkronkan saldo berjalan di aplikasi dengan saldo riil fisik Anda (kas laci atau mutasi bank). Sistem akan otomatis mencatat penyesuaian cashflow.
               </p>
             </div>
@@ -1898,12 +1898,12 @@ const Admin = () => {
                     : ''
 
                   return (
-                    <div key={acc.pos || idx} className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+                    <div key={acc.pos || idx} className="p-3.5 rounded-xl bg-[#18181c]/60 border border-[#26272d] space-y-2">
                       <div className="flex justify-between items-center text-xs">
-                        <span className="font-semibold text-slate-300">
-                          {acc.label || acc.pos} <span className="text-[10px] text-slate-500 font-mono">({acc.pos})</span>
+                        <span className="font-semibold text-white">
+                          {acc.label || acc.pos} <span className="text-[10px] text-[#6b7367] font-mono">({acc.pos})</span>
                         </span>
-                        <span className="font-bold text-brand-emerald">
+                        <span className="font-bold text-[#00ffff]">
                           Berjalan: {formatRupiah(currentVal)}
                         </span>
                       </div>
@@ -1922,7 +1922,7 @@ const Admin = () => {
                             ...(acc.pos === 'SALDO REKENING R' ? { rekR: val } : {})
                           }))
                         }}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-emerald"
+                        className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-emerald"
                       />
                     </div>
                   )
@@ -1932,7 +1932,7 @@ const Admin = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 bg-brand-emerald hover:bg-emerald-500 active:bg-emerald-600 disabled:opacity-50 text-slate-950 font-bold rounded-xl shadow-lg shadow-brand-emerald/20 transition-all text-sm mt-3"
+                className="w-full py-2.5 bg-[#00ffff] hover:bg-[#00ffff]/90 active:scale-[0.98] disabled:opacity-50 text-[#0f0f0f] font-bold rounded-xl shadow-lg shadow-brand-emerald/20 transition-all text-sm mt-3"
               >
                 {loading ? 'Menyimpan Kalibrasi...' : 'Simpan & Sesuaikan Seluruh Saldo'}
               </button>
@@ -1944,33 +1944,33 @@ const Admin = () => {
       {/* CONTENT TAB 6: Kelola Diskon */}
       {activeTab === 'discounts' && (
         <div className="space-y-6">
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800/80 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-[#121215] border border-[#26272d] p-6 rounded-2xl border border-[#26272d] max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
             
             {/* Form Tambah Diskon Baru */}
             <div className="md:col-span-1 space-y-4">
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Plus className="text-brand-blue" size={18} />
+                  <Plus className="text-[#00ffff]" size={18} />
                   <span>Tambah Diskon</span>
                 </h3>
-                <p className="text-[10px] text-slate-500 mt-0.5">Daftarkan promo atau diskon baru untuk digunakan di kasir.</p>
+                <p className="text-[10px] text-[#6b7367] mt-0.5">Daftarkan promo atau diskon baru untuk digunakan di kasir.</p>
               </div>
 
               <form onSubmit={handleSaveDiscount} className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Nama Diskon / Promo</label>
+                  <label className="text-[10px] text-[#bbcbb2] font-bold uppercase tracking-wider block">Nama Diskon / Promo</label>
                   <input
                     type="text"
                     required
                     placeholder="Contoh: PROMO MEMBER"
                     value={discountForm.nama}
                     onChange={(e) => setDiscountForm(prev => ({ ...prev, nama: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-xs uppercase focus:outline-none focus:border-brand-blue"
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-xs uppercase focus:outline-none focus:border-[#00ffff]"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Tipe Potongan</label>
+                  <label className="text-[10px] text-[#bbcbb2] font-bold uppercase tracking-wider block">Tipe Potongan</label>
                   <CustomSelect
                     value={discountForm.tipe}
                     onChange={(val) => setDiscountForm(prev => ({ ...prev, tipe: val }))}
@@ -1985,7 +1985,7 @@ const Admin = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                  <label className="text-[10px] text-[#bbcbb2] font-bold uppercase tracking-wider block">
                     {discountForm.tipe === 'Persen' ? 'Besar Persen (%)' : 'Besar Potongan (Rp)'}
                   </label>
                   <input
@@ -1996,12 +1996,12 @@ const Admin = () => {
                     placeholder={discountForm.tipe === 'Persen' ? 'Contoh: 10' : 'Contoh: 5000'}
                     value={discountForm.nominal || ''}
                     onChange={(e) => setDiscountForm(prev => ({ ...prev, nominal: parseFloat(e.target.value) || 0 }))}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-xs focus:outline-none focus:border-brand-blue"
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-xs focus:outline-none focus:border-[#00ffff]"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Kategori Berlaku</label>
+                  <label className="text-[10px] text-[#bbcbb2] font-bold uppercase tracking-wider block">Kategori Berlaku</label>
                   <CustomSelect
                     value={discountForm.kategori}
                     onChange={(val) => setDiscountForm(prev => ({ ...prev, kategori: val }))}
@@ -2019,7 +2019,7 @@ const Admin = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-2 bg-brand-blue hover:bg-cyan-500 active:bg-cyan-600 disabled:opacity-50 text-slate-950 font-bold rounded-lg transition-all text-xs"
+                  className="w-full py-2 bg-[#00ffff] hover:bg-cyan-500 active:bg-cyan-600 disabled:opacity-50 text-[#0f0f0f] font-bold rounded-lg transition-all text-xs"
                 >
                   {loading ? 'Menyimpan...' : 'Simpan Promo'}
                 </button>
@@ -2030,37 +2030,37 @@ const Admin = () => {
             <div className="md:col-span-2 space-y-4">
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Percent className="text-brand-blue" size={18} />
+                  <Percent className="text-[#00ffff]" size={18} />
                   <span>Daftar Diskon Terdaftar</span>
                 </h3>
-                <p className="text-[10px] text-slate-500 mt-0.5">Daftar promo aktif yang dapat dipilih oleh kasir.</p>
+                <p className="text-[10px] text-[#6b7367] mt-0.5">Daftar promo aktif yang dapat dipilih oleh kasir.</p>
               </div>
 
-              <div className="bg-slate-950/40 border border-slate-850 rounded-xl overflow-hidden divide-y divide-slate-850">
+              <div className="bg-[#18181c]/40 border border-slate-850 rounded-xl overflow-hidden divide-y divide-slate-850">
                 {discounts.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-slate-500">Belum ada promo/diskon yang didaftarkan.</div>
+                  <div className="p-8 text-center text-xs text-[#6b7367]">Belum ada promo/diskon yang didaftarkan.</div>
                 ) : (
                   discounts.map((d) => (
                     <div key={d.id_diskon} className="p-3.5 flex justify-between items-center text-xs">
                       <div>
                         <div className="font-extrabold text-white uppercase tracking-wide flex items-center gap-2">
                           <span>{d.nama}</span>
-                          <span className="text-[9px] px-2 py-0.5 rounded-full font-mono bg-slate-850 text-slate-400">
+                          <span className="text-[9px] px-2 py-0.5 rounded-full font-mono bg-slate-850 text-[#bbcbb2]">
                             {d.kategori === 'Semua' ? 'Cafe & Carwash' : d.kategori}
                           </span>
                         </div>
-                        <div className="text-[10px] text-slate-500 mt-1">
+                        <div className="text-[10px] text-[#6b7367] mt-1">
                           Tipe: {d.tipe === 'Persen' ? 'Persentase' : 'Rupiah'}
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
-                        <span className="font-mono font-black text-brand-emerald text-sm">
+                        <span className="font-mono font-black text-[#00ffff] text-sm">
                           {d.tipe === 'Persen' ? `${d.nominal}%` : formatRupiah(d.nominal)}
                         </span>
                         <button
                           type="button"
                           onClick={() => handleDeleteDiscount(d.id_diskon, d.nama)}
-                          className="text-rose-400 hover:text-rose-500 p-1 bg-slate-900 border border-slate-850 rounded-lg"
+                          className="text-rose-400 hover:text-rose-500 p-1 bg-[#18181c] border border-slate-850 rounded-lg"
                         >
                           <Trash2 size={13} />
                         </button>
@@ -2081,10 +2081,10 @@ const Admin = () => {
           <div className="flex justify-between items-start flex-wrap gap-4">
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Lock className="text-brand-emerald" size={20} />
+                <Lock className="text-[#00ffff]" size={20} />
                 <span>Master Jenis & Kategori Terkunci (Cashflow & COA)</span>
               </h3>
-              <p className="text-xs text-slate-400 mt-1 max-w-2xl">
+              <p className="text-xs text-[#bbcbb2] mt-1 max-w-2xl">
                 Kunci kategori pengeluaran dan pemasukan per jenisnya (contoh: jenis Cafe hanya berisi kategori F&B dan tidak dapat memilih Chemical Carwash). Atur juga hak akses kasir dan pemetaan akun buku besar (COA).
               </p>
             </div>
@@ -2102,7 +2102,7 @@ const Admin = () => {
                 })
                 setShowCategoryModal(true)
               }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-brand-emerald hover:bg-emerald-500 active:scale-[0.98] text-slate-950 font-bold rounded-xl text-xs shadow-lg shadow-brand-emerald/20 transition-all"
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#00ffff] hover:bg-[#00ffff]/90 active:scale-[0.98] text-[#0f0f0f] font-bold rounded-xl text-xs shadow-lg shadow-brand-emerald/20 transition-all"
             >
               <Plus size={14} />
               Tambah Kategori Baru
@@ -2115,8 +2115,8 @@ const Admin = () => {
               onClick={() => setCategoryFilterJenis('all')}
               className={`px-3 py-1.5 rounded-xl font-bold transition-all whitespace-nowrap ${
                 categoryFilterJenis === 'all'
-                  ? 'bg-brand-emerald text-slate-950 shadow-md shadow-brand-emerald/20'
-                  : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                  ? 'bg-[#00ffff] text-[#0f0f0f] shadow-md shadow-brand-emerald/20'
+                  : 'bg-[#18181c] text-[#bbcbb2] hover:text-white border border-[#26272d]'
               }`}
             >
               Semua Jenis ({masterCategories.length})
@@ -2130,13 +2130,13 @@ const Admin = () => {
                   onClick={() => setCategoryFilterJenis(j)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all whitespace-nowrap ${
                     isActive
-                      ? 'bg-brand-emerald text-slate-950 shadow-md shadow-brand-emerald/20'
-                      : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                      ? 'bg-[#00ffff] text-[#0f0f0f] shadow-md shadow-brand-emerald/20'
+                      : 'bg-[#18181c] text-[#bbcbb2] hover:text-white border border-[#26272d]'
                   }`}
                 >
                   <span>{j}</span>
                   <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-                    isActive ? 'bg-slate-950/30 text-slate-950' : 'bg-slate-800 text-slate-400'
+                    isActive ? 'bg-[#18181c]/30 text-[#0f0f0f]' : 'bg-[#18181c] text-[#bbcbb2]'
                   }`}>
                     {count}
                   </span>
@@ -2146,11 +2146,11 @@ const Admin = () => {
           </div>
 
           {/* Table of Categories */}
-          <div className="glass-panel rounded-2xl border border-slate-800/80 overflow-hidden">
+          <div className="bg-[#121215] border border-[#26272d] rounded-2xl border border-[#26272d] overflow-hidden">
             <TableContainer>
               <Table dense>
                 <thead>
-                  <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400 font-bold uppercase tracking-wider">
+                  <tr className="border-b border-[#26272d] bg-[#18181c]/60 text-[#bbcbb2] font-bold uppercase tracking-wider">
                     <th className="py-3 px-4">Nama Kategori</th>
                     <th className="py-3 px-4">Jenis Terkunci</th>
                     <th className="py-3 px-4">Tipe Arus</th>
@@ -2162,9 +2162,9 @@ const Admin = () => {
                 <tbody className="divide-y divide-slate-800/40">
                   {filteredMasterCategories.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-slate-500">
-                        <Tag size={32} className="mx-auto text-slate-600 mb-2 opacity-50" />
-                        <p className="font-semibold text-slate-400">Belum ada kategori untuk jenis ini ({categoryFilterJenis}).</p>
+                      <td colSpan={6} className="p-8 text-center text-[#6b7367]">
+                        <Tag size={32} className="mx-auto text-[#6b7367] mb-2 opacity-50" />
+                        <p className="font-semibold text-[#bbcbb2]">Belum ada kategori untuk jenis ini ({categoryFilterJenis}).</p>
                         <button
                           onClick={() => {
                             setEditingCategory(null)
@@ -2179,7 +2179,7 @@ const Admin = () => {
                             })
                             setShowCategoryModal(true)
                           }}
-                          className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-emerald/10 text-brand-emerald border border-brand-emerald/30 rounded-xl font-bold text-xs"
+                          className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#00ffff]/10 text-[#00ffff] border border-brand-emerald/30 rounded-xl font-bold text-xs"
                         >
                           <Plus size={13} />
                           Tambah Kategori Sekarang
@@ -2194,7 +2194,7 @@ const Admin = () => {
                       const isCasbon = String(cat.jenis || '').toLowerCase().includes('casbon')
 
                       return (
-                        <tr key={cat.id} className="hover:bg-slate-800/30 transition-colors">
+                        <tr key={cat.id} className="hover:bg-[#26272d]/30 transition-colors">
                           <td className="py-3 px-4 font-bold text-white">
                             <div className="flex items-center gap-2">
                               <span>{cat.nama_kategori}</span>
@@ -2206,10 +2206,10 @@ const Admin = () => {
                           <td className="py-3 px-4">
                             <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold ${
                               isCafe ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20' :
-                              isCarwash ? 'bg-brand-blue/10 text-brand-blue border border-brand-blue/20' :
+                              isCarwash ? 'bg-[#00ffff]/10 text-[#00ffff] border border-brand-blue/20' :
                               isBersama ? 'bg-purple-500/10 text-purple-300 border border-purple-500/20' :
                               isCasbon ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' :
-                              'bg-slate-800 text-slate-300 border border-slate-700'
+                              'bg-[#18181c] text-white border border-[#26272d]'
                             }`}>
                               <Lock size={10} />
                               {cat.jenis}
@@ -2222,7 +2222,7 @@ const Admin = () => {
                               {cat.tipe_arus}
                             </span>
                           </td>
-                          <td className="py-3 px-4 font-mono text-slate-300">
+                          <td className="py-3 px-4 font-mono text-white">
                             {cat.account_id || 'acc_6004'}
                           </td>
                           <td className="py-3 px-4 text-center">
@@ -2231,7 +2231,7 @@ const Admin = () => {
                                 Kasir Boleh
                               </span>
                             ) : (
-                              <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-bold text-[10px]">
+                              <span className="px-2 py-0.5 rounded-full bg-[#18181c] text-[#bbcbb2] font-bold text-[10px]">
                                 Hanya Owner
                               </span>
                             )}
@@ -2252,7 +2252,7 @@ const Admin = () => {
                                   })
                                   setShowCategoryModal(true)
                                 }}
-                                className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+                                className="p-1.5 rounded-lg bg-[#18181c] text-white hover:text-white hover:bg-slate-700 transition-colors"
                                 title="Edit Kategori"
                               >
                                 <Edit3 size={13} />
@@ -2281,14 +2281,14 @@ const Admin = () => {
       {activeTab === 'manual-eod' && (
         <div className="space-y-6 max-w-5xl mx-auto">
           {/* Header Panel */}
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800/80 space-y-4">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+          <div className="bg-[#121215] border border-[#26272d] p-6 rounded-2xl border border-[#26272d] space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#26272d] pb-4">
               <div>
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <CalendarCheck className="text-amber-400" size={20} />
                   <span>Tutup Kasir Manual (Rekap Susulan ke Cashflow)</span>
                 </h3>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-[#bbcbb2] mt-1">
                   Fitur darurat untuk merekap omzet (Cash & QRIS) serta pengeluaran harian kasir pada tanggal tertentu yang terlewat atau belum sempat di-End Kasir.
                 </p>
               </div>
@@ -2298,7 +2298,7 @@ const Admin = () => {
                   type="button"
                   onClick={() => fetchManualEodPreview(manualEodDate)}
                   disabled={manualEodLoading}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#18181c] hover:bg-[#26272d] text-white rounded-lg text-xs font-semibold border border-[#26272d] transition-colors"
                 >
                   <RotateCcw size={13} className={manualEodLoading ? 'animate-spin' : ''} />
                   Segarkan Data
@@ -2309,19 +2309,19 @@ const Admin = () => {
             {/* Input Controls Filter Tanggal & Kasir */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                   1. Pilih Tanggal Transaksi
                 </label>
                 <input
                   type="date"
                   value={manualEodDate}
                   onChange={(e) => setManualEodDate(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm font-mono focus:border-amber-400 focus:outline-none"
+                  className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm font-mono focus:border-amber-400 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                   2. Kasir / Petugas Rekap
                 </label>
                 <CustomSelect
@@ -2338,7 +2338,7 @@ const Admin = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                   3. Rekening Penampung QRIS
                 </label>
                 <CustomSelect
@@ -2392,40 +2392,40 @@ const Admin = () => {
 
           {/* Metric Summary Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="glass-panel p-4.5 rounded-2xl border border-slate-800/80">
-              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Pemasukan Cash (Omzet Tunai)</span>
-              <h3 className="text-xl font-black text-brand-emerald mt-1">{formatRupiah(manualEodData.totalCash)}</h3>
-              <span className="text-[10px] text-slate-500 mt-1 block">Tujuan: SALDO CASH</span>
+            <div className="bg-[#121215] border border-[#26272d] p-4.5 rounded-2xl border border-[#26272d]">
+              <span className="text-[#6b7367] text-[10px] font-bold uppercase tracking-wider block">Pemasukan Cash (Omzet Tunai)</span>
+              <h3 className="text-xl font-black text-[#00ffff] mt-1">{formatRupiah(manualEodData.totalCash)}</h3>
+              <span className="text-[10px] text-[#6b7367] mt-1 block">Tujuan: SALDO CASH</span>
             </div>
 
-            <div className="glass-panel p-4.5 rounded-2xl border border-slate-800/80">
-              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Pemasukan QRIS / Transfer</span>
+            <div className="bg-[#121215] border border-[#26272d] p-4.5 rounded-2xl border border-[#26272d]">
+              <span className="text-[#6b7367] text-[10px] font-bold uppercase tracking-wider block">Pemasukan QRIS / Transfer</span>
               <h3 className="text-xl font-black text-cyan-400 mt-1">{formatRupiah(manualEodData.totalQris)}</h3>
-              <span className="text-[10px] text-slate-500 mt-1 block truncate">Tujuan: {manualEodQrisPos}</span>
+              <span className="text-[10px] text-[#6b7367] mt-1 block truncate">Tujuan: {manualEodQrisPos}</span>
             </div>
 
-            <div className="glass-panel p-4.5 rounded-2xl border border-slate-800/80">
-              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Pengeluaran Kasir</span>
+            <div className="bg-[#121215] border border-[#26272d] p-4.5 rounded-2xl border border-[#26272d]">
+              <span className="text-[#6b7367] text-[10px] font-bold uppercase tracking-wider block">Pengeluaran Kasir</span>
               <h3 className="text-xl font-black text-rose-400 mt-1">{formatRupiah(manualEodData.totalExpense)}</h3>
-              <span className="text-[10px] text-slate-500 mt-1 block">Sumber: SALDO CASH</span>
+              <span className="text-[10px] text-[#6b7367] mt-1 block">Sumber: SALDO CASH</span>
             </div>
 
-            <div className="glass-panel p-4.5 rounded-2xl border border-slate-800/80">
-              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Estimasi Kas Bersih Hari Ini</span>
+            <div className="bg-[#121215] border border-[#26272d] p-4.5 rounded-2xl border border-[#26272d]">
+              <span className="text-[#6b7367] text-[10px] font-bold uppercase tracking-wider block">Estimasi Kas Bersih Hari Ini</span>
               <h3 className="text-xl font-black text-white mt-1">
                 {formatRupiah(manualEodData.totalCash + manualEodData.totalQris - manualEodData.totalExpense)}
               </h3>
-              <span className="text-[10px] text-slate-500 mt-1 block">Total Omzet - Beban Kasir</span>
+              <span className="text-[10px] text-[#6b7367] mt-1 block">Total Omzet - Beban Kasir</span>
             </div>
           </div>
 
           {/* Breakdown Tables (Struk Selesai & Pengeluaran Kasir) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Table 1: Struk Selesai */}
-            <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 space-y-3">
-              <div className="flex justify-between items-center border-b border-slate-800 pb-2.5">
+            <div className="bg-[#121215] border border-[#26272d] p-5 rounded-2xl border border-[#26272d] space-y-3">
+              <div className="flex justify-between items-center border-b border-[#26272d] pb-2.5">
                 <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                  <FileText size={14} className="text-brand-blue" />
+                  <FileText size={14} className="text-[#00ffff]" />
                   Struk Transaksi Lunas ({manualEodData.strukList.length})
                 </h4>
                 <span className="text-xs font-mono font-bold text-emerald-400">
@@ -2435,20 +2435,20 @@ const Admin = () => {
 
               <div className="overflow-x-auto max-h-60 overflow-y-auto pr-1">
                 {manualEodData.strukList.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-6 text-center">Tidak ada struk lunas pada tanggal {manualEodDate}</p>
+                  <p className="text-xs text-[#6b7367] py-6 text-center">Tidak ada struk lunas pada tanggal {manualEodDate}</p>
                 ) : (
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="text-slate-500 font-bold border-b border-slate-800/80 text-[10px] uppercase">
+                      <tr className="text-[#6b7367] font-bold border-b border-[#26272d] text-[10px] uppercase">
                         <th className="py-2">No. Struk</th>
                         <th className="py-2">Metode</th>
                         <th className="py-2 text-right">Tagihan</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/40 text-slate-300">
+                    <tbody className="divide-y divide-slate-800/40 text-white">
                       {manualEodData.strukList.map(s => (
-                        <tr key={s.id_struk} className="hover:bg-slate-850/30">
-                          <td className="py-2 font-mono text-[11px] text-slate-400">{s.id_struk}</td>
+                        <tr key={s.id_struk} className="hover:bg-[#26272d]/30">
+                          <td className="py-2 font-mono text-[11px] text-[#bbcbb2]">{s.id_struk}</td>
                           <td className="py-2">
                             <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
                               s.metode_bayar === 'CASH' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-cyan-500/10 text-cyan-400'
@@ -2468,8 +2468,8 @@ const Admin = () => {
             </div>
 
             {/* Table 2: Pengeluaran Kasir */}
-            <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 space-y-3">
-              <div className="flex justify-between items-center border-b border-slate-800 pb-2.5">
+            <div className="bg-[#121215] border border-[#26272d] p-5 rounded-2xl border border-[#26272d] space-y-3">
+              <div className="flex justify-between items-center border-b border-[#26272d] pb-2.5">
                 <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
                   <ArrowDownRight size={14} className="text-rose-400" />
                   Pengeluaran Kasir ({manualEodData.expenseList.length})
@@ -2481,21 +2481,21 @@ const Admin = () => {
 
               <div className="overflow-x-auto max-h-60 overflow-y-auto pr-1">
                 {manualEodData.expenseList.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-6 text-center">Tidak ada pengeluaran kasir pada tanggal {manualEodDate}</p>
+                  <p className="text-xs text-[#6b7367] py-6 text-center">Tidak ada pengeluaran kasir pada tanggal {manualEodDate}</p>
                 ) : (
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="text-slate-500 font-bold border-b border-slate-800/80 text-[10px] uppercase">
+                      <tr className="text-[#6b7367] font-bold border-b border-[#26272d] text-[10px] uppercase">
                         <th className="py-2">Keterangan</th>
                         <th className="py-2">Kategori</th>
                         <th className="py-2 text-right">Nominal</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/40 text-slate-300">
+                    <tbody className="divide-y divide-slate-800/40 text-white">
                       {manualEodData.expenseList.map(e => (
-                        <tr key={e.id_pengeluaran || e.id} className="hover:bg-slate-850/30">
+                        <tr key={e.id_pengeluaran || e.id} className="hover:bg-[#26272d]/30">
                           <td className="py-2 text-white font-medium">{e.nama_pengeluaran || e.keterangan}</td>
-                          <td className="py-2 text-slate-400 text-[11px]">{e.kategori || 'Operasional'}</td>
+                          <td className="py-2 text-[#bbcbb2] text-[11px]">{e.kategori || 'Operasional'}</td>
                           <td className="py-2 text-right font-mono font-bold text-rose-400">
                             -{formatRupiah(e.nominal)}
                           </td>
@@ -2509,10 +2509,10 @@ const Admin = () => {
           </div>
 
           {/* Action Submission Button */}
-          <div className="glass-panel p-6 rounded-2xl border border-amber-500/30 bg-amber-500/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="bg-[#121215] border border-[#26272d] p-6 rounded-2xl border border-amber-500/30 bg-amber-500/5 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
               <h4 className="text-sm font-bold text-white">Siap Memasukkan Rekap ke Cashflow?</h4>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-[#bbcbb2] mt-0.5">
                 Sistem akan membuat 3 entri akuntansi (Omzet Cash, Omzet QRIS, dan Pengeluaran) pada tanggal <strong>{manualEodDate}</strong>.
               </p>
             </div>
@@ -2521,7 +2521,7 @@ const Admin = () => {
               type="button"
               onClick={handleExecuteManualEod}
               disabled={manualEodProcessing || (manualEodData.totalCash === 0 && manualEodData.totalQris === 0 && manualEodData.totalExpense === 0)}
-              className="w-full sm:w-auto px-6 py-3 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 disabled:opacity-50 text-slate-950 font-black rounded-xl shadow-lg shadow-amber-400/20 transition-all text-xs uppercase tracking-wider flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 disabled:opacity-50 text-[#0f0f0f] font-black rounded-xl shadow-lg shadow-amber-400/20 transition-all text-xs uppercase tracking-wider flex items-center justify-center gap-2"
             >
               {manualEodProcessing ? (
                 <>
@@ -2555,16 +2555,16 @@ const Admin = () => {
 
       {/* MODAL MASTER KATEGORI CASHFLOW (KUNCI KATEGORI KE JENIS) */}
       {showCategoryModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto animate-fade-in">
-          <div className="glass-panel w-full max-w-lg p-6 rounded-2xl shadow-2xl border border-slate-800 bg-slate-900 text-slate-200 animate-pop-in">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+        <div className="fixed inset-0 bg-[#18181c]/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto animate-fade-in">
+          <div className="bg-[#121215] border border-[#26272d] w-full max-w-lg p-6 rounded-2xl shadow-2xl border border-[#26272d] bg-[#18181c] text-white animate-pop-in">
+            <div className="flex justify-between items-center border-b border-[#26272d] pb-3 mb-4">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Lock className="text-brand-emerald" size={18} />
+                <Lock className="text-[#00ffff]" size={18} />
                 <span>{editingCategory ? 'Edit Kategori Terkunci' : 'Tambah Kategori Terkunci Baru'}</span>
               </h3>
               <button
                 onClick={() => setShowCategoryModal(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-[#bbcbb2] hover:text-white"
               >
                 ✕
               </button>
@@ -2572,7 +2572,7 @@ const Admin = () => {
 
             <form onSubmit={handleSaveCategory} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                   Nama Kategori
                 </label>
                 <input
@@ -2580,14 +2580,14 @@ const Admin = () => {
                   placeholder="Misal: Bahan Baku F&B, Chemical Snow Wash, Listrik Cafe, Sewa..."
                   value={categoryForm.nama_kategori}
                   onChange={(e) => setCategoryForm(prev => ({ ...prev, nama_kategori: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-emerald"
+                  className="w-full bg-[#18181c] border border-[#26272d] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-emerald"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Tipe Arus
                   </label>
                   <CustomSelect
@@ -2605,13 +2605,13 @@ const Admin = () => {
 
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider">
                       Jenis Pengunci (Kelompok)
                     </label>
                     <button
                       type="button"
                       onClick={() => setIsCustomCategoryJenis(!isCustomCategoryJenis)}
-                      className="text-[11px] text-brand-emerald hover:underline font-medium"
+                      className="text-[11px] text-[#00ffff] hover:underline font-medium"
                     >
                       {isCustomCategoryJenis ? '← Pilihan List' : '+ Custom Jenis'}
                     </button>
@@ -2622,7 +2622,7 @@ const Admin = () => {
                       placeholder="Ketik nama jenis baru..."
                       value={categoryForm.jenis}
                       onChange={(e) => setCategoryForm(prev => ({ ...prev, jenis: e.target.value }))}
-                      className="w-full bg-slate-950 border border-brand-emerald rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
+                      className="w-full bg-[#18181c] border border-brand-emerald rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
                       autoFocus
                       required
                     />
@@ -2639,18 +2639,18 @@ const Admin = () => {
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-brand-emerald/5 border border-brand-emerald/20 text-xs text-slate-300 space-y-1">
-                <div className="flex items-center gap-1.5 font-bold text-brand-emerald">
+              <div className="p-3 rounded-xl bg-[#00ffff]/5 border border-brand-emerald/20 text-xs text-white space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-[#00ffff]">
                   <Lock size={13} />
                   <span>Proteksi Kategori Terkunci:</span>
                 </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
+                <p className="text-[11px] text-[#bbcbb2] leading-relaxed">
                   Kategori <strong>"{categoryForm.nama_kategori || '...'}"</strong> hanya akan muncul ketika pengguna memilih jenis <strong>"{categoryForm.jenis}"</strong> di form input.
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                   Akun Buku Besar (COA Akuntansi)
                 </label>
                 <CustomSelect
@@ -2677,32 +2677,32 @@ const Admin = () => {
                 />
               </div>
 
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-[#18181c] border border-[#26272d]">
                 <input
                   type="checkbox"
                   id="chk_boleh_kasir"
                   checked={categoryForm.boleh_kasir}
                   onChange={(e) => setCategoryForm(prev => ({ ...prev, boleh_kasir: e.target.checked }))}
-                  className="w-4 h-4 text-brand-emerald rounded border-slate-700 bg-slate-900 focus:ring-0 cursor-pointer"
+                  className="w-4 h-4 text-[#00ffff] rounded border-[#26272d] bg-[#18181c] focus:ring-0 cursor-pointer"
                 />
-                <label htmlFor="chk_boleh_kasir" className="text-xs text-slate-300 select-none cursor-pointer">
+                <label htmlFor="chk_boleh_kasir" className="text-xs text-white select-none cursor-pointer">
                   <strong className="block text-white font-semibold">Izinkan Kasir Mencatat Kategori Ini di POS</strong>
                   Beri centang jika kasir diperbolehkan mencatat biaya belanja laci kasir untuk kategori ini.
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#26272d]">
                 <button
                   type="button"
                   onClick={() => setShowCategoryModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
+                  className="px-4 py-2 rounded-xl bg-[#18181c] hover:bg-slate-700 text-white font-bold text-xs"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-5 py-2 rounded-xl bg-brand-emerald hover:bg-emerald-500 active:scale-[0.98] text-slate-950 font-black text-xs shadow-lg shadow-brand-emerald/20 transition-all disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl bg-[#00ffff] hover:bg-[#00ffff]/90 active:scale-[0.98] text-[#0f0f0f] font-black text-xs shadow-lg shadow-brand-emerald/20 transition-all disabled:opacity-50"
                 >
                   {loading ? 'Menyimpan...' : 'Simpan Kategori'}
                 </button>
@@ -2714,16 +2714,16 @@ const Admin = () => {
 
       {/* MODAL MASTER AKUN LIKUIDITAS (KAS & BANK) */}
       {showAccountModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="glass-panel w-full max-w-lg p-6 rounded-2xl shadow-2xl border border-slate-800 bg-slate-900 text-slate-200">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+        <div className="fixed inset-0 bg-[#18181c]/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-[#121215] border border-[#26272d] w-full max-w-lg p-6 rounded-2xl shadow-2xl border border-[#26272d] bg-[#18181c] text-white">
+            <div className="flex justify-between items-center border-b border-[#26272d] pb-3 mb-4">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Wallet className="text-brand-blue" size={18} />
+                <Wallet className="text-[#00ffff]" size={18} />
                 <span>{editingAccount ? 'Edit Akun Likuiditas' : 'Tambah Akun Kas / Bank Baru'}</span>
               </h3>
               <button
                 onClick={() => setShowAccountModal(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-[#bbcbb2] hover:text-white"
               >
                 ✕
               </button>
@@ -2731,7 +2731,7 @@ const Admin = () => {
 
             <form onSubmit={handleSaveAccount} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                   Kode / Nama Pos Akun
                 </label>
                 <input
@@ -2740,14 +2740,14 @@ const Admin = () => {
                   value={accountForm.pos}
                   onChange={(e) => setAccountForm(prev => ({ ...prev, pos: e.target.value }))}
                   disabled={!!editingAccount && editingAccount.pos === 'SALDO CASH'}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-blue disabled:opacity-50"
+                  className="w-full bg-[#18181c] border border-[#26272d] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#00ffff] disabled:opacity-50"
                   required
                 />
-                <p className="text-[10px] text-slate-500 mt-1">Kode unik yang dicatat di tabel mutasi cashflow.</p>
+                <p className="text-[10px] text-[#6b7367] mt-1">Kode unik yang dicatat di tabel mutasi cashflow.</p>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                   Label Tampilan di Dashboard
                 </label>
                 <input
@@ -2755,14 +2755,14 @@ const Admin = () => {
                   placeholder="Misal: BCA Operasional Utama, Kasir Laci, Tabungan Owner"
                   value={accountForm.label}
                   onChange={(e) => setAccountForm(prev => ({ ...prev, label: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-blue"
+                  className="w-full bg-[#18181c] border border-[#26272d] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#00ffff]"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Tipe Akun
                   </label>
                   <CustomSelect
@@ -2782,7 +2782,7 @@ const Admin = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Warna Kartu Dashboard
                   </label>
                   <CustomSelect
@@ -2804,7 +2804,7 @@ const Admin = () => {
 
               {!editingAccount && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Saldo Awal (Rp)
                   </label>
                   <input
@@ -2812,13 +2812,13 @@ const Admin = () => {
                     placeholder="0"
                     value={accountForm.balance}
                     onChange={(e) => setAccountForm(prev => ({ ...prev, balance: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-blue font-mono"
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#00ffff] font-mono"
                   />
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                   Keterangan Singkat
                 </label>
                 <input
@@ -2826,22 +2826,22 @@ const Admin = () => {
                   placeholder="Misal: Rekening penampungan EDC & QRIS kasir"
                   value={accountForm.keterangan}
                   onChange={(e) => setAccountForm(prev => ({ ...prev, keterangan: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-blue"
+                  className="w-full bg-[#18181c] border border-[#26272d] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#00ffff]"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#26272d]">
                 <button
                   type="button"
                   onClick={() => setShowAccountModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-[#bbcbb2] hover:text-white"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-5 py-2 rounded-xl text-xs font-bold bg-brand-blue hover:bg-cyan-500 text-slate-950 shadow-lg shadow-brand-blue/20 transition-all"
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-[#00ffff] hover:bg-cyan-500 text-[#0f0f0f] shadow-lg shadow-brand-blue/20 transition-all"
                 >
                   {editingAccount ? 'Simpan Akun' : 'Tambah Akun'}
                 </button>
@@ -2853,16 +2853,16 @@ const Admin = () => {
 
       {/* MODAL 1: Tambah/Edit Menu & Resep */}
       {showMenuModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="glass-panel w-full max-w-2xl p-6 rounded-2xl shadow-2xl border border-slate-800 max-h-[90vh] flex flex-col justify-between">
+        <div className="fixed inset-0 bg-[#18181c]/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-[#121215] border border-[#26272d] w-full max-w-2xl p-6 rounded-2xl shadow-2xl border border-[#26272d] max-h-[90vh] flex flex-col justify-between">
             <div>
-              <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
+              <div className="flex justify-between items-center border-b border-[#26272d] pb-4 mb-4">
                 <h3 className="text-lg font-bold text-white">
                   {isEditingMenu ? 'Edit Menu & Resep' : 'Tambah Menu Baru'}
                 </h3>
                 <button 
                   onClick={() => setShowMenuModal(false)}
-                  className="text-slate-400 hover:text-slate-200"
+                  className="text-[#bbcbb2] hover:text-white"
                 >
                   ✕
                 </button>
@@ -2880,7 +2880,7 @@ const Admin = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                       Nama Menu
                     </label>
                     <input
@@ -2889,13 +2889,13 @@ const Admin = () => {
                       value={menuForm.nama_menu}
                       onChange={(e) => setMenuForm(prev => ({ ...prev, nama_menu: e.target.value }))}
                       disabled={isEditingMenu}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm disabled:opacity-50"
+                      className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm disabled:opacity-50"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                       Harga Jual (Rp)
                     </label>
                     <input
@@ -2903,7 +2903,7 @@ const Admin = () => {
                       placeholder="0"
                       value={menuForm.harga}
                       onChange={(e) => setMenuForm(prev => ({ ...prev, harga: parseFloat(e.target.value) || 0 }))}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm"
+                      className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm"
                       required
                     />
                   </div>
@@ -2922,22 +2922,22 @@ const Admin = () => {
                   />
 
                   <div className="flex items-center gap-4 pt-4">
-                    <label className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider cursor-pointer">
+                    <label className="flex items-center gap-2 text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider cursor-pointer">
                       <input
                         type="checkbox"
                         checked={menuForm.is_bundling}
                         onChange={(e) => setMenuForm(prev => ({ ...prev, is_bundling: e.target.checked }))}
-                        className="rounded border-slate-800 bg-slate-900 text-brand-emerald focus:ring-brand-emerald"
+                        className="rounded border-[#26272d] bg-[#18181c] text-[#00ffff] focus:ring-brand-emerald"
                       />
                       Paket Bundling
                     </label>
 
-                    <label className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider cursor-pointer">
+                    <label className="flex items-center gap-2 text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider cursor-pointer">
                       <input
                         type="checkbox"
                         checked={menuForm.is_active}
                         onChange={(e) => setMenuForm(prev => ({ ...prev, is_active: e.target.checked }))}
-                        className="rounded border-slate-800 bg-slate-900 text-brand-emerald focus:ring-brand-emerald"
+                        className="rounded border-[#26272d] bg-[#18181c] text-[#00ffff] focus:ring-brand-emerald"
                       />
                       Aktif/Jual
                     </label>
@@ -2945,34 +2945,34 @@ const Admin = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Deskripsi Menu
                   </label>
                   <textarea
                     placeholder="Tulis detail menu..."
                     value={menuForm.deskripsi}
                     onChange={(e) => setMenuForm(prev => ({ ...prev, deskripsi: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm h-16 focus:outline-none"
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm h-16 focus:outline-none"
                   />
                 </div>
 
                 {/* Resep List */}
                 <div className="space-y-3 pt-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    <span className="text-xs font-bold text-[#bbcbb2] uppercase tracking-wider">
                       Resep Bahan Baku Terpakai
                     </span>
                     <button
                       type="button"
                       onClick={handleAddRecipeRow}
-                      className="px-3 py-1 bg-brand-emerald/10 border border-brand-emerald/20 text-brand-emerald font-bold rounded-lg text-xs"
+                      className="px-3 py-1 bg-[#00ffff]/10 border border-brand-emerald/20 text-[#00ffff] font-bold rounded-lg text-xs"
                     >
                       + Tambah Bahan
                     </button>
                   </div>
 
                   {menuRecipe.map((row, idx) => (
-                    <div key={idx} className="flex gap-2 items-center p-2 rounded-xl bg-slate-900/60 border border-slate-850">
+                    <div key={idx} className="flex gap-2 items-center p-2 rounded-xl bg-[#18181c]/60 border border-slate-850">
                       <div className="flex-1 min-w-[120px]">
                         <CustomSelect
                           value={row.nama_bahan}
@@ -2989,10 +2989,10 @@ const Admin = () => {
                           placeholder="Jumlah"
                           value={row.jumlah_dibutuhkan}
                           onChange={(e) => updateRecipeRow(idx, 'jumlah_dibutuhkan', parseFloat(e.target.value) || 0)}
-                          className="w-full bg-slate-900 border border-slate-800 rounded py-1 px-2 text-white text-xs text-center"
+                          className="w-full bg-[#18181c] border border-[#26272d] rounded py-1 px-2 text-white text-xs text-center"
                         />
                       </div>
-                      <span className="text-[10px] text-slate-500 w-12 font-mono">{row.satuan}</span>
+                      <span className="text-[10px] text-[#6b7367] w-12 font-mono">{row.satuan}</span>
                       <button
                         type="button"
                         onClick={() => removeRecipeRow(idx)}
@@ -3006,18 +3006,18 @@ const Admin = () => {
               </form>
             </div>
 
-            <div className="flex justify-end gap-3 border-t border-slate-800 pt-4 mt-6">
+            <div className="flex justify-end gap-3 border-t border-[#26272d] pt-4 mt-6">
               <button
                 type="button"
                 onClick={() => setShowMenuModal(false)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-sm"
+                className="px-4 py-2 bg-[#18181c] hover:bg-slate-700 text-white font-bold rounded-xl text-sm"
               >
                 Batal
               </button>
               <button
                 type="submit"
                 onClick={handleSaveMenu}
-                className="px-4 py-2 bg-brand-emerald hover:bg-emerald-500 active:bg-emerald-600 text-slate-950 font-bold rounded-xl text-sm"
+                className="px-4 py-2 bg-[#00ffff] hover:bg-[#00ffff]/90 active:scale-[0.98] text-[#0f0f0f] font-bold rounded-xl text-sm"
               >
                 Simpan Menu
               </button>
@@ -3028,9 +3028,9 @@ const Admin = () => {
 
       {/* MODAL 2: Tambah Bahan Baku Baru */}
       {showIngredientModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="glass-panel w-full max-w-md p-6 rounded-2xl shadow-2xl border border-slate-800">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
+        <div className="fixed inset-0 bg-[#18181c]/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-[#121215] border border-[#26272d] w-full max-w-md p-6 rounded-2xl shadow-2xl border border-[#26272d]">
+            <div className="flex justify-between items-center border-b border-[#26272d] pb-4 mb-4">
               <h3 className="text-lg font-bold text-white">Tambah Bahan Baku Baru</h3>
               <button 
                 type="button" 
@@ -3038,7 +3038,7 @@ const Admin = () => {
                   setShowIngredientModal(false)
                   setIngredientForm({ id_bahan_baku: '', nama_bahan: '', stok: 0, satuan: 'Gram/Ml', harga_satuan: 0 })
                 }} 
-                className="text-slate-400 hover:text-slate-200"
+                className="text-[#bbcbb2] hover:text-white"
               >
                 ✕
               </button>
@@ -3047,7 +3047,7 @@ const Admin = () => {
             <form onSubmit={handleSaveIngredient} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     ID Bahan Baku
                   </label>
                   <input
@@ -3055,12 +3055,12 @@ const Admin = () => {
                     placeholder="Contoh: BK-01, MB-01"
                     value={ingredientForm.id_bahan_baku}
                     onChange={(e) => setIngredientForm(prev => ({ ...prev, id_bahan_baku: e.target.value.toUpperCase() }))}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm font-mono font-bold"
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm font-mono font-bold"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Nama Bahan Baku
                   </label>
                   <input
@@ -3068,7 +3068,7 @@ const Admin = () => {
                     placeholder="Contoh: Biji Kopi"
                     value={ingredientForm.nama_bahan}
                     onChange={(e) => setIngredientForm(prev => ({ ...prev, nama_bahan: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm"
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm"
                     required
                   />
                 </div>
@@ -3076,7 +3076,7 @@ const Admin = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Satuan Ukuran
                   </label>
                   <CustomSelect
@@ -3095,7 +3095,7 @@ const Admin = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Harga Satuan (Rp)
                   </label>
                   <input
@@ -3103,14 +3103,14 @@ const Admin = () => {
                     placeholder="0"
                     value={ingredientForm.harga_satuan}
                     onChange={(e) => setIngredientForm(prev => ({ ...prev, harga_satuan: parseFloat(e.target.value) || 0 }))}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm font-mono"
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm font-mono"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                   Stok Awal
                 </label>
                 <input
@@ -3118,24 +3118,24 @@ const Admin = () => {
                   placeholder="0"
                   value={ingredientForm.stok}
                   onChange={(e) => setIngredientForm(prev => ({ ...prev, stok: parseFloat(e.target.value) || 0 }))}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm font-mono"
+                  className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm font-mono"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800 mt-4">
+              <div className="flex justify-end gap-3 pt-4 border-t border-[#26272d] mt-4">
                 <button
                   type="button"
                   onClick={() => {
                     setShowIngredientModal(false)
                     setIngredientForm({ id_bahan_baku: '', nama_bahan: '', stok: 0, satuan: 'Gram/Ml', harga_satuan: 0 })
                   }}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-sm"
+                  className="px-4 py-2 bg-[#18181c] hover:bg-slate-700 text-white font-bold rounded-xl text-sm"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-brand-emerald hover:bg-emerald-500 active:bg-emerald-600 text-slate-950 font-bold rounded-xl text-sm"
+                  className="px-4 py-2 bg-[#00ffff] hover:bg-[#00ffff]/90 active:scale-[0.98] text-[#0f0f0f] font-bold rounded-xl text-sm"
                 >
                   Tambah Bahan
                 </button>
@@ -3147,14 +3147,14 @@ const Admin = () => {
 
       {/* MODAL 2b: Edit Bahan Baku */}
       {editingIngredient && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="glass-panel w-full max-w-md p-6 rounded-2xl shadow-2xl border border-slate-800">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
+        <div className="fixed inset-0 bg-[#18181c]/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-[#121215] border border-[#26272d] w-full max-w-md p-6 rounded-2xl shadow-2xl border border-[#26272d]">
+            <div className="flex justify-between items-center border-b border-[#26272d] pb-4 mb-4">
               <h3 className="text-lg font-bold text-white">Edit Bahan Baku</h3>
               <button 
                 type="button" 
                 onClick={() => setEditingIngredient(null)} 
-                className="text-slate-400 hover:text-slate-200"
+                className="text-[#bbcbb2] hover:text-white"
               >
                 ✕
               </button>
@@ -3163,25 +3163,25 @@ const Admin = () => {
             <form onSubmit={handleUpdateIngredient} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     ID Bahan Baku
                   </label>
                   <input
                     type="text"
                     value={editingIngredient.id_bahan_baku}
                     disabled
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm font-mono font-bold opacity-50"
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm font-mono font-bold opacity-50"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Nama Bahan Baku
                   </label>
                   <input
                     type="text"
                     value={editingIngredient.nama_produk}
                     onChange={(e) => setEditingIngredient(prev => ({ ...prev, nama_produk: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm"
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm"
                     required
                   />
                 </div>
@@ -3189,7 +3189,7 @@ const Admin = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Satuan Ukuran
                   </label>
                   <CustomSelect
@@ -3208,42 +3208,42 @@ const Admin = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Harga Satuan (Rp)
                   </label>
                   <input
                     type="number"
                     value={editingIngredient.harga_satuan}
                     onChange={(e) => setEditingIngredient(prev => ({ ...prev, harga_satuan: parseFloat(e.target.value) || 0 }))}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm font-mono"
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm font-mono"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                   Stok Saat Ini
                 </label>
                 <input
                   type="number"
                   value={editingIngredient.stok}
                   onChange={(e) => setEditingIngredient(prev => ({ ...prev, stok: parseFloat(e.target.value) || 0 }))}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm font-mono"
+                  className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm font-mono"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800 mt-4">
+              <div className="flex justify-end gap-3 pt-4 border-t border-[#26272d] mt-4">
                 <button
                   type="button"
                   onClick={() => setEditingIngredient(null)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-350 font-bold rounded-xl text-sm"
+                  className="px-4 py-2 bg-[#18181c] hover:bg-slate-700 text-slate-350 font-bold rounded-xl text-sm"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-brand-emerald hover:bg-emerald-500 active:bg-emerald-600 text-slate-950 font-bold rounded-xl text-sm"
+                  className="px-4 py-2 bg-[#00ffff] hover:bg-[#00ffff]/90 active:scale-[0.98] text-[#0f0f0f] font-bold rounded-xl text-sm"
                 >
                   Simpan Perubahan
                 </button>
@@ -3254,40 +3254,40 @@ const Admin = () => {
       )}
       {/* MODAL OPNAME / KEBOCORAN */}
       {opnameIngredient && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex justify-center items-center p-4 z-50">
-          <div className="glass-panel w-full max-w-md p-6 rounded-2xl border border-slate-700 relative">
+        <div className="fixed inset-0 bg-[#18181c]/80 backdrop-blur-md flex justify-center items-center p-4 z-50">
+          <div className="bg-[#121215] border border-[#26272d] w-full max-w-md p-6 rounded-2xl border border-[#26272d] relative">
             <h3 className="text-xl font-bold text-white mb-2">Opname & Kebocoran</h3>
-            <p className="text-xs text-slate-400 mb-6 border-b border-slate-800 pb-4">
+            <p className="text-xs text-[#bbcbb2] mb-6 border-b border-[#26272d] pb-4">
               Hitung selisih stok aplikasi dengan stok fisik gudang.
             </p>
             
             <div className="space-y-4 mb-6">
-              <div className="flex justify-between bg-slate-900/50 p-3 rounded-lg border border-slate-800">
-                <span className="text-sm font-semibold text-slate-400">Bahan Baku:</span>
+              <div className="flex justify-between bg-[#18181c]/50 p-3 rounded-lg border border-[#26272d]">
+                <span className="text-sm font-semibold text-[#bbcbb2]">Bahan Baku:</span>
                 <span className="text-sm font-bold text-white">{opnameIngredient.nama_bahan}</span>
               </div>
-              <div className="flex justify-between bg-slate-900/50 p-3 rounded-lg border border-slate-800">
-                <span className="text-sm font-semibold text-slate-400">Stok Sistem Saat Ini:</span>
-                <span className="text-sm font-bold text-brand-blue">{parseFloat(opnameIngredient.stok).toFixed(2)} {opnameIngredient.satuan}</span>
+              <div className="flex justify-between bg-[#18181c]/50 p-3 rounded-lg border border-[#26272d]">
+                <span className="text-sm font-semibold text-[#bbcbb2]">Stok Sistem Saat Ini:</span>
+                <span className="text-sm font-bold text-[#00ffff]">{parseFloat(opnameIngredient.stok).toFixed(2)} {opnameIngredient.satuan}</span>
               </div>
             </div>
 
             <form onSubmit={handleSimpanOpname} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Stok Fisik Gudang ({opnameIngredient.satuan})</label>
+                <label className="block text-xs font-semibold text-[#bbcbb2] mb-1">Stok Fisik Gudang ({opnameIngredient.satuan})</label>
                 <input
                   type="number"
                   step="0.01"
                   required
                   value={stokFisik}
                   onChange={(e) => setStokFisik(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-brand-emerald transition-colors"
+                  className="w-full bg-[#18181c] border border-[#26272d] rounded-xl px-4 py-3 text-white focus:border-brand-emerald transition-colors"
                   placeholder="Masukkan jumlah asli di gudang"
                 />
               </div>
 
               {stokFisik !== '' && !isNaN(parseFloat(stokFisik)) && (
-                <div className="p-4 rounded-xl border mt-4 bg-slate-900/50">
+                <div className="p-4 rounded-xl border mt-4 bg-[#18181c]/50">
                   {(() => {
                     const diff = parseFloat(opnameIngredient.stok) - parseFloat(stokFisik);
                     const isBocor = diff > 0;
@@ -3296,7 +3296,7 @@ const Admin = () => {
 
                     if (diff === 0) {
                       return (
-                        <div className="text-brand-emerald text-sm text-center font-bold">
+                        <div className="text-[#00ffff] text-sm text-center font-bold">
                           Stok Cocok! Tidak ada kebocoran.
                         </div>
                       )
@@ -3329,17 +3329,17 @@ const Admin = () => {
                 </div>
               )}
 
-              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-[#26272d]">
                 <button
                   type="button"
                   onClick={() => setOpnameIngredient(null)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-sm transition-colors"
+                  className="px-4 py-2 bg-[#18181c] hover:bg-slate-700 text-white font-bold rounded-xl text-sm transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-brand-emerald text-slate-950 font-bold rounded-xl text-sm shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] transition-all"
+                  className="px-4 py-2 bg-[#00ffff] text-[#0f0f0f] font-bold rounded-xl text-sm shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] transition-all"
                 >
                   Update & Sesuaikan Stok
                 </button>
@@ -3350,8 +3350,8 @@ const Admin = () => {
       )}
       {/* CUSTOM MODAL: Alert / Confirm */}
       {customAlert && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">
-          <div className="glass-panel w-full max-w-sm p-6 rounded-2xl shadow-2xl border border-slate-800 shadow-[0_0_50px_rgba(16,185,129,0.08)] animate-pop-in text-center">
+        <div className="fixed inset-0 bg-[#18181c]/80 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">
+          <div className="bg-[#121215] border border-[#26272d] w-full max-w-sm p-6 rounded-2xl shadow-2xl border border-[#26272d] shadow-[0_0_50px_rgba(16,185,129,0.08)] animate-pop-in text-center">
             <div className="mb-4">
               {customAlert.title === 'Sukses' ? (
                 <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/10 flex items-center justify-center">
@@ -3380,7 +3380,7 @@ const Admin = () => {
                 <button
                   type="button"
                   onClick={customAlert.onCancel}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-bold rounded-xl text-xs transition-all w-24"
+                  className="px-4 py-2 bg-[#18181c] hover:bg-slate-700 active:scale-[0.98] text-white font-bold rounded-xl text-xs transition-all w-24"
                 >
                   Batal
                 </button>
@@ -3388,10 +3388,10 @@ const Admin = () => {
               <button
                 type="button"
                 onClick={customAlert.onConfirm}
-                className={`px-4 py-2 active:scale-95 font-bold rounded-xl text-xs transition-all w-24 ${
+                className={`px-4 py-2 active:scale-[0.98] font-bold rounded-xl text-xs transition-all w-24 ${
                   customAlert.title === 'Error' || customAlert.title === 'Hapus Bahan Baku' || customAlert.title === 'Hapus Menu' || customAlert.title === 'Hapus Karyawan'
                     ? 'bg-rose-500 hover:bg-rose-600 text-white'
-                    : 'bg-brand-emerald hover:bg-emerald-500 text-slate-950'
+                    : 'bg-[#00ffff] hover:bg-[#00ffff]/90 text-[#0f0f0f]'
                 }`}
               >
                 {customAlert.type === 'confirm' ? 'Ya' : 'OK'}

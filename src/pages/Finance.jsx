@@ -1507,7 +1507,7 @@ const Finance = () => {
             <DollarSign size={28} className="text-primary" />
             Monitoring Keuangan
           </h1>
-          <p className="text-slate-400 text-xs md:text-sm mt-0.5">
+          <p className="text-[#bbcbb2] text-xs md:text-sm mt-0.5">
             Pusat pengelolaan cashflow, log carwash, log cafe, pengeluaran & ekspor data
           </p>
         </div>
@@ -1515,29 +1515,29 @@ const Finance = () => {
           <button
             onClick={() => { setRefreshing(true); fetchFinanceData(); }}
             disabled={loading || refreshing}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-850 text-slate-300 rounded-xl text-xs font-bold border border-slate-800 transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 bg-[#18181c] hover:bg-[#26272d] text-white rounded-xl text-xs font-bold border border-[#26272d] transition-all"
             title="Refresh Data"
           >
-            <RefreshCw size={14} className={refreshing ? 'animate-spin text-brand-blue' : ''} />
+            <RefreshCw size={14} className={refreshing ? 'animate-spin text-[#00ffff]' : ''} />
             Refresh
           </button>
           <button
             onClick={() => setShowIncomeModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-primary hover:bg-emerald-400 active:bg-emerald-500 text-slate-950 font-bold rounded-xl shadow-lg shadow-brand-emerald/20 transition-all text-xs"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#00ffff] hover:bg-[#00ffff]/90 text-[#0f0f0f] font-bold rounded-xl shadow-sm transition-all text-xs active:scale-[0.98]"
           >
             <Plus size={15} />
             + Pemasukan
           </button>
           <button
             onClick={() => setShowExpenseModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-brand-rose hover:bg-rose-500 active:bg-rose-600 text-slate-950 font-bold rounded-xl shadow-lg shadow-brand-rose/20 transition-all text-xs"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#ff5102] hover:bg-[#ff5102]/90 text-white font-bold rounded-xl shadow-sm transition-all text-xs active:scale-[0.98]"
           >
             <Plus size={15} />
             + Pengeluaran
           </button>
           <button
             onClick={() => setShowTransferModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-500 hover:bg-sky-400 active:bg-sky-600 text-slate-950 font-bold rounded-xl shadow-lg shadow-sky-500/20 transition-all text-xs"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#ffc71f] hover:bg-[#ffc71f]/90 text-[#0f0f0f] font-bold rounded-xl shadow-sm transition-all text-xs active:scale-[0.98]"
           >
             <RotateCcw size={14} />
             ⇄ Pindah Saldo
@@ -1561,59 +1561,59 @@ const Finance = () => {
 
       {/* Global Net Balance Summary Cards */}
       <div className="space-y-1.5">
-        <div className="flex items-center justify-between text-xs text-slate-400 px-1">
-          <span className="font-bold uppercase tracking-wider text-[11px] text-slate-400">Ringkasan Finansial Akumulatif (Sepanjang Waktu)</span>
-          <span className="text-[10px] text-slate-500">Total riil sistem sejak awal operasional</span>
+        <div className="flex items-center justify-between text-xs text-[#bbcbb2] px-1">
+          <span className="font-bold uppercase tracking-wider text-[11px] text-[#bbcbb2]">Ringkasan Finansial Akumulatif (Sepanjang Waktu)</span>
+          <span className="text-[10px] text-[#6b7367]">Total riil sistem sejak awal operasional</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-          <div className="glass-panel p-4.5 rounded-2xl border border-slate-800/80 hover:border-slate-700 transition-colors">
-            <p className="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Total Kas Bersih (All-time)</p>
+          <div className="bg-[#121215] border border-[#26272d] p-4.5 rounded-2xl border border-[#26272d] hover:border-slate-700 transition-colors">
+            <p className="text-[#6b7367] text-[11px] font-semibold uppercase tracking-wider">Total Kas Bersih (All-time)</p>
             <h3 className={`text-2xl font-black mt-1.5 ${allTimeSummary.totalBalance >= 0 ? 'text-primary' : 'text-rose-400'}`}>
               {formatRupiah(allTimeSummary.totalBalance)}
             </h3>
-            <span className="text-[10px] text-slate-500 mt-1 block">Net akumulasi seluruh pemasukan riil - pengeluaran riil</span>
+            <span className="text-[10px] text-[#6b7367] mt-1 block">Net akumulasi seluruh pemasukan riil - pengeluaran riil</span>
           </div>
-          <div className="glass-panel p-4.5 rounded-2xl border border-slate-800/80 hover:border-slate-700 transition-colors">
+          <div className="bg-[#121215] border border-[#26272d] p-4.5 rounded-2xl border border-[#26272d] hover:border-slate-700 transition-colors">
             <div className="flex justify-between items-center">
-              <p className="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Total Pemasukan Riil (All-time)</p>
+              <p className="text-[#6b7367] text-[11px] font-semibold uppercase tracking-wider">Total Pemasukan Riil (All-time)</p>
               <ArrowUpRight size={16} className="text-primary" />
             </div>
             <h3 className="text-2xl font-bold text-white mt-1.5">{formatRupiah(allTimeSummary.totalIncome)}</h3>
-            <span className="text-[10px] text-slate-500 mt-1 block">Akumulasi struk lunas & kas masuk (di luar pindah saldo)</span>
+            <span className="text-[10px] text-[#6b7367] mt-1 block">Akumulasi struk lunas & kas masuk (di luar pindah saldo)</span>
           </div>
-          <div className="glass-panel p-4.5 rounded-2xl border border-slate-800/80 hover:border-slate-700 transition-colors">
+          <div className="bg-[#121215] border border-[#26272d] p-4.5 rounded-2xl border border-[#26272d] hover:border-slate-700 transition-colors">
             <div className="flex justify-between items-center">
-              <p className="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Total Pengeluaran Riil (All-time)</p>
+              <p className="text-[#6b7367] text-[11px] font-semibold uppercase tracking-wider">Total Pengeluaran Riil (All-time)</p>
               <ArrowDownRight size={16} className="text-brand-rose" />
             </div>
             <h3 className="text-2xl font-bold text-white mt-1.5">{formatRupiah(allTimeSummary.totalExpense)}</h3>
-            <span className="text-[10px] text-slate-500 mt-1 block">Akumulasi beban operasional riil (di luar pindah saldo)</span>
+            <span className="text-[10px] text-[#6b7367] mt-1 block">Akumulasi beban operasional riil (di luar pindah saldo)</span>
           </div>
         </div>
       </div>
 
       {/* Real-Time Wallet Balances Cards (Laci Cash, Mandiri Utama, Mandiri Ops, Rekening R) */}
       <div className="space-y-1.5">
-        <div className="flex items-center justify-between text-xs text-slate-400 px-1">
-          <span className="font-bold uppercase tracking-wider text-[11px] text-slate-400">Posisi Saldo Riil per Dompet / Rekening (Saat Ini)</span>
-          <span className="text-[10px] text-slate-500">Saldo fisik di laci kasir & mutasi bank</span>
+        <div className="flex items-center justify-between text-xs text-[#bbcbb2] px-1">
+          <span className="font-bold uppercase tracking-wider text-[11px] text-[#bbcbb2]">Posisi Saldo Riil per Dompet / Rekening (Saat Ini)</span>
+          <span className="text-[10px] text-[#6b7367]">Saldo fisik di laci kasir & mutasi bank</span>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-          <div className="glass-panel p-3.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-slate-700 transition-colors">
+          <div className="bg-[#121215] border border-[#26272d] p-3.5 rounded-xl border border-[#26272d] flex items-center justify-between hover:border-slate-700 transition-colors">
             <div>
-              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Laci Kasir (Cash Fisik)</span>
+              <span className="text-[#6b7367] text-[10px] font-bold uppercase tracking-wider block">Laci Kasir (Cash Fisik)</span>
               <h4 className={`text-base md:text-lg font-black mt-0.5 ${posAllTimeBalances.cash >= 0 ? 'text-white' : 'text-rose-400'}`}>
                 {formatRupiah(posAllTimeBalances.cash)}
               </h4>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-slate-800/80 text-slate-300 flex items-center justify-center font-bold text-xs">
-              💵
+            <div className="w-8 h-8 rounded-lg bg-slate-800/80 text-white flex items-center justify-center font-bold text-xs">
+              CASH
             </div>
           </div>
 
-          <div className="glass-panel p-3.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-slate-700 transition-colors">
+          <div className="bg-[#121215] border border-[#26272d] p-3.5 rounded-xl border border-[#26272d] flex items-center justify-between hover:border-slate-700 transition-colors">
             <div>
-              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Mandiri Utama (Rek Y)</span>
+              <span className="text-[#6b7367] text-[10px] font-bold uppercase tracking-wider block">Mandiri Utama (Rek Y)</span>
               <h4 className={`text-base md:text-lg font-black mt-0.5 ${posAllTimeBalances.rekY >= 0 ? 'text-primary' : 'text-rose-400'}`}>
                 {formatRupiah(posAllTimeBalances.rekY)}
               </h4>
@@ -1623,21 +1623,21 @@ const Finance = () => {
             </div>
           </div>
 
-          <div className="glass-panel p-3.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-slate-700 transition-colors">
+          <div className="bg-[#121215] border border-[#26272d] p-3.5 rounded-xl border border-[#26272d] flex items-center justify-between hover:border-slate-700 transition-colors">
             <div>
-              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Mandiri Ops (Rek N)</span>
-              <h4 className={`text-base md:text-lg font-black mt-0.5 ${posAllTimeBalances.rekN >= 0 ? 'text-brand-blue' : 'text-rose-400'}`}>
+              <span className="text-[#6b7367] text-[10px] font-bold uppercase tracking-wider block">Mandiri Ops (Rek N)</span>
+              <h4 className={`text-base md:text-lg font-black mt-0.5 ${posAllTimeBalances.rekN >= 0 ? 'text-[#00ffff]' : 'text-rose-400'}`}>
                 {formatRupiah(posAllTimeBalances.rekN)}
               </h4>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-brand-blue/10 text-brand-blue flex items-center justify-center font-bold text-xs">
+            <div className="w-8 h-8 rounded-lg bg-brand-blue/10 text-[#00ffff] flex items-center justify-center font-bold text-xs">
               N
             </div>
           </div>
 
-          <div className="glass-panel p-3.5 rounded-xl border border-slate-800/80 flex items-center justify-between hover:border-slate-700 transition-colors">
+          <div className="bg-[#121215] border border-[#26272d] p-3.5 rounded-xl border border-[#26272d] flex items-center justify-between hover:border-slate-700 transition-colors">
             <div>
-              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Saldo Rekening R (Cadangan)</span>
+              <span className="text-[#6b7367] text-[10px] font-bold uppercase tracking-wider block">Saldo Rekening R (Cadangan)</span>
               <h4 className={`text-base md:text-lg font-black mt-0.5 ${posAllTimeBalances.rekR >= 0 ? 'text-purple-400' : 'text-rose-400'}`}>
                 {formatRupiah(posAllTimeBalances.rekR)}
               </h4>
@@ -1650,22 +1650,22 @@ const Finance = () => {
       </div>
 
       {/* Universal Flexible Filter Panel */}
-      <div className="glass-panel p-4 md:p-5 rounded-2xl border border-slate-800 space-y-3.5">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+      <div className="bg-[#121215] border border-[#26272d] p-4 md:p-5 rounded-2xl border border-[#26272d] space-y-3.5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-[#26272d] pb-3">
           <div className="flex items-center gap-2">
-            <Calendar size={18} className="text-brand-blue" />
+            <Calendar size={18} className="text-[#00ffff]" />
             <span className="text-xs font-bold text-white uppercase tracking-wider">Filter Rentang Waktu:</span>
-            <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-brand-blue/10 text-brand-blue border border-brand-blue/20">
+            <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30">
               {activePeriodLabel}
             </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800">
+            <div className="flex bg-[#18181c] p-1 rounded-xl border border-[#26272d]">
               <button
                 onClick={() => setFilterPeriodMode('month')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
-                  filterPeriodMode === 'month' ? 'bg-brand-blue text-slate-950 shadow' : 'text-slate-400 hover:text-white'
+                  filterPeriodMode === 'month' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
                 }`}
               >
                 Pilih Bulan
@@ -1673,7 +1673,7 @@ const Finance = () => {
               <button
                 onClick={() => setFilterPeriodMode('quick')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
-                  filterPeriodMode === 'quick' ? 'bg-brand-blue text-slate-950 shadow' : 'text-slate-400 hover:text-white'
+                  filterPeriodMode === 'quick' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
                 }`}
               >
                 Preset Cepat
@@ -1681,7 +1681,7 @@ const Finance = () => {
               <button
                 onClick={() => setFilterPeriodMode('custom')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
-                  filterPeriodMode === 'custom' ? 'bg-brand-blue text-slate-950 shadow' : 'text-slate-400 hover:text-white'
+                  filterPeriodMode === 'custom' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
                 }`}
               >
                 Kustom Tanggal
@@ -1694,7 +1694,7 @@ const Finance = () => {
         <div className="flex flex-wrap items-center gap-3">
           {filterPeriodMode === 'month' && (
             <div className="flex items-center gap-2">
-              <label className="text-xs text-slate-400 font-semibold">Bulan:</label>
+              <label className="text-xs text-[#bbcbb2] font-semibold">Bulan:</label>
               <CustomSelect
                 value={selectedMonth}
                 onChange={(val) => setSelectedMonth(val)}
@@ -1719,7 +1719,7 @@ const Finance = () => {
                   key={p.id}
                   onClick={() => setQuickPreset(p.id)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                    quickPreset === p.id ? 'bg-slate-800 text-white border border-brand-blue/50' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                    quickPreset === p.id ? 'bg-slate-800 text-white border border-brand-blue/50' : 'bg-[#18181c] text-[#bbcbb2] hover:text-white border border-[#26272d]'
                   }`}
                 >
                   {p.label}
@@ -1730,22 +1730,22 @@ const Finance = () => {
 
           {filterPeriodMode === 'custom' && (
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1.5 text-xs text-slate-400">
+              <div className="flex items-center gap-1.5 text-xs text-[#bbcbb2]">
                 <span>Dari:</span>
                 <input
                   type="date"
                   value={customStartDate}
                   onChange={(e) => setCustomStartDate(e.target.value)}
-                  className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-white text-xs"
+                  className="bg-[#18181c] border border-[#26272d] rounded-lg px-2.5 py-1 text-white text-xs"
                 />
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-slate-400">
+              <div className="flex items-center gap-1.5 text-xs text-[#bbcbb2]">
                 <span>Sampai:</span>
                 <input
                   type="date"
                   value={customEndDate}
                   onChange={(e) => setCustomEndDate(e.target.value)}
-                  className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-white text-xs"
+                  className="bg-[#18181c] border border-[#26272d] rounded-lg px-2.5 py-1 text-white text-xs"
                 />
               </div>
             </div>
@@ -1753,16 +1753,16 @@ const Finance = () => {
 
           {/* Search Bar */}
           <div className="flex-1 min-w-[200px] relative ml-auto">
-            <Search size={14} className="absolute left-3 top-2.5 text-slate-500" />
+            <Search size={14} className="absolute left-3 top-2.5 text-[#6b7367]" />
             <input
               type="text"
               placeholder="Cari keterangan, menu, plat nomor, kategori..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-8 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-emerald"
+              className="w-full bg-[#18181c] border border-[#26272d] rounded-xl pl-9 pr-8 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-emerald"
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-2 text-slate-500 hover:text-white">
+              <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-2 text-[#6b7367] hover:text-white">
                 <X size={13} />
               </button>
             )}
@@ -1771,7 +1771,7 @@ const Finance = () => {
       </div>
 
       {/* Dynamic Main Tabs Navigation based on Tenant Capabilities */}
-      <div className="flex border-b border-slate-800 gap-2 overflow-x-auto pb-1">
+      <div className="flex border-b border-[#26272d] gap-2 overflow-x-auto pb-1">
         {[
           { id: 'cashflow', label: '1. Arus Kas (Cashflow)', icon: DollarSign, count: filteredCashflow.length, visible: true },
           { id: 'carwash', label: '2. Log Carwash', icon: Car, count: filteredCarwash.length, visible: features.hasCarwash },
@@ -1787,13 +1787,13 @@ const Finance = () => {
               className={`flex items-center gap-2 px-4 py-3 font-bold text-xs md:text-sm border-b-2 transition-all whitespace-nowrap ${
                 isActive 
                   ? 'border-brand-emerald text-primary bg-primary/5' 
-                  : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
+                  : 'border-transparent text-[#bbcbb2] hover:text-white hover:bg-[#18181c]/40'
               }`}
             >
               <Icon size={16} />
               <span>{tab.label}</span>
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
-                isActive ? 'bg-primary text-slate-950' : 'bg-slate-800 text-slate-400'
+                isActive ? 'bg-primary text-slate-950' : 'bg-slate-800 text-[#bbcbb2]'
               }`}>
                 {tab.count}
               </span>
@@ -1807,34 +1807,34 @@ const Finance = () => {
         <div className="space-y-6 animate-fade-in">
           {/* Mini KPI Bar */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] text-slate-500 font-bold uppercase">Pemasukan Periode</span>
+            <div className="p-3 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
+              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Pemasukan Periode</span>
               <p className="text-sm md:text-base font-black text-primary mt-1">{formatRupiah(cashflowKpis.totalInc)}</p>
             </div>
-            <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] text-slate-500 font-bold uppercase">Pengeluaran Periode</span>
+            <div className="p-3 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
+              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Pengeluaran Periode</span>
               <p className="text-sm md:text-base font-black text-rose-400 mt-1">{formatRupiah(cashflowKpis.totalExp)}</p>
             </div>
-            <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] text-slate-500 font-bold uppercase">Net Laci Cash</span>
+            <div className="p-3 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
+              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Net Laci Cash</span>
               <p className={`text-sm md:text-base font-black mt-1 ${cashflowKpis.cashNet >= 0 ? 'text-white' : 'text-rose-400'}`}>
                 {formatRupiah(cashflowKpis.cashNet)}
               </p>
             </div>
-            <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] text-slate-500 font-bold uppercase">Net Rekening Y</span>
+            <div className="p-3 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
+              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Net Rekening Y</span>
               <p className={`text-sm md:text-base font-black mt-1 ${cashflowKpis.rekYNet >= 0 ? 'text-primary' : 'text-rose-400'}`}>
                 {formatRupiah(cashflowKpis.rekYNet)}
               </p>
             </div>
-            <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] text-slate-500 font-bold uppercase">Net Rekening N</span>
-              <p className={`text-sm md:text-base font-black mt-1 ${cashflowKpis.rekNNet >= 0 ? 'text-brand-blue' : 'text-rose-400'}`}>
+            <div className="p-3 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
+              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Net Rekening N</span>
+              <p className={`text-sm md:text-base font-black mt-1 ${cashflowKpis.rekNNet >= 0 ? 'text-[#00ffff]' : 'text-rose-400'}`}>
                 {formatRupiah(cashflowKpis.rekNNet)}
               </p>
             </div>
-            <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] text-slate-500 font-bold uppercase">Net Rekening R</span>
+            <div className="p-3 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
+              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Net Rekening R</span>
               <p className={`text-sm md:text-base font-black mt-1 ${cashflowKpis.rekRNet >= 0 ? 'text-purple-400' : 'text-rose-400'}`}>
                 {formatRupiah(cashflowKpis.rekRNet)}
               </p>
@@ -1842,7 +1842,7 @@ const Finance = () => {
           </div>
 
           {/* Cashflow Table Section */}
-          <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
+          <div className="bg-[#121215] border border-[#26272d] p-5 rounded-2xl border border-[#26272d] space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-bold text-white">Log Transaksi Cashflow</h3>
@@ -1914,7 +1914,7 @@ const Finance = () => {
 
               <button
                 onClick={handleExportCSV}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl text-xs font-bold border border-slate-700 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#18181c] hover:bg-[#26272d] text-white rounded-xl text-xs font-bold border border-slate-700 transition-colors"
               >
                 <Download size={14} className="text-primary" />
                 Unduh CSV
@@ -1927,7 +1927,7 @@ const Finance = () => {
                 <thead>
                   <tr className="bg-subsurface/90 border-b border-border text-muted font-bold uppercase text-[10px] sm:text-xs">
                     <th 
-                      className="p-3 cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
+                      className="p-3 cursor-pointer select-none hover:bg-[#18181c]/60 transition-colors group"
                       onClick={() => handleSortToggle('tanggal')}
                       title="Klik untuk mengurutkan tanggal (menaik/menurun)"
                     >
@@ -1940,7 +1940,7 @@ const Finance = () => {
                             <ArrowUp size={14} className="text-primary" />
                           )
                         ) : (
-                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
+                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-[#bbcbb2]" />
                         )}
                       </div>
                     </th>
@@ -1955,7 +1955,7 @@ const Finance = () => {
                     <th className="p-3">Keterangan</th>
                     <th className="p-3">POS Kas</th>
                     <th 
-                      className="p-3 text-right cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
+                      className="p-3 text-right cursor-pointer select-none hover:bg-[#18181c]/60 transition-colors group"
                       onClick={() => handleSortToggle('nominal')}
                       title="Klik untuk mengurutkan nominal (menaik/menurun)"
                     >
@@ -1968,7 +1968,7 @@ const Finance = () => {
                             <ArrowUp size={14} className="text-primary" />
                           )
                         ) : (
-                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
+                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-[#bbcbb2]" />
                         )}
                       </div>
                     </th>
@@ -1980,8 +1980,8 @@ const Finance = () => {
                     <tr>
                       <td colSpan={6} className="py-10 text-center text-muted">
                         <DollarSign size={32} className="mx-auto text-slate-600 mb-2 opacity-60" />
-                        <p className="font-bold text-sm text-slate-300">Tidak ada log cashflow pada periode ini ({activePeriodLabel})</p>
-                        <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                        <p className="font-bold text-sm text-white">Tidak ada log cashflow pada periode ini ({activePeriodLabel})</p>
+                        <p className="text-xs text-[#6b7367] mt-1 max-w-md mx-auto">
                           Gunakan filter tanggal di atas atau klik tombol berikut untuk melihat riwayat:
                         </p>
                         <button
@@ -1998,8 +1998,8 @@ const Finance = () => {
                       const isInc = parseFloat(item.pemasukan || 0) > 0
                       const nominal = isInc ? item.pemasukan : item.pengeluaran
                       return (
-                        <tr key={item.id_cashflow} className="hover:bg-slate-850/30 transition-colors">
-                          <td className="p-3 text-slate-400 font-mono">{item.tanggal}</td>
+                        <tr key={item.id_cashflow} className="hover:bg-[#26272d]/30 transition-colors">
+                          <td className="p-3 text-[#bbcbb2] font-mono">{item.tanggal}</td>
                           <td className="p-3">
                             {isPindah ? (
                               <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-sky-500/10 text-sky-400 border border-sky-500/20">
@@ -2012,11 +2012,11 @@ const Finance = () => {
                                 {item.jenis || (isInc ? 'Pemasukan' : 'Pengeluaran')}
                               </span>
                             )}
-                            {item.kategori && !isPindah && <span className="ml-1 text-[10px] text-slate-500 font-sans">({item.kategori})</span>}
+                            {item.kategori && !isPindah && <span className="ml-1 text-[10px] text-[#6b7367] font-sans">({item.kategori})</span>}
                           </td>
                           <td className="p-3 font-semibold text-white max-w-xs truncate">{item.keterangan_transaksi}</td>
                           <td className="p-3">
-                            <span className="px-2 py-0.5 rounded font-mono text-[10px] text-slate-400 bg-slate-900 border border-slate-800">
+                            <span className="px-2 py-0.5 rounded font-mono text-[10px] text-[#bbcbb2] bg-[#18181c] border border-[#26272d]">
                               {item.pos}
                             </span>
                           </td>
@@ -2024,20 +2024,20 @@ const Finance = () => {
                             isPindah ? 'text-sky-300' : (isInc ? 'text-primary' : 'text-rose-400')
                           }`}>
                             {isInc ? '+' : '-'} {formatRupiah(nominal)}
-                            {isPindah && <span className="text-[9px] text-slate-500 block font-sans font-normal">[Mutasi Kas/Bank]</span>}
+                            {isPindah && <span className="text-[9px] text-[#6b7367] block font-sans font-normal">[Mutasi Kas/Bank]</span>}
                           </td>
                           <td className="p-3 text-center">
                             <div className="flex items-center justify-center gap-1.5">
                               <button
                                 onClick={() => handleOpenEdit(item, 'cashflow')}
-                                className="p-1 text-slate-400 hover:text-brand-blue transition-colors"
+                                className="p-1 text-[#bbcbb2] hover:text-[#00ffff] transition-colors"
                                 title="Edit Transaksi"
                               >
                                 <Edit2 size={14} />
                               </button>
                               <button
                                 onClick={() => handleDeleteItem(item, 'cashflow')}
-                                className="p-1 text-slate-400 hover:text-rose-400 transition-colors"
+                                className="p-1 text-[#bbcbb2] hover:text-rose-400 transition-colors"
                                 title="Hapus Transaksi"
                               >
                                 <Trash2 size={14} />
@@ -2053,13 +2053,13 @@ const Finance = () => {
             </TableContainer>
 
             {/* Pagination Controls */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2 text-xs text-slate-400 border-t border-slate-800">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2 text-xs text-[#bbcbb2] border-t border-[#26272d]">
               <div className="flex items-center gap-2">
                 <span>Baris per halaman:</span>
                 <select
                   value={pageSize}
                   onChange={(e) => setPageSize(parseInt(e.target.value))}
-                  className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
+                  className="bg-[#18181c] border border-[#26272d] rounded-lg px-2.5 py-1 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
                 >
                   <option value={25}>25</option>
                   <option value={50}>50</option>
@@ -2074,7 +2074,7 @@ const Finance = () => {
                   <button
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="p-1.5 rounded bg-slate-900 hover:bg-slate-800 disabled:opacity-30 text-white"
+                    className="p-1.5 rounded bg-[#18181c] hover:bg-[#26272d] disabled:opacity-30 text-white"
                   >
                     <ChevronLeft size={14} />
                   </button>
@@ -2082,7 +2082,7 @@ const Finance = () => {
                   <button
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
-                    className="p-1.5 rounded bg-slate-900 hover:bg-slate-800 disabled:opacity-30 text-white"
+                    className="p-1.5 rounded bg-[#18181c] hover:bg-[#26272d] disabled:opacity-30 text-white"
                   >
                     <ChevronRight size={14} />
                   </button>
@@ -2098,26 +2098,26 @@ const Finance = () => {
         <div className="space-y-6 animate-fade-in">
           {/* Mini KPI Bar */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] text-slate-500 font-bold uppercase">Total Unit Dicuci</span>
+            <div className="p-3.5 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
+              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Total Unit Dicuci</span>
               <p className="text-base md:text-lg font-black text-white mt-1">{carwashKpis.units} Kendaraan</p>
             </div>
-            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] text-slate-500 font-bold uppercase">Total Omzet Kotor</span>
+            <div className="p-3.5 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
+              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Total Omzet Kotor</span>
               <p className="text-base md:text-lg font-black text-primary mt-1">{formatRupiah(carwashKpis.grossRev)}</p>
             </div>
-            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] text-slate-500 font-bold uppercase">Total Diskon Diberikan</span>
+            <div className="p-3.5 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
+              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Total Diskon Diberikan</span>
               <p className="text-base md:text-lg font-black text-rose-400 mt-1">{formatRupiah(carwashKpis.discount)}</p>
             </div>
-            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] text-slate-500 font-bold uppercase">Omzet Bersih (Pemasukan)</span>
-              <p className="text-base md:text-lg font-black text-brand-blue mt-1">{formatRupiah(carwashKpis.netRev)}</p>
+            <div className="p-3.5 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
+              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Omzet Bersih (Pemasukan)</span>
+              <p className="text-base md:text-lg font-black text-[#00ffff] mt-1">{formatRupiah(carwashKpis.netRev)}</p>
             </div>
           </div>
 
           {/* Carwash Table Section */}
-          <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
+          <div className="bg-[#121215] border border-[#26272d] p-5 rounded-2xl border border-[#26272d] space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-bold text-white">Log Transaksi Carwash</h3>
@@ -2149,7 +2149,7 @@ const Finance = () => {
 
               <button
                 onClick={handleExportCSV}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl text-xs font-bold border border-slate-700 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#18181c] hover:bg-[#26272d] text-white rounded-xl text-xs font-bold border border-slate-700 transition-colors"
               >
                 <Download size={14} className="text-primary" />
                 Unduh CSV
@@ -2161,7 +2161,7 @@ const Finance = () => {
                 <thead>
                   <tr className="bg-subsurface/90 border-b border-border text-muted font-bold uppercase text-[10px] sm:text-xs">
                     <th 
-                      className="p-3 cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
+                      className="p-3 cursor-pointer select-none hover:bg-[#18181c]/60 transition-colors group"
                       onClick={() => handleSortToggle('tanggal')}
                       title="Klik untuk mengurutkan tanggal (menaik/menurun)"
                     >
@@ -2174,7 +2174,7 @@ const Finance = () => {
                             <ArrowUp size={14} className="text-primary" />
                           )
                         ) : (
-                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
+                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-[#bbcbb2]" />
                         )}
                       </div>
                     </th>
@@ -2183,7 +2183,7 @@ const Finance = () => {
                     <th className="p-3">Metode Bayar</th>
                     <th className="p-3">Status</th>
                     <th 
-                      className="p-3 text-right cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
+                      className="p-3 text-right cursor-pointer select-none hover:bg-[#18181c]/60 transition-colors group"
                       onClick={() => handleSortToggle('nominal')}
                       title="Klik untuk mengurutkan harga (menaik/menurun)"
                     >
@@ -2196,7 +2196,7 @@ const Finance = () => {
                             <ArrowUp size={14} className="text-primary" />
                           )
                         ) : (
-                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
+                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-[#bbcbb2]" />
                         )}
                       </div>
                     </th>
@@ -2208,8 +2208,8 @@ const Finance = () => {
                     <tr>
                       <td colSpan={7} className="py-10 text-center text-muted">
                         <Car size={32} className="mx-auto text-slate-600 mb-2 opacity-60" />
-                        <p className="font-bold text-sm text-slate-300">Tidak ada log carwash pada periode ini ({activePeriodLabel})</p>
-                        <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                        <p className="font-bold text-sm text-white">Tidak ada log carwash pada periode ini ({activePeriodLabel})</p>
+                        <p className="text-xs text-[#6b7367] mt-1 max-w-md mx-auto">
                           Gunakan filter tanggal di atas atau klik tombol berikut untuk melihat riwayat:
                         </p>
                         <button
@@ -2223,16 +2223,16 @@ const Finance = () => {
                   ) : (
                     paginatedList.map(item => (
                       <tr key={item.id_carwash} className="hover:bg-slate-855/30 transition-colors">
-                        <td className="p-3 font-mono text-slate-400">
-                          {item.tanggal} <span className="text-[10px] text-slate-500">{item.jam || ''}</span>
+                        <td className="p-3 font-mono text-[#bbcbb2]">
+                          {item.tanggal} <span className="text-[10px] text-[#6b7367]">{item.jam || ''}</span>
                         </td>
                         <td className="p-3">
                           <span className="font-extrabold text-white font-mono">{item.plat_nomor}</span>
-                          <span className="text-[10px] text-slate-400 block">{item.model || item.tipe_kendaraan}</span>
+                          <span className="text-[10px] text-[#bbcbb2] block">{item.model || item.tipe_kendaraan}</span>
                         </td>
-                        <td className="p-3 font-semibold text-slate-200">{item.layanan}</td>
+                        <td className="p-3 font-semibold text-white">{item.layanan}</td>
                         <td className="p-3">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-white">
                             {item.metode_bayar || 'CASH'}
                           </span>
                         </td>
@@ -2246,7 +2246,7 @@ const Finance = () => {
                         <td className="p-3 text-right font-mono font-bold text-primary">
                           {formatRupiah(item.harga)}
                           {parseFloat(item.diskon) > 0 && (
-                            <span className="text-[10px] text-slate-500 block font-normal line-through">
+                            <span className="text-[10px] text-[#6b7367] block font-normal line-through">
                               {formatRupiah(parseFloat(item.harga) + parseFloat(item.diskon))}
                             </span>
                           )}
@@ -2255,14 +2255,14 @@ const Finance = () => {
                           <div className="flex items-center justify-center gap-1.5">
                             <button
                               onClick={() => handleOpenEdit(item, 'carwash')}
-                              className="p-1 text-slate-400 hover:text-brand-blue transition-colors"
+                              className="p-1 text-[#bbcbb2] hover:text-[#00ffff] transition-colors"
                               title="Edit Transaksi"
                             >
                               <Edit2 size={14} />
                             </button>
                             <button
                               onClick={() => handleDeleteItem(item, 'carwash')}
-                              className="p-1 text-slate-400 hover:text-rose-400 transition-colors"
+                              className="p-1 text-[#bbcbb2] hover:text-rose-400 transition-colors"
                               title="Hapus Transaksi"
                             >
                               <Trash2 size={14} />
@@ -2277,13 +2277,13 @@ const Finance = () => {
             </TableContainer>
 
             {/* Pagination Controls */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2 text-xs text-slate-400 border-t border-slate-800">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2 text-xs text-[#bbcbb2] border-t border-[#26272d]">
               <div className="flex items-center gap-2">
                 <span>Baris:</span>
                 <select
                   value={pageSize}
                   onChange={(e) => setPageSize(parseInt(e.target.value))}
-                  className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
+                  className="bg-[#18181c] border border-[#26272d] rounded-lg px-2.5 py-1 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
                 >
                   <option value={25}>25</option>
                   <option value={50}>50</option>
@@ -2295,11 +2295,11 @@ const Finance = () => {
 
               {pageSize > 0 && totalPages > 1 && (
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-1.5 rounded bg-slate-900 hover:bg-slate-800 disabled:opacity-30 text-white">
+                  <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-1.5 rounded bg-[#18181c] hover:bg-[#26272d] disabled:opacity-30 text-white">
                     <ChevronLeft size={14} />
                   </button>
                   <span>Halaman <strong className="text-white">{currentPage}</strong> dari {totalPages}</span>
-                  <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-1.5 rounded bg-slate-900 hover:bg-slate-800 disabled:opacity-30 text-white">
+                  <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-1.5 rounded bg-[#18181c] hover:bg-[#26272d] disabled:opacity-30 text-white">
                     <ChevronRight size={14} />
                   </button>
                 </div>
@@ -2314,22 +2314,22 @@ const Finance = () => {
         <div className="space-y-6 animate-fade-in">
           {/* Mini KPI Bar */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] text-slate-500 font-bold uppercase">Total Item / Porsi Terjual</span>
+            <div className="p-3.5 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
+              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Total Item / Porsi Terjual</span>
               <p className="text-base md:text-lg font-black text-white mt-1">{cafeKpis.totalItems} Porsi/Item</p>
             </div>
-            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] text-slate-500 font-bold uppercase">Menu Terlaris (Top Seller)</span>
-              <p className="text-base md:text-lg font-black text-brand-blue mt-1 truncate">{cafeKpis.topSellingItem}</p>
+            <div className="p-3.5 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
+              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Menu Terlaris (Top Seller)</span>
+              <p className="text-base md:text-lg font-black text-[#00ffff] mt-1 truncate">{cafeKpis.topSellingItem}</p>
             </div>
-            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] text-slate-500 font-bold uppercase">Total Omzet Cafe (F&B)</span>
+            <div className="p-3.5 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
+              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Total Omzet Cafe (F&B)</span>
               <p className="text-base md:text-lg font-black text-primary mt-1">{formatRupiah(cafeKpis.totalRev)}</p>
             </div>
           </div>
 
           {/* Cafe Table Section */}
-          <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
+          <div className="bg-[#121215] border border-[#26272d] p-5 rounded-2xl border border-[#26272d] space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-bold text-white">Log Detail Penjualan Cafe</h3>
@@ -2348,7 +2348,7 @@ const Finance = () => {
 
               <button
                 onClick={handleExportCSV}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl text-xs font-bold border border-slate-700 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#18181c] hover:bg-[#26272d] text-white rounded-xl text-xs font-bold border border-slate-700 transition-colors"
               >
                 <Download size={14} className="text-primary" />
                 Unduh CSV
@@ -2360,7 +2360,7 @@ const Finance = () => {
                 <thead>
                   <tr className="bg-subsurface/90 border-b border-border text-muted font-bold uppercase text-[10px] sm:text-xs">
                     <th 
-                      className="p-3 cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
+                      className="p-3 cursor-pointer select-none hover:bg-[#18181c]/60 transition-colors group"
                       onClick={() => handleSortToggle('tanggal')}
                       title="Klik untuk mengurutkan waktu/tanggal (menaik/menurun)"
                     >
@@ -2373,7 +2373,7 @@ const Finance = () => {
                             <ArrowUp size={14} className="text-primary" />
                           )
                         ) : (
-                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
+                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-[#bbcbb2]" />
                         )}
                       </div>
                     </th>
@@ -2389,7 +2389,7 @@ const Finance = () => {
                     <th className="p-3 text-center">Qty</th>
                     <th className="p-3 text-right">Harga Satuan</th>
                     <th 
-                      className="p-3 text-right cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
+                      className="p-3 text-right cursor-pointer select-none hover:bg-[#18181c]/60 transition-colors group"
                       onClick={() => handleSortToggle('nominal')}
                       title="Klik untuk mengurutkan total tagihan (menaik/menurun)"
                     >
@@ -2402,7 +2402,7 @@ const Finance = () => {
                             <ArrowUp size={14} className="text-primary" />
                           )
                         ) : (
-                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
+                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-[#bbcbb2]" />
                         )}
                       </div>
                     </th>
@@ -2414,13 +2414,13 @@ const Finance = () => {
                     <tr>
                       <td colSpan={7} className="py-10 text-center text-muted">
                         <Coffee size={32} className="mx-auto text-slate-600 mb-2 opacity-60" />
-                        <p className="font-bold text-sm text-slate-300">Tidak ada log cafe pada periode ini ({activePeriodLabel})</p>
-                        <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                        <p className="font-bold text-sm text-white">Tidak ada log cafe pada periode ini ({activePeriodLabel})</p>
+                        <p className="text-xs text-[#6b7367] mt-1 max-w-md mx-auto">
                           Data transaksi cafe di database berada pada periode April – Juli 2026. Anda dapat mengganti filter bulan di atas atau klik tombol berikut:
                         </p>
                         <button
                           onClick={() => { setFilterPeriodMode('quick'); setQuickPreset('all'); }}
-                          className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-brand-blue/10 hover:bg-brand-blue/20 text-brand-blue border border-brand-blue/30 text-xs font-bold transition-all"
+                          className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-brand-blue/10 hover:bg-brand-blue/20 text-[#00ffff] border border-brand-blue/30 text-xs font-bold transition-all"
                         >
                           Tampilkan Semua Waktu ({cafeList.length} Item)
                         </button>
@@ -2428,19 +2428,19 @@ const Finance = () => {
                     </tr>
                   ) : (
                     paginatedList.map(item => (
-                      <tr key={item.id_detail} className="hover:bg-slate-850/30 transition-colors">
-                        <td className="p-3 font-mono text-slate-400">
+                      <tr key={item.id_detail} className="hover:bg-[#26272d]/30 transition-colors">
+                        <td className="p-3 font-mono text-[#bbcbb2]">
                           {item.struk?.tanggal || '-'}
-                          <span className="text-[10px] text-slate-500 block">Kasir: {item.struk?.kasir || 'Admin'}</span>
+                          <span className="text-[10px] text-[#6b7367] block">Kasir: {item.struk?.kasir || 'Admin'}</span>
                         </td>
                         <td className="p-3 font-extrabold text-white">{item.nama_menu || item.nama_item || 'Menu'}</td>
                         <td className="p-3">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-white">
                             {item.kategori || 'Menu'}
                           </span>
                         </td>
-                        <td className="p-3 text-center font-mono font-bold text-brand-blue">{item.qty || item.jumlah || 1}x</td>
-                        <td className="p-3 text-right font-mono text-slate-300">{formatRupiah(item.harga_satuan)}</td>
+                        <td className="p-3 text-center font-mono font-bold text-[#00ffff]">{item.qty || item.jumlah || 1}x</td>
+                        <td className="p-3 text-right font-mono text-white">{formatRupiah(item.harga_satuan)}</td>
                         <td className="p-3 text-right font-mono font-bold text-primary">
                           {formatRupiah(item.subtotal || item.total_harga || ((item.qty || item.jumlah || 1) * (item.harga_satuan || 0)))}
                         </td>
@@ -2448,14 +2448,14 @@ const Finance = () => {
                           <div className="flex items-center justify-center gap-1.5">
                             <button
                               onClick={() => handleOpenEdit(item, 'cafe')}
-                              className="p-1 text-slate-400 hover:text-brand-blue transition-colors"
+                              className="p-1 text-[#bbcbb2] hover:text-[#00ffff] transition-colors"
                               title="Edit Transaksi"
                             >
                               <Edit2 size={14} />
                             </button>
                             <button
                               onClick={() => handleDeleteItem(item, 'cafe')}
-                              className="p-1 text-slate-400 hover:text-rose-400 transition-colors"
+                              className="p-1 text-[#bbcbb2] hover:text-rose-400 transition-colors"
                               title="Hapus Transaksi"
                             >
                               <Trash2 size={14} />
@@ -2470,13 +2470,13 @@ const Finance = () => {
             </TableContainer>
 
             {/* Pagination Controls */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2 text-xs text-slate-400 border-t border-slate-800">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2 text-xs text-[#bbcbb2] border-t border-[#26272d]">
               <div className="flex items-center gap-2">
                 <span>Baris:</span>
                 <select
                   value={pageSize}
                   onChange={(e) => setPageSize(parseInt(e.target.value))}
-                  className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
+                  className="bg-[#18181c] border border-[#26272d] rounded-lg px-2.5 py-1 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
                 >
                   <option value={25}>25</option>
                   <option value={50}>50</option>
@@ -2488,11 +2488,11 @@ const Finance = () => {
 
               {pageSize > 0 && totalPages > 1 && (
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-1.5 rounded bg-slate-900 hover:bg-slate-800 disabled:opacity-30 text-white">
+                  <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-1.5 rounded bg-[#18181c] hover:bg-[#26272d] disabled:opacity-30 text-white">
                     <ChevronLeft size={14} />
                   </button>
                   <span>Halaman <strong className="text-white">{currentPage}</strong> dari {totalPages}</span>
-                  <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-1.5 rounded bg-slate-900 hover:bg-slate-800 disabled:opacity-30 text-white">
+                  <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-1.5 rounded bg-[#18181c] hover:bg-[#26272d] disabled:opacity-30 text-white">
                     <ChevronRight size={14} />
                   </button>
                 </div>
@@ -2507,26 +2507,26 @@ const Finance = () => {
         <div className="space-y-6 animate-fade-in">
           {/* Mini KPI Bar */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] text-slate-500 font-bold uppercase">Beban Operasional Murni</span>
+            <div className="p-3.5 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
+              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Beban Operasional Murni</span>
               <p className="text-base md:text-lg font-black text-rose-400 mt-1">{formatRupiah(expensesKpis.opTotal)}</p>
             </div>
-            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] text-slate-500 font-bold uppercase">Belanja Bahan Baku</span>
+            <div className="p-3.5 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
+              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Belanja Bahan Baku</span>
               <p className="text-base md:text-lg font-black text-amber-400 mt-1">{formatRupiah(expensesKpis.rawTotal)}</p>
             </div>
-            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] text-slate-500 font-bold uppercase">Kasbon Karyawan</span>
-              <p className="text-base md:text-lg font-black text-brand-blue mt-1">{formatRupiah(expensesKpis.casbonTotal)}</p>
+            <div className="p-3.5 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
+              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Kasbon Karyawan</span>
+              <p className="text-base md:text-lg font-black text-[#00ffff] mt-1">{formatRupiah(expensesKpis.casbonTotal)}</p>
             </div>
-            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] text-slate-500 font-bold uppercase">Total Seluruh Pengeluaran</span>
+            <div className="p-3.5 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
+              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Total Seluruh Pengeluaran</span>
               <p className="text-base md:text-lg font-black text-white mt-1">{formatRupiah(expensesKpis.totalAll)}</p>
             </div>
           </div>
 
           {/* Expenses Table Section */}
-          <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
+          <div className="bg-[#121215] border border-[#26272d] p-5 rounded-2xl border border-[#26272d] space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-bold text-white">Log Pengeluaran Lengkap</h3>
@@ -2584,7 +2584,7 @@ const Finance = () => {
 
               <button
                 onClick={handleExportCSV}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl text-xs font-bold border border-slate-700 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#18181c] hover:bg-[#26272d] text-white rounded-xl text-xs font-bold border border-slate-700 transition-colors"
               >
                 <Download size={14} className="text-primary" />
                 Unduh CSV
@@ -2596,7 +2596,7 @@ const Finance = () => {
                 <thead>
                   <tr className="bg-subsurface/90 border-b border-border text-muted font-bold uppercase text-[10px] sm:text-xs">
                     <th 
-                      className="p-3 cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
+                      className="p-3 cursor-pointer select-none hover:bg-[#18181c]/60 transition-colors group"
                       onClick={() => handleSortToggle('tanggal')}
                       title="Klik untuk mengurutkan tanggal (menaik/menurun)"
                     >
@@ -2609,7 +2609,7 @@ const Finance = () => {
                             <ArrowUp size={14} className="text-brand-rose" />
                           )
                         ) : (
-                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
+                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-[#bbcbb2]" />
                         )}
                       </div>
                     </th>
@@ -2624,7 +2624,7 @@ const Finance = () => {
                     </th>
                     <th className="p-3">POS Kas</th>
                     <th 
-                      className="p-3 text-right cursor-pointer select-none hover:bg-slate-900/60 transition-colors group"
+                      className="p-3 text-right cursor-pointer select-none hover:bg-[#18181c]/60 transition-colors group"
                       onClick={() => handleSortToggle('nominal')}
                       title="Klik untuk mengurutkan nominal beban (menaik/menurun)"
                     >
@@ -2637,7 +2637,7 @@ const Finance = () => {
                             <ArrowUp size={14} className="text-brand-rose" />
                           )
                         ) : (
-                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-slate-400" />
+                          <ArrowUpDown size={14} className="text-slate-600 group-hover:text-[#bbcbb2]" />
                         )}
                       </div>
                     </th>
@@ -2649,8 +2649,8 @@ const Finance = () => {
                     <tr>
                       <td colSpan={6} className="py-10 text-center text-muted">
                         <Receipt size={32} className="mx-auto text-slate-600 mb-2 opacity-60" />
-                        <p className="font-bold text-sm text-slate-300">Tidak ada log pengeluaran pada periode ini ({activePeriodLabel})</p>
-                        <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                        <p className="font-bold text-sm text-white">Tidak ada log pengeluaran pada periode ini ({activePeriodLabel})</p>
+                        <p className="text-xs text-[#6b7367] mt-1 max-w-md mx-auto">
                           Gunakan filter tanggal di atas atau klik tombol berikut untuk melihat riwayat:
                         </p>
                         <button
@@ -2663,20 +2663,20 @@ const Finance = () => {
                     </tr>
                   ) : (
                     paginatedList.map(item => (
-                      <tr key={item.id_pengeluaran} className="hover:bg-slate-850/30 transition-colors">
-                        <td className="p-3 font-mono text-slate-400">
-                          {item.tanggal} <span className="text-[10px] text-slate-500">{item.jam || ''}</span>
+                      <tr key={item.id_pengeluaran} className="hover:bg-[#26272d]/30 transition-colors">
+                        <td className="p-3 font-mono text-[#bbcbb2]">
+                          {item.tanggal} <span className="text-[10px] text-[#6b7367]">{item.jam || ''}</span>
                         </td>
                         <td className="p-3 font-semibold text-white max-w-xs truncate">
                           {item.nama_pengeluaran || item.keterangan || '-'}
                         </td>
                         <td className="p-3">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-white">
                             {item.kategori || item.jenis || 'Operasional'}
                           </span>
                         </td>
                         <td className="p-3">
-                          <span className="px-2 py-0.5 rounded font-mono text-[10px] text-slate-400 bg-slate-900 border border-slate-800">
+                          <span className="px-2 py-0.5 rounded font-mono text-[10px] text-[#bbcbb2] bg-[#18181c] border border-[#26272d]">
                             {item.pos || 'SALDO CASH'}
                           </span>
                         </td>
@@ -2687,14 +2687,14 @@ const Finance = () => {
                           <div className="flex items-center justify-center gap-1.5">
                             <button
                               onClick={() => handleOpenEdit(item, 'expenses')}
-                              className="p-1 text-slate-400 hover:text-brand-blue transition-colors"
+                              className="p-1 text-[#bbcbb2] hover:text-[#00ffff] transition-colors"
                               title="Edit Pengeluaran"
                             >
                               <Edit2 size={14} />
                             </button>
                             <button
                               onClick={() => handleDeleteItem(item, 'expenses')}
-                              className="p-1 text-slate-400 hover:text-rose-400 transition-colors"
+                              className="p-1 text-[#bbcbb2] hover:text-rose-400 transition-colors"
                               title="Hapus Pengeluaran"
                             >
                               <Trash2 size={14} />
@@ -2709,13 +2709,13 @@ const Finance = () => {
             </TableContainer>
 
             {/* Pagination Controls */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2 text-xs text-slate-400 border-t border-slate-800">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2 text-xs text-[#bbcbb2] border-t border-[#26272d]">
               <div className="flex items-center gap-2">
                 <span>Baris:</span>
                 <select
                   value={pageSize}
                   onChange={(e) => setPageSize(parseInt(e.target.value))}
-                  className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
+                  className="bg-[#18181c] border border-[#26272d] rounded-lg px-2.5 py-1 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
                 >
                   <option value={25}>25</option>
                   <option value={50}>50</option>
@@ -2727,11 +2727,11 @@ const Finance = () => {
 
               {pageSize > 0 && totalPages > 1 && (
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-1.5 rounded bg-slate-900 hover:bg-slate-800 disabled:opacity-30 text-white">
+                  <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-1.5 rounded bg-[#18181c] hover:bg-[#26272d] disabled:opacity-30 text-white">
                     <ChevronLeft size={14} />
                   </button>
                   <span>Halaman <strong className="text-white">{currentPage}</strong> dari {totalPages}</span>
-                  <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-1.5 rounded bg-slate-900 hover:bg-slate-800 disabled:opacity-30 text-white">
+                  <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-1.5 rounded bg-[#18181c] hover:bg-[#26272d] disabled:opacity-30 text-white">
                     <ChevronRight size={14} />
                   </button>
                 </div>
@@ -2743,17 +2743,17 @@ const Finance = () => {
 
       {/* MODAL 1: CATAT PENGELUARAN BARU */}
       {showExpenseModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="glass-panel w-full max-w-2xl p-6 rounded-2xl shadow-2xl border border-slate-800 max-h-[90vh] flex flex-col justify-between">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-[#121215] border border-[#26272d] w-full max-w-2xl p-6 rounded-2xl shadow-2xl border border-[#26272d] max-h-[90vh] flex flex-col justify-between">
             <div>
-              <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
+              <div className="flex justify-between items-center border-b border-[#26272d] pb-4 mb-4">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <TrendingDown className="text-brand-rose" />
                   Catat Pengeluaran Baru
                 </h3>
                 <button 
                   onClick={() => { setShowExpenseModal(false); setBarangMasukList([]); }}
-                  className="text-slate-400 hover:text-slate-200"
+                  className="text-[#bbcbb2] hover:text-white"
                 >
                   ✕
                 </button>
@@ -2769,21 +2769,21 @@ const Finance = () => {
               <form onSubmit={handleSaveExpense} className="space-y-4 overflow-y-auto max-h-[50vh] pr-2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                       Tanggal
                     </label>
                     <input
                       type="date"
                       value={expenseForm.tanggal}
                       onChange={(e) => setExpenseForm(prev => ({ ...prev, tanggal: e.target.value }))}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-rose"
+                      className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-rose"
                       required
                     />
                   </div>
 
                   <div>
                     <div className="flex justify-between items-center mb-1.5">
-                      <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider">
                         Jenis Pengeluaran
                       </label>
                       <button
@@ -2800,7 +2800,7 @@ const Finance = () => {
                         placeholder="Ketik jenis..."
                         value={expenseForm.jenis}
                         onChange={(e) => handleExpenseJenisSelect(e.target.value)}
-                        className="w-full bg-slate-900 border border-brand-emerald rounded-xl py-2 px-3 text-white text-xs md:text-sm focus:outline-none"
+                        className="w-full bg-[#18181c] border border-brand-emerald rounded-xl py-2 px-3 text-white text-xs md:text-sm focus:outline-none"
                         autoFocus
                       />
                     ) : (
@@ -2827,7 +2827,7 @@ const Finance = () => {
 
                   <div>
                     <div className="flex justify-between items-center mb-1.5">
-                      <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider">
                         Kategori (Terkunci)
                       </label>
                       <button
@@ -2852,7 +2852,7 @@ const Finance = () => {
                           }))
                           if (newCat !== 'Bahan Baku') setBarangMasukList([])
                         }}
-                        className="w-full bg-slate-900 border border-brand-emerald rounded-xl py-2 px-3 text-white text-xs md:text-sm focus:outline-none"
+                        className="w-full bg-[#18181c] border border-brand-emerald rounded-xl py-2 px-3 text-white text-xs md:text-sm focus:outline-none"
                         autoFocus
                       />
                     ) : (
@@ -2884,7 +2884,7 @@ const Finance = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                       POS Kas
                     </label>
                     <CustomSelect
@@ -2899,20 +2899,20 @@ const Finance = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Keterangan
                   </label>
                   <textarea
                     placeholder="Beli sabun cuci mobil, bayar listrik cafe, casbon staff..."
                     value={expenseForm.keterangan}
                     onChange={(e) => setExpenseForm(prev => ({ ...prev, keterangan: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm h-20 placeholder-slate-600 focus:outline-none focus:border-brand-rose"
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm h-20 placeholder-slate-600 focus:outline-none focus:border-brand-rose"
                   />
                 </div>
 
                 {expenseForm.kategori !== 'Bahan Baku' ? (
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                       Total Nominal (Rp)
                     </label>
                     <input
@@ -2920,31 +2920,31 @@ const Finance = () => {
                       placeholder="0"
                       value={expenseForm.total_harga}
                       onChange={(e) => setExpenseForm(prev => ({ ...prev, total_harga: e.target.value }))}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm font-mono focus:outline-none focus:border-brand-rose"
+                      className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm font-mono focus:outline-none focus:border-brand-rose"
                     />
                   </div>
                 ) : (
                   <div className="space-y-3 pt-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      <span className="text-xs font-bold text-[#bbcbb2] uppercase tracking-wider">
                         Detail Restok Bahan Baku (Barang Masuk)
                       </span>
                       <button
                         type="button"
                         onClick={addBarangMasukItem}
-                        className="px-3 py-1 bg-brand-blue/10 border border-brand-blue/20 text-brand-blue font-bold rounded-lg text-xs"
+                        className="px-3 py-1 bg-brand-blue/10 border border-brand-blue/20 text-[#00ffff] font-bold rounded-lg text-xs"
                       >
                         + Tambah Item
                       </button>
                     </div>
 
                     {barangMasukList.map((item, idx) => (
-                      <div key={idx} className="flex gap-2 items-center p-3 rounded-lg bg-slate-900/60 border border-slate-800">
+                      <div key={idx} className="flex gap-2 items-center p-3 rounded-lg bg-[#18181c]/60 border border-[#26272d]">
                         <div className="flex-1 min-w-[120px]">
                           <select
                             value={item.id_bahan_baku}
                             onChange={(e) => updateBarangMasukItem(idx, 'id_bahan_baku', e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-800 rounded py-1.5 px-2 text-white text-xs font-semibold focus:outline-none focus:border-brand-rose"
+                            className="w-full bg-[#18181c] border border-[#26272d] rounded py-1.5 px-2 text-white text-xs font-semibold focus:outline-none focus:border-brand-rose"
                           >
                             {stokBahan.map(b => (
                               <option key={b.id_bahan_baku} value={b.id_bahan_baku}>
@@ -2959,17 +2959,17 @@ const Finance = () => {
                             placeholder="Qty"
                             value={item.jumlah}
                             onChange={(e) => updateBarangMasukItem(idx, 'jumlah', e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-800 rounded py-1.5 px-2 text-white text-xs text-center font-mono focus:outline-none focus:border-brand-rose"
+                            className="w-full bg-[#18181c] border border-[#26272d] rounded py-1.5 px-2 text-white text-xs text-center font-mono focus:outline-none focus:border-brand-rose"
                           />
                         </div>
-                        <span className="text-[10px] text-slate-400 w-12 font-mono">{item.satuan}</span>
+                        <span className="text-[10px] text-[#bbcbb2] w-12 font-mono">{item.satuan}</span>
                         <div className="flex-1 min-w-[100px]">
                           <input
                             type="number"
                             placeholder="Harga Satuan"
                             value={item.harga_satuan}
                             onChange={(e) => updateBarangMasukItem(idx, 'harga_satuan', e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-800 rounded py-1.5 px-2 text-white text-xs text-right font-mono focus:outline-none focus:border-brand-rose"
+                            className="w-full bg-[#18181c] border border-[#26272d] rounded py-1.5 px-2 text-white text-xs text-right font-mono focus:outline-none focus:border-brand-rose"
                           />
                         </div>
                         <button
@@ -2983,7 +2983,7 @@ const Finance = () => {
                     ))}
 
                     <div className="p-3 rounded-lg bg-brand-rose/5 border border-brand-rose/10 flex justify-between items-center text-xs font-bold mt-2">
-                      <span className="text-slate-400">Total Biaya Restok</span>
+                      <span className="text-[#bbcbb2]">Total Biaya Restok</span>
                       <span className="text-brand-rose text-sm font-black">{formatRupiah(expenseForm.total_harga)}</span>
                     </div>
                   </div>
@@ -2991,11 +2991,11 @@ const Finance = () => {
               </form>
             </div>
 
-            <div className="flex justify-end gap-3 border-t border-slate-800 pt-4 mt-6">
+            <div className="flex justify-end gap-3 border-t border-[#26272d] pt-4 mt-6">
               <button
                 type="button"
                 onClick={() => { setShowExpenseModal(false); setBarangMasukList([]); }}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-sm"
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-sm"
               >
                 Batal
               </button>
@@ -3014,15 +3014,15 @@ const Finance = () => {
 
       {/* MODAL 2: CATAT PEMASUKAN BARU */}
       {showIncomeModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="glass-panel w-full max-w-xl p-6 rounded-2xl shadow-2xl border border-slate-800 max-h-[90vh] flex flex-col justify-between">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-[#121215] border border-[#26272d] w-full max-w-xl p-6 rounded-2xl shadow-2xl border border-[#26272d] max-h-[90vh] flex flex-col justify-between">
             <div>
-              <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
+              <div className="flex justify-between items-center border-b border-[#26272d] pb-4 mb-4">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <Plus className="text-primary" />
                   Catat Pemasukan Baru
                 </h3>
-                <button onClick={() => setShowIncomeModal(false)} className="text-slate-400 hover:text-slate-200">✕</button>
+                <button onClick={() => setShowIncomeModal(false)} className="text-[#bbcbb2] hover:text-white">✕</button>
               </div>
 
               {error && (
@@ -3035,21 +3035,21 @@ const Finance = () => {
               <form onSubmit={handleSaveIncome} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                       Tanggal
                     </label>
                     <input
                       type="date"
                       value={incomeForm.tanggal}
                       onChange={(e) => setIncomeForm(prev => ({ ...prev, tanggal: e.target.value }))}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-emerald"
+                      className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-emerald"
                       required
                     />
                   </div>
 
                   <div>
                     <div className="flex justify-between items-center mb-1.5">
-                      <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider">
                         Jenis Pemasukan
                       </label>
                       <button
@@ -3066,7 +3066,7 @@ const Finance = () => {
                         placeholder="Ketik jenis..."
                         value={incomeForm.jenis}
                         onChange={(e) => handleIncomeJenisSelect(e.target.value)}
-                        className="w-full bg-slate-900 border border-brand-emerald rounded-xl py-2 px-3 text-white text-xs md:text-sm focus:outline-none"
+                        className="w-full bg-[#18181c] border border-brand-emerald rounded-xl py-2 px-3 text-white text-xs md:text-sm focus:outline-none"
                         autoFocus
                       />
                     ) : (
@@ -3093,7 +3093,7 @@ const Finance = () => {
 
                   <div>
                     <div className="flex justify-between items-center mb-1.5">
-                      <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider">
                         Kategori Pemasukan (Terkunci)
                       </label>
                       <button
@@ -3110,7 +3110,7 @@ const Finance = () => {
                         placeholder="Ketik kategori..."
                         value={incomeForm.kategori}
                         onChange={(e) => setIncomeForm(prev => ({ ...prev, kategori: e.target.value }))}
-                        className="w-full bg-slate-900 border border-brand-emerald rounded-xl py-2 px-3 text-white text-xs md:text-sm focus:outline-none"
+                        className="w-full bg-[#18181c] border border-brand-emerald rounded-xl py-2 px-3 text-white text-xs md:text-sm focus:outline-none"
                         autoFocus
                       />
                     ) : (
@@ -3136,7 +3136,7 @@ const Finance = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                       POS Kas Tujuan
                     </label>
                     <CustomSelect
@@ -3151,7 +3151,7 @@ const Finance = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Keterangan
                   </label>
                   <input
@@ -3159,12 +3159,12 @@ const Finance = () => {
                     placeholder="Contoh: Setoran modal awal owner, pendapatan iklan..."
                     value={incomeForm.keterangan}
                     onChange={(e) => setIncomeForm(prev => ({ ...prev, keterangan: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-emerald"
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-emerald"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Nominal Pemasukan (Rp)
                   </label>
                   <input
@@ -3172,17 +3172,17 @@ const Finance = () => {
                     placeholder="0"
                     value={incomeForm.nominal}
                     onChange={(e) => setIncomeForm(prev => ({ ...prev, nominal: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm font-mono focus:outline-none focus:border-brand-emerald"
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm font-mono focus:outline-none focus:border-brand-emerald"
                   />
                 </div>
               </form>
             </div>
 
-            <div className="flex justify-end gap-3 border-t border-slate-800 pt-4 mt-6">
+            <div className="flex justify-end gap-3 border-t border-[#26272d] pt-4 mt-6">
               <button
                 type="button"
                 onClick={() => setShowIncomeModal(false)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-sm"
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-sm"
               >
                 Batal
               </button>
@@ -3201,15 +3201,15 @@ const Finance = () => {
 
       {/* MODAL 2B: PINDAH SALDO (TRANSFER ANTAR REKENING/KAS) */}
       {showTransferModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto animate-fade-in">
-          <div className="glass-panel w-full max-w-xl p-6 rounded-2xl shadow-2xl border border-slate-800 max-h-[90vh] flex flex-col justify-between animate-pop-in">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto animate-fade-in">
+          <div className="bg-[#121215] border border-[#26272d] w-full max-w-xl p-6 rounded-2xl shadow-2xl border border-[#26272d] max-h-[90vh] flex flex-col justify-between animate-pop-in">
             <div>
-              <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
+              <div className="flex justify-between items-center border-b border-[#26272d] pb-4 mb-4">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <RotateCcw className="text-sky-400" />
                   Pindah Saldo (Mutasi Kas / Bank)
                 </h3>
-                <button onClick={() => setShowTransferModal(false)} className="text-slate-400 hover:text-slate-200">✕</button>
+                <button onClick={() => setShowTransferModal(false)} className="text-[#bbcbb2] hover:text-white">✕</button>
               </div>
 
               {error && (
@@ -3222,21 +3222,21 @@ const Finance = () => {
               <form onSubmit={handleSaveTransfer} className="space-y-4">
                 {/* Tanggal */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Tanggal Perpindahan
                   </label>
                   <input
                     type="date"
                     value={transferForm.tanggal}
                     onChange={(e) => setTransferForm(prev => ({ ...prev, tanggal: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm font-mono focus:outline-none focus:border-sky-400"
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm font-mono focus:outline-none focus:border-sky-400"
                     required
                   />
                 </div>
 
                 {/* Dropdowns Dari POS Asal ke POS Tujuan */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+                  <div className="p-3.5 rounded-xl bg-[#18181c]/80 border border-[#26272d] space-y-2">
                     <label className="block text-xs font-bold text-rose-400 uppercase tracking-wider">
                       1. Dari Pos Kas (Sumber / Asal)
                     </label>
@@ -3251,10 +3251,10 @@ const Finance = () => {
                       variant="rose"
                       className="w-full"
                     />
-                    <span className="text-[10px] text-slate-500 block">Saldo akan berkurang (-)</span>
+                    <span className="text-[10px] text-[#6b7367] block">Saldo akan berkurang (-)</span>
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+                  <div className="p-3.5 rounded-xl bg-[#18181c]/80 border border-[#26272d] space-y-2">
                     <label className="block text-xs font-bold text-primary uppercase tracking-wider">
                       2. Ke Pos Kas (Tujuan)
                     </label>
@@ -3269,13 +3269,13 @@ const Finance = () => {
                       variant="emerald"
                       className="w-full"
                     />
-                    <span className="text-[10px] text-slate-500 block">Saldo akan bertambah (+)</span>
+                    <span className="text-[10px] text-[#6b7367] block">Saldo akan bertambah (+)</span>
                   </div>
                 </div>
 
                 {/* Nominal */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Nominal Perpindahan (Rp)
                   </label>
                   <input
@@ -3283,14 +3283,14 @@ const Finance = () => {
                     placeholder="Contoh: 1500000"
                     value={transferForm.nominal}
                     onChange={(e) => setTransferForm(prev => ({ ...prev, nominal: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2.5 px-3 text-white text-base font-mono font-bold focus:outline-none focus:border-sky-400"
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2.5 px-3 text-white text-base font-mono font-bold focus:outline-none focus:border-sky-400"
                     required
                   />
                 </div>
 
                 {/* Keterangan */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Keterangan / Catatan (Opsional)
                   </label>
                   <input
@@ -3298,7 +3298,7 @@ const Finance = () => {
                     placeholder={`Pindah Saldo dari ${transferForm.pos_asal} ke ${transferForm.pos_tujuan}`}
                     value={transferForm.keterangan}
                     onChange={(e) => setTransferForm(prev => ({ ...prev, keterangan: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-sky-400"
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-sky-400"
                   />
                 </div>
 
@@ -3312,11 +3312,11 @@ const Finance = () => {
               </form>
             </div>
 
-            <div className="flex justify-end gap-3 border-t border-slate-800 pt-4 mt-6">
+            <div className="flex justify-end gap-3 border-t border-[#26272d] pt-4 mt-6">
               <button
                 type="button"
                 onClick={() => setShowTransferModal(false)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-sm"
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-sm"
               >
                 Batal
               </button>
@@ -3335,15 +3335,15 @@ const Finance = () => {
 
       {/* MODAL 3: EDIT TRANSAKSI (UNIVERSAL) */}
       {showEditModal && editForm.id && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="glass-panel w-full max-w-xl p-6 rounded-2xl shadow-2xl border border-slate-800 max-h-[90vh] flex flex-col justify-between">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-[#121215] border border-[#26272d] w-full max-w-xl p-6 rounded-2xl shadow-2xl border border-[#26272d] max-h-[90vh] flex flex-col justify-between">
             <div>
-              <div className="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+              <div className="flex justify-between items-center border-b border-[#26272d] pb-3 mb-4">
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Edit2 className="text-brand-blue" size={18} />
+                  <Edit2 className="text-[#00ffff]" size={18} />
                   Edit Data Transaksi ({editForm.table.toUpperCase()})
                 </h3>
-                <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-200">✕</button>
+                <button onClick={() => setShowEditModal(false)} className="text-[#bbcbb2] hover:text-white">✕</button>
               </div>
 
               {error && (
@@ -3357,23 +3357,23 @@ const Finance = () => {
                 {/* Tanggal & Jam */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Tanggal</label>
+                    <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Tanggal</label>
                     <input
                       type="date"
                       value={editForm.tanggal}
                       onChange={(e) => setEditForm(prev => ({ ...prev, tanggal: e.target.value }))}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs"
+                      className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-1.5 px-3 text-white text-xs"
                       required
                     />
                   </div>
                   {editForm.table !== 'cashflow' && (
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Jam</label>
+                      <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Jam</label>
                       <input
                         type="time"
                         value={editForm.jam}
                         onChange={(e) => setEditForm(prev => ({ ...prev, jam: e.target.value }))}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs"
+                        className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-1.5 px-3 text-white text-xs"
                       />
                     </div>
                   )}
@@ -3383,28 +3383,28 @@ const Finance = () => {
                 {editForm.table === 'cashflow' && (
                   <>
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Keterangan</label>
+                      <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Keterangan</label>
                       <input
                         type="text"
                         value={editForm.keterangan}
                         onChange={(e) => setEditForm(prev => ({ ...prev, keterangan: e.target.value }))}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs"
+                        className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-1.5 px-3 text-white text-xs"
                         required
                       />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">POS Kas</label>
+                        <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">POS Kas</label>
                         <select
                           value={editForm.pos}
                           onChange={(e) => setEditForm(prev => ({ ...prev, pos: e.target.value }))}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2 px-3 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
+                          className="w-full bg-[#18181c] border border-[#26272d] rounded-xl py-2 px-3 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
                         >
                           {posOptions.map(p => <option key={p} value={p}>{p}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Jenis</label>
+                        <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Jenis</label>
                         <input
                           type="text"
                           list="edit-cf-jenis-list"
@@ -3422,7 +3422,7 @@ const Finance = () => {
                               }
                             })
                           }}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2 px-3 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald"
+                          className="w-full bg-[#18181c] border border-[#26272d] rounded-xl py-2 px-3 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald"
                         />
                         <datalist id="edit-cf-jenis-list">
                           {Array.from(new Set([...allJenisOptions, ...allIncomeJenisOptions])).map((opt, i) => (
@@ -3431,14 +3431,14 @@ const Finance = () => {
                         </datalist>
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Kategori (Terkunci)</label>
+                        <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Kategori (Terkunci)</label>
                         <input
                           type="text"
                           list="edit-cf-kategori-list"
                           placeholder="Kategori transaksi"
                           value={editForm.kategori || ''}
                           onChange={(e) => setEditForm(prev => ({ ...prev, kategori: e.target.value }))}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2 px-3 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald"
+                          className="w-full bg-[#18181c] border border-[#26272d] rounded-xl py-2 px-3 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald"
                         />
                         <datalist id="edit-cf-kategori-list">
                           {editAvailableCategories.map((opt, i) => (
@@ -3449,21 +3449,21 @@ const Finance = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Pemasukan (Rp)</label>
+                        <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Pemasukan (Rp)</label>
                         <input
                           type="number"
                           value={editForm.pemasukan}
                           onChange={(e) => setEditForm(prev => ({ ...prev, pemasukan: parseFloat(e.target.value) || 0 }))}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs font-mono"
+                          className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-1.5 px-3 text-white text-xs font-mono"
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Pengeluaran (Rp)</label>
+                        <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Pengeluaran (Rp)</label>
                         <input
                           type="number"
                           value={editForm.pengeluaran}
                           onChange={(e) => setEditForm(prev => ({ ...prev, pengeluaran: parseFloat(e.target.value) || 0 }))}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs font-mono"
+                          className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-1.5 px-3 text-white text-xs font-mono"
                         />
                       </div>
                     </div>
@@ -3475,38 +3475,38 @@ const Finance = () => {
                   <>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Plat Nomor</label>
+                        <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Plat Nomor</label>
                         <input
                           type="text"
                           value={editForm.plat_nomor}
                           onChange={(e) => setEditForm(prev => ({ ...prev, plat_nomor: e.target.value }))}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs font-mono font-bold"
+                          className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-1.5 px-3 text-white text-xs font-mono font-bold"
                           required
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Model Mobil/Motor</label>
+                        <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Model Mobil/Motor</label>
                         <input
                           type="text"
                           value={editForm.model}
                           onChange={(e) => setEditForm(prev => ({ ...prev, model: e.target.value }))}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs"
+                          className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-1.5 px-3 text-white text-xs"
                         />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Paket Layanan</label>
+                        <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Paket Layanan</label>
                         <input
                           type="text"
                           value={editForm.layanan}
                           onChange={(e) => setEditForm(prev => ({ ...prev, layanan: e.target.value }))}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs"
+                          className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-1.5 px-3 text-white text-xs"
                           required
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Metode Bayar</label>
+                        <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Metode Bayar</label>
                         <CustomSelect
                           value={editForm.metode_bayar}
                           onChange={(val) => setEditForm(prev => ({ ...prev, metode_bayar: val }))}
@@ -3523,17 +3523,17 @@ const Finance = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Harga Bersih (Rp)</label>
+                        <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Harga Bersih (Rp)</label>
                         <input
                           type="number"
                           value={editForm.harga}
                           onChange={(e) => setEditForm(prev => ({ ...prev, harga: parseFloat(e.target.value) || 0 }))}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs font-mono"
+                          className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-1.5 px-3 text-white text-xs font-mono"
                           required
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Status</label>
+                        <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Status</label>
                         <CustomSelect
                           value={editForm.status}
                           onChange={(val) => setEditForm(prev => ({ ...prev, status: val }))}
@@ -3555,18 +3555,18 @@ const Finance = () => {
                 {editForm.table === 'cafe' && (
                   <>
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Nama Menu</label>
+                      <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Nama Menu</label>
                       <input
                         type="text"
                         value={editForm.nama_item}
                         onChange={(e) => setEditForm(prev => ({ ...prev, nama_item: e.target.value }))}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs"
+                        className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-1.5 px-3 text-white text-xs"
                         required
                       />
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Qty</label>
+                        <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Qty</label>
                         <input
                           type="number"
                           value={editForm.jumlah}
@@ -3574,11 +3574,11 @@ const Finance = () => {
                             const q = parseFloat(e.target.value) || 1
                             setEditForm(prev => ({ ...prev, jumlah: q, total_harga: q * prev.harga_satuan }))
                           }}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs text-center font-mono"
+                          className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-1.5 px-3 text-white text-xs text-center font-mono"
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Harga Satuan</label>
+                        <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Harga Satuan</label>
                         <input
                           type="number"
                           value={editForm.harga_satuan}
@@ -3586,16 +3586,16 @@ const Finance = () => {
                             const hs = parseFloat(e.target.value) || 0
                             setEditForm(prev => ({ ...prev, harga_satuan: hs, total_harga: prev.jumlah * hs }))
                           }}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs font-mono"
+                          className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-1.5 px-3 text-white text-xs font-mono"
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Total Tagihan</label>
+                        <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Total Tagihan</label>
                         <input
                           type="number"
                           value={editForm.total_harga}
                           onChange={(e) => setEditForm(prev => ({ ...prev, total_harga: parseFloat(e.target.value) || 0 }))}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs font-mono font-bold"
+                          className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-1.5 px-3 text-white text-xs font-mono font-bold"
                         />
                       </div>
                     </div>
@@ -3606,25 +3606,25 @@ const Finance = () => {
                 {editForm.table === 'pengeluaran' && (
                   <>
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Keterangan / Nama Beban</label>
+                      <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Keterangan / Nama Beban</label>
                       <input
                         type="text"
                         value={editForm.keterangan}
                         onChange={(e) => setEditForm(prev => ({ ...prev, keterangan: e.target.value }))}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs"
+                        className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-1.5 px-3 text-white text-xs"
                         required
                       />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Kategori (Terkunci)</label>
+                        <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Kategori (Terkunci)</label>
                         <input
                           type="text"
                           list="edit-exp-kategori-list"
                           placeholder="Kategori beban"
                           value={editForm.kategori || ''}
                           onChange={(e) => setEditForm(prev => ({ ...prev, kategori: e.target.value }))}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2 px-3 text-white text-xs font-semibold focus:outline-none focus:border-brand-rose"
+                          className="w-full bg-[#18181c] border border-[#26272d] rounded-xl py-2 px-3 text-white text-xs font-semibold focus:outline-none focus:border-brand-rose"
                         />
                         <datalist id="edit-exp-kategori-list">
                           {editAvailableCategories.map((k, i) => (
@@ -3633,7 +3633,7 @@ const Finance = () => {
                         </datalist>
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">POS Kas</label>
+                        <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">POS Kas</label>
                         <CustomSelect
                           value={editForm.pos}
                           onChange={(val) => setEditForm(prev => ({ ...prev, pos: val }))}
@@ -3645,12 +3645,12 @@ const Finance = () => {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Nominal Beban (Rp)</label>
+                      <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase mb-1">Nominal Beban (Rp)</label>
                       <input
                         type="number"
                         value={editForm.nominal}
                         onChange={(e) => setEditForm(prev => ({ ...prev, nominal: e.target.value }))}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-white text-xs font-mono font-bold focus:outline-none focus:border-brand-blue"
+                        className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-1.5 px-3 text-white text-xs font-mono font-bold focus:outline-none focus:border-brand-blue"
                         required
                       />
                     </div>
@@ -3659,11 +3659,11 @@ const Finance = () => {
               </form>
             </div>
 
-            <div className="flex justify-end gap-2.5 border-t border-slate-800 pt-3.5 mt-5">
+            <div className="flex justify-end gap-2.5 border-t border-[#26272d] pt-3.5 mt-5">
               <button
                 type="button"
                 onClick={() => setShowEditModal(false)}
-                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs"
+                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs"
               >
                 Batal
               </button>
@@ -3682,8 +3682,8 @@ const Finance = () => {
 
       {/* CUSTOM POPUP MODAL: Alert / Confirm */}
       {customAlert && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">
-          <div className="glass-panel w-full max-w-sm p-6 rounded-2xl shadow-2xl border border-slate-800 animate-pop-in text-center">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">
+          <div className="bg-[#121215] border border-[#26272d] w-full max-w-sm p-6 rounded-2xl shadow-2xl border border-[#26272d] animate-pop-in text-center">
             <div className="mb-4">
               {customAlert.title.includes('Hapus') || customAlert.title === 'Error' ? (
                 <div className="w-12 h-12 mx-auto rounded-full bg-rose-500/10 flex items-center justify-center">
@@ -3701,14 +3701,14 @@ const Finance = () => {
             </div>
             
             <h4 className="text-base font-extrabold text-white mb-2">{customAlert.title}</h4>
-            <p className="text-xs text-slate-300 leading-relaxed mb-6">{customAlert.message}</p>
+            <p className="text-xs text-white leading-relaxed mb-6">{customAlert.message}</p>
             
             <div className="flex justify-center gap-3">
               {customAlert.type === 'confirm' && (
                 <button
                   type="button"
                   onClick={customAlert.onCancel}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs w-24"
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs w-24"
                 >
                   Batal
                 </button>

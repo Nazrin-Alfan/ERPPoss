@@ -2754,4 +2754,26 @@
         - Vite production build sukses dalam 2.17 detik (286 kB gzip).
         - AST & Runtime Integrity: Zero syntax error, zero missing identifiers.
 
+    55. **Eksekusi Total Overhaul Batch 4 (Finansial/Buku Besar, Laporan Eksekutif, SDM & Komisi Kru, serta Master Admin & RBAC) (2026-10-03)**:
+      - **Cakupan Modul**:
+        1. **Monitoring Finansial & General Ledger (`src/pages/Finance.jsx` & `src/components/reports/GeneralLedgerView.jsx`)**:
+           - Penyelarasan penuh ke desain token 21st.dev VRS_2026 Cyan Master (`#000000` pitch black canvas, `#121215` deep charcoal solid surface, `#18181c` input/subsurface, border `#26272d`).
+           - Kartu Ringkasan Akumulatif: Total Kas Bersih All-time, Total Pemasukan Riil, Total Pengeluaran Riil, serta Saldo Fisik per Dompet / Rekening (Laci Kasir, Mandiri Utama Y, Mandiri Ops N, Cadangan R) bebas dari emoji dan berformat monospaced `tabular-nums`.
+           - Tombol Aksi Transaksi Cepat: `+ Pemasukan` (`#00ffff`), `+ Pengeluaran` (`#ff5102`), dan `⇄ Pindah Saldo` (`#ffc71f`) dengan micro-interaction tactile `active:scale-[0.98]`.
+           - Penyelarasan tampilan Buku Besar (`GeneralLedgerView.jsx`): Neraca Saldo (Trial Balance), Neraca (Balance Sheet), Laporan Laba Rugi Akuntansi (Income Statement), dan Drilldown Rincian Akun.
+        2. **Laporan Keuangan & Rekonsiliasi Konsolidasi (`src/pages/Reports.jsx`)**:
+           - Penyeragaman tab filter rentang waktu (Hari Ini, Bulan Ini, Kustom, Sepanjang Waktu) beraksen Electric Cyan `#00ffff`.
+           - 4 Kartu Laba Rugi Segmen Usaha: Laba Bersih Segmen Cafe (`#ffc71f`), Segmen Carwash (`#f57733`), Biaya Bersama Overhead (`#bbcbb2`), dan Laba Bersih Konsolidasi (`#00ffff`).
+           - Penyelarasan tabel komparatif pendapatan, HPP bahan baku, margin kotor, dan laba operasional bersih.
+        3. **SDM, Manajemen Kru & Komisi (`src/pages/Karyawan.jsx`)**:
+           - Penyelarasan tab navigasi: Rekapitulasi Upah & Komisi Cuci, Kru Cuci, Staf Kantor, dan Seluruh Staf.
+           - Pembersihan skema warna slate/blue legacy menjadi latar `#121215`, teks `#bbcbb2` / `#ffffff`, dan aksen angka komisi `#00ffff`.
+           - Lembar rincian komisi pengerjaan kru cuci, riwayat potongan kasbon, serta slip gaji cetak printer thermal/A4.
+        4. **Master Pengaturan Outlet & Role Access RBAC (`src/pages/Admin.jsx`)**:
+           - Penyelarasan panel pengaturan outlet, master kategori menu & layanan, kalibrasi takaran bahan baku, diskon promo, dan registrasi akun kasir vs owner.
+      - **Verifikasi Kualitas**:
+        - Vitest: **246/246 unit tests PASS across 41 test files (100% GREEN)**.
+        - Vite production build sukses dalam 2.02 detik (283 kB gzip).
+        - AST & Runtime Integrity: Zero syntax error, zero missing identifiers, zero breaking changes.
+
 
