@@ -6,7 +6,8 @@ import Sidebar from './components/Sidebar'
 import ErrorBoundary from './components/ErrorBoundary'
 import ExecutiveLayout from './components/layout/ExecutiveLayout'
 import FounderLayout from './components/layout/FounderLayout'
-import { getTenantFeatures } from './utils/businessCapabilities'
+import { BUSINESS_TYPES, getTenantFeatures } from './utils/businessCapabilities'
+import { ROLES } from './constants/roles'
 
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -51,18 +52,18 @@ const ProtectedRoute = ({ children, allowedRoles = null, ownerOnly = false, requ
   }
 
   // Selesaikan role pengguna dari profile atau user metadata dengan fallback aman
-  const role = profile?.role || user?.role || user?.user_metadata?.role || 'Kasir'
+  const role = profile?.role || user?.role || user?.user_metadata?.role || ROLES.KASIR
 
   // Jika rute menetapkan allowedRoles, verifikasi apakah user memiliki salah satu peran tersebut
   if (allowedRoles && Array.isArray(allowedRoles) && !allowedRoles.includes(role)) {
-    if (role === 'Super Admin') return <Navigate to="/founder" replace />
-    if (role === 'Owner') return <Navigate to="/konsolidasi" replace />
+    if (role === ROLES.SUPER_ADMIN) return <Navigate to="/founder" replace />
+    if (role === ROLES.OWNER) return <Navigate to="/konsolidasi" replace />
     return <Navigate to="/pos" replace />
   }
 
   // Kompatibilitas mundur untuk properti ownerOnly
-  if (ownerOnly && role !== 'Owner') {
-    if (role === 'Super Admin') return <Navigate to="/founder" replace />
+  if (ownerOnly && role !== ROLES.OWNER) {
+    if (role === ROLES.SUPER_ADMIN) return <Navigate to="/founder" replace />
     return <Navigate to="/pos" replace />
   }
 
@@ -101,12 +102,12 @@ const RootDispatcher = () => {
     return <Navigate to="/login" replace />
   }
 
-  const role = profile?.role || user?.role || user?.user_metadata?.role || 'Owner'
+  const role = profile?.role || user?.role || user?.user_metadata?.role || ROLES.OWNER
 
-  if (role === 'Super Admin') {
+  if (role === ROLES.SUPER_ADMIN) {
     return <Navigate to="/founder" replace />
   }
-  if (role === 'Owner') {
+  if (role === ROLES.OWNER) {
     return <Navigate to="/konsolidasi" replace />
   }
   return <Navigate to="/pos" replace />
@@ -293,7 +294,7 @@ const AppContent = () => {
               {/* Rute Catch-All */}
               <Route 
                 path="*" 
-                element={<Navigate to={user ? (profile?.role === 'Owner' ? '/' : '/pos') : '/login'} replace />} 
+                element={<Navigate to={user ? (profile?.role === ROLES.OWNER ? '/' : '/pos') : '/login'} replace />} 
               />
             </Routes>
           </Suspense>

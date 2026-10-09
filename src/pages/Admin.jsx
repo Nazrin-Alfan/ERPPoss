@@ -11,6 +11,7 @@ import {
 import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
+import { isMerchandiseCategory } from '../constants/transactionConstants'
 import { 
   Settings, 
   UserPlus, 
@@ -528,15 +529,7 @@ const Admin = () => {
     return (stokBahan || []).filter(
       (s) =>
         s.gudang === 'MERCHANDISE' ||
-        s.kategori === 'MERCHANDISE' ||
-        s.sub_kategori === 'Parfum' ||
-        s.sub_kategori === 'Lap & Perawatan' ||
-        s.sub_kategori === 'Aksesoris & Detailing' ||
-        s.kategori === 'Parfum Mobil' ||
-        s.kategori === 'Lap & Perawatan' ||
-        s.kategori === 'Aksesoris & Detailing' ||
-        s.kategori === 'Chemical Retail' ||
-        s.kategori === 'Snack & Minuman Ringan'
+        isMerchandiseCategory(s.kategori, s.sub_kategori)
     )
   }, [stokBahan])
 
@@ -3028,8 +3021,8 @@ const Admin = () => {
 
       {/* MODAL 2: Tambah Bahan Baku Baru */}
       {showIngredientModal && (
-        <div className="fixed inset-0 bg-[#18181c]/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-[#121215] border border-[#26272d] w-full max-w-md p-6 rounded-2xl shadow-2xl border border-[#26272d]">
+        <div className="fixed inset-0 bg-[#18181c]/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto animate-fade-in">
+          <div className="bg-[#121215] border border-[#26272d] w-full max-w-md p-6 rounded-2xl shadow-2xl relative max-h-[92dvh] overflow-y-auto my-auto overscroll-contain">
             <div className="flex justify-between items-center border-b border-[#26272d] pb-4 mb-4">
               <h3 className="text-lg font-bold text-white">Tambah Bahan Baku Baru</h3>
               <button 
@@ -3147,8 +3140,8 @@ const Admin = () => {
 
       {/* MODAL 2b: Edit Bahan Baku */}
       {editingIngredient && (
-        <div className="fixed inset-0 bg-[#18181c]/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-[#121215] border border-[#26272d] w-full max-w-md p-6 rounded-2xl shadow-2xl border border-[#26272d]">
+        <div className="fixed inset-0 bg-[#18181c]/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto animate-fade-in">
+          <div className="bg-[#121215] border border-[#26272d] w-full max-w-md p-6 rounded-2xl shadow-2xl relative max-h-[92dvh] overflow-y-auto my-auto overscroll-contain">
             <div className="flex justify-between items-center border-b border-[#26272d] pb-4 mb-4">
               <h3 className="text-lg font-bold text-white">Edit Bahan Baku</h3>
               <button 
@@ -3254,8 +3247,8 @@ const Admin = () => {
       )}
       {/* MODAL OPNAME / KEBOCORAN */}
       {opnameIngredient && (
-        <div className="fixed inset-0 bg-[#18181c]/80 backdrop-blur-md flex justify-center items-center p-4 z-50">
-          <div className="bg-[#121215] border border-[#26272d] w-full max-w-md p-6 rounded-2xl border border-[#26272d] relative">
+        <div className="fixed inset-0 bg-[#18181c]/80 backdrop-blur-md flex justify-center items-center p-3 sm:p-4 z-50 overflow-y-auto animate-fade-in">
+          <div className="bg-[#121215] border border-[#26272d] w-full max-w-md p-6 rounded-2xl shadow-2xl border border-[#26272d] relative max-h-[92dvh] overflow-y-auto my-auto overscroll-contain">
             <h3 className="text-xl font-bold text-white mb-2">Opname & Kebocoran</h3>
             <p className="text-xs text-[#bbcbb2] mb-6 border-b border-[#26272d] pb-4">
               Hitung selisih stok aplikasi dengan stok fisik gudang.

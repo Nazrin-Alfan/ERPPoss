@@ -12,13 +12,32 @@ const GLOBALS = new Set([
   'btoa', 'atob', 'process', 'require', 'global', 'globalThis', 'crypto',
   'isNaN', 'isFinite', 'encodeURI', 'decodeURI', 'self',
   'File', 'FileReader', 'FormData', 'CustomEvent', 'Event', 'AbortController',
-  'performance', 'requestAnimationFrame', 'cancelAnimationFrame', 'Headers', 'Request', 'Response'
+  'performance', 'requestAnimationFrame', 'cancelAnimationFrame', 'Headers', 'Request', 'Response',
+  'import', 'meta'
 ])
 
 const pagesDir = path.resolve('src/pages')
-const files = fs.readdirSync(pagesDir).filter(f => f.endsWith('.jsx'))
 
-console.log('Auditing scope and declared identifiers in 10 pages...')
+function getFilesRecursively(dir) {
+  let results = []
+  const list = fs.readdirSync(dir)
+  for (const file of list) {
+    const fullPath = path.join(dir, file)
+    const stat = fs.statSync(fullPath)
+    if (stat && stat.isDirectory()) {
+      if (!file.includes('__tests__') && !file.includes('node_modules')) {
+        results = results.concat(getFilesRecursively(fullPath))
+      }
+    } else if (file.endsWith('.jsx')) {
+      results.push(fullPath)
+    }
+  }
+  return results
+}
+
+const files = getFilesRecursively(pagesDir)
+
+console.log(`Auditing scope and declared identifiers in ${files.length} pages...`)
 
 // Helper to walk ESTree AST
 function walk(node, parent, visitors) {
@@ -38,8 +57,8 @@ function walk(node, parent, visitors) {
 
 let totalErrors = 0
 
-for (const file of files) {
-  const filePath = path.join(pagesDir, file)
+for (const filePath of files) {
+  const file = path.relative(pagesDir, filePath)
   const code = fs.readFileSync(filePath, 'utf-8')
   const transformed = await transformWithOxc(code, file, { lang: 'jsx' })
   const ast = parseAst(transformed.code)

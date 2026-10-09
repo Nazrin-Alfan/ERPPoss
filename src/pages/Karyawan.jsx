@@ -26,8 +26,9 @@ import {
   Sparkles
 } from 'lucide-react'
 import { formatRupiah } from '../utils/helpers'
-import { syncStaffToKaryawanKantor, getRoleBadgeConfig } from '../utils/staffHelpers'
+import { syncStaffToKaryawanKantor, getRoleBadgeConfig, calculateCarwashWorkerWage } from '../utils/staffHelpers'
 import { getTenantFeatures } from '../utils/businessCapabilities'
+import { ROLES } from '../constants/roles'
 import InteractiveCalendar from '../components/InteractiveCalendar'
 
 const Karyawan = () => {
@@ -96,7 +97,7 @@ const Karyawan = () => {
     email: '',
     password: '',
     nama: '',
-    role: 'Kasir'
+    role: ROLES.KASIR
   })
 
   // Custom Alert / Confirm Modal State
@@ -314,17 +315,11 @@ const Karyawan = () => {
       
       const isSplit = w2 !== '' && w2 !== w1
       
-      const washWagePerPerson = isSplit 
-        ? Math.floor((hargaCuci / 3 / 2) / 1000) * 1000 
-        : Math.floor((hargaCuci / 3) / 1000) * 1000
-      
-      const packageWagePerPerson = hargaPaket > 0 
-        ? (isSplit 
-            ? Math.floor((hargaPaket / 2 / 2) / 1000) * 1000 
-            : Math.floor((hargaPaket / 2) / 1000) * 1000)
-        : 0
-      
-      const share = washWagePerPerson + packageWagePerPerson
+      const { washWagePerPerson, packageWagePerPerson, totalSharePerPerson: share } = calculateCarwashWorkerWage({
+        hargaCuci,
+        hargaPaket,
+        isSplit
+      })
 
       if (w1) {
         if (!summary[w1]) {
@@ -609,7 +604,7 @@ const Karyawan = () => {
       if (!res.success) throw new Error(res.error)
 
       // 1. Jika role Kasir, masukkan ke tabel kasir untuk master dropdown kasir di POS
-      if (staffForm.role === 'Kasir') {
+      if (staffForm.role === ROLES.KASIR) {
         const { error: kasirErr } = await supabase
           .from('kasir')
           .insert({ nama: cleanNama, is_active: true })
@@ -641,7 +636,7 @@ const Karyawan = () => {
       }
 
       setSuccess(`Staf baru "${cleanNama}" (${staffForm.role}) berhasil didaftarkan dan otomatis tercatat di section Karyawan Kantor!`)
-      setStaffForm({ email: '', password: '', nama: '', role: 'Kasir' })
+      setStaffForm({ email: '', password: '', nama: '', role: ROLES.KASIR })
       
       // Muat ulang data agar tampilan Karyawan Kantor dan Staf langsung ter-update
       await loadKaryawanData()

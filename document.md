@@ -1638,6 +1638,28 @@
 
 ---
 
+- **[2026-10-04]** Standardisasi Skema Database `cafe` (Penambahan Kolom `tanggal` & `jam`):
+  - Membuat berkas migrasi `supabase/migrations/002_add_tanggal_to_cafe.sql` untuk menambahkan kolom `tanggal DATE` dan `jam TIME` pada tabel `cafe`, lengkap dengan script backfill data historis dari tabel `struk` dan composite index `idx_cafe_tanggal`, `idx_cafe_struk_tanggal`.
+  - Memperbarui skema DDL di `supabase/migrations/001_initial_relaypos_cloud_schema.sql` dan fungsi RPC checkout transaksi multi-tenant.
+  - Memperbarui payload `HybridPOSPage.jsx` saat menyimpan item pesanan cafe agar menyertakan `tanggal` dan `jam` secara konsisten.
+  - Memperbarui skema halaman Database Master (`src/pages/Database.jsx`) pada `TABLE_SCHEMAS.cafe` dengan menambahkan kolom `tanggal (date)`, `jam (text)`, dan mengaktifkan `dateField: 'tanggal'` untuk filter rentang tanggal.
+  - Menyinkronkan seluruh 1.601 baris data cafe di `realSeedData.json` dan `pulled_supabase_data/cafe.json` sehingga field `tanggal` dan `jam` terisi penuh sesuai struk masing-masing.
+  - Seluruh pengujian Vitest (41 test files, 246 unit tests) dan build Vite produksi lulus 100% Green.
+
+- **[2026-10-05]** Pengujian Simulasi Terpadu Seluruh Fitur Sistem (Comprehensive Feature Simulation & Cross-Module Data Integration Audit):
+  - Membuat test suite `src/services/__tests__/fullFeaturesSimulation.test.js` yang memverifikasi 8 domain integrasi data:
+    1. Feature Flags & Kapabilitas Model Bisnis (`CAFE`, `CARWASH`, `HYBRID`).
+    2. Transaksi POS Estafet (Carwash + Cafe) dengan pemotongan stok otomatis berbasis Bill of Materials (BOM/Resep) & logging `barang_keluar`.
+    3. Alur Siklus Antrean Kendaraan (*Queue*: Menunggu -> Dicuci -> Finishing -> Selesai).
+    4. Integrasi CRM Kendaraan (Agregasi kunjungan dan total belanja per plat nomor).
+    5. Perhitungan Komisi Karyawan (Solo vs Duet) & integrasi casbon staf.
+    6. Jurnal Umum Double-Entry & Neraca Saldo (*Trial Balance*: Debit = Credit).
+    7. Modul Gudang & Restock Fisik (`barang_masuk` menambah `stok_barang`).
+    8. Verifikasi integrasi skema Database Master `TABLE_SCHEMAS.cafe` (kolom tanggal & filter).
+  - Seluruh pengujian Vitest: **42 Test Files, 254/254 Tests PASSED (100% Green)**.
+
+---
+
 ## 5. Blueprint Arsitektur Cloud-Native PostgreSQL & Supabase (Transisi Enterprise)
 - **Tanggal Perancangan:** 26 September 2026
 - **Spesifikasi Migration:** `supabase/migrations/001_initial_relaypos_cloud_schema.sql`
@@ -2787,5 +2809,168 @@
       - **Verifikasi Kualitas**:
         - Vitest: **246/246 unit tests PASS across 41 test files (100% GREEN)**.
         - Vite production build sukses dalam 2.03 detik.
+
+    58. **Full-Spectrum Audit & End-to-End Verification (2026-10-06)**:
+      - **Orkestrasi Multi-Agen 6 Global Skills**:
+        - **@ERP_Architect (`database-design`)**: Audit skema DDL Supabase (`001_initial_relaypos_cloud_schema.sql`), integritas foreign keys (`RESTRICT` / `CASCADE`), composite unique indexing `(tenant_id, id)`, isolasi multi-tenant Row Level Security (RLS) di seluruh tabel transaksi dan master data, serta presisi moneter `NUMERIC(18, 4)`.
+        - **@Codebase_Auditor (`code-review-checklist`)**: Audit arsitektur Clean Separation (Routes -> Pages/Controllers -> Services -> LocalDB Engine), audit N+1 query, async error handling, dan resolusi static analysis linter.
+        - **@TDD_ERP_Engineer (`test-driven-development`)**: Eksekusi test suite Vitest secara menyeluruh: **42 Test Files (254 Tests) PASS 100% GREEN** mencakup Multi-Tenant breach tests, Double-Entry Trial Balance invariants, Moving Average Cost, dan E2E simulations.
+        - **@Frontend_ERP_Dev & @UIUX_Design_Auditor (`ui-ux-pro-max`, `humanize-ui`, `webapp-testing`)**:
+          - Perbaikan pelanggaran React Rules of Hooks pada `ThermalReceiptModal.jsx` dan `AIPromptBuilderModal.jsx` (memindahkan inisialisasi state/memo sebelum conditional early-return `if (!receiptData)` dan `if (!isOpen)`).
+          - Verifikasi proteksi anti-blank screen via `<ErrorBoundary>` dan `<Suspense fallback={<PageLoader />}>` pada seluruh rute di `App.jsx`.
+          - Verifikasi 4 UI States (Loading, Success, Empty, Error) serta pemenuhan standar Anti-AI Slop (desain gelap VRS_2026, ikon SVG Lucide, `text-right font-mono tabular-nums`).
+        - **@QA_ERP_Auditor (`agent-qa`, `web-pentest`)**: Audit keamanan OWASP Top 10 (Zero XSS/Zero `dangerouslySetInnerHTML`, Zero dynamic string SQL injection, token JWT auth isolasi sesi, zero-leak IDOR multi-tenant breach).
+      - **Status Akhir**:
+        - Vitest: **254/254 tests PASS across 42 test files (100% GREEN)**.
+        - Production Build: `vite build` selesai sukses tanpa error (1881 modules transformed).
+        - Quality Verdict: **[QA_VERDICT: APPROVED]** & **[UIUX_VERDICT: APPROVED]**.
+
+    59. **Perbaikan Bug Checkout POS: `activeTanggal is not defined` (`HybridPOSPage.jsx`) (2026-10-06)**:
+      - **Akar Masalah (Root Cause)**:
+        - Pada `src/pages/pos/HybridPOSPage.jsx`, fungsi `handleProcessOrder` (saat menyimpan item pesanan cafe ke tabel `cafe`) dan `handleSettleBill` (saat menyimpan biaya inap tambahan kendaraan) merujuk pada identifier `activeTanggal` dan `activeJam`.
+        - Variabel tanggal dan jam aktif yang telah didefinisikan dalam scope fungsi adalah `todayDate` (`new Date().toLocaleDateString('en-CA')`) dan `currentTime` (`new Date().toTimeString().split(' ')[0]`). Karena `activeTanggal` tidak dideklarasikan di dalam closure, runtime melemparkan `ReferenceError: activeTanggal is not defined` yang menggagalkan checkout pesanan cafe.
+      - **Solusi Rekayasa**:
+        - Memperbarui pemetaan payload item cafe di `handleProcessOrder` ke `tanggal: todayDate` dan `jam: currentTime`.
+        - Menambahkan inisialisasi `todayDate` dan `currentTime` serta menyelaraskan payload biaya inap di `handleSettleBill`.
+        - Memperluas skrip AST scanner `scripts/verifyNoUndeclaredVars.js` untuk mencakup seluruh subdirektori halaman (termasuk `src/pages/pos/`), memastikan 100% dari 19 file halaman bebas dari variabel yang tidak dideklarasikan.
+      - **Verifikasi**:
+        - AST Scope Audit: 19/19 file halaman (100% clean scope).
+        - Vitest: **254/254 unit & integration tests PASS (100% GREEN)**.
+        - Vite production build sukses dalam 2.61 detik.
+
+    60. **Perbaikan UX Modal Pelunasan Tagihan (Split Payment Viewport Overflow) (`HybridPOSPage.jsx`) (2026-10-06)**:
+      - **Akar Masalah (Root Cause)**:
+        - Pada `HybridPOSPage.jsx`, modal "Pelunasan Tagihan" (`settlingBill`) dibungkus dalam kontainer `flex items-center justify-center` dengan tinggi bebas (tanpa batasan `max-h` dan tanpa `overflow-y-auto`).
+        - Ketika pengguna memilih metode bayar `SPLIT`, sistem memunculkan input split tunai/QRIS serta kalkulator kembalian secara bersamaan. Total tinggi konten bertambah hingga >750px–850px.
+        - Pada layar tablet, laptop 768p/800p, atau perangkat mobile, modal memanjang melebihi batas vertikal viewport (`window.innerHeight`), menyebabkan elemen atas dan bawah (khususnya tombol "Batal" dan "Konfirmasi Lunas & Cetak Struk") terdorong keluar dari layar tanpa dapat di-scroll.
+      - **Solusi Rekayasa Desain (UI/UX Pro Max Architecture)**:
+        - Mengonversi modal pelunasan menjadi arsitektur 3-tier standar Enterprise:
+          1. **Fixed Header (`shrink-0`)**: Judul tagihan dan tombol tutup silang terkunci di bagian atas.
+          2. **Scrollable Body (`flex-1 overflow-y-auto max-h-[90dvh] overscroll-contain`)**: Seluruh elemen rincian tagihan, biaya inap, pemilih metode, form split, dan kalkulator kembalian dapat digulir dengan mulus di dalam batas kontainer dialog.
+          3. **Sticky Footer (`shrink-0 border-t border-zinc-800 bg-[#18181c]`)**: Tombol "Batal" dan "Konfirmasi Lunas & Cetak Struk" terkunci permanen di bagian bawah dialog sehingga 100% selalu terlihat dan mudah ditekan pada resolusi layar apa pun.
+      - **Verifikasi Kualitas**:
+        - Vitest: **254/254 unit & integration tests PASS (100% GREEN)**.
+        - Vite production build sukses dalam 2.31 detik.
+        - AST Scope Audit: 19/19 modul halaman 100% clean.
+
+    61. **Audit & Standardisasi Penuh Geometri Viewport Seluruh Modal/Dialog UI/UX (2026-10-06)**:
+      - **Latar Belakang & Ruang Lingkup**:
+        - Dilakukan audit menyeluruh terhadap 100% modal, dialog, dan popup di seluruh aplikasi (`src/components/` dan `src/pages/`) untuk mencegah terdorongnya tombol aksi keluar layar pada perangkat mobile, tablet (Tailscale VPN), dan layar beresolusi rendah.
+      - **Komponen yang Diaudit & Distandardisasi ke Pola 3-Tier Enterprise**:
+        1. `src/components/pos/ShiftClosingModal.jsx`: Mengonversi kontainer modal menjadi 3-tier dengan Pinned Header, Scrollable Body (`max-h-[92dvh] overflow-y-auto`), dan Pinned Sticky Footer agar tombol "Konfirmasi Tutup Kasir" dan rincian selisih selalu tampil utuh.
+        2. `src/components/auth/OnboardingWizardModal.jsx`: Menata ulang stepper wizard setup outlet baru menjadi Header tetap, form input scrollable, dan Sticky Footer aksi ("Kembali", "Lanjut", "Selesai & Buka Toko").
+        3. `src/components/finance/OwnerWithdrawalModal.jsx`: Menerapkan Scrollable Form Body dan Sticky Footer untuk penarikan prive pemilik.
+        4. `src/components/pos/VoidReasonModal.jsx`: Menjamin dialog pembatalan nota tetap proporsional dengan scrollbar internal saat keyboard layar sentuh aktif.
+        5. `src/pages/Admin.jsx`: Menambahkan `overflow-y-auto` pada overlay backdrop dan batasan `max-h-[92dvh]` pada modal Tambah Bahan Baku, Edit Bahan Baku, dan Stock Opname Bahan.
+        6. `src/pages/Gudang.jsx`: Menambahkan `overflow-y-auto` dan `max-h-[92dvh]` pada modal Restock Masuk dan Stock Opname Gudang.
+        7. `src/pages/Founder.jsx`: Menambahkan batasan `max-h-[92dvh]` dan backdrop scrollable pada modal Terbitkan Tenant Baru dan Perpanjang Lisensi.
+        8. `src/pages/SuperAdmin.jsx`: Menjamin modal Terbitkan Serial Key Baru tidak overflow pada resolusi tablet.
+      - **Hasil Audit Komponen Data Grid (Tabel)**:
+        - Memeriksa seluruh elemen `<table>` di `Admin.jsx`, `Database.jsx`, `Reports.jsx`, `Founder.jsx`, dan `Konsolidasi.jsx`: Terverifikasi 100% telah dibungkus oleh kontainer dengan properti `overflow-x-auto` pelindung overflow horizontal.
+      - **Verifikasi Kualitas**:
+        - Vitest: **254/254 unit & integration tests PASS (100% GREEN)**.
+        - AST Scope Audit: 19/19 file halaman (100% clean scope).
+        - Vite production build sukses dalam 2.16 detik.
+
+    62. **Sinkronisasi Ulang Data Real-Time Supabase Cloud (2026-10-06)**:
+      - **Operasi**:
+        - Sinkronisasi snapshot data transaksi dan operasional langsung dari Supabase Cloud (`https://grwvhsqxuypcdxxqshgs.supabase.co`) dengan metode aman 100% read-only GET requests.
+      - **Tabel & Volume Data Terkini**:
+        - `struk`: 4.784 records (+175 transaksi baru)
+        - `carwash`: 4.854 records (+164 antrean/pengerjaan baru)
+        - `cafe`: 1.657 records (+56 item pesanan baru)
+        - `cashflow`: 1.787 records (+29 mutasi kas baru)
+        - `pengeluaran`: 880 records (+20 pencatatan biaya baru)
+        - `barang_keluar`: 2.551 records (+104 konsumsi stok baru)
+        - `metode_bayar`: 6 master metode bayar (+3 metode baru)
+        - `stok_barang`: 18 master item persediaan
+        - `daftar_harga_menu`: 37 varian menu cafe
+        - `resep`: 63 formula Bill of Materials (BOM)
+        - `kasir`: 8 profil kasir operasional
+        - `pos_balances`: 4 log saldo kasir
+        - `profiles`: 12 akun pengguna & role
+      - **Hasil Pengujian**:
+        - Vitest: **254/254 unit & integration tests PASS (100% GREEN)** di 42 file test.
+
+    63. **Refactoring Hardcode: Sentralisasi Konstanta, Dynamic Category Matching, Payment-COA Resolver & Formula Komisi (2026-10-08)**:
+      - **Deskripsi & Latar Belakang**:
+        - Melakukan pembersihan komprehensif terhadap hardcode pada lapisan otorisasi (RBAC), pencocokan kategori, relasi metode pembayaran ke akun buku besar (COA), serta rumus komisi karyawan.
+      - **Komponen & Berkas yang Dibuat / Dimodifikasi**:
+        - `src/constants/roles.js`: Modul baru berisi konstanta terpusat `ROLES`, `ROLE_PERMISSIONS`, dan helper (`isSuperAdmin`, `isOwner`, `isOwnerOrSuperAdmin`, `isManagement`, `isCashier`).
+        - `src/constants/transactionConstants.js`: Modul baru berisi `PAYMENT_METHODS`, `PAYMENT_METHOD_ACCOUNTS`, `TRANSACTION_STATUS`, `ORDER_STATUS`, `EXPENSE_CATEGORIES`, `MERCHANDISE_CATEGORIES`, `isMerchandiseCategory()`, dan `resolveAccountForPaymentMethod()`.
+        - `src/App.jsx`, `src/components/Sidebar.jsx`, `src/context/AuthContext.jsx`, `src/pages/Gudang.jsx`, `src/pages/Karyawan.jsx`, `src/pages/Login.jsx`, `src/pages/pos/HybridPOSPage.jsx`, `src/services/consolidationService.js`: Refactoring seluruh pengecekan role string literal ke `ROLES` / helper terpusat.
+        - `src/pages/Admin.jsx`, `src/pages/Finance.jsx`, `src/pages/pos/HybridPOSPage.jsx`, `src/components/admin/CarwashPackageManager.jsx`: Refactoring filter string kategori produk & pengeluaran ke helper dinamis `isMerchandiseCategory` dan enum `EXPENSE_CATEGORIES`.
+        - `src/services/localDbEngine.js`, `src/services/generalLedgerService.js`: Refactoring penentuan akun debit/kredit penerimaan struk kasir & pembelian barang masuk menjadi pemetaan dinamis berbasis `resolveAccountForPaymentMethod(method, masterMetodeBayar)`.
+        - `src/utils/staffHelpers.js`, `src/pages/Karyawan.jsx`: Modularisasi formula bagi hasil cuci dasar & paket tambahan ke `calculateCarwashWorkerWage()`.
+        - `src/pages/Reports.jsx`: Normalisasi tanggal awal laporan fallback menggunakan awal bulan berjalan dinamis alih-alih tanggal statis.
+      - **Hasil Pengujian & Verifikasi Mutu**:
+        - Vitest Suite: **254/254 tests PASS (100% GREEN)** pada 42 test files.
+        - Production Build: Vite build berhasil tanpa peringatan/error sintaks (`1.883 modules transformed`).
+
+    64. **Audit Semantik, ProgramGraph Impact Analysis & Optimasi Data Flow (2026-10-08)**:
+      - **Deskripsi & Latar Belakang**:
+        - Melakukan analisis ketergantungan modul menggunakan `ProgramGraph` di seluruh 124 berkas kode sumber untuk mengevaluasi keselarasan arsitektur, potensi kebocoran data (data leakage/bottlenecks), dan kebersihan kode dari artifak zero-shot generation.
+      - **Hasil Analisis ProgramGraph (Modul & Hubs)**:
+        - Teridentifikasi Directed Acyclic Graph (DAG) bersih dengan **0 dependency cycle**.
+        - Hub modul dengan ketergantungan tertinggi: `utils/helpers.js` (25 modul), `context/AuthContext.jsx` (22 modul), `supabaseClient.js` (20 modul), `services/localDbEngine.js` (17 modul).
+      - **Perbaikan Aspek Data Flow & Kebersihan Kode**:
+        - **Eliminasi Kompleksitas Kuadratik O(N x M)**: Pada `src/pages/Dashboard.jsx` dan `src/pages/Reports.jsx`, pencarian `strukList.find(...)` linier di dalam filter `carwashList` dan `cafeList` diubah menjadi lookup O(1) berbasis `strukMap` (`Map<id_struk, object>`). Hal ini mengeliminasi >23 juta iterasi berulang pada dataset riil ribuan transaksi.
+        - **Deduplikasi Filter Zero-Shot**: Menghilangkan pencarian ganda objek parent struk pada `filteredCafeList` dan menggabungkan validasi status transaksi menjadi alur deklaratif satu kali evaluasi.
+        - **Normalisasi Parsing Tanggal**: Merefaktor pemotongan string tanggal manual (`startDate.split('-')`) di `Reports.jsx` menjadi penggunaan fungsi waktu standar dengan batasan jam (00:00:00 s/d 23:59:59).
+      - **Hasil Pengujian**:
+        - Vitest: **254/254 unit & integration tests PASS (100% GREEN)** di 42 test suites.
+        - Production Build: Vite build sukses dalam 2.97 detik.
+
+    65. **Kustomisasi Key Metrics, Sinkronisasi Laporan Keuangan & Modal Detail Pengeluaran di Dashboard (2026-10-09)**:
+      - **Deskripsi & Kebutuhan**:
+        - Menyesuaikan 4 kartu metrik bento (Key Metrics Utama), grafik tren performa penjualan (Sales Performance Chart), rincian pendapatan (Revenue / Category Breakdown), dan daftar transaksi terkini (Recent Transactions) agar 100% adaptif dan spesifik berdasarkan sektor bisnis yang dipilih (`ALL` / `CARWASH` / `CAFE`).
+        - Menambahkan kalkulasi terpisah untuk **Total Pengeluaran** dan **Kas Bersih (Net Profit)** di setiap divisi dan Sinergi Holding.
+        - Melakukan rekonsiliasi dan sinkronisasi 100% rumus penghitungan pengeluaran antara `Dashboard.jsx` dan `Reports.jsx` (Laporan Keuangan) agar tidak ada selisih data akibat perbedaan sumber tabel (`pengeluaran`, `carwashCommission`, dan deduplikasi `cashflow`).
+        - Mengimplementasikan komponen modal interaktif `ExpenseDetailModal.jsx` (`src/components/dashboard/ExpenseDetailModal.jsx`): ketika kartu metrik atau baris pengeluaran divisi carwash (maupun cafe/bersama) diklik, muncul modal popup rincian seluruh catatan pengeluaran (tanggal, kategori, uraian, akun/sumber dana, nominal), filter chip kategori, pencarian teks instan, dan ekspor CSV.
+        - **Perbaikan React Rules of Hooks**: Memastikan seluruh deklarasi hook (`useMemo`, `useState`) pada `ExpenseDetailModal.jsx` berada di tingkat teratas komponen sebelum evaluasi *early return* `if (!isOpen) return null`, mengeliminasi error runtime *"Rendered more hooks than during the previous render"*.
+        - **Resolusi Kesalahan Alokasi Rekap Kasir ke Cafe**: Mengidentifikasi dan memperbaiki anomali data di mana entri ringkasan penutupan kasir harian (*EOD Cashier Recap*) secara historis diberi label `jenis: 'pengeluaran Cafe'` pada fungsi `calculateTutupKasirRecap` di `helpers.js`. Melakukan perbaikan pada generator `helpers.js` menjadi `jenis: 'Pengeluaran Bersama'` serta menambahkan filter pengecualian entri rekap kasir pada `Dashboard.jsx` dan `Reports.jsx`. Hal ini mencegah duplikasi beban (*double-counting*) terhadap tabel `pengeluaran` dan memastikan rekap kasir tidak lagi membebani divisi Cafe.
+      - **Spesifikasi Metrik per Sektor**:
+        - **Divisi Carwash (`CARWASH`)**:
+          1. *Omzet Divisi Carwash*: Total omzet layanan cuci, rata-rata omzet/hari, dan proporsi kontribusi holding.
+          2. *Pengeluaran Carwash (Interactive Clickable)*: Total pengeluaran operasional cuci, komisi kru pencuci, dan chemical.
+          3. *Kas Bersih Carwash*: Omzet carwash dikurangi beban operasional cuci & profit margin %.
+          4. *Utilisasi Bay & Efisiensi*: Persentase keterisian kapasitas bay terhadap target harian dan konversi cross-sell ke cafe.
+        - **Divisi Cafe (`CAFE`)**:
+          1. *Omzet Divisi Cafe & Resto*: Total omzet F&B, rata-rata omzet F&B/hari, dan proporsi kontribusi holding.
+          2. *Pengeluaran Cafe & Resto (Interactive Clickable)*: Total belanja bahan baku (biji kopi, susu, sirup, kemasan) & dapur.
+          3. *Kas Bersih Cafe*: Omzet F&B dikurangi beban bahan & dapur serta profit margin %.
+          4. *Menu Terlaris & Basket Size*: Nama menu favorit konsumen, porsi terjual, dan Average Order Value (AOV).
+        - **Sinergi Holding (`ALL`)**:
+          1. *Total Revenue Holding*: Omzet konsolidasi Cafe + Carwash.
+          2. *Total Pengeluaran Holding (Interactive Clickable)*: Menampilkan nominal & breakdown Pengeluaran Carwash, Pengeluaran Cafe, dan Pengeluaran Bersama (Shared Overhead/Gaji/Utilitas).
+          3. *Kas Bersih Holding (Net Profit)*: Omzet konsolidasi setelah dikurangi seluruh beban operasional divisi & beban bersama.
+          4. *Sinergi Estafet & Saldo Kas*: Tingkat konversi estafet Cuci ➔ Ngopi & total kas/bank aktif.
+      - **Hasil Pengujian & Verifikasi**:
+        - Vitest: **255/255 tests PASS (100% GREEN)** di 42 test files.
+        - Production Build: Terverifikasi bebas dari error identifier, runtime handler, dan render crash.
+
+    66. **Rekonseptualisasi Logika Tukar Uang Cash / Keluar Uang Cash Kasir Menjadi Perpindahan Saldo (2026-10-09)**:
+      - **Latar Belakang & Kebutuhan Bisnis**:
+        - Pada operasional kasir RelayPOS, transaksi "Tukar Uang Cash" / "Keluar Uang Cash" terjadi saat Customer atau Owner mengambil uang tunai fisik dari laci kasir dan menggantinya dengan transfer / scan QRIS ke rekening toko (atau sebaliknya).
+        - Sebelumnya, transaksi ini secara keliru dimasukkan ke tabel `pengeluaran` sebagai beban operasional (beban bersama) dan dimasukkan ke tabel `struk` sebagai omzet penjualan, sehingga mendistorsi metrik laba rugi (P&L) dan memunculkan entri penukaran uang di dalam daftar pengeluaran operasional.
+      - **Implementasi Solusi Akuntansi & Kode**:
+        - **Modul POS (`src/pages/pos/HybridPOSPage.jsx`)**:
+          - Merefaktor `handleSaveExchange` pada Tab Tukar Uang: Tidak lagi memasukkan uang penukaran ke tabel `pengeluaran` maupun `struk`.
+          - Mencatat transaksi sebagai **Perpindahan Saldo (Mutasi Internal)** berpasangan di tabel `cashflow`:
+            1. Mutasi Kas Keluar dari `SALDO CASH` (laci kasir berkurang `cashOut`, `jenis: 'Pindah'`, `kategori: 'Tukar Uang'`).
+            2. Mutasi Kas Masuk ke `SALDO REKENING Y` (rekening QRIS bertambah `cashOut`, `jenis: 'Pindah'`, `kategori: 'Tukar Uang'`).
+            3. Jika ada selisih biaya admin (`adminFee > 0`), dicatat sebagai pemasukan fee (`jenis: 'Pemasukan'`, `kategori: 'Pendapatan Lain-lain'`).
+          - Memperbarui `pos_balances` secara langsung agar posisi saldo laci kasir dan rekening bank tetap akurat.
+        - **Helper Standar (`src/utils/financeHelpers.js`)**:
+          - Mengembangkan helper `isPindahSaldo` agar mengenali transaksi `Tukar Uang`, `Tukar Cash`, `Keluar Uang Cash`, `Tarik Tunai`, dan `Lebih QRIS`.
+          - Menyesuaikan `formatPosExpensePayload` agar mendeteksi kategori penukaran kas dan menandainya sebagai `jenis: 'Pindah'`.
+        - **Dashboard & Laporan Keuangan (`Dashboard.jsx` & `Reports.jsx`)**:
+          - Mengecualikan transaksi bertipe tukar uang dari akumulasi `struk` (agar tidak menggelembungkan omzet toko).
+          - Mengecualikan transaksi bertipe tukar uang (`isPindahSaldo`) dari tabel `pengeluaran` dan `cashflow` (agar tidak masuk sebagai beban operasional toko).
+      - **Hasil Pengujian & Verifikasi Mutu**:
+        - Vitest Suite: **257/257 tests PASS (100% GREEN)** di 43 test files.
+        - Telah diverifikasi langsung melalui test suite otomatis `src/services/__tests__/tukarUangCash.test.js`:
+          1. Form dan payload pengeluaran kasir dengan keterangan atau kategori tukar uang terbukti 100% bertipe `jenis: 'Pindah'` dan terdeteksi `isPindahSaldo == true`.
+          2. Transaksi cash keluar dari laci kasir dan transfer masuk QRIS terbukti berpasangan tercatat sebagai `Pindah Saldo` di `cashflow`, tidak masuk ke beban pengeluaran, dan pendapatan biaya admin tetap tercatat presisi sebagai `Pemasukan`.
 
 

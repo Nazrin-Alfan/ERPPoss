@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 import { formatRupiah } from '../utils/helpers'
 
-const TABLES_METADATA = {
+export const TABLES_METADATA = {
   carwash: {
     name: 'Transaksi Carwash',
     dateField: 'tanggal',
@@ -61,11 +61,13 @@ const TABLES_METADATA = {
   },
   cafe: {
     name: 'Item Transaksi Cafe',
-    dateField: null,
+    dateField: 'tanggal',
     keyField: 'id_detail',
     columns: [
       { name: 'id_detail', label: 'ID Detail', type: 'text', readOnly: true, placeholder: 'Otomatis' },
       { name: 'id_struk', label: 'ID Struk', type: 'text', required: true },
+      { name: 'tanggal', label: 'Tanggal (YYYY-MM-DD)', type: 'date', required: true },
+      { name: 'jam', label: 'Jam (HH:MM:SS)', type: 'text' },
       { name: 'nama_menu', label: 'Nama Menu', type: 'text', required: true },
       { name: 'qty', label: 'Jumlah', type: 'number', required: true },
       { name: 'harga_satuan', label: 'Harga Satuan', type: 'number', required: true },

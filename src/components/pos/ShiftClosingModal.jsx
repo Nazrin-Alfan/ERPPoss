@@ -106,9 +106,10 @@ export default function ShiftClosingModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000]/85 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-lg glass-panel border border-[#26272d] rounded-3xl p-6 sm:p-7 shadow-2xl relative">
-        <div className="flex items-center justify-between pb-3 border-b border-[#26272d]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#000000]/85 backdrop-blur-sm animate-fade-in overflow-y-auto">
+      <div className="w-full max-w-lg glass-panel border border-[#26272d] rounded-3xl shadow-2xl relative flex flex-col max-h-[92dvh] overflow-hidden my-auto">
+        {/* Pinned Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#26272d] shrink-0 bg-[#121215]">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
               <Calculator size={18} />
@@ -129,93 +130,97 @@ export default function ShiftClosingModal({
         </div>
 
         {error && (
-          <div className="my-3 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
+          <div className="mx-6 mt-3 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs shrink-0">
             {error}
           </div>
         )}
 
         {!isSuccessClosed ? (
-          <div className="space-y-4 my-4 animate-fade-in">
-            {/* Rincian Hitungan Komputer / Sistem */}
-            <div className="p-3.5 rounded-lg bg-[#121215]/80 border border-[#26272d] space-y-2 text-xs">
-              <div className="text-[10px] uppercase font-bold text-[#bbcbb2] tracking-wider flex items-center justify-between">
-                <span>Rincian Sistem Komputer</span>
-                <span className="text-[#6b7367] font-mono">Kasir: {cashierName}</span>
+          <>
+            {/* Scrollable Body */}
+            <div className="px-6 py-4 overflow-y-auto flex-1 min-h-0 space-y-4 overscroll-contain">
+              {/* Rincian Hitungan Komputer / Sistem */}
+              <div className="p-3.5 rounded-lg bg-[#121215]/80 border border-[#26272d] space-y-2 text-xs">
+                <div className="text-[10px] uppercase font-bold text-[#bbcbb2] tracking-wider flex items-center justify-between">
+                  <span>Rincian Sistem Komputer</span>
+                  <span className="text-[#6b7367] font-mono">Kasir: {cashierName}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-[#26272d]/60">
+                  <span className="text-slate-200">Modal Awal Kasir</span>
+                  <span className="font-mono font-bold text-white">{formatRupiah(startingCapital)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-[#26272d]/60">
+                  <span className="text-slate-200">Penerimaan Tunai (Cash)</span>
+                  <span className="font-mono font-bold text-emerald-400">+{formatRupiah(todayCashSales)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-[#26272d]/60">
+                  <span className="text-slate-200">Penerimaan QRIS / Transfer Bank</span>
+                  <span className="font-mono font-bold text-[#00ffff]">{formatRupiah(todayQrisSales)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-[#26272d]/60">
+                  <span className="text-slate-200">Pengeluaran Kasir Hari Ini</span>
+                  <span className="font-mono font-bold text-rose-400">-{formatRupiah(todayExpenses)}</span>
+                </div>
+                <div className="flex justify-between items-center pt-1.5 font-bold text-sm">
+                  <span className="text-amber-300">Ekspektasi Uang Fisik Laci:</span>
+                  <span className="font-mono text-amber-300 text-base">{formatRupiah(expectedDrawerCash)}</span>
+                </div>
               </div>
-              <div className="flex justify-between items-center py-1 border-b border-[#26272d]/60">
-                <span className="text-slate-200">Modal Awal Kasir</span>
-                <span className="font-mono font-bold text-white">{formatRupiah(startingCapital)}</span>
-              </div>
-              <div className="flex justify-between items-center py-1 border-b border-[#26272d]/60">
-                <span className="text-slate-200">Penerimaan Tunai (Cash)</span>
-                <span className="font-mono font-bold text-emerald-400">+{formatRupiah(todayCashSales)}</span>
-              </div>
-              <div className="flex justify-between items-center py-1 border-b border-[#26272d]/60">
-                <span className="text-slate-200">Penerimaan QRIS / Transfer Bank</span>
-                <span className="font-mono font-bold text-[#00ffff]">{formatRupiah(todayQrisSales)}</span>
-              </div>
-              <div className="flex justify-between items-center py-1 border-b border-[#26272d]/60">
-                <span className="text-slate-200">Pengeluaran Kasir Hari Ini</span>
-                <span className="font-mono font-bold text-rose-400">-{formatRupiah(todayExpenses)}</span>
-              </div>
-              <div className="flex justify-between items-center pt-1.5 font-bold text-sm">
-                <span className="text-amber-300">Ekspektasi Uang Fisik Laci:</span>
-                <span className="font-mono text-amber-300 text-base">{formatRupiah(expectedDrawerCash)}</span>
-              </div>
-            </div>
 
-            {/* Input Uang Fisik Nyata di Laci */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-200 uppercase tracking-wider mb-1.5">
-                Hitung & Masukkan Uang Fisik di Laci <span className="text-rose-400">*</span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-3 text-[#bbcbb2] font-bold text-sm">Rp</span>
-                <input
-                  type="number"
-                  placeholder="0"
-                  value={physicalCash}
-                  onChange={(e) => setPhysicalCash(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 bg-[#121215] border border-[#26272d] rounded-lg text-white text-base font-mono font-bold focus:outline-none focus:border-[#00ffff]"
-                  autoFocus
+              {/* Input Uang Fisik Nyata di Laci */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-200 uppercase tracking-wider mb-1.5">
+                  Hitung & Masukkan Uang Fisik di Laci <span className="text-rose-400">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-3 text-[#bbcbb2] font-bold text-sm">Rp</span>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={physicalCash}
+                    onChange={(e) => setPhysicalCash(e.target.value)}
+                    className="w-full pl-11 pr-4 py-2.5 bg-[#121215] border border-[#26272d] rounded-lg text-white text-base font-mono font-bold focus:outline-none focus:border-[#00ffff]"
+                    autoFocus
+                  />
+                </div>
+
+                {/* Tampilan Selisih Real-Time */}
+                {physicalCash !== '' && (
+                  <div className={`mt-2 p-2.5 rounded-lg border flex items-center justify-between text-xs font-bold ${
+                    discrepancy === 0
+                      ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+                      : discrepancy > 0
+                      ? 'bg-[#00ffff]/10 border-[#00ffff]/30 text-[#00ffff]'
+                      : 'bg-rose-500/15 border-rose-500/30 text-rose-300'
+                  }`}>
+                    <span className="flex items-center gap-1.5">
+                      {discrepancy === 0 ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
+                      <span>{discrepancy === 0 ? 'Uang Fisik Cocok Sempurna' : discrepancy > 0 ? 'Selisih Lebih (Surplus)' : 'Selisih Kurang (Minus)'}</span>
+                    </span>
+                    <span className="font-mono text-sm">
+                      {discrepancy > 0 ? '+' : ''}{formatRupiah(discrepancy)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Catatan / Alasan Selisih */}
+              <div>
+                <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
+                  Catatan Kasir / Keterangan Selisih
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Tulis catatan penutupan kasir atau penjelasan jika ada selisih..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="w-full p-2.5 bg-[#121215] border border-[#26272d] rounded-lg text-white text-xs focus:outline-none focus:border-[#00ffff] resize-none"
                 />
               </div>
-
-              {/* Tampilan Selisih Real-Time */}
-              {physicalCash !== '' && (
-                <div className={`mt-2 p-2.5 rounded-lg border flex items-center justify-between text-xs font-bold ${
-                  discrepancy === 0
-                    ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
-                    : discrepancy > 0
-                    ? 'bg-[#00ffff]/10 border-[#00ffff]/30 text-[#00ffff]'
-                    : 'bg-rose-500/15 border-rose-500/30 text-rose-300'
-                }`}>
-                  <span className="flex items-center gap-1.5">
-                    {discrepancy === 0 ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
-                    <span>{discrepancy === 0 ? 'Uang Fisik Cocok Sempurna' : discrepancy > 0 ? 'Selisih Lebih (Surplus)' : 'Selisih Kurang (Minus)'}</span>
-                  </span>
-                  <span className="font-mono text-sm">
-                    {discrepancy > 0 ? '+' : ''}{formatRupiah(discrepancy)}
-                  </span>
-                </div>
-              )}
             </div>
 
-            {/* Catatan / Alasan Selisih */}
-            <div>
-              <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
-                Catatan Kasir / Keterangan Selisih
-              </label>
-              <textarea
-                rows={2}
-                placeholder="Tulis catatan penutupan kasir atau penjelasan jika ada selisih..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="w-full p-2.5 bg-[#121215] border border-[#26272d] rounded-lg text-white text-xs focus:outline-none focus:border-[#00ffff] resize-none"
-              />
-            </div>
-
-            <div className="pt-2 flex items-center justify-end gap-2.5">
+            {/* Pinned Footer Actions */}
+            <div className="px-6 py-3.5 border-t border-[#26272d] bg-[#18181c] shrink-0 flex items-center justify-end gap-2.5">
               <button
                 type="button"
                 onClick={onClose}
@@ -234,10 +239,10 @@ export default function ShiftClosingModal({
                 <span>{loading ? 'Menutup Kasir...' : 'Konfirmasi Tutup Kasir'}</span>
               </button>
             </div>
-          </div>
+          </>
         ) : (
           /* TAMPILAN SUKSES & KIRIM LAPORAN WA */
-          <div className="py-4 text-center space-y-4 animate-fade-in">
+          <div className="p-6 text-center space-y-4 overflow-y-auto flex-1 overscroll-contain animate-fade-in">
             <div className="w-14 h-14 mx-auto rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
               <CheckCircle2 size={32} />
             </div>

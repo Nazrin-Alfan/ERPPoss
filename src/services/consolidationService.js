@@ -3,6 +3,7 @@
  * Domain Service layer untuk agregasi data finansial multi-tenant eksekutif (Owner view)
  * Dilengkapi pertahanan RBAC Fail-Safe (Zero-Trust Data Protection).
  */
+import { ROLES, isOwnerOrSuperAdmin } from '../constants/roles'
 
 /**
  * Filter transaksi valid (mengecualikan transaksi Batal / Void)
@@ -15,14 +16,14 @@ export function getValidTransactions(transactions = []) {
  * Validasi otorisasi peran (Hanya Owner & Super Admin)
  */
 export function isExecutiveAuthorized(userRole) {
-  return userRole === 'Owner' || userRole === 'Super Admin'
+  return isOwnerOrSuperAdmin(userRole)
 }
 
 /**
  * Menghitung ringkasan metrik konsolidasi eksekutif seluruh outlet
  */
 export function calculateConsolidatedMetrics({
-  userRole = 'Owner',
+  userRole = ROLES.OWNER,
   tenants = [],
   transactions = [],
   expenses = [],

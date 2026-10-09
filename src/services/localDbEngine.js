@@ -9,6 +9,7 @@ import realSeedData from './realSeedData.json' with { type: 'json' }
 import { DEFAULT_TENANT_ID, DEFAULT_BRANCH_ID } from '../constants/erpConfig.js'
 import { GeneralLedgerService, calculateMovingAverageCost } from './generalLedgerService.js'
 import { DEFAULT_CARWASH_PACKAGES } from '../utils/carwashHelpers.js'
+import { resolveAccountForPaymentMethod } from '../constants/transactionConstants.js'
 
 const STORAGE_KEY = 'relaypos_real_sandbox_v2'
 const AUTH_STORAGE_KEY = 'relaypos_real_auth_v2'
@@ -1300,9 +1301,7 @@ export class LocalQueryBuilder {
         const totalAmount = parseFloat(record.total_harga) || (qtyMasuk * unitPrice)
         if (totalAmount > 0) {
           const method = String(record.metode_bayar || 'CASH').toUpperCase()
-          let creditAcc = 'acc_1001'
-          if (method === 'CREDIT' || method === 'TEMPO') creditAcc = 'acc_2001'
-          else if (method === 'BANK' || method === 'TRANSFER' || method === 'QRIS') creditAcc = 'acc_1002'
+          const creditAcc = resolveAccountForPaymentMethod(method, this.store.getTable('metode_bayar'))
 
           this.store.postJournalEntry({
             tenant_id: record.tenant_id || DEFAULT_TENANT_ID,
@@ -1502,7 +1501,7 @@ export class LocalQueryBuilder {
         created_at: new Date().toISOString(),
       })
 
-      const debitAcc = struk.metode_bayar === 'QRIS' ? 'acc_1002' : 'acc_1001'
+      const debitAcc = resolveAccountForPaymentMethod(struk.metode_bayar, this.store.getTable('metode_bayar'))
       this.store.postJournalEntry({
         tenant_id: effectiveTenant,
         branch_id: effectiveBranch,

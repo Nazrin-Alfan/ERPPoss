@@ -1,5 +1,6 @@
 import { InventoryTable } from '../components/ui/tables'
 import React, { useState, useEffect, useMemo } from 'react'
+import { ROLES, isManagement } from '../constants/roles'
 import { 
   Boxes, 
   Package, 
@@ -56,7 +57,7 @@ const DEFAULT_GUDANG_DATA = [
 
 export default function Gudang() {
   const { profile, activeTenant } = useAuth()
-  const isOwnerOrAdmin = profile?.role === 'Owner' || profile?.role === 'Admin' || profile?.role === 'Super Admin'
+  const isOwnerOrAdmin = isManagement(profile?.role)
   const features = getTenantFeatures(activeTenant?.business_type)
 
   // Tab Gudang Aktif: 'CAFE' | 'CARWASH' | 'MERCHANDISE'
@@ -921,8 +922,8 @@ export default function Gudang() {
       {/* MODAL 2: RESTOCK / STOK MASUK */}
       {/* ========================================================================= */}
       {showRestockModal && restockTarget && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#18181c] border border-[#26272d] rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-[#18181c] border border-[#26272d] rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4 max-h-[92dvh] overflow-y-auto my-auto overscroll-contain">
             <div className="flex items-center justify-between pb-3 border-b border-[#26272d]">
               <h3 className="font-bold text-base text-white flex items-center gap-2">
                 <ArrowDownRight className="w-5 h-5 text-[#00ffff]" />
@@ -1008,8 +1009,8 @@ export default function Gudang() {
       {/* MODAL 3: STOCK OPNAME (PENYESUAIAN STOK FISIK) */}
       {/* ========================================================================= */}
       {showOpnameModal && opnameTarget && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#18181c] border border-[#26272d] rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-[#18181c] border border-[#26272d] rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4 max-h-[92dvh] overflow-y-auto my-auto overscroll-contain">
             <div className="flex items-center justify-between pb-3 border-b border-[#26272d]">
               <h3 className="font-bold text-base text-white flex items-center gap-2">
                 <SlidersHorizontal className="w-5 h-5 text-blue-400" />

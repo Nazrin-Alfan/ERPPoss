@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { supabase } from '../supabaseClient'
 import { api } from '../services/apiAdapter'
-import { DEFAULT_TENANT_ID } from '../constants/erpConfig'
+import { DEFAULT_TENANT_ID, DEFAULT_BRANCH_ID } from '../constants/erpConfig'
+import { ROLES } from '../constants/roles'
 import { setActiveTenantId } from '../services/localDbEngine'
 
 const ACTIVE_TENANT_STORAGE_KEY = 'relaypos_active_tenant_id'
@@ -36,15 +37,15 @@ export const AuthProvider = ({ children }) => {
       const tenantList = Array.isArray(allTenants) ? allTenants : []
       let allowedTenants = []
 
-      const role = currentProfile?.role || 'Kasir'
+      const role = currentProfile?.role || ROLES.KASIR
       const userTenantId = currentProfile?.tenant_id || DEFAULT_TENANT_ID
 
-      if (role === 'Super Admin') {
+      if (role === ROLES.SUPER_ADMIN) {
         // Super admin memiliki akses penuh ke semua tenant
         allowedTenants = tenantList.length > 0 ? tenantList : [
           { id: DEFAULT_TENANT_ID, nama: 'RelayPOS Demo Outlet', slug: 'relaypos-demo', plan: 'ENTERPRISE', status: 'ACTIVE' }
         ]
-      } else if (role === 'Owner') {
+      } else if (role === ROLES.OWNER) {
         // Owner memiliki akses ke semua tenant miliknya atau default jika baru
         allowedTenants = tenantList.length > 0 ? tenantList : [
           { id: userTenantId, nama: 'Outlet Utama Owner', slug: 'outlet-owner', plan: 'ENTERPRISE', status: 'ACTIVE' }
@@ -79,7 +80,7 @@ export const AuthProvider = ({ children }) => {
       let resolvedTenant = normalizedTenants.find(t => t.id === savedTenantId)
 
       // Jika role Kasir, wajib abaikan storage yang tidak sesuai dan gunakan tenant miliknya
-      if (role === 'Kasir' || !resolvedTenant) {
+      if (role === ROLES.KASIR || !resolvedTenant) {
         resolvedTenant = normalizedTenants.find(t => t.id === userTenantId) || normalizedTenants[0]
       }
 

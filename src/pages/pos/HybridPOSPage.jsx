@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../supabaseClient'
 import { useAuth } from '../../context/AuthContext'
 import { DEFAULT_TENANT_ID } from '../../constants/erpConfig'
+import { ROLES, isCashier } from '../../constants/roles'
+import { isMerchandiseCategory, EXPENSE_CATEGORIES } from '../../constants/transactionConstants'
 import {
   Plus,
   Minus,
@@ -472,7 +474,7 @@ const CafePOS = () => {
         console.warn('Fallback to static washing employees:', err)
       }
 
-      if (profile && profile.role === 'Kasir') {
+      if (profile && isCashier(profile.role)) {
         setSelectedCashier(profile.nama ? profile.nama.toUpperCase() : '')
       } else if (defaultCashiers.length > 0) {
         setSelectedCashier(defaultCashiers[0].nama ? defaultCashiers[0].nama.toUpperCase() : '')
@@ -669,13 +671,7 @@ const CafePOS = () => {
         (
           i.gudang === 'MERCHANDISE' ||
           i.tipe_barang === 'MERCHANDISE' || 
-          i.kategori === 'MERCHANDISE' || 
-          i.kategori === 'Merchandise' || 
-          i.kategori === 'Parfum Mobil' ||
-          i.kategori === 'Lap & Perawatan' ||
-          i.kategori === 'Aksesoris & Detailing' ||
-          i.kategori === 'Chemical Retail' ||
-          i.kategori === 'Snack & Minuman Ringan' ||
+          isMerchandiseCategory(i.kategori, i.sub_kategori) ||
           i.tipe === 'BARANG_JADI' ||
           String(i.kategori || '').toLowerCase().includes('retail')
         ) && i.is_active !== false
@@ -758,7 +754,7 @@ const CafePOS = () => {
     try {
       if (editingExpenseId) {
         // Mode Edit: Update data pengeluaran
-        const isCasbon = posExpenseForm.kategori === 'Casbon'
+        const isCasbon = posExpenseForm.kategori === EXPENSE_CATEGORIES.CASBON
         const updatePayload = {
           jenis: isCasbon ? 'Casbon' : `pengeluaran ${posExpenseForm.unit}`,
           kategori: isCasbon ? `Casbon - ${posExpenseForm.karyawan}` : posExpenseForm.kategori,
@@ -847,45 +843,70 @@ const CafePOS = () => {
       const currentTime = new Date().toTimeString().split(' ')[0]
       const timestamp = new Date().toISOString()
 
-      const newStrukId = generateUUID()
-      const newPengeluaranId = generateUUID()
-
-      // 1. Catat Struk Pemasukan QRIS
-      const { error: strukErr } = await supabase
-        .from('struk')
-        .insert({
-          id_struk: newStrukId,
+      // Logika Tukar Uang:
+      // Uang cash keluar dari laci kasir (SALDO CASH) dan diganti dengan transfer/QRIS masuk ke rekening (SALDO REKENING Y).
+      // Ini adalah PERPINDAHAN SALDO (Mutasi Saldo Kas), BUKAN beban pengeluaran dan BUKAN omzet penjualan toko.
+      const insertions = [
+        // 1. Kas keluar dari Laci Kasir (SALDO CASH)
+        {
+          id_cashflow: generateUUID(),
           tanggal: todayDate,
-          jam: currentTime,
-          metode_bayar: 'QRIS',
-          status_bayar: 'Selesai',
-          kasir: selectedCashier.toUpperCase(),
-          total_tagihan: qrisIn,
-          keterangan: `Tukar Uang (Tarik Tunai) - Cust: ${exchangeCustomer || 'Umum'}`,
-          waktu_dibuat: timestamp,
-          waktu_dibayar: timestamp
-        })
-
-      if (strukErr) throw strukErr
-
-      // 2. Catat Pengeluaran Cash Laci
-      const { error: expErr } = await supabase
-        .from('pengeluaran')
-        .insert({
-          id_pengeluaran: newPengeluaranId,
-          tanggal: todayDate,
-          jam: currentTime,
-          nominal: cashOut,
-          nama_pengeluaran: `Tukar Uang Cash Keluar - Cust: ${exchangeCustomer || 'Umum'}`,
-          jenis: 'pengeluaran Bersama',
+          jenis: 'Pindah',
           kategori: 'Tukar Uang',
-          apakah_stok: 'tidak',
+          pos: 'SALDO CASH',
+          pemasukan: 0,
+          pengeluaran: cashOut,
+          keterangan_transaksi: `Tukar Uang Cash Keluar - Cust: ${exchangeCustomer || 'Umum'}`,
+          created_at: timestamp
+        },
+        // 2. Kas masuk ke Rekening QRIS/Bank (SALDO REKENING Y)
+        {
+          id_cashflow: generateUUID(),
+          tanggal: todayDate,
+          jenis: 'Pindah',
+          kategori: 'Tukar Uang',
+          pos: 'SALDO REKENING Y',
+          pemasukan: cashOut,
+          pengeluaran: 0,
+          keterangan_transaksi: `Tukar Uang QRIS Masuk - Cust: ${exchangeCustomer || 'Umum'}`,
+          created_at: timestamp
+        }
+      ]
+
+      // 3. Jika ada selisih biaya admin (pendapatan fee toko), catat sebagai pemasukan fee
+      if (adminFee > 0) {
+        insertions.push({
+          id_cashflow: generateUUID(),
+          tanggal: todayDate,
+          jenis: 'Pemasukan',
+          kategori: 'Pendapatan Lain-lain',
+          pos: 'SALDO REKENING Y',
+          pemasukan: adminFee,
+          pengeluaran: 0,
+          keterangan_transaksi: `Biaya Admin Tukar Uang - Cust: ${exchangeCustomer || 'Umum'}`,
           created_at: timestamp
         })
+      }
 
-      if (expErr) throw expErr
+      const { error: insErr } = await supabase.from('cashflow').insert(insertions)
+      if (insErr) throw insErr
 
-      await showAlert('Transaksi Tukar Uang berhasil dicatat!', 'Sukses')
+      // Sinkronkan update saldo laci kasir dan rekening di pos_balances
+      const { data: currentBalances } = await supabase.from('pos_balances').select('*')
+      if (currentBalances) {
+        const cashAccount = currentBalances.find(b => b.pos === 'SALDO CASH')
+        const qrisAccount = currentBalances.find(b => b.pos === 'SALDO REKENING Y')
+        if (cashAccount) {
+          const newBalCash = (parseFloat(cashAccount.balance) || 0) - cashOut
+          await supabase.from('pos_balances').update({ balance: newBalCash }).eq('pos', 'SALDO CASH')
+        }
+        if (qrisAccount) {
+          const newBalQris = (parseFloat(qrisAccount.balance) || 0) + qrisIn
+          await supabase.from('pos_balances').update({ balance: newBalQris }).eq('pos', 'SALDO REKENING Y')
+        }
+      }
+
+      await showAlert(`Transaksi Tukar Uang berhasil dicatat sebagai Perpindahan Saldo!\n\n• Uang tunai keluar dari Laci Kasir: ${formatRupiah(cashOut)}\n• Transfer masuk ke Rekening QRIS: ${formatRupiah(qrisIn)}${adminFee > 0 ? `\n• Pendapatan Biaya Admin: ${formatRupiah(adminFee)}` : ''}\n\n*Transaksi ini tidak dicatat sebagai beban pengeluaran operasional.`, 'Sukses')
       setExchangeCash('')
       setExchangeQris('')
       setExchangeCustomer('')
@@ -1319,6 +1340,9 @@ const CafePOS = () => {
     setLoading(true)
     setError('')
     try {
+      const todayDate = new Date().toLocaleDateString('en-CA')
+      const currentTime = new Date().toTimeString().split(' ')[0]
+
       let nCash = 0
       let nQris = 0
       if (settlePaymentMethod === 'SPLIT') {
@@ -1340,6 +1364,9 @@ const CafePOS = () => {
         await supabase.from('cafe').insert({
           id_detail: generateUUID(),
           id_struk: settlingBill.id,
+          tenant_id: effectiveTenantId,
+          tanggal: todayDate,
+          jam: currentTime,
           nama_menu: surchargeDescription || 'Biaya Inap Kendaraan',
           qty: 1,
           harga_satuan: surchargeAmount,
@@ -1699,6 +1726,8 @@ const CafePOS = () => {
           id_detail: generateUUID(),
           id_struk: effectiveStrukId,
           tenant_id: effectiveTenantId,
+          tanggal: todayDate,
+          jam: currentTime,
           nama_menu: item.nama_menu,
           qty: item.qty,
           harga_satuan: item.harga,
@@ -2194,7 +2223,7 @@ const CafePOS = () => {
           <div className="flex items-center gap-1.5 bg-subsurface border border-border rounded-xl px-2.5 py-1 text-xs">
             <span className="w-2 h-2 rounded-full bg-primary text-primary-foreground animate-pulse shrink-0"></span>
             <span className="text-muted-dark text-[10px] font-semibold hidden sm:inline uppercase tracking-wider">Kasir:</span>
-            {profile?.role === 'Kasir' ? (
+            {isCashier(profile?.role) ? (
               <span className="font-bold text-white uppercase text-xs">{selectedCashier}</span>
             ) : (
               <CustomSelect
@@ -3475,7 +3504,7 @@ const CafePOS = () => {
             </div>
 
             <form onSubmit={handleSavePosExpense} className="space-y-4 max-w-xl shrink-0">
-              <div className={`grid grid-cols-1 ${posExpenseForm.kategori === 'Casbon' ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4`}>
+              <div className={`grid grid-cols-1 ${posExpenseForm.kategori === EXPENSE_CATEGORIES.CASBON ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4`}>
                 <div>
                   <label className="block text-xs font-semibold text-muted mb-1.5 uppercase">Tanggal</label>
                   <input
@@ -3754,18 +3783,18 @@ const CafePOS = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-muted mb-1.5 uppercase">Nama Pelanggan (Keterangan)</label>
+                  <label className="block text-xs font-semibold text-muted mb-1.5 uppercase">Nama Customer / Owner (Keterangan)</label>
                   <input
                     type="text"
                     value={exchangeCustomer}
                     onChange={(e) => setExchangeCustomer(e.target.value)}
-                    placeholder="Contoh: Budi (Tukar Uang)"
+                    placeholder="Contoh: Pelanggan Budi / Owner Raka (Tukar Cash)"
                     className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-muted mb-1.5 uppercase">Estimasi Biaya Admin (Pendapatan Toko)</label>
+                  <label className="block text-xs font-semibold text-muted mb-1.5 uppercase">Estimasi Biaya Admin (Pendapatan Fee)</label>
                   <div className="w-full bg-subsurface border border-slate-850 rounded-lg px-3 py-2 text-primary text-sm font-mono font-bold">
                     {formatRupiah(Math.max(0, parseFloat(exchangeQris || 0) - parseFloat(exchangeCash || 0)))}
                   </div>
@@ -3777,15 +3806,14 @@ const CafePOS = () => {
                 disabled={loading}
                 className="w-full py-2.5 bg-cyan-500 hover:bg-cyan-400 disabled:bg-subsurface text-slate-950 font-bold rounded-lg text-sm transition-all"
               >
-                {loading ? 'Memproses...' : 'Catat Penukaran Uang'}
+                {loading ? 'Memproses...' : 'Catat Perpindahan Saldo (Tukar Uang)'}
               </button>
             </form>
 
             <div className="border-t border-border pt-6">
               <h4 className="font-bold text-sm text-white mb-1">Informasi Cara Kerja Tukar Uang:</h4>
               <p className="text-xs text-muted leading-relaxed">
-                Fitur ini mencatat uang masuk QRIS ke rekening bank Anda (menambah saldo QRIS) dan uang keluar Cash dari laci kasir (mengurangi expected cash laci).
-                Selisih antara QRIS diterima dan Cash diberikan otomatis tercatat sebagai pendapatan admin (laba bersih bertambah).
+                Fitur ini mencatat <strong>Perpindahan Saldo (Mutasi Internal)</strong>: uang tunai keluar dari laci kasir (mengurangi saldo cash laci) dan uang transfer masuk ke rekening bank/QRIS toko (menambah saldo rekening). Transaksi ini <strong>TIDAK masuk ke beban pengeluaran operasional</strong> dan <strong>TIDAK masuk ke omzet penjualan</strong>. Jika ada biaya admin, selisihnya dicatat sebagai pendapatan lain-lain.
               </p>
             </div>
           </div>
@@ -4538,234 +4566,243 @@ const CafePOS = () => {
 
       {/* MODAL: Selesaikan Pembayaran Pending */}
       {settlingBill && (
-        <div className="fixed inset-0 bg-subsurface backdrop-blur-md flex items-center justify-center p-4 z-[60] animate-fade-in">
-          <div className="glass-panel w-full max-w-md p-6 rounded-2xl shadow-2xl border border-[#3f414a] shadow-[0_0_40px_rgba(16,185,129,0.15)] animate-pop-in">
-            <div className="flex justify-between items-center border-b border-border pb-4 mb-4">
-              <h3 className="text-lg font-bold text-white">
-                Pelunasan Tagihan #{settlingBill.id.substring(0, 8)}
-              </h3>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 z-[60] animate-fade-in">
+          <div className="glass-panel w-full max-w-md rounded-2xl shadow-2xl border border-zinc-700/80 bg-[#121215] flex flex-col max-h-[90dvh] overflow-hidden animate-pop-in">
+            {/* Header (Shrink-0 / Fixed di Atas) */}
+            <div className="flex justify-between items-center px-5 py-3.5 border-b border-zinc-800 bg-[#121215] shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                <h3 className="text-sm sm:text-base font-bold text-white tracking-wide">
+                  Pelunasan Tagihan #{settlingBill.id.substring(0, 8)}
+                </h3>
+              </div>
               <button
+                type="button"
                 onClick={() => setSettlingBill(null)}
-                className="text-muted hover:text-slate-200"
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSettleBill} className="space-y-4">
+            <form onSubmit={handleSettleBill} className="flex flex-col flex-1 min-h-0 overflow-hidden">
               {(() => {
                 const finalTotalToPay = settlingBill.total_harga + (settleSurcharge.enabled ? (parseFloat(settleSurcharge.nominal) || 0) : 0)
 
                 return (
                   <>
-                    <div className="p-4 rounded-xl bg-surface/60 border border-border space-y-1.5 text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-muted">Tagihan Layanan:</span>
-                        <span className="font-bold text-slate-200 font-mono">{formatRupiah(settlingBill.total_harga)}</span>
-                      </div>
-                      {settleSurcharge.enabled && (
-                        <div className="flex justify-between text-amber-400 font-medium">
-                          <span>{settleSurcharge.keterangan || 'Cas Inap'}:</span>
-                          <span className="font-bold font-mono">+{formatRupiah(settleSurcharge.nominal || 0)}</span>
+                    {/* Bodi Modal yang Dapat Di-Scroll Secara Mandiri */}
+                    <div className="p-4 sm:p-5 overflow-y-auto space-y-3.5 flex-1 overscroll-contain">
+                      <div className="p-4 rounded-xl bg-surface/60 border border-border space-y-1.5 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-muted">Tagihan Layanan:</span>
+                          <span className="font-bold text-slate-200 font-mono">{formatRupiah(settlingBill.total_harga)}</span>
                         </div>
-                      )}
-                      <div className="flex justify-between pt-1.5 border-t border-border">
-                        <span className="text-white font-bold">Total Pelunasan:</span>
-                        <span className="font-black text-primary text-base font-mono">{formatRupiah(finalTotalToPay)}</span>
-                      </div>
-                      <div className="flex justify-between text-muted text-[11px]">
-                        <span>Kasir Pembuka:</span>
-                        <span className="text-slate-200 font-bold">{settlingBill.kasir}</span>
-                      </div>
-                    </div>
-
-                    {/* Fitur Cas Inap / Biaya Tambahan Mobil Menginap */}
-                    <div className="p-3.5 rounded-xl bg-surface border border-border space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-amber-400">
-                          <input
-                            type="checkbox"
-                            checked={settleSurcharge.enabled}
-                            onChange={(e) => setSettleSurcharge(prev => ({ ...prev, enabled: e.target.checked }))}
-                            className="rounded bg-subsurface border-[#3f414a] text-amber-500 focus:ring-0 w-4 h-4 cursor-pointer"
-                          />
-                          <span>Tambah Biaya Inap / Cas Keterlambatan</span>
-                        </label>
                         {settleSurcharge.enabled && (
-                          <span className="text-[10px] font-bold text-primary bg-primary text-primary-foreground/15 px-2 py-0.5 rounded font-mono">
-                            +{formatRupiah(settleSurcharge.nominal || 0)}
-                          </span>
+                          <div className="flex justify-between text-amber-400 font-medium">
+                            <span>{settleSurcharge.keterangan || 'Cas Inap'}:</span>
+                            <span className="font-bold font-mono">+{formatRupiah(settleSurcharge.nominal || 0)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between pt-1.5 border-t border-border">
+                          <span className="text-white font-bold">Total Pelunasan:</span>
+                          <span className="font-black text-primary text-base font-mono">{formatRupiah(finalTotalToPay)}</span>
+                        </div>
+                        <div className="flex justify-between text-muted text-[11px]">
+                          <span>Kasir Pembuka:</span>
+                          <span className="text-slate-200 font-bold">{settlingBill.kasir}</span>
+                        </div>
+                      </div>
+
+                      {/* Fitur Cas Inap / Biaya Tambahan Mobil Menginap */}
+                      <div className="p-3.5 rounded-xl bg-surface border border-border space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-amber-400">
+                            <input
+                              type="checkbox"
+                              checked={settleSurcharge.enabled}
+                              onChange={(e) => setSettleSurcharge(prev => ({ ...prev, enabled: e.target.checked }))}
+                              className="rounded bg-subsurface border-[#3f414a] text-amber-500 focus:ring-0 w-4 h-4 cursor-pointer"
+                            />
+                            <span>Tambah Biaya Inap / Cas Keterlambatan</span>
+                          </label>
+                          {settleSurcharge.enabled && (
+                            <span className="text-[10px] font-bold text-primary bg-primary text-primary-foreground/15 px-2 py-0.5 rounded font-mono">
+                              +{formatRupiah(settleSurcharge.nominal || 0)}
+                            </span>
+                          )}
+                        </div>
+
+                        {settleSurcharge.enabled && (
+                          <div className="space-y-2 pt-2 border-t border-border animate-fade-in">
+                            {/* Preset Buttons */}
+                            <div className="flex gap-1.5 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => setSettleSurcharge(prev => ({ ...prev, nominal: 50000, keterangan: 'Biaya Inap Kendaraan (1 Malam)' }))}
+                                className={`px-2.5 py-1 text-[10px] rounded-lg font-bold border transition-colors ${
+                                  settleSurcharge.nominal === 50000 
+                                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' 
+                                    : 'bg-subsurface text-muted border-border hover:text-white'
+                                }`}
+                              >
+                                1 Malam (50rb)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setSettleSurcharge(prev => ({ ...prev, nominal: 100000, keterangan: 'Biaya Inap Kendaraan (2 Malam)' }))}
+                                className={`px-2.5 py-1 text-[10px] rounded-lg font-bold border transition-colors ${
+                                  settleSurcharge.nominal === 100000 
+                                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' 
+                                    : 'bg-subsurface text-muted border-border hover:text-white'
+                                }`}
+                              >
+                                2 Malam (100rb)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setSettleSurcharge(prev => ({ ...prev, nominal: 35000, keterangan: 'Cas Keterlambatan Pengambilan' }))}
+                                className={`px-2.5 py-1 text-[10px] rounded-lg font-bold border transition-colors ${
+                                  settleSurcharge.nominal === 35000 
+                                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' 
+                                    : 'bg-subsurface text-muted border-border hover:text-white'
+                                }`}
+                              >
+                                Telat Ambil (35rb)
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[10px] text-muted font-semibold block mb-1">Nominal Cas (Rp):</label>
+                                <input
+                                  type="number"
+                                  value={settleSurcharge.nominal}
+                                  onChange={(e) => setSettleSurcharge(prev => ({ ...prev, nominal: parseFloat(e.target.value) || 0 }))}
+                                  className="w-full bg-subsurface border border-border rounded-lg px-2.5 py-1.5 text-white text-xs font-mono font-bold focus:outline-none focus:border-amber-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] text-muted font-semibold block mb-1">Keterangan Biaya:</label>
+                                <input
+                                  type="text"
+                                  value={settleSurcharge.keterangan}
+                                  onChange={(e) => setSettleSurcharge(prev => ({ ...prev, keterangan: e.target.value }))}
+                                  placeholder="Contoh: Biaya Inap 1 Malam"
+                                  className="w-full bg-subsurface border border-border rounded-lg px-2.5 py-1.5 text-white text-xs focus:outline-none focus:border-amber-500"
+                                />
+                              </div>
+                            </div>
+                          </div>
                         )}
                       </div>
 
-                      {settleSurcharge.enabled && (
-                        <div className="space-y-2 pt-2 border-t border-border animate-fade-in">
-                          {/* Preset Buttons */}
-                          <div className="flex gap-1.5 flex-wrap">
-                            <button
-                              type="button"
-                              onClick={() => setSettleSurcharge(prev => ({ ...prev, nominal: 50000, keterangan: 'Biaya Inap Kendaraan (1 Malam)' }))}
-                              className={`px-2.5 py-1 text-[10px] rounded-lg font-bold border transition-colors ${
-                                settleSurcharge.nominal === 50000 
-                                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' 
-                                  : 'bg-subsurface text-muted border-border hover:text-white'
-                              }`}
-                            >
-                              1 Malam (50rb)
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setSettleSurcharge(prev => ({ ...prev, nominal: 100000, keterangan: 'Biaya Inap Kendaraan (2 Malam)' }))}
-                              className={`px-2.5 py-1 text-[10px] rounded-lg font-bold border transition-colors ${
-                                settleSurcharge.nominal === 100000 
-                                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' 
-                                  : 'bg-subsurface text-muted border-border hover:text-white'
-                              }`}
-                            >
-                              2 Malam (100rb)
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setSettleSurcharge(prev => ({ ...prev, nominal: 35000, keterangan: 'Cas Keterlambatan Pengambilan' }))}
-                              className={`px-2.5 py-1 text-[10px] rounded-lg font-bold border transition-colors ${
-                                settleSurcharge.nominal === 35000 
-                                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' 
-                                  : 'bg-subsurface text-muted border-border hover:text-white'
-                              }`}
-                            >
-                              Telat Ambil (35rb)
-                            </button>
-                          </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
+                          Metode Pembayaran Pelunasan
+                        </label>
+                        <select
+                          value={settlePaymentMethod}
+                          onChange={(e) => setSettlePaymentMethod(e.target.value)}
+                          className="w-full bg-surface border border-slate-850 rounded-lg py-2 px-3 text-white text-sm"
+                          required
+                        >
+                          {paymentMethods.map(p => (
+                            <option key={p.nama || p.id} value={p.nama}>{p.nama}</option>
+                          ))}
+                        </select>
+                      </div>
 
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <label className="text-[10px] text-muted font-semibold block mb-1">Nominal Cas (Rp):</label>
-                              <input
-                                type="number"
-                                value={settleSurcharge.nominal}
-                                onChange={(e) => setSettleSurcharge(prev => ({ ...prev, nominal: parseFloat(e.target.value) || 0 }))}
-                                className="w-full bg-subsurface border border-border rounded-lg px-2.5 py-1.5 text-white text-xs font-mono font-bold focus:outline-none focus:border-amber-500"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-[10px] text-muted font-semibold block mb-1">Keterangan Biaya:</label>
-                              <input
-                                type="text"
-                                value={settleSurcharge.keterangan}
-                                onChange={(e) => setSettleSurcharge(prev => ({ ...prev, keterangan: e.target.value }))}
-                                placeholder="Contoh: Biaya Inap 1 Malam"
-                                className="w-full bg-subsurface border border-border rounded-lg px-2.5 py-1.5 text-white text-xs focus:outline-none focus:border-amber-500"
-                              />
-                            </div>
+                      {settlePaymentMethod === 'SPLIT' && (
+                        <div className="p-3.5 rounded-xl bg-subsurface border border-slate-850 space-y-3 my-1">
+                          <span className="text-[10px] text-muted-dark uppercase tracking-wider font-extrabold block text-muted">Pembayaran Terpisah (Split)</span>
+                          <div className="space-y-1">
+                            <label className="text-[10px] text-muted-dark font-semibold block">Tunai (Cash):</label>
+                            <input
+                              type="number"
+                              value={splitCashAmount}
+                              onChange={(e) => {
+                                const cashVal = e.target.value
+                                setSplitCashAmount(cashVal)
+                                const parsed = parseFloat(cashVal || 0)
+                                setSplitQrisAmount(Math.max(0, finalTotalToPay - parsed).toString())
+                              }}
+                              placeholder="Contoh: 50000"
+                              className="w-full bg-surface border border-border rounded-lg py-1.5 px-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
+                              required
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] text-muted-dark font-semibold block">Non-Tunai (QRIS):</label>
+                            <input
+                              type="number"
+                              value={splitQrisAmount}
+                              onChange={(e) => {
+                                const qrisVal = e.target.value
+                                setSplitQrisAmount(qrisVal)
+                                const parsed = parseFloat(qrisVal || 0)
+                                setSplitCashAmount(Math.max(0, finalTotalToPay - parsed).toString())
+                              }}
+                              placeholder="Contoh: 50000"
+                              className="w-full bg-surface border border-border rounded-lg py-1.5 px-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
+                              required
+                            />
                           </div>
                         </div>
                       )}
-                    </div>
 
-                    <div>
-                      <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
-                        Metode Pembayaran Pelunasan
-                      </label>
-                      <select
-                        value={settlePaymentMethod}
-                        onChange={(e) => setSettlePaymentMethod(e.target.value)}
-                        className="w-full bg-surface border border-slate-850 rounded-lg py-2 px-3 text-white text-sm"
-                        required
-                      >
-                        {paymentMethods.map(p => (
-                          <option key={p.nama || p.id} value={p.nama}>{p.nama}</option>
-                        ))}
-                      </select>
-                    </div>
+                      {/* Kalkulator Kembalian untuk Pelunasan (CASH / SPLIT) */}
+                      {(settlePaymentMethod === 'CASH' || settlePaymentMethod === 'SPLIT') && (() => {
+                        const targetCash = settlePaymentMethod === 'SPLIT' ? (parseFloat(splitCashAmount) || 0) : finalTotalToPay
+                        const sKembalian = settleCashReceived ? parseFloat(settleCashReceived) - targetCash : 0
+                        const isSKurang = settleCashReceived && sKembalian < 0
 
-                    {settlePaymentMethod === 'SPLIT' && (
-                      <div className="p-3.5 rounded-xl bg-subsurface border border-slate-850 space-y-3 my-1">
-                        <span className="text-[10px] text-muted-dark uppercase tracking-wider font-extrabold block text-muted">Pembayaran Terpisah (Split)</span>
-                        <div className="space-y-1">
-                          <label className="text-[10px] text-muted-dark font-semibold block">Tunai (Cash):</label>
-                          <input
-                            type="number"
-                            value={splitCashAmount}
-                            onChange={(e) => {
-                              const cashVal = e.target.value
-                              setSplitCashAmount(cashVal)
-                              const parsed = parseFloat(cashVal || 0)
-                              setSplitQrisAmount(Math.max(0, finalTotalToPay - parsed).toString())
-                            }}
-                            placeholder="Contoh: 50000"
-                            className="w-full bg-surface border border-border rounded-lg py-1.5 px-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] text-muted-dark font-semibold block">Non-Tunai (QRIS):</label>
-                          <input
-                            type="number"
-                            value={splitQrisAmount}
-                            onChange={(e) => {
-                              const qrisVal = e.target.value
-                              setSplitQrisAmount(qrisVal)
-                              const parsed = parseFloat(qrisVal || 0)
-                              setSplitCashAmount(Math.max(0, finalTotalToPay - parsed).toString())
-                            }}
-                            placeholder="Contoh: 50000"
-                            className="w-full bg-surface border border-border rounded-lg py-1.5 px-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
-                            required
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Kalkulator Kembalian untuk Pelunasan (CASH / SPLIT) */}
-                    {(settlePaymentMethod === 'CASH' || settlePaymentMethod === 'SPLIT') && (() => {
-                      const targetCash = settlePaymentMethod === 'SPLIT' ? (parseFloat(splitCashAmount) || 0) : finalTotalToPay
-                      const sKembalian = settleCashReceived ? parseFloat(settleCashReceived) - targetCash : 0
-                      const isSKurang = settleCashReceived && sKembalian < 0
-
-                      return (
-                        <div className="p-3.5 rounded-xl bg-surface border border-border space-y-3 my-1">
-                          <span className="text-[10px] text-muted uppercase tracking-wider font-extrabold block">Kalkulator Kembalian Pelunasan</span>
-                          <div className="space-y-1">
-                            <label className="text-[10px] text-muted font-semibold block">
-                              Uang Diterima dari Pelanggan (Cash):
-                            </label>
-                            <div className="relative">
-                              <span className="absolute left-3 top-2 text-xs text-muted-dark font-bold font-mono">Rp</span>
-                              <input
-                                type="number"
-                                value={settleCashReceived}
-                                onChange={(e) => setSettleCashReceived(e.target.value)}
-                                placeholder={targetCash ? `Contoh: ${targetCash}` : 'Contoh: 100000'}
-                                className="w-full bg-subsurface border border-border rounded-lg py-2 pl-8 pr-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
-                              />
+                        return (
+                          <div className="p-3.5 rounded-xl bg-surface border border-border space-y-3 my-1">
+                            <span className="text-[10px] text-muted uppercase tracking-wider font-extrabold block">Kalkulator Kembalian Pelunasan</span>
+                            <div className="space-y-1">
+                              <label className="text-[10px] text-muted font-semibold block">
+                                Uang Diterima dari Pelanggan (Cash):
+                              </label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-2 text-xs text-muted-dark font-bold font-mono">Rp</span>
+                                <input
+                                  type="number"
+                                  value={settleCashReceived}
+                                  onChange={(e) => setSettleCashReceived(e.target.value)}
+                                  placeholder={targetCash ? `Contoh: ${targetCash}` : 'Contoh: 100000'}
+                                  className="w-full bg-subsurface border border-border rounded-lg py-2 pl-8 pr-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
+                                />
+                              </div>
                             </div>
+                            {settleCashReceived && (
+                              <div className="flex justify-between items-center text-xs border-t border-border/60 pt-2">
+                                <span className="text-muted">Kembalian Pelanggan:</span>
+                                {isSKurang ? (
+                                  <span className="font-mono font-bold text-rose-450 uppercase text-[10px]">Kurang {formatRupiah(Math.abs(sKembalian))}</span>
+                                ) : (
+                                  <span className="font-mono font-black text-primary text-sm">{formatRupiah(sKembalian)}</span>
+                                )}
+                              </div>
+                            )}
                           </div>
-                          {settleCashReceived && (
-                            <div className="flex justify-between items-center text-xs border-t border-border/60 pt-2">
-                              <span className="text-muted">Kembalian Pelanggan:</span>
-                              {isSKurang ? (
-                                <span className="font-mono font-bold text-rose-450 uppercase text-[10px]">Kurang {formatRupiah(Math.abs(sKembalian))}</span>
-                              ) : (
-                                <span className="font-mono font-black text-primary text-sm">{formatRupiah(sKembalian)}</span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })()}
+                        )
+                      })()}
+                    </div>
 
-                    <div className="flex justify-end gap-3 pt-4 border-t border-border mt-4">
+                    {/* Footer Tetap / Sticky di Bagian Bawah (Tidak Pernah Terpotong) */}
+                    <div className="px-5 py-3.5 border-t border-zinc-800 bg-[#18181c] flex items-center justify-end gap-3 shrink-0">
                       <button
                         type="button"
                         onClick={() => setSettlingBill(null)}
-                        className="px-4 py-2 bg-subsurface hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-sm"
+                        className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold rounded-xl text-xs sm:text-sm transition-all active:scale-[0.98]"
                       >
                         Batal
                       </button>
                       <button
                         type="submit"
                         disabled={loading || ((settlePaymentMethod === 'CASH' || settlePaymentMethod === 'SPLIT') && settleCashReceived && (parseFloat(settleCashReceived) < (settlePaymentMethod === 'SPLIT' ? (parseFloat(splitCashAmount) || 0) : finalTotalToPay)))}
-                        className="px-4 py-2 bg-primary text-primary-foreground hover:bg-emerald-500 active:bg-emerald-600 text-slate-950 font-bold rounded-xl text-sm disabled:opacity-50"
+                        className="px-4 py-2 bg-primary text-primary-foreground hover:bg-emerald-500 active:bg-emerald-600 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all active:scale-[0.98] disabled:opacity-50"
                       >
                         {loading ? 'Memproses...' : 'Konfirmasi Lunas & Cetak Struk'}
                       </button>

@@ -47,9 +47,9 @@ export default function VoidReasonModal({ isOpen, onClose, onConfirm, transactio
   const totalAmount = transaction.total_tagihan || transaction.total_harga || 0
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000]/85 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-md glass-panel border border-rose-500/30 rounded-3xl p-6 shadow-2xl relative">
-        <div className="flex items-center justify-between pb-3 border-b border-[#26272d]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#000000]/85 backdrop-blur-sm animate-fade-in overflow-y-auto">
+      <div className="w-full max-w-md glass-panel border border-rose-500/30 rounded-3xl shadow-2xl relative flex flex-col max-h-[92dvh] overflow-hidden my-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#26272d] shrink-0 bg-[#121215]">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-lg bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
               <ShieldAlert size={18} />
@@ -69,64 +69,66 @@ export default function VoidReasonModal({ isOpen, onClose, onConfirm, transactio
           </button>
         </div>
 
-        {/* Warning Policy */}
-        <div className="my-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 space-y-1">
-          <div className="font-bold flex items-center gap-1.5">
-            <AlertTriangle size={13} className="shrink-0" />
-            <span>Kebijakan Zero Hard Delete:</span>
-          </div>
-          <p className="text-[11px] leading-relaxed text-rose-200/90">
-            Transaksi tidak akan dihapus fisik. Status diubah menjadi <strong className="text-white">Batal</strong>, alasan pembatalan disimpan ke audit log, dan bahan baku F&B otomatis dikembalikan ke stok.
-          </p>
-        </div>
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="p-6 overflow-y-auto flex-1 min-h-0 space-y-3.5 overscroll-contain">
+            {/* Warning Policy */}
+            <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 space-y-1">
+              <div className="font-bold flex items-center gap-1.5">
+                <AlertTriangle size={13} className="shrink-0" />
+                <span>Kebijakan Zero Hard Delete:</span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-rose-200/90">
+                Transaksi tidak akan dihapus fisik. Status diubah menjadi <strong className="text-white">Batal</strong>, alasan pembatalan disimpan ke audit log, dan bahan baku F&B otomatis dikembalikan ke stok.
+              </p>
+            </div>
 
-        {error && (
-          <div className="mb-3 p-2.5 rounded-lg bg-rose-500/20 text-rose-300 text-xs font-medium">
-            {error}
-          </div>
-        )}
+            {error && (
+              <div className="p-2.5 rounded-lg bg-rose-500/20 text-rose-300 text-xs font-medium">
+                {error}
+              </div>
+            )}
 
-        <form onSubmit={handleSubmit} className="space-y-3.5">
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-[#bbcbb2] mb-2">
-              Pilih Alasan Cepat:
-            </label>
-            <div className="flex flex-wrap gap-1.5">
-              {PRESET_REASONS.map((reason) => {
-                const isSelected = selectedPreset === reason
-                return (
-                  <button
-                    key={reason}
-                    type="button"
-                    onClick={() => handleSelectPreset(reason)}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-rose-500/20 border-rose-500 text-white shadow-sm'
-                        : 'bg-[#121215]/60 border-[#26272d] text-[#bbcbb2] hover:text-slate-200 hover:border-[#3f414a]'
-                    }`}
-                  >
-                    {reason}
-                  </button>
-                )
-              })}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#bbcbb2] mb-2">
+                Pilih Alasan Cepat:
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {PRESET_REASONS.map((reason) => {
+                  const isSelected = selectedPreset === reason
+                  return (
+                    <button
+                      key={reason}
+                      type="button"
+                      onClick={() => handleSelectPreset(reason)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-rose-500/20 border-rose-500 text-white shadow-sm'
+                          : 'bg-[#121215]/60 border-[#26272d] text-[#bbcbb2] hover:text-slate-200 hover:border-[#3f414a]'
+                      }`}
+                    >
+                      {reason}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#bbcbb2] mb-1.5">
+                Keterangan / Alasan Pembatalan <span className="text-rose-400">*</span>
+              </label>
+              <textarea
+                rows={3}
+                required
+                placeholder="Jelaskan alasan nota ini dibatalkan secara detail..."
+                value={customReason}
+                onChange={(e) => setCustomReason(e.target.value)}
+                className="w-full p-3 bg-[#121215] border border-[#26272d] rounded-lg text-white text-xs placeholder-slate-600 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30 resize-none"
+              />
             </div>
           </div>
 
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-[#bbcbb2] mb-1.5">
-              Keterangan / Alasan Pembatalan <span className="text-rose-400">*</span>
-            </label>
-            <textarea
-              rows={3}
-              required
-              placeholder="Jelaskan alasan nota ini dibatalkan secara detail..."
-              value={customReason}
-              onChange={(e) => setCustomReason(e.target.value)}
-              className="w-full p-3 bg-[#121215] border border-[#26272d] rounded-lg text-white text-xs placeholder-slate-600 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30 resize-none"
-            />
-          </div>
-
-          <div className="pt-2 flex items-center justify-end gap-2.5">
+          <div className="px-6 py-4 border-t border-[#26272d] bg-[#18181c] shrink-0 flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}

@@ -34,30 +34,29 @@ export default function ThermalReceiptModal({
   receiptData, 
   onClose 
 }) {
-  if (!receiptData) return null
-
-  const [phoneInput, setPhoneInput] = useState(receiptData.noTelepon || '')
+  const [phoneInput, setPhoneInput] = useState(receiptData?.noTelepon || '')
   const [copied, setCopied] = useState(false)
   const [isBluetoothPrinting, setIsBluetoothPrinting] = useState(false)
   const [btStatusMsg, setBtStatusMsg] = useState(null) // { type: 'success' | 'error', text: string }
+  const [showKitchenSlip, setShowKitchenSlip] = useState(false)
+
+  // Pasang class ke body saat modal terbuka agar CSS print dapat mematikan display:none pada #root
+  useEffect(() => {
+    if (!receiptData) return
+    document.body.classList.add('has-thermal-receipt')
+    return () => {
+      document.body.classList.remove('has-thermal-receipt')
+    }
+  }, [receiptData])
+
+  if (!receiptData) return null
 
   const isDropOff = receiptData.type === 'ORDER_DROP_OFF'
   const isKitchenSlip = receiptData.type === 'KITCHEN_TICKET'
   const waInfo = generateWhatsAppReceiptMessage(receiptData, phoneInput)
   const config = getReceiptConfig()
   const hasBtSupport = isWebBluetoothSupported()
-
-  // State untuk mode cetak dapur/bar
-  const [showKitchenSlip, setShowKitchenSlip] = useState(false)
   const hasCafeItems = receiptData.items?.some(it => it.type === 'CAFE' || !it.type)
-
-  // Pasang class ke body saat modal terbuka agar CSS print dapat mematikan display:none pada #root
-  useEffect(() => {
-    document.body.classList.add('has-thermal-receipt')
-    return () => {
-      document.body.classList.remove('has-thermal-receipt')
-    }
-  }, [])
 
   const handlePrint = () => {
     window.print()

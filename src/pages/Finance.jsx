@@ -12,6 +12,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import { getTenantFeatures } from '../utils/businessCapabilities'
+import { EXPENSE_CATEGORIES } from '../constants/transactionConstants'
 import { 
   DollarSign, 
   ArrowUpRight, 
@@ -1492,7 +1493,7 @@ const Finance = () => {
   }
 
   useEffect(() => {
-    if (expenseForm.kategori === 'Bahan Baku' && barangMasukList.length > 0) {
+    if (expenseForm.kategori === EXPENSE_CATEGORIES.BAHAN_BAKU && barangMasukList.length > 0) {
       const computedTotal = barangMasukList.reduce((sum, item) => sum + ((parseFloat(item.jumlah) || 0) * (parseFloat(item.harga_satuan) || 0)), 0)
       setExpenseForm(prev => ({ ...prev, total_harga: computedTotal > 0 ? computedTotal : '' }))
     }

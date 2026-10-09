@@ -5,6 +5,7 @@
  */
 
 import { DEFAULT_TENANT_ID, DEFAULT_BRANCH_ID } from '../constants/erpConfig.js'
+import { resolveAccountForPaymentMethod } from '../constants/transactionConstants.js'
 
 /**
  * Calculates Moving Average Cost (MAC) upon receiving new stock
@@ -427,7 +428,7 @@ export class GeneralLedgerService {
     strukList.forEach((s) => {
       const amount = parseFloat(s.total_tagihan) || 0
       if (amount > 0) {
-        const debitAcc = s.metode_bayar === 'QRIS' || s.metode_bayar === 'TRANSFER' ? 'acc_1002' : 'acc_1001'
+        const debitAcc = resolveAccountForPaymentMethod(s.metode_bayar, this.store.getTable('metode_bayar'))
         this.store.postJournalEntry({
           tenant_id,
           branch_id: branchId,

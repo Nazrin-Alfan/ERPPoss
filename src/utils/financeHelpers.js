@@ -166,8 +166,20 @@ export const formatPosExpensePayload = ({ form, todayDate, currentTime, newExpId
   const normKat = normalizeCategory(form.kategori || 'Operasional')
   const isCasbon = normKat === 'Casbon'
   const isPaketan = normKat === 'Ambil Uang Paketan'
+  const isTukarUang =
+    normKat.toLowerCase().includes('tukar') ||
+    normKat.toLowerCase().includes('pindah') ||
+    (form.keterangan || '').toLowerCase().includes('tukar uang') ||
+    (form.keterangan || '').toLowerCase().includes('keluar uang cash') ||
+    (form.keterangan || '').toLowerCase().includes('tukar cash')
   const isEmployeeRelated = isCasbon || isPaketan
-  const jenisVal = isCasbon ? 'Casbon' : (isPaketan ? 'Ambil Uang Paketan' : normalizeJenis(form.jenis || `Pengeluaran ${form.unit || 'Cafe'}`))
+  const jenisVal = isCasbon
+    ? 'Casbon'
+    : isPaketan
+    ? 'Ambil Uang Paketan'
+    : isTukarUang
+    ? 'Pindah'
+    : normalizeJenis(form.jenis || `Pengeluaran ${form.unit || 'Cafe'}`)
   
   const rawItemId = form.id_barang || form.id_bahan_baku || ''
   const hasRawMaterial = Boolean(rawItemId)
@@ -241,7 +253,28 @@ export const isPindahSaldo = (item) => {
   const j = String(item.jenis || '').toLowerCase().trim()
   const k = String(item.kategori || '').toLowerCase().trim()
   const ket = String(item.keterangan_transaksi || item.keterangan || item.nama_pengeluaran || '').toLowerCase().trim()
-  return j.includes('pindah') || k.includes('pindah') || ket.includes('pindah saldo') || ket.includes('transfer saldo') || ket.includes('mutasi saldo')
+
+  // Jika transaksi adalah biaya admin / fee penukaran uang, ini adalah pendapatan riil toko (bukan pindah saldo)
+  if (ket.includes('biaya admin') || ket.includes('admin fee') || ket.includes('fee tukar') || k.includes('admin fee')) {
+    return false
+  }
+
+  return (
+    j.includes('pindah') ||
+    k.includes('pindah') ||
+    j.includes('transfer saldo') ||
+    k.includes('transfer saldo') ||
+    ket.includes('pindah saldo') ||
+    ket.includes('transfer saldo') ||
+    ket.includes('mutasi saldo') ||
+    k.includes('tukar uang') ||
+    k.includes('tukar cash') ||
+    ket.includes('tukar uang') ||
+    ket.includes('tukar cash') ||
+    ket.includes('keluar uang cash') ||
+    ket.includes('tarik tunai') ||
+    ket.includes('lebih qris')
+  )
 }
 
 export const getLockedCategoriesForJenis = (jenis, masterCategories = [], customKategoriList = [], isIncome = false) => {

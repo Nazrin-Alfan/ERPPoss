@@ -3,12 +3,44 @@
  * Utilitas integrasi dan sinkronisasi otomatis antara akun Staf terdaftar (profiles)
  * dan tabel Master Karyawan Kantor (karyawan_kantor).
  */
+import { DEFAULT_TENANT_ID, DEFAULT_BRANCH_ID } from '../constants/erpConfig.js'
+import { ROLES } from '../constants/roles.js'
+
+export const DEFAULT_COMMISSION_CONFIG = {
+  washShareDivisor: 3, // Bagi 3 untuk pencucian dasar
+  packageShareDivisor: 2, // Bagi 2 untuk paket tambahan
+  roundingUnit: 1000,
+}
+
+/**
+ * Menghitung bagi hasil komisi staf pencucian mobil
+ */
+export function calculateCarwashWorkerWage({
+  hargaCuci = 0,
+  hargaPaket = 0,
+  isSplit = false,
+  config = DEFAULT_COMMISSION_CONFIG
+}) {
+  const { washShareDivisor = 3, packageShareDivisor = 2, roundingUnit = 1000 } = config
+
+  const splitFactor = isSplit ? 2 : 1
+  const washWagePerPerson = Math.floor((hargaCuci / washShareDivisor / splitFactor) / roundingUnit) * roundingUnit
+  const packageWagePerPerson = hargaPaket > 0
+    ? Math.floor((hargaPaket / packageShareDivisor / splitFactor) / roundingUnit) * roundingUnit
+    : 0
+
+  return {
+    washWagePerPerson,
+    packageWagePerPerson,
+    totalSharePerPerson: washWagePerPerson + packageWagePerPerson
+  }
+}
 
 export const syncStaffToKaryawanKantor = ({
   staffProfiles = [],
   existingKaryawanKantor = [],
-  defaultTenantId = 'tenant_jb_enterprise',
-  defaultBranchId = 'branch_medan_01'
+  defaultTenantId = DEFAULT_TENANT_ID,
+  defaultBranchId = DEFAULT_BRANCH_ID
 }) => {
   const existingMap = new Map()
 

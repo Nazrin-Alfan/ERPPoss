@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useAppTheme } from '../context/ThemeContext'
 import { KeyRound, Mail, AlertCircle } from 'lucide-react'
+import { ROLES } from '../constants/roles'
 
 const Login = () => {
   const { login, loginWithGoogle } = useAuth()
@@ -30,10 +31,10 @@ const Login = () => {
       setError(res.error || 'Gagal masuk. Periksa kembali username dan password Anda.')
     } else {
       // Dispatching rute berdasarkan role profile yang akurat
-      const userRole = res.profile?.role || res.user?.role || res.user?.user_metadata?.role || 'Kasir'
-      if (userRole === 'Super Admin') {
+      const userRole = res.profile?.role || res.user?.role || res.user?.user_metadata?.role || ROLES.KASIR
+      if (userRole === ROLES.SUPER_ADMIN) {
         navigate('/founder', { replace: true })
-      } else if (userRole === 'Owner') {
+      } else if (userRole === ROLES.OWNER) {
         navigate('/konsolidasi', { replace: true })
       } else {
         navigate('/pos', { replace: true })

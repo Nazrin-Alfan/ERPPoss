@@ -123,10 +123,10 @@ export default function OnboardingWizardModal({ isOpen, onClose, ownerUser, onCo
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-lg glass-panel border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative">
-        {/* Header Steps */}
-        <div className="text-center mb-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in overflow-y-auto">
+      <div className="w-full max-w-lg glass-panel border border-slate-800 rounded-3xl shadow-2xl relative flex flex-col max-h-[92dvh] overflow-hidden my-auto">
+        {/* Pinned Header Steps */}
+        <div className="text-center px-6 sm:px-8 pt-6 pb-4 border-b border-slate-800/80 shrink-0 bg-slate-900/60">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-emerald/15 border border-brand-emerald/30 text-brand-emerald text-xs font-bold uppercase tracking-wider mb-2">
             <Sparkles size={13} />
             <span>Wizard Setup Outlet Baru</span>
@@ -143,20 +143,22 @@ export default function OnboardingWizardModal({ isOpen, onClose, ownerUser, onCo
           </p>
 
           {/* Stepper Bar */}
-          <div className="grid grid-cols-3 gap-2 mt-4 max-w-xs mx-auto">
+          <div className="grid grid-cols-3 gap-2 mt-3 max-w-xs mx-auto">
             <div className={`h-1.5 rounded-full transition-all ${currentStep >= 1 ? 'bg-brand-emerald' : 'bg-slate-800'}`}></div>
             <div className={`h-1.5 rounded-full transition-all ${currentStep >= 2 ? 'bg-brand-emerald' : 'bg-slate-800'}`}></div>
             <div className={`h-1.5 rounded-full transition-all ${currentStep >= 3 ? 'bg-brand-emerald' : 'bg-slate-800'}`}></div>
           </div>
         </div>
 
-        {/* Error Alert */}
-        {error && (
-          <div className="mb-4 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-start gap-2.5">
-            <span className="shrink-0 font-bold">⚠️</span>
-            <span>{error}</span>
-          </div>
-        )}
+        {/* Scrollable Form Body */}
+        <div className="px-6 sm:px-8 py-5 overflow-y-auto flex-1 min-h-0 overscroll-contain">
+          {/* Error Alert */}
+          {error && (
+            <div className="mb-4 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-start gap-2.5">
+              <span className="shrink-0 font-bold">⚠️</span>
+              <span>{error}</span>
+            </div>
+          )}
 
         {/* STEP 1: IDENTITAS & PRINTER STRUK */}
         {currentStep === 1 && (
@@ -391,8 +393,10 @@ export default function OnboardingWizardModal({ isOpen, onClose, ownerUser, onCo
           </div>
         )}
 
-        {/* Footer Actions */}
-        <div className="mt-8 pt-4 border-t border-slate-800/80 flex items-center justify-between">
+        </div>
+
+        {/* Pinned Footer Actions */}
+        <div className="px-6 sm:px-8 py-4 border-t border-slate-800/80 bg-slate-900/90 shrink-0 flex items-center justify-between">
           {currentStep > 1 ? (
             <button
               type="button"

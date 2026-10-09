@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import InteractiveCalendar from '../components/InteractiveCalendar'
 import { formatRupiah, parseDateSafe } from '../utils/helpers'
+import { isPindahSaldo } from '../utils/financeHelpers'
 import { getTenantFeatures } from '../utils/businessCapabilities'
 import GeneralLedgerView from '../components/reports/GeneralLedgerView'
 import { DEFAULT_TENANT_ID } from '../constants/erpConfig.js'
@@ -169,20 +170,16 @@ const Reports = () => {
     }
     if (timeRange === 'custom') {
       const currentVal = parseDateSafe(dateStr).getTime()
-      let startVal = 0
-      if (startDate) {
-        const sParts = startDate.split('-')
-        startVal = new Date(parseInt(sParts[0], 10), parseInt(sParts[1], 10) - 1, parseInt(sParts[2], 10), 0, 0, 0).getTime()
-      }
-      let endVal = Infinity
-      if (endDate) {
-        const eParts = endDate.split('-')
-        endVal = new Date(parseInt(eParts[0], 10), parseInt(eParts[1], 10) - 1, parseInt(eParts[2], 10), 23, 59, 59).getTime()
-      }
+      const startVal = startDate ? parseDateSafe(startDate).setHours(0, 0, 0, 0) : 0
+      const endVal = endDate ? parseDateSafe(endDate).setHours(23, 59, 59, 999) : Infinity
       return currentVal >= startVal && currentVal <= endVal
     }
     return true
   }, [timeRange, startDate, endDate])
+
+  const strukMap = useMemo(() => {
+    return new Map((strukList || []).map(s => [s.id_struk, s]))
+  }, [strukList])
 
   const filteredStrukByTime = useMemo(() => {
     let list = strukList
@@ -191,7 +188,9 @@ const Reports = () => {
     }
     return list.filter(s => {
       const ket = String(s.keterangan || '').toLowerCase()
-      return !ket.includes('kalibrasi') && !ket.includes('test') && s.status_bayar !== 'Batal'
+      const isTestOrBatal = ket.includes('kalibrasi') || ket.includes('test') || s.status_bayar === 'Batal'
+      const isTukarUang = ket.includes('tukar uang') || ket.includes('tarik tunai') || ket.includes('tukar cash') || ket.includes('lebih qris')
+      return !isTestOrBatal && !isTukarUang
     })
   }, [strukList, isDateInRange, timeRange])
 
@@ -201,7 +200,7 @@ const Reports = () => {
       list = carwashList.filter(cw => isDateInRange(cw.tanggal))
     }
     return list.filter(cw => {
-      const parentStruk = strukList.find(s => s.id_struk === cw.id_struk)
+      const parentStruk = strukMap.get(cw.id_struk)
       if (parentStruk) {
         const ket = String(parentStruk.keterangan || '').toLowerCase()
         if (ket.includes('kalibrasi') || ket.includes('test') || parentStruk.status_bayar === 'Batal') {
@@ -210,28 +209,27 @@ const Reports = () => {
       }
       return cw.status !== 'Batal' && cw.status !== 'Cancelled' && parseFloat(cw.harga || 0) > 0
     })
-  }, [carwashList, strukList, isDateInRange, timeRange])
+  }, [carwashList, strukMap, isDateInRange, timeRange])
 
   const filteredCafeList = useMemo(() => {
-    let list = cafeList
-    if (timeRange !== 'all') {
-      list = cafeList.filter(c => {
-        const parentStruk = strukList.find(s => s.id_struk === c.id_struk)
+    return (cafeList || []).filter(c => {
+      if (c.status === 'Batal' || c.status === 'Cancelled' || !(parseFloat(c.subtotal) > 0)) {
+        return false
+      }
+      const parentStruk = strukMap.get(c.id_struk)
+      if (timeRange !== 'all') {
         const dateStr = parentStruk?.tanggal || c.struk?.tanggal || c.created_at
-        return isDateInRange(dateStr)
-      })
-    }
-    return list.filter(c => {
-      const parentStruk = strukList.find(s => s.id_struk === c.id_struk)
+        if (!isDateInRange(dateStr)) return false
+      }
       if (parentStruk) {
         const ket = String(parentStruk.keterangan || '').toLowerCase()
         if (ket.includes('kalibrasi') || ket.includes('test') || parentStruk.status_bayar === 'Batal') {
           return false
         }
       }
-      return c.status !== 'Batal' && c.status !== 'Cancelled' && parseFloat(c.subtotal) > 0
+      return true
     })
-  }, [cafeList, strukList, isDateInRange, timeRange])
+  }, [cafeList, strukMap, isDateInRange, timeRange])
 
   const filteredCashflowLogs = useMemo(() => {
     if (timeRange === 'all') return cashflowLogs
@@ -239,8 +237,11 @@ const Reports = () => {
   }, [cashflowLogs, isDateInRange, timeRange])
 
   const filteredPengeluaranList = useMemo(() => {
-    if (timeRange === 'all') return pengeluaranList
-    return pengeluaranList.filter(e => isDateInRange(e.tanggal))
+    let list = pengeluaranList
+    if (timeRange !== 'all') {
+      list = pengeluaranList.filter(e => isDateInRange(e.tanggal))
+    }
+    return list.filter(e => !isPindahSaldo(e))
   }, [pengeluaranList, isDateInRange, timeRange])
 
   // Consolidated Statement Computations: Segmented P&L (Cafe vs Carwash vs Overhead)
@@ -322,6 +323,17 @@ const Reports = () => {
       const jenis = String(c.jenis || '').toLowerCase()
       const kat = String(c.kategori || '').toLowerCase()
       const ket = String(c.keterangan_transaksi || '').toLowerCase()
+
+      if (jenis.includes('pindah') || jenis.includes('transfer') || isPindahSaldo(c)) return
+      // Abaikan entri rekap kasir / rekap tutup kasir agar tidak menduplikasi rincian tabel pengeluaran
+      // dan tidak salah diklasifikasikan ke Cafe akibat anomali label 'pengeluaran Cafe' pada log rekap kasir.
+      if (
+        ket.includes('rekap pengeluaran') ||
+        ket.includes('rekap tutup kasir') ||
+        ket.includes('rekap kasir') ||
+        kat.includes('rekap') ||
+        jenis.includes('rekap')
+      ) return
 
       if (jenis.includes('cafe')) {
         if (kat.includes('bahan') || kat.includes('kulakan')) cafeBahanBaku += nom
@@ -519,7 +531,7 @@ const Reports = () => {
           </div>
           <p className="text-xs text-[#bbcbb2] uppercase tracking-widest font-bold print:text-slate-600">Laporan Keuangan Konsolidasi (Segmen Usaha Terpadu)</p>
           <p className="text-xs text-cyan-400 font-mono mt-1 font-bold print:text-slate-700">
-            Periode: {timeRange === 'all' ? 'Seluruh Periode' : `${parseDateSafe(startDate || '2026-07-01').toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })} s/d ${parseDateSafe(endDate || new Date().toLocaleDateString('en-CA')).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`}
+            Periode: {timeRange === 'all' ? 'Seluruh Periode' : `${parseDateSafe(startDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toLocaleDateString('en-CA')).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })} s/d ${parseDateSafe(endDate || new Date().toLocaleDateString('en-CA')).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`}
           </p>
           <span className="text-[10px] text-[#6b7367] block mt-1.5 print:text-[#6b7367] font-medium">Mata Uang: Rupiah Indonesia (IDR) • Basis Pencatatan: Akrual & Kas Riil</span>
         </div>

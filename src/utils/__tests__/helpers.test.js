@@ -161,7 +161,7 @@ describe('Base Helpers', () => {
       expect(expenseRecord.pemasukan).toBe(0)
       expect(expenseRecord.pengeluaran).toBe(25000) // 10000 + 15000
       expect(expenseRecord.kategori).toBe('Operasional')
-      expect(expenseRecord.jenis).toBe('pengeluaran Cafe')
+      expect(expenseRecord.jenis).toBe('Pengeluaran Bersama')
       expect(expenseRecord.keterangan_transaksi).toBe('Rekap Pengeluaran Kasir - Kasir: Alexa')
     })
 

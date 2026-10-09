@@ -79,9 +79,10 @@ export default function OwnerWithdrawalModal({ isOpen, onClose, onSuccess, curre
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-md glass-panel border border-brand-emerald/30 rounded-3xl p-6 shadow-2xl relative">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in overflow-y-auto">
+      <div className="w-full max-w-md glass-panel border border-brand-emerald/30 rounded-3xl shadow-2xl relative flex flex-col max-h-[92dvh] overflow-hidden my-auto">
+        {/* Pinned Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 shrink-0 bg-slate-900/60">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-brand-emerald/15 border border-brand-emerald/30 flex items-center justify-center text-brand-emerald">
               <Wallet size={18} />
@@ -101,83 +102,87 @@ export default function OwnerWithdrawalModal({ isOpen, onClose, onSuccess, curre
           </button>
         </div>
 
-        {/* Info Banner Akuntansi */}
-        <div className="my-3.5 p-3 rounded-2xl bg-brand-emerald/10 border border-brand-emerald/20 text-xs text-slate-300">
-          <span className="font-bold text-brand-emerald block mb-0.5">ℹ️ Integritas Laporan Akuntansi:</span>
-          Penarikan ini dicatat pada akun <strong className="text-white">Prive [3002]</strong> (Ekuitas Pemilik), sehingga kas riil berkurang namun laba operasional toko tetap akurat 100%.
-        </div>
-
-        {error && (
-          <div className="mb-3 p-2.5 rounded-xl bg-rose-500/20 text-rose-300 text-xs font-medium">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleWithdraw} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-              Sumber Dana Penarikan <span className="text-rose-400">*</span>
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setSumberDana('SALDO CASH')}
-                className={`p-3 rounded-xl border text-left transition-all ${
-                  sumberDana === 'SALDO CASH'
-                    ? 'bg-emerald-500/15 border-emerald-500 text-white shadow-sm'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <div className="text-xs font-bold">Kas Laci Kasir</div>
-                <div className="text-[10px] text-slate-500 font-mono">Uang Tunai Fisik</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setSumberDana('SALDO REKENING OPERASIONAL')}
-                className={`p-3 rounded-xl border text-left transition-all ${
-                  sumberDana === 'SALDO REKENING OPERASIONAL'
-                    ? 'bg-blue-500/15 border-blue-500 text-white shadow-sm'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <div className="text-xs font-bold">Rekening Bank</div>
-                <div className="text-[10px] text-slate-500 font-mono">QRIS / Transfer</div>
-              </button>
+        {/* Scrollable Form Body */}
+        <form onSubmit={handleWithdraw} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="p-6 overflow-y-auto flex-1 min-h-0 space-y-4 overscroll-contain">
+            {/* Info Banner Akuntansi */}
+            <div className="p-3 rounded-2xl bg-brand-emerald/10 border border-brand-emerald/20 text-xs text-slate-300">
+              <span className="font-bold text-brand-emerald block mb-0.5">ℹ️ Integritas Laporan Akuntansi:</span>
+              Penarikan ini dicatat pada akun <strong className="text-white">Prive [3002]</strong> (Ekuitas Pemilik), sehingga kas riil berkurang namun laba operasional toko tetap akurat 100%.
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-              Jumlah Nominal Penarikan (Rp) <span className="text-rose-400">*</span>
-            </label>
-            <div className="relative">
-              <span className="absolute left-3.5 top-2.5 text-slate-400 font-bold text-sm">Rp</span>
+            {error && (
+              <div className="p-2.5 rounded-xl bg-rose-500/20 text-rose-300 text-xs font-medium">
+                {error}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                Sumber Dana Penarikan <span className="text-rose-400">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSumberDana('SALDO CASH')}
+                  className={`p-3 rounded-xl border text-left transition-all ${
+                    sumberDana === 'SALDO CASH'
+                      ? 'bg-emerald-500/15 border-emerald-500 text-white shadow-sm'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <div className="text-xs font-bold">Kas Laci Kasir</div>
+                  <div className="text-[10px] text-slate-500 font-mono">Uang Tunai Fisik</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSumberDana('SALDO REKENING OPERASIONAL')}
+                  className={`p-3 rounded-xl border text-left transition-all ${
+                    sumberDana === 'SALDO REKENING OPERASIONAL'
+                      ? 'bg-blue-500/15 border-blue-500 text-white shadow-sm'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <div className="text-xs font-bold">Rekening Bank</div>
+                  <div className="text-[10px] text-slate-500 font-mono">QRIS / Transfer</div>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                Jumlah Nominal Penarikan (Rp) <span className="text-rose-400">*</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-2.5 text-slate-400 font-bold text-sm">Rp</span>
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={nominal}
+                  onChange={(e) => setNominal(e.target.value)}
+                  className="w-full pl-11 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-base font-mono font-bold focus:outline-none focus:border-brand-emerald"
+                  required
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                Keterangan Penarikan
+              </label>
               <input
-                type="number"
-                placeholder="0"
-                value={nominal}
-                onChange={(e) => setNominal(e.target.value)}
-                className="w-full pl-11 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-base font-mono font-bold focus:outline-none focus:border-brand-emerald"
-                required
-                autoFocus
+                type="text"
+                placeholder="Contoh: Keperluan pribadi Pak Budi"
+                value={keterangan}
+                onChange={(e) => setKeterangan(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-brand-emerald"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-              Keterangan Penarikan
-            </label>
-            <input
-              type="text"
-              placeholder="Contoh: Keperluan pribadi Pak Budi"
-              value={keterangan}
-              onChange={(e) => setKeterangan(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-brand-emerald"
-            />
-          </div>
-
-          <div className="pt-2 flex items-center justify-end gap-2.5">
+          {/* Pinned Footer Actions */}
+          <div className="px-6 py-4 border-t border-slate-800 bg-slate-900/90 shrink-0 flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}

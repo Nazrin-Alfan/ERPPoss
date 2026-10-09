@@ -714,8 +714,8 @@ const SuperAdmin = () => {
 
       {/* MODAL: Generate Serial Key Tambahan */}
       {showKeyModal && selectedTenantForKey && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-          <div className="glass-panel w-full max-w-md p-6 rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
+          <div className="glass-panel w-full max-w-md p-6 rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl relative max-h-[92dvh] overflow-y-auto my-auto overscroll-contain">
             <div className="flex justify-between items-center pb-4 border-b border-slate-800">
               <div className="flex items-center gap-2">
                 <Key size={18} className="text-amber-400" />

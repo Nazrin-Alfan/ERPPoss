@@ -13,5 +13,20 @@
     "nama": "CUSTOM",
     "is_active": true,
     "created_at": "2026-07-30T18:10:56.895252+00:00"
+  },
+  {
+    "nama": "SPLIT",
+    "is_active": true,
+    "created_at": "2026-10-03T19:24:35.570693+00:00"
+  },
+  {
+    "nama": "TRANSFER",
+    "is_active": true,
+    "created_at": "2026-10-03T19:25:01.756901+00:00"
+  },
+  {
+    "nama": "DEBIT",
+    "is_active": true,
+    "created_at": "2026-10-03T19:25:01.943727+00:00"
   }
 ]

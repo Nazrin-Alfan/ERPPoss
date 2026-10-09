@@ -47,7 +47,9 @@ const CarwashPackageManager = ({
   // Filter bahan kimia dari gudang carwash atau seluruh bahan baku cair
   const carwashChemicals = stokBahan.filter(b => 
     b.gudang === 'CARWASH' || 
+    b.sector === 'CARWASH' ||
     b.kategori === 'Bahan Cuci Mobil' || 
+    String(b.kategori || '').toLowerCase().includes('cuci') ||
     (b.nama_bahan && (
       b.nama_bahan.toLowerCase().includes('shampo') ||
       b.nama_bahan.toLowerCase().includes('semir') ||

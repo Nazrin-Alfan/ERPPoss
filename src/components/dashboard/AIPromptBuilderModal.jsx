@@ -136,6 +136,8 @@ export default function AIPromptBuilderModal({
     return JSON.stringify(contextBuilder.exportCleanJSON(), null, 2)
   }, [contextBuilder])
 
+  const allPresets = useMemo(() => getAdaptedPresets(tenantType), [tenantType])
+
   if (!isOpen) return null
 
   const handleCopyMarkdown = async () => {
@@ -191,8 +193,6 @@ export default function AIPromptBuilderModal({
       console.error('Failed to download JSON:', err)
     }
   }
-
-  const allPresets = useMemo(() => getAdaptedPresets(tenantType), [tenantType])
 
   const filteredPresets = allPresets.filter((p) => {
     // Filter rekomendasi tipe bisnis

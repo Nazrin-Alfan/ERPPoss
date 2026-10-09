@@ -245,7 +245,7 @@ export const calculateTutupKasirRecap = ({
       insertions.push({
         id_cashflow: generateUUID(),
         tanggal: dateStr,
-        jenis: 'pengeluaran Cafe',
+        jenis: 'Pengeluaran Bersama',
         kategori: 'Operasional',
         pemasukan: 0,
         pengeluaran: Math.round(totalExpense),

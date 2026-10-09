@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 
 import { getTenantFeatures } from '../utils/businessCapabilities'
+import { ROLES } from '../constants/roles'
 
 const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const location = useLocation()
@@ -55,7 +56,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     if (item.allowedRoles && Array.isArray(item.allowedRoles)) {
       if (!item.allowedRoles.includes(currentRole)) return false
     }
-    if (item.ownerOnly && currentRole !== 'Owner') {
+    if (item.ownerOnly && currentRole !== ROLES.OWNER) {
       return false
     }
     if (item.requiresFeature && !features[item.requiresFeature]) {
@@ -68,8 +69,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   }
 
   const getRoleBadgeStyle = (role) => {
-    if (role === 'Owner') return 'bg-[#ffc71f]/15 text-[#ffc71f] border border-[#ffc71f]/30'
-    if (role === 'Admin' || role === 'Super Admin') return 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30'
+    if (role === ROLES.OWNER) return 'bg-[#ffc71f]/15 text-[#ffc71f] border border-[#ffc71f]/30'
+    if (role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) return 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30'
     return 'bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/20'
   }
 
@@ -81,7 +82,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           name: 'Dashboard',
           path: '/dashboard',
           icon: LayoutDashboard,
-          allowedRoles: ['Owner']
+          allowedRoles: [ROLES.OWNER]
         }
       ]
     },
@@ -92,20 +93,20 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           name: 'Kasir POS',
           path: '/pos',
           icon: ShoppingCart,
-          allowedRoles: ['Owner', 'Admin', 'Kasir']
+          allowedRoles: [ROLES.OWNER, ROLES.ADMIN, ROLES.KASIR]
         },
         {
           name: 'Antrean Carwash',
           path: '/queue',
           icon: Car,
-          allowedRoles: ['Owner', 'Admin', 'Kasir'],
+          allowedRoles: [ROLES.OWNER, ROLES.ADMIN, ROLES.KASIR],
           requiresFeature: 'hasQueue'
         },
         {
           name: 'Pelanggan & CRM',
           path: '/crm',
           icon: UserCheck,
-          allowedRoles: ['Owner', 'Admin'],
+          allowedRoles: [ROLES.OWNER, ROLES.ADMIN],
           requiresFeature: 'hasCRM'
         }
       ]
@@ -117,13 +118,13 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           name: 'Buku Kas Keuangan',
           path: '/finance',
           icon: DollarSign,
-          allowedRoles: ['Owner', 'Admin']
+          allowedRoles: [ROLES.OWNER, ROLES.ADMIN]
         },
         {
           name: 'Laporan Akuntansi',
           path: '/reports',
           icon: FileText,
-          allowedRoles: ['Owner']
+          allowedRoles: [ROLES.OWNER]
         }
       ]
     },
@@ -134,19 +135,19 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           name: 'Multi-Gudang & Stok',
           path: '/gudang',
           icon: Boxes,
-          allowedRoles: ['Owner', 'Admin', 'Kasir']
+          allowedRoles: [ROLES.OWNER, ROLES.ADMIN, ROLES.KASIR]
         },
         {
           name: 'Karyawan & Komisi',
           path: '/karyawan',
           icon: Users,
-          allowedRoles: ['Owner', 'Admin']
+          allowedRoles: [ROLES.OWNER, ROLES.ADMIN]
         },
         {
           name: 'Database Master',
           path: '/database',
           icon: Database,
-          allowedRoles: ['Owner', 'Admin']
+          allowedRoles: [ROLES.OWNER, ROLES.ADMIN]
         }
       ]
     },
@@ -157,13 +158,13 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           name: 'Kelola Admin',
           path: '/admin',
           icon: Settings,
-          allowedRoles: ['Owner', 'Super Admin']
+          allowedRoles: [ROLES.OWNER, ROLES.SUPER_ADMIN]
         },
         {
           name: 'Console Founder',
           path: '/founder',
           icon: ShieldAlert,
-          allowedRoles: ['Super Admin']
+          allowedRoles: [ROLES.SUPER_ADMIN]
         }
       ]
     }

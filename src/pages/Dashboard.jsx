@@ -36,7 +36,9 @@ import {
 import InteractiveCalendar from '../components/InteractiveCalendar'
 import AIPromptBuilderModal from '../components/dashboard/AIPromptBuilderModal'
 import ExecutivePromptStudio from '../components/dashboard/ExecutivePromptStudio'
+import ExpenseDetailModal from '../components/dashboard/ExpenseDetailModal'
 import { formatRupiah, parseDateSafe, calculateDailyCashierRecap } from '../utils/helpers'
+import { isPindahSaldo } from '../utils/financeHelpers'
 
 // Helper function to fetch all rows beyond Supabase's default 1000 row REST limit
 const fetchAllRows = async (table, select = '*', dateColumn = null, start = null, end = null) => {
@@ -104,6 +106,8 @@ const Dashboard = () => {
   const [endDate, setEndDate] = useState('')
   const [showCustomCalendar, setShowCustomCalendar] = useState(false)
   const [showAIPromptModal, setShowAIPromptModal] = useState(false)
+  const [showExpenseModal, setShowExpenseModal] = useState(false)
+  const [selectedExpenseDivision, setSelectedExpenseDivision] = useState('CARWASH')
   const [activeInsightTab, setActiveInsightTab] = useState('sinergi') // 'sinergi', 'rekap', 'stok'
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -113,6 +117,7 @@ const Dashboard = () => {
   const [cafeList, setCafeList] = useState([])
   const [cashflowLogs, setCashflowLogs] = useState([])
   const [stokList, setStokList] = useState([])
+  const [pengeluaranList, setPengeluaranList] = useState([])
   const [posBalances, setPosBalances] = useState({ cash: 0, rekY: 0, rekN: 0, rekR: 0 })
   const [posAccountList, setPosAccountList] = useState([])
 
@@ -142,12 +147,13 @@ const Dashboard = () => {
       }
 
       // Fetch master analytics data (memuat seluruh data agar perbandingan historis & prompt studio akurat)
-      const [dbStruk, dbCw, dbCafe, dbCf, dbStok] = await Promise.all([
+      const [dbStruk, dbCw, dbCafe, dbCf, dbStok, dbExp] = await Promise.all([
         fetchAllRows('struk'),
         fetchAllRows('carwash'),
         fetchCafeRows(),
         fetchAllRows('cashflow'),
-        fetchAllRows('stok_barang')
+        fetchAllRows('stok_barang'),
+        fetchAllRows('pengeluaran')
       ])
 
       const { data: dbBal, error: balErr } = await supabase
@@ -172,6 +178,7 @@ const Dashboard = () => {
       setCafeList(dbCafe || [])
       setCashflowLogs(dbCf || [])
       setStokList(dbStok || [])
+      setPengeluaranList(dbExp || [])
       setPosBalances({ cash, rekY, rekN, rekR })
       setPosAccountList(dbBal || [])
 
@@ -218,6 +225,10 @@ const Dashboard = () => {
     return true
   }, [timeRange, startDate, endDate])
 
+  const strukMap = useMemo(() => {
+    return new Map((strukList || []).map(s => [s.id_struk, s]))
+  }, [strukList])
+
   const filteredStrukByTime = useMemo(() => {
     let list = strukList
     if (timeRange !== 'all') {
@@ -225,7 +236,9 @@ const Dashboard = () => {
     }
     return list.filter(s => {
       const ket = String(s.keterangan || '').toLowerCase()
-      return !ket.includes('kalibrasi') && !ket.includes('test') && s.status_bayar !== 'Batal'
+      const isTestOrBatal = ket.includes('kalibrasi') || ket.includes('test') || s.status_bayar === 'Batal'
+      const isTukarUang = ket.includes('tukar uang') || ket.includes('tarik tunai') || ket.includes('tukar cash') || ket.includes('lebih qris')
+      return !isTestOrBatal && !isTukarUang
     })
   }, [strukList, isDateInRange, timeRange])
 
@@ -235,7 +248,7 @@ const Dashboard = () => {
       list = carwashList.filter(cw => isDateInRange(cw.tanggal))
     }
     return list.filter(cw => {
-      const parentStruk = strukList.find(s => s.id_struk === cw.id_struk)
+      const parentStruk = strukMap.get(cw.id_struk)
       if (parentStruk) {
         const ket = String(parentStruk.keterangan || '').toLowerCase()
         if (ket.includes('kalibrasi') || ket.includes('test') || parentStruk.status_bayar === 'Batal') {
@@ -244,36 +257,40 @@ const Dashboard = () => {
       }
       return cw.status !== 'Batal' && cw.status !== 'Cancelled' && parseFloat(cw.harga || 0) > 0
     })
-  }, [carwashList, strukList, isDateInRange, timeRange])
+  }, [carwashList, strukMap, isDateInRange, timeRange])
 
   const filteredCafeList = useMemo(() => {
-    let list = cafeList
-    if (timeRange !== 'all') {
-      list = cafeList.filter(c => {
-        const parentStruk = strukList.find(s => s.id_struk === c.id_struk)
+    return (cafeList || []).filter(c => {
+      if (c.status === 'Batal' || c.status === 'Cancelled' || !(parseFloat(c.subtotal) > 0)) {
+        return false
+      }
+      const parentStruk = strukMap.get(c.id_struk)
+      if (timeRange !== 'all') {
         const dateStr = parentStruk?.tanggal || c.struk?.tanggal || c.created_at
-        return isDateInRange(dateStr)
-      })
-    }
-    return list.filter(c => {
-      const parentStruk = strukList.find(s => s.id_struk === c.id_struk)
+        if (!isDateInRange(dateStr)) return false
+      }
       if (parentStruk) {
         const ket = String(parentStruk.keterangan || '').toLowerCase()
         if (ket.includes('kalibrasi') || ket.includes('test') || parentStruk.status_bayar === 'Batal') {
           return false
         }
       }
-      if (c.status === 'Batal' || c.status === 'Cancelled') {
-        return false
-      }
-      return parseFloat(c.subtotal) > 0
+      return true
     })
-  }, [cafeList, strukList, isDateInRange, timeRange])
+  }, [cafeList, strukMap, isDateInRange, timeRange])
 
   const filteredCashflowLogs = useMemo(() => {
     if (timeRange === 'all') return cashflowLogs
     return cashflowLogs.filter(c => isDateInRange(c.tanggal))
   }, [cashflowLogs, isDateInRange, timeRange])
+
+  const filteredPengeluaranList = useMemo(() => {
+    let list = pengeluaranList
+    if (timeRange !== 'all') {
+      list = pengeluaranList.filter(e => isDateInRange(e.tanggal))
+    }
+    return list.filter(e => !isPindahSaldo(e))
+  }, [pengeluaranList, isDateInRange, timeRange])
 
   const operatingDays = useMemo(() => {
     if (timeRange === 'today') return 1
@@ -361,66 +378,270 @@ const Dashboard = () => {
     }
   }, [filteredCarwashList, operatingDays])
 
-  // Financial Analytics & Trend Data
-  const financialAnalytics = useMemo(() => {
-    let totalExp = 0
-    const dailyDataMap = {}
-
-    filteredStrukByTime.forEach(s => {
-      const d = s.tanggal ? s.tanggal.substring(0, 10) : ''
-      if (!d) return
-      if (!dailyDataMap[d]) dailyDataMap[d] = { date: d, omzet: 0, pengeluaran: 0 }
-      dailyDataMap[d].omzet += parseFloat(s.total_tagihan || 0)
-    })
-
-    filteredCashflowLogs.forEach(c => {
-      const d = c.tanggal ? c.tanggal.substring(0, 10) : ''
-      const exp = parseFloat(c.pengeluaran || 0)
-      const jenisLower = String(c.jenis || '').toLowerCase()
-
-      if (jenisLower.includes('pindah') || jenisLower.includes('casbon')) return
-
-      if (exp > 0) {
-        totalExp += exp
-        if (d) {
-          if (!dailyDataMap[d]) dailyDataMap[d] = { date: d, omzet: 0, pengeluaran: 0 }
-          dailyDataMap[d].pengeluaran += exp
-        }
-      }
-    })
-
-    const trendData = Object.values(dailyDataMap).sort((a, b) => a.date.localeCompare(b.date))
-
-    return {
-      totalExpenses: totalExp,
-      trendData
-    }
-  }, [filteredStrukByTime, filteredCashflowLogs])
-
   // Overview Stats
   const overviewStats = useMemo(() => {
     const totalRevenue = filteredStrukByTime.reduce((sum, item) => sum + parseFloat(item.total_tagihan || 0), 0)
-    const netProfit = totalRevenue - financialAnalytics.totalExpenses
-    const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : 0
     const totalLiquid = posAccountList.length > 0
       ? posAccountList.reduce((sum, item) => sum + (parseFloat(item.balance) || 0), 0)
       : (posBalances.cash + posBalances.rekY + posBalances.rekN + posBalances.rekR)
 
     return {
       totalRevenue,
-      netProfit,
-      profitMargin,
       totalLiquid,
       todayCwCount: carwashAnalytics.totalUnits,
       todayCafeCount: cafeAnalytics.totalItems,
       avgCarsPerDay: carwashAnalytics.avgCarsPerDay
     }
-  }, [filteredStrukByTime, financialAnalytics, posBalances, posAccountList, carwashAnalytics, cafeAnalytics])
+  }, [filteredStrukByTime, posBalances, posAccountList, carwashAnalytics, cafeAnalytics])
+
+  // Segmented Financial Expenses & Net Cash (Cafe, Carwash, Shared/Bersama)
+  // 100% konsisten dan sinkron dengan Laporan Keuangan (Reports.jsx)
+  const segmentedExpenses = useMemo(() => {
+    let cafeBahanBaku = 0
+    let cafeOperasional = 0
+
+    let carwashBahan = 0
+    let carwashOperasional = 0
+
+    let bebanBersamaUtilitas = 0
+    let bebanBersamaGaji = 0
+    let bebanBersamaLain = 0
+
+    const carwashExpenseItems = []
+    const cafeExpenseItems = []
+    const sharedExpenseItems = []
+
+    // Carwash komisi karyawan
+    let carwashCommission = 0
+    filteredCarwashList.forEach((cw, idx) => {
+      const komisi = (parseFloat(cw.komisi_1 || 0) + parseFloat(cw.komisi_2 || 0))
+      carwashCommission += komisi
+      if (komisi > 0) {
+        carwashExpenseItems.push({
+          id: `cw-komisi-${cw.id_carwash || cw.id || idx}`,
+          tanggal: cw.tanggal || '',
+          divisi: 'CARWASH',
+          kategori: 'Komisi Kru Cuci',
+          keterangan: `Komisi Cuci: ${cw.karyawan_1 || 'Kru 1'}${cw.karyawan_2 ? ` & ${cw.karyawan_2}` : ''} (${cw.model || 'Mobil'}${cw.plat_nomor ? ` - ${cw.plat_nomor}` : ''})`,
+          akun: 'Bagi Hasil Layanan',
+          nominal: komisi
+        })
+      }
+    })
+
+    const processedExpIds = new Set()
+
+    // 1. Dari tabel pengeluaran resmi
+    filteredPengeluaranList.forEach(exp => {
+      processedExpIds.add(exp.id_pengeluaran)
+      const nom = parseFloat(exp.nominal || exp.total_harga || 0)
+      if (nom <= 0) return
+
+      const jenis = String(exp.jenis || '').toLowerCase()
+      const kat = String(exp.kategori || '').toLowerCase()
+      const ket = String(exp.nama_pengeluaran || exp.keterangan || '').toLowerCase()
+
+      const itemObj = {
+        id: exp.id_pengeluaran || `exp-${exp.id}`,
+        tanggal: exp.tanggal || '',
+        kategori: exp.kategori || (jenis.includes('cafe') ? 'Bahan Cafe' : jenis.includes('carwash') ? 'Chemical Cuci' : 'Operasional'),
+        keterangan: exp.nama_pengeluaran || exp.keterangan || 'Pengeluaran Kasir',
+        akun: exp.akun_sumber || exp.pos || 'Laci Kasir',
+        nominal: nom
+      }
+
+      if (jenis.includes('cafe')) {
+        itemObj.divisi = 'CAFE'
+        cafeExpenseItems.push(itemObj)
+        if (kat.includes('bahan') || kat.includes('kulakan') || ket.includes('biji kopi') || ket.includes('susu') || ket.includes('sirup')) {
+          cafeBahanBaku += nom
+        } else {
+          cafeOperasional += nom
+        }
+      } else if (jenis.includes('carwash')) {
+        itemObj.divisi = 'CARWASH'
+        carwashExpenseItems.push(itemObj)
+        if (kat.includes('bahan') || kat.includes('chemical') || ket.includes('shampoo') || kat.includes('sabun') || ket.includes('semir')) {
+          carwashBahan += nom
+        } else {
+          carwashOperasional += nom
+        }
+      } else {
+        itemObj.divisi = 'SHARED'
+        sharedExpenseItems.push(itemObj)
+        // Beban Bersama / Overhead
+        if (kat.includes('gaji') || kat.includes('casbon') || jenis.includes('casbon') || ket.includes('gaji') || ket.includes('casbon')) {
+          bebanBersamaGaji += nom
+        } else if (kat.includes('listrik') || kat.includes('air') || kat.includes('pdam') || kat.includes('wifi') || kat.includes('utilitas') || ket.includes('listrik') || ket.includes('air')) {
+          bebanBersamaUtilitas += nom
+        } else {
+          bebanBersamaLain += nom
+        }
+      }
+    })
+
+    // 2. Dari cashflow logs (mencakup log pengeluaran yang tidak tercatat di tabel pengeluaran)
+    filteredCashflowLogs.forEach((c, idx) => {
+      const nom = parseFloat(c.pengeluaran || 0)
+      if (nom <= 0) return
+      if (c.id_sumber && processedExpIds.has(c.id_sumber)) return
+
+      const jenis = String(c.jenis || '').toLowerCase()
+      const kat = String(c.kategori || '').toLowerCase()
+      const ket = String(c.keterangan_transaksi || c.keterangan || '').toLowerCase()
+
+      if (jenis.includes('pindah') || jenis.includes('transfer') || isPindahSaldo(c)) return
+
+      // Abaikan entri rekap kasir / rekap tutup kasir agar tidak menduplikasi rincian tabel pengeluaran
+      // dan tidak salah diklasifikasikan ke Divisi Cafe akibat label historis 'pengeluaran Cafe' pada log rekap kasir.
+      if (
+        ket.includes('rekap pengeluaran') ||
+        ket.includes('rekap tutup kasir') ||
+        ket.includes('rekap kasir') ||
+        kat.includes('rekap') ||
+        jenis.includes('rekap')
+      ) return
+
+      const itemObj = {
+        id: c.id_cashflow || `cf-${c.id || idx}`,
+        tanggal: c.tanggal || '',
+        kategori: c.kategori || 'Beban Kas',
+        keterangan: c.keterangan_transaksi || c.keterangan || 'Log Pengeluaran',
+        akun: c.pos || 'Kasir',
+        nominal: nom
+      }
+
+      if (jenis.includes('cafe')) {
+        itemObj.divisi = 'CAFE'
+        cafeExpenseItems.push(itemObj)
+        if (kat.includes('bahan') || kat.includes('kulakan')) cafeBahanBaku += nom
+        else cafeOperasional += nom
+      } else if (jenis.includes('carwash')) {
+        itemObj.divisi = 'CARWASH'
+        carwashExpenseItems.push(itemObj)
+        if (kat.includes('bahan') || kat.includes('chemical')) carwashBahan += nom
+        else carwashOperasional += nom
+      } else {
+        itemObj.divisi = 'SHARED'
+        sharedExpenseItems.push(itemObj)
+        if (ket.includes('casbon') || kat.includes('casbon') || ket.includes('gaji')) bebanBersamaGaji += nom
+        else if (ket.includes('listrik') || kat.includes('air') || kat.includes('wifi')) bebanBersamaUtilitas += nom
+        else bebanBersamaLain += nom
+      }
+    })
+
+    const totalCafeExp = cafeBahanBaku + cafeOperasional
+    const totalCarwashExp = carwashCommission + carwashBahan + carwashOperasional
+    const totalSharedExp = bebanBersamaUtilitas + bebanBersamaGaji + bebanBersamaLain
+    const totalExpenses = totalCafeExp + totalCarwashExp + totalSharedExp
+
+    const carwashNetProfit = carwashAnalytics.totalRevenue - totalCarwashExp
+    const cafeNetProfit = cafeAnalytics.totalRevenue - totalCafeExp
+    const holdingNetProfit = overviewStats.totalRevenue - totalExpenses
+
+    const carwashProfitMargin = carwashAnalytics.totalRevenue > 0 ? ((carwashNetProfit / carwashAnalytics.totalRevenue) * 100).toFixed(1) : '0.0'
+    const cafeProfitMargin = cafeAnalytics.totalRevenue > 0 ? ((cafeNetProfit / cafeAnalytics.totalRevenue) * 100).toFixed(1) : '0.0'
+    const holdingProfitMargin = overviewStats.totalRevenue > 0 ? ((holdingNetProfit / overviewStats.totalRevenue) * 100).toFixed(1) : '0.0'
+
+    return {
+      cafeExp: totalCafeExp,
+      cafeBahanBaku,
+      cafeOperasional,
+      carwashExp: totalCarwashExp,
+      carwashCommission,
+      carwashBahan,
+      carwashOperasional,
+      sharedExp: totalSharedExp,
+      bebanBersamaUtilitas,
+      bebanBersamaGaji,
+      bebanBersamaLain,
+      totalExpenses,
+      carwashNetProfit,
+      cafeNetProfit,
+      holdingNetProfit,
+      carwashProfitMargin,
+      cafeProfitMargin,
+      holdingProfitMargin,
+      carwashExpenses: carwashExpenseItems,
+      cafeExpenses: cafeExpenseItems,
+      sharedExpenses: sharedExpenseItems
+    }
+  }, [filteredPengeluaranList, filteredCashflowLogs, filteredCarwashList, carwashAnalytics.totalRevenue, cafeAnalytics.totalRevenue, overviewStats.totalRevenue])
+
+  // Financial Analytics & Trend Data (Synchronized with segmented expenses)
+  const financialAnalytics = useMemo(() => {
+    const dailyDataMap = {}
+
+    filteredStrukByTime.forEach(s => {
+      const d = s.tanggal ? s.tanggal.substring(0, 10) : ''
+      if (!d) return
+      if (!dailyDataMap[d]) dailyDataMap[d] = { date: d, omzet: 0, carwashOmzet: 0, cafeOmzet: 0, pengeluaran: 0 }
+      dailyDataMap[d].omzet += parseFloat(s.total_tagihan || 0)
+    })
+
+    filteredCarwashList.forEach(cw => {
+      const d = cw.tanggal ? cw.tanggal.substring(0, 10) : ''
+      if (!d) return
+      if (!dailyDataMap[d]) dailyDataMap[d] = { date: d, omzet: 0, carwashOmzet: 0, cafeOmzet: 0, pengeluaran: 0 }
+      dailyDataMap[d].carwashOmzet += parseFloat(cw.harga || 0)
+      const komisi = parseFloat(cw.komisi_1 || 0) + parseFloat(cw.komisi_2 || 0)
+      dailyDataMap[d].pengeluaran += komisi
+    })
+
+    filteredCafeList.forEach(c => {
+      const parentStruk = strukMap.get(c.id_struk)
+      const dateStr = parentStruk?.tanggal || c.struk?.tanggal || c.created_at
+      const d = dateStr ? dateStr.substring(0, 10) : ''
+      if (!d) return
+      if (!dailyDataMap[d]) dailyDataMap[d] = { date: d, omzet: 0, carwashOmzet: 0, cafeOmzet: 0, pengeluaran: 0 }
+      dailyDataMap[d].cafeOmzet += parseFloat(c.subtotal || ((c.harga_satuan || 0) * (c.qty || 1)) || 0)
+    })
+
+    const processedExpIds = new Set()
+    filteredPengeluaranList.forEach(exp => {
+      processedExpIds.add(exp.id_pengeluaran)
+      const d = exp.tanggal ? exp.tanggal.substring(0, 10) : ''
+      const nom = parseFloat(exp.nominal || exp.total_harga || 0)
+      if (nom > 0 && d) {
+        if (!dailyDataMap[d]) dailyDataMap[d] = { date: d, omzet: 0, carwashOmzet: 0, cafeOmzet: 0, pengeluaran: 0 }
+        dailyDataMap[d].pengeluaran += nom
+      }
+    })
+
+    filteredCashflowLogs.forEach(c => {
+      const d = c.tanggal ? c.tanggal.substring(0, 10) : ''
+      const exp = parseFloat(c.pengeluaran || 0)
+      const jenisLower = String(c.jenis || '').toLowerCase()
+      const ketLower = String(c.keterangan_transaksi || c.keterangan || '').toLowerCase()
+      const katLower = String(c.kategori || '').toLowerCase()
+
+      if (jenisLower.includes('pindah') || isPindahSaldo(c) || (c.id_sumber && processedExpIds.has(c.id_sumber))) return
+      if (
+        ketLower.includes('rekap pengeluaran') ||
+        ketLower.includes('rekap tutup kasir') ||
+        ketLower.includes('rekap kasir') ||
+        katLower.includes('rekap') ||
+        jenisLower.includes('rekap')
+      ) return
+
+      if (exp > 0 && d) {
+        if (!dailyDataMap[d]) dailyDataMap[d] = { date: d, omzet: 0, carwashOmzet: 0, cafeOmzet: 0, pengeluaran: 0 }
+        dailyDataMap[d].pengeluaran += exp
+      }
+    })
+
+    const trendData = Object.values(dailyDataMap).sort((a, b) => a.date.localeCompare(b.date))
+
+    return {
+      totalExpenses: segmentedExpenses.totalExpenses,
+      trendData
+    }
+  }, [filteredStrukByTime, filteredCarwashList, filteredCafeList, filteredPengeluaranList, filteredCashflowLogs, strukMap, segmentedExpenses.totalExpenses])
 
   // CFO Health & Expense Ratio
   const cfoHealth = useMemo(() => {
     const expenseRatio = overviewStats.totalRevenue > 0
-      ? ((financialAnalytics.totalExpenses / overviewStats.totalRevenue) * 100).toFixed(1)
+      ? ((segmentedExpenses.totalExpenses / overviewStats.totalRevenue) * 100).toFixed(1)
       : '0.0'
     const avgDailyOmzet = operatingDays > 0
       ? Math.round(overviewStats.totalRevenue / operatingDays)
@@ -429,7 +650,7 @@ const Dashboard = () => {
       expenseRatio,
       avgDailyOmzet
     }
-  }, [overviewStats.totalRevenue, financialAnalytics.totalExpenses, operatingDays])
+  }, [overviewStats.totalRevenue, segmentedExpenses.totalExpenses, operatingDays])
 
   // Daily Cashier Recap (Cash vs QRIS / Non-Tunai)
   const todayDateStr = useMemo(() => new Date().toLocaleDateString('en-CA'), [])
@@ -530,7 +751,18 @@ const Dashboard = () => {
 
   // Recent Transactions Data (shadcn dashboard-2)
   const recentTransactionsList = useMemo(() => {
-    const list = filteredStrukByTime.length > 0 ? filteredStrukByTime : strukList
+    let list = filteredStrukByTime.length > 0 ? filteredStrukByTime : strukList
+    if (activeSection === 'CAFE') {
+      list = list.filter(s => {
+        if (s.item_cafe && s.item_cafe.length > 0) return true
+        return (cafeList || []).some(c => c.id_struk === s.id_struk)
+      })
+    } else if (activeSection === 'CARWASH') {
+      list = list.filter(s => {
+        if (s.item_carwash && s.item_carwash.length > 0) return true
+        return (carwashList || []).some(cw => cw.id_struk === s.id_struk)
+      })
+    }
     return list.slice(0, 5).map((s, idx) => ({
       id: s.no_struk || `STRUK-${idx + 1}`,
       customer: {
@@ -542,40 +774,58 @@ const Dashboard = () => {
       status: s.status === 'Batal' ? 'failed' : s.status === 'Pending' ? 'pending' : 'completed',
       date: s.tanggal ? new Date(s.tanggal).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Hari ini'
     }))
-  }, [filteredStrukByTime, strukList])
+  }, [filteredStrukByTime, strukList, activeSection, cafeList, carwashList])
 
   // Top Products & Services Data (shadcn dashboard-2)
   const topProductsList = useMemo(() => {
     const combined = []
-    if (cafeAnalytics.topMenus && cafeAnalytics.topMenus.length > 0) {
-      cafeAnalytics.topMenus.forEach((m, idx) => {
-        combined.push({
-          id: `cafe-${idx}`,
-          name: m.nama,
-          category: 'Cafe F&B',
-          sales: m.qty,
-          revenue: formatRupiah(m.revenue || (m.qty * 25000)),
-          growth: '+18%',
-          rating: 4.9,
-          stock: 85
+    if (activeSection === 'ALL' || activeSection === 'CAFE') {
+      if (cafeAnalytics.topMenus && cafeAnalytics.topMenus.length > 0) {
+        cafeAnalytics.topMenus.forEach((m, idx) => {
+          combined.push({
+            id: `cafe-${idx}`,
+            name: m.nama,
+            category: 'Cafe F&B',
+            sales: m.qty,
+            revenue: formatRupiah(m.revenue || (m.qty * 25000)),
+            growth: '+18%',
+            rating: 4.9,
+            stock: 85
+          })
         })
-      })
+      }
     }
-    if (carwashAnalytics.topModels && carwashAnalytics.topModels.length > 0) {
-      carwashAnalytics.topModels.forEach((m, idx) => {
-        combined.push({
-          id: `cw-${idx}`,
-          name: `Cuci Mobil ${m.model}`,
-          category: 'Carwash Service',
-          sales: m.count,
-          revenue: formatRupiah(m.count * 45000),
-          growth: '+12%',
-          rating: 4.8,
-          stock: 100
+    if (activeSection === 'ALL' || activeSection === 'CARWASH') {
+      if (carwashAnalytics.topModels && carwashAnalytics.topModels.length > 0) {
+        carwashAnalytics.topModels.forEach((m, idx) => {
+          combined.push({
+            id: `cw-${idx}`,
+            name: `Layanan Cuci Mobil ${m.model}`,
+            category: 'Carwash Service',
+            sales: m.count,
+            revenue: formatRupiah(m.count * (carwashAnalytics.carwashAOV || 45000)),
+            growth: '+12%',
+            rating: 4.8,
+            stock: 100
+          })
         })
-      })
+      }
     }
     if (combined.length === 0) {
+      if (activeSection === 'CAFE') {
+        return [
+          { id: 1, name: 'Kopi Susu Aren Gula Aren', category: 'Cafe F&B', sales: 289, revenue: 'Rp 6.358.000', growth: '+15%', rating: 4.8, stock: 65 },
+          { id: 2, name: 'Matcha Latte Iced', category: 'Cafe F&B', sales: 142, revenue: 'Rp 3.976.000', growth: '+14%', rating: 4.6, stock: 42 },
+          { id: 3, name: 'French Fries Crispy', category: 'Cafe Snack', sales: 110, revenue: 'Rp 2.200.000', growth: '+8%', rating: 4.7, stock: 30 }
+        ]
+      }
+      if (activeSection === 'CARWASH') {
+        return [
+          { id: 1, name: 'Paket Cuci Snow Carwash', category: 'Carwash', sales: 342, revenue: 'Rp 15.390.000', growth: '+23%', rating: 4.9, stock: 100 },
+          { id: 2, name: 'Cuci Hidrolik + Wax', category: 'Carwash', sales: 198, revenue: 'Rp 11.880.000', growth: '+9%', rating: 4.7, stock: 100 },
+          { id: 3, name: 'Detailing Interior Mobil', category: 'Detailing', sales: 45, revenue: 'Rp 6.750.000', growth: '+11%', rating: 4.9, stock: 100 }
+        ]
+      }
       return [
         { id: 1, name: 'Paket Cuci Snow Carwash', category: 'Carwash', sales: 342, revenue: 'Rp 15.390.000', growth: '+23%', rating: 4.9, stock: 100 },
         { id: 2, name: 'Kopi Susu Aren Gula Aren', category: 'Cafe F&B', sales: 289, revenue: 'Rp 6.358.000', growth: '+15%', rating: 4.8, stock: 65 },
@@ -584,7 +834,7 @@ const Dashboard = () => {
       ]
     }
     return combined.sort((a, b) => b.sales - a.sales).slice(0, 5)
-  }, [cafeAnalytics.topMenus, carwashAnalytics.topModels])
+  }, [activeSection, cafeAnalytics.topMenus, carwashAnalytics.topModels, carwashAnalytics.carwashAOV])
 
   // Custom SVG Trend Line Chart
   const renderTrendChart = () => {
@@ -597,14 +847,18 @@ const Dashboard = () => {
       )
     }
 
-    const maxVal = Math.max(...data.map(d => Math.max(d.omzet, d.pengeluaran)), 100000)
+    const trendKey = activeSection === 'CAFE' ? 'cafeOmzet' : activeSection === 'CARWASH' ? 'carwashOmzet' : 'omzet'
+    const trendLabel = activeSection === 'CAFE' ? 'Omzet Penjualan Cafe' : activeSection === 'CARWASH' ? 'Omzet Layanan Carwash' : 'Omzet Penjualan Holding'
+    const lineColor = activeSection === 'CAFE' ? '#ffc71f' : '#00ffff'
+
+    const maxVal = Math.max(...data.map(d => Math.max(d[trendKey] || 0, d.pengeluaran)), 100000)
     const svgWidth = 600
     const svgHeight = 180
     const padding = 28
 
     const pointsOmzet = data.map((d, i) => {
       const x = padding + (i / Math.max(data.length - 1, 1)) * (svgWidth - padding * 2)
-      const y = svgHeight - padding - (d.omzet / maxVal) * (svgHeight - padding * 2)
+      const y = svgHeight - padding - ((d[trendKey] || 0) / maxVal) * (svgHeight - padding * 2)
       return `${x},${y}`
     }).join(' ')
 
@@ -623,8 +877,8 @@ const Dashboard = () => {
         <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-44 overflow-visible">
             <defs>
               <linearGradient id="omzetAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#00ffff" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="#00ffff" stopOpacity="0.0" />
+                <stop offset="0%" stopColor={lineColor} stopOpacity="0.2" />
+                <stop offset="100%" stopColor={lineColor} stopOpacity="0.0" />
               </linearGradient>
             </defs>
 
@@ -641,7 +895,7 @@ const Dashboard = () => {
             {/* Omzet Curve */}
             <polyline
               fill="none"
-              stroke="#00ffff"
+              stroke={lineColor}
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -663,7 +917,8 @@ const Dashboard = () => {
               const labelInterval = Math.max(Math.ceil(data.length / 8), 1)
               const showLabel = i % labelInterval === 0 || i === data.length - 1
               const x = padding + (i / Math.max(data.length - 1, 1)) * (svgWidth - padding * 2)
-              const yOmzet = svgHeight - padding - (d.omzet / maxVal) * (svgHeight - padding * 2)
+              const valOmzet = d[trendKey] || 0
+              const yOmzet = svgHeight - padding - (valOmzet / maxVal) * (svgHeight - padding * 2)
               const yExp = svgHeight - padding - (d.pengeluaran / maxVal) * (svgHeight - padding * 2)
               const tooltipY = Math.max(5, Math.min(yOmzet, yExp) - 42)
               const dateLabel = d.date ? d.date.substring(5) : ''
@@ -671,12 +926,12 @@ const Dashboard = () => {
               return (
                 <g key={i} className="group cursor-pointer">
                   <rect x={x - 8} y={Math.min(yOmzet, yExp) - 8} width="16" height={Math.abs(yOmzet - yExp) + 16} fill="transparent" />
-                  <circle cx={x} cy={yOmzet} r="4" fill="#00ffff" className="transition-all group-hover:r-6" />
+                  <circle cx={x} cy={yOmzet} r="4" fill={lineColor} className="transition-all group-hover:r-6" />
                   <circle cx={x} cy={yExp} r="3.5" fill="#ff5102" className="transition-all group-hover:r-5" />
                   <g className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
                     <rect x={x - 55} y={tooltipY} width="110" height="34" rx="4" fill="#121215" stroke="#26272d" strokeWidth="1" />
-                    <text x={x} y={tooltipY + 12} fontSize="9" fill="#00ffff" fontWeight="bold" textAnchor="middle">
-                      {formatRupiah(d.omzet)}
+                    <text x={x} y={tooltipY + 12} fontSize="9" fill={lineColor} fontWeight="bold" textAnchor="middle">
+                      {formatRupiah(valOmzet)}
                     </text>
                     <text x={x} y={tooltipY + 26} fontSize="9" fill="#ff5102" fontWeight="bold" textAnchor="middle">
                       {formatRupiah(d.pengeluaran)}
@@ -693,9 +948,9 @@ const Dashboard = () => {
           </svg>
 
           <div className="flex justify-center items-center gap-6 mt-3 text-xs font-semibold">
-            <span className="flex items-center gap-2 text-[#00ffff]">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#00ffff]"></span>
-              Omzet Penjualan
+            <span className="flex items-center gap-2" style={{ color: lineColor }}>
+              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: lineColor }}></span>
+              {trendLabel}
             </span>
             <span className="flex items-center gap-2 text-[#ff5102]">
               <span className="w-3 h-0.5 border-t-2 border-dashed border-[#ff5102]"></span>
@@ -901,133 +1156,344 @@ const Dashboard = () => {
       <div className="space-y-6">
         {/* Top Row - Key Metrics (4 Bento Cards) */}
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-          {/* Metric 1: Total Revenue */}
-          <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-xs font-medium text-[#bbcbb2]">
-                  {activeSection === 'CAFE' ? 'Total Revenue (Cafe)' : activeSection === 'CARWASH' ? 'Total Revenue (Carwash)' : 'Total Revenue'}
-                </p>
-                <h3 className="text-2xl font-bold text-white mt-1 font-mono tabular-nums tracking-tight">
-                  {formatRupiah(activeSection === 'CAFE' ? cafeAnalytics.totalRevenue : activeSection === 'CARWASH' ? carwashAnalytics.totalRevenue : overviewStats.totalRevenue)}
-                </h3>
+          {/* Mode ALL (Sinergi Holding) */}
+          {activeSection === 'ALL' && (
+            <>
+              {/* Metric 1: Total Revenue Holding */}
+              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-medium text-[#bbcbb2]">Total Revenue Holding</p>
+                    <h3 className="text-2xl font-bold text-white mt-1 font-mono tabular-nums tracking-tight">
+                      {formatRupiah(overviewStats.totalRevenue)}
+                    </h3>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30 font-mono">
+                    <TrendingUp size={12} strokeWidth={2} />
+                    +12.4%
+                  </span>
+                </div>
+                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
+                  <p className="font-semibold text-white flex items-center gap-1">
+                    Trending up this month <TrendingUp size={13} className="text-[#00ffff]" />
+                  </p>
+                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
+                    CW: {formatRupiah(carwashAnalytics.totalRevenue)} • Cafe: {formatRupiah(cafeAnalytics.totalRevenue)}
+                  </p>
+                </div>
               </div>
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30 font-mono">
-                <TrendingUp size={12} strokeWidth={2} />
-                +12.4%
-              </span>
-            </div>
-            <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
-              <p className="font-semibold text-white flex items-center gap-1">
-                Trending up this month <TrendingUp size={13} className="text-[#00ffff]" />
-              </p>
-              <p className="text-[11px] text-[#bbcbb2] mt-0.5">
-                {activeSection === 'CAFE'
-                  ? `${overviewStats.totalRevenue > 0 ? ((cafeAnalytics.totalRevenue / overviewStats.totalRevenue) * 100).toFixed(1) : 0}% kontribusi omzet total`
-                  : activeSection === 'CARWASH'
-                  ? `${overviewStats.totalRevenue > 0 ? ((carwashAnalytics.totalRevenue / overviewStats.totalRevenue) * 100).toFixed(1) : 0}% kontribusi omzet total`
-                  : 'Gabungan Divisi Cafe & Carwash'}
-              </p>
-            </div>
-          </div>
 
-          {/* Metric 2: Net Profit & Margin */}
-          <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-xs font-medium text-[#bbcbb2]">
-                  {activeSection === 'CAFE' ? 'Porsi Terjual' : activeSection === 'CARWASH' ? 'Kendaraan Dicuci' : 'Estimasi Laba Bersih'}
-                </p>
-                <h3 className={`text-2xl font-bold mt-1 font-mono tabular-nums tracking-tight ${
-                  activeSection === 'ALL'
-                    ? (overviewStats.netProfit >= 0 ? 'text-[#00ffff]' : 'text-[#ff5102]')
-                    : 'text-white'
-                }`}>
-                  {activeSection === 'CAFE'
-                    ? `${cafeAnalytics.totalItems} Porsi`
-                    : activeSection === 'CARWASH'
-                    ? `${carwashAnalytics.totalUnits} Unit`
-                    : formatRupiah(overviewStats.netProfit)}
-                </h3>
+              {/* Metric 2: Total Pengeluaran Konsolidasi */}
+              <div
+                onClick={() => { setSelectedExpenseDivision('ALL'); setShowExpenseModal(true) }}
+                className="bg-[#121215] border border-[#26272d] hover:border-[#ff5102]/50 rounded-xl p-5 flex flex-col justify-between transition-all shadow-xs group cursor-pointer"
+                title="Klik untuk melihat rincian seluruh pengeluaran holding"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-xs font-medium text-[#bbcbb2]">Total Pengeluaran Holding</p>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#ff5102]/10 text-[#ff5102] font-semibold flex items-center gap-0.5">
+                        <Eye size={10} />
+                        Detail
+                      </span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-[#ff5102] mt-1 font-mono tabular-nums tracking-tight">
+                      {formatRupiah(segmentedExpenses.totalExpenses)}
+                    </h3>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#ff5102]/15 text-[#ff5102] border border-[#ff5102]/30 font-mono">
+                    <TrendingDown size={12} strokeWidth={2} />
+                    {cfoHealth.expenseRatio}% Beban
+                  </span>
+                </div>
+                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
+                  <p className="font-semibold text-white flex items-center gap-1">
+                    Beban Divisi & Operasional <ArrowRight size={13} className="text-[#ff5102] group-hover:translate-x-0.5 transition-transform" />
+                  </p>
+                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate" title={`CW: ${formatRupiah(segmentedExpenses.carwashExp)} • Cafe: ${formatRupiah(segmentedExpenses.cafeExp)} • Bersama: ${formatRupiah(segmentedExpenses.sharedExp)}`}>
+                    CW: {formatRupiah(segmentedExpenses.carwashExp)} • Cafe: {formatRupiah(segmentedExpenses.cafeExp)} • Bersama: {formatRupiah(segmentedExpenses.sharedExp)}
+                  </p>
+                </div>
               </div>
-              <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md font-mono ${
-                overviewStats.netProfit >= 0
-                  ? 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30'
-                  : 'bg-[#ff5102]/15 text-[#ff5102] border border-[#ff5102]/30'
-              }`}>
-                {overviewStats.netProfit >= 0 ? <TrendingUp size={12} strokeWidth={2} /> : <TrendingDown size={12} strokeWidth={2} />}
-                {overviewStats.profitMargin}% Margin
-              </span>
-            </div>
-            <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
-              <p className="font-semibold text-white flex items-center gap-1">
-                Likuiditas Sehat & Terjaga <CheckCircle size={13} className="text-[#00ffff]" />
-              </p>
-              <p className="text-[11px] text-[#bbcbb2] mt-0.5">
-                {activeSection === 'CAFE'
-                  ? `${cafeAnalytics.cafeStrukCount} struk pesanan F&B`
-                  : activeSection === 'CARWASH'
-                  ? `Rata-rata ${carwashAnalytics.avgCarsPerDay} mobil/hari`
-                  : 'Setelah beban operasional & HPP'}
-              </p>
-            </div>
-          </div>
 
-          {/* Metric 3: Total Orders / Struk */}
-          <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-xs font-medium text-[#bbcbb2]">Total Orders / Struk</p>
-                <h3 className="text-2xl font-bold text-white mt-1 font-mono tabular-nums tracking-tight">
-                  {filteredStrukByTime.length} Struk
-                </h3>
+              {/* Metric 3: Kas Bersih (Net Profit) Holding */}
+              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-medium text-[#bbcbb2]">Kas Bersih Holding (Net Profit)</p>
+                    <h3 className={`text-2xl font-bold mt-1 font-mono tabular-nums tracking-tight ${segmentedExpenses.holdingNetProfit >= 0 ? 'text-[#00ffff]' : 'text-[#ff5102]'}`}>
+                      {formatRupiah(segmentedExpenses.holdingNetProfit)}
+                    </h3>
+                  </div>
+                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md font-mono ${
+                    segmentedExpenses.holdingNetProfit >= 0 ? 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30' : 'bg-[#ff5102]/15 text-[#ff5102] border border-[#ff5102]/30'
+                  }`}>
+                    {segmentedExpenses.holdingNetProfit >= 0 ? <TrendingUp size={12} strokeWidth={2} /> : <TrendingDown size={12} strokeWidth={2} />}
+                    {segmentedExpenses.holdingProfitMargin}% Margin
+                  </span>
+                </div>
+                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
+                  <p className="font-semibold text-white flex items-center gap-1">
+                    Likuiditas Sehat & Terjaga <CheckCircle size={13} className="text-[#00ffff]" />
+                  </p>
+                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
+                    Omzet dikurangi beban CW, Cafe & bersama
+                  </p>
+                </div>
               </div>
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#ffc71f]/15 text-[#ffc71f] border border-[#ffc71f]/30 font-mono">
-                <ShoppingCart size={12} strokeWidth={2} />
-                AOV: {formatRupiah(advancedKPIs.combinedARPU)}
-              </span>
-            </div>
-            <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
-              <p className="font-semibold text-white flex items-center gap-1">
-                Volume Transaksi Kasir Stabil <TrendingUp size={13} className="text-[#ffc71f]" />
-              </p>
-              <p className="text-[11px] text-[#bbcbb2] mt-0.5">
-                {activeSection === 'CAFE'
-                  ? `AOV Cafe: ${formatRupiah(cafeAnalytics.cafeAOV)}`
-                  : activeSection === 'CARWASH'
-                  ? `Utilisasi Bay: ${advancedKPIs.capacityEfficiency}%`
-                  : `Frekuensi belanja harian pelanggan`}
-              </p>
-            </div>
-          </div>
 
-          {/* Metric 4: Conversion Rate / Sinergi Estafet */}
-          <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-xs font-medium text-[#bbcbb2]">
-                  {activeSection === 'ALL' ? 'Conversion Rate Sinergi' : 'Total Kas & Rekening'}
-                </p>
-                <h3 className="text-2xl font-bold text-[#00ffff] mt-1 font-mono tabular-nums tracking-tight">
-                  {activeSection === 'ALL' ? `${advancedKPIs.crossConversionRate}%` : formatRupiah(overviewStats.totalLiquid)}
-                </h3>
+              {/* Metric 4: Conversion Rate & Likuiditas Kas */}
+              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-medium text-[#bbcbb2]">Sinergi Estafet & Kas</p>
+                    <h3 className="text-2xl font-bold text-white mt-1 font-mono tabular-nums tracking-tight">
+                      {advancedKPIs.crossConversionRate}% <span className="text-xs text-[#bbcbb2] font-normal font-sans">Estafet</span>
+                    </h3>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#f57733]/15 text-[#f57733] border border-[#f57733]/30 font-mono">
+                    <Store size={12} strokeWidth={2} />
+                    {advancedKPIs.crossCount} Pesanan
+                  </span>
+                </div>
+                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
+                  <p className="font-semibold text-white flex items-center gap-1">
+                    Total Kas Aktif: <strong className="text-[#00ffff] font-mono">{formatRupiah(overviewStats.totalLiquid)}</strong>
+                  </p>
+                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
+                    {filteredStrukByTime.length} struk • AOV: {formatRupiah(advancedKPIs.combinedARPU)}
+                  </p>
+                </div>
               </div>
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#f57733]/15 text-[#f57733] border border-[#f57733]/30 font-mono">
-                <Store size={12} strokeWidth={2} />
-                {activeSection === 'ALL' ? `${advancedKPIs.crossCount} Estafet` : 'Kas Aktif'}
-              </span>
-            </div>
-            <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
-              <p className="font-semibold text-white flex items-center gap-1">
-                Cross-Order Cuci ➔ Ngopi <TrendingUp size={13} className="text-[#f57733]" />
-              </p>
-              <p className="text-[11px] text-[#bbcbb2] mt-0.5">
-                {activeSection === 'ALL'
-                  ? `${advancedKPIs.crossCount} dari ${advancedKPIs.totalCarwashStruks} mobil pesan cafe`
-                  : 'Saldo laci kasir + bank terdaftar'}
-              </p>
-            </div>
-          </div>
+            </>
+          )}
+
+          {/* Mode CARWASH (Divisi Carwash & Detailing) */}
+          {activeSection === 'CARWASH' && (
+            <>
+              {/* CW Card 1: Omzet Divisi Carwash */}
+              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-medium text-[#bbcbb2]">Omzet Divisi Carwash</p>
+                    <h3 className="text-2xl font-bold text-[#00ffff] mt-1 font-mono tabular-nums tracking-tight">
+                      {formatRupiah(carwashAnalytics.totalRevenue)}
+                    </h3>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30 font-mono">
+                    <Car size={12} strokeWidth={2} />
+                    {overviewStats.totalRevenue > 0 ? ((carwashAnalytics.totalRevenue / overviewStats.totalRevenue) * 100).toFixed(0) : 0}% Holding
+                  </span>
+                </div>
+                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
+                  <p className="font-semibold text-white flex items-center gap-1">
+                    Rata-rata: {formatRupiah(Math.round(carwashAnalytics.totalRevenue / operatingDays))}/hari
+                  </p>
+                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
+                    {carwashAnalytics.totalUnits} unit dicuci • AOV: {formatRupiah(carwashAnalytics.carwashAOV)}
+                  </p>
+                </div>
+              </div>
+
+              {/* CW Card 2: Total Pengeluaran Carwash */}
+              <div
+                onClick={() => { setSelectedExpenseDivision('CARWASH'); setShowExpenseModal(true) }}
+                className="bg-[#121215] border border-[#26272d] hover:border-[#00ffff]/50 rounded-xl p-5 flex flex-col justify-between transition-all shadow-xs group cursor-pointer"
+                title="Klik untuk melihat rincian pengeluaran divisi carwash"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-xs font-medium text-[#bbcbb2]">Pengeluaran Carwash</p>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#00ffff]/10 text-[#00ffff] font-semibold flex items-center gap-0.5">
+                        <Eye size={10} />
+                        Detail
+                      </span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-[#ff5102] mt-1 font-mono tabular-nums tracking-tight">
+                      {formatRupiah(segmentedExpenses.carwashExp)}
+                    </h3>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#ff5102]/15 text-[#ff5102] border border-[#ff5102]/30 font-mono">
+                    <TrendingDown size={12} strokeWidth={2} />
+                    Beban Cuci
+                  </span>
+                </div>
+                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
+                  <p className="font-semibold text-white flex items-center gap-1">
+                    Chemical, Operasional & Komisi <ArrowRight size={13} className="text-[#00ffff] group-hover:translate-x-0.5 transition-transform" />
+                  </p>
+                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
+                    Komisi kru: {formatRupiah(segmentedExpenses.carwashCommission)} • Bahan & utilitas
+                  </p>
+                </div>
+              </div>
+
+              {/* CW Card 3: Kas Bersih Carwash (Net Profit) */}
+              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-medium text-[#bbcbb2]">Kas Bersih Carwash</p>
+                    <h3 className={`text-2xl font-bold mt-1 font-mono tabular-nums tracking-tight ${segmentedExpenses.carwashNetProfit >= 0 ? 'text-[#00ffff]' : 'text-[#ff5102]'}`}>
+                      {formatRupiah(segmentedExpenses.carwashNetProfit)}
+                    </h3>
+                  </div>
+                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md font-mono ${
+                    segmentedExpenses.carwashNetProfit >= 0 ? 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30' : 'bg-[#ff5102]/15 text-[#ff5102] border border-[#ff5102]/30'
+                  }`}>
+                    {segmentedExpenses.carwashNetProfit >= 0 ? <TrendingUp size={12} strokeWidth={2} /> : <TrendingDown size={12} strokeWidth={2} />}
+                    {segmentedExpenses.carwashProfitMargin}% Margin
+                  </span>
+                </div>
+                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
+                  <p className="font-semibold text-white flex items-center gap-1">
+                    Laba Bersih Operasional Cuci <CheckCircle size={13} className="text-[#00ffff]" />
+                  </p>
+                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
+                    Omzet carwash dikurangi beban operasional cuci
+                  </p>
+                </div>
+              </div>
+
+              {/* CW Card 4: Volume & Utilisasi Bay */}
+              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-medium text-[#bbcbb2]">Utilisasi Bay Cuci</p>
+                    <h3 className="text-2xl font-bold text-[#00ffff] mt-1 font-mono tabular-nums tracking-tight">
+                      {advancedKPIs.capacityEfficiency}%
+                    </h3>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#f57733]/15 text-[#f57733] border border-[#f57733]/30 font-mono">
+                    <Layers size={12} strokeWidth={2} />
+                    Target {targetCapacity}/Hari
+                  </span>
+                </div>
+                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
+                  <p className="font-semibold text-white flex items-center gap-1">
+                    Cross-Sell Cafe: {advancedKPIs.crossConversionRate}% <TrendingUp size={13} className="text-[#f57733]" />
+                  </p>
+                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
+                    {activeQueueSummary.totalToday} mobil antre hari ini ({activeQueueSummary.completed} selesai)
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Mode CAFE (Divisi Cafe & Resto) */}
+          {activeSection === 'CAFE' && (
+            <>
+              {/* Cafe Card 1: Omzet Divisi Cafe */}
+              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-medium text-[#bbcbb2]">Omzet Divisi Cafe & Resto</p>
+                    <h3 className="text-2xl font-bold text-[#ffc71f] mt-1 font-mono tabular-nums tracking-tight">
+                      {formatRupiah(cafeAnalytics.totalRevenue)}
+                    </h3>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#ffc71f]/15 text-[#ffc71f] border border-[#ffc71f]/30 font-mono">
+                    <Coffee size={12} strokeWidth={2} />
+                    {overviewStats.totalRevenue > 0 ? ((cafeAnalytics.totalRevenue / overviewStats.totalRevenue) * 100).toFixed(0) : 0}% Holding
+                  </span>
+                </div>
+                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
+                  <p className="font-semibold text-white flex items-center gap-1">
+                    Rata-rata: {formatRupiah(Math.round(cafeAnalytics.totalRevenue / operatingDays))}/hari
+                  </p>
+                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
+                    {cafeAnalytics.totalItems} porsi • {cafeAnalytics.cafeStrukCount} struk pesanan F&B
+                  </p>
+                </div>
+              </div>
+
+              {/* Cafe Card 2: Total Pengeluaran Cafe */}
+              <div
+                onClick={() => { setSelectedExpenseDivision('CAFE'); setShowExpenseModal(true) }}
+                className="bg-[#121215] border border-[#26272d] hover:border-[#ffc71f]/50 rounded-xl p-5 flex flex-col justify-between transition-all shadow-xs group cursor-pointer"
+                title="Klik untuk melihat rincian pengeluaran divisi cafe & resto"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-xs font-medium text-[#bbcbb2]">Pengeluaran Cafe & Resto</p>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#ffc71f]/10 text-[#ffc71f] font-semibold flex items-center gap-0.5">
+                        <Eye size={10} />
+                        Detail
+                      </span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-[#ff5102] mt-1 font-mono tabular-nums tracking-tight">
+                      {formatRupiah(segmentedExpenses.cafeExp)}
+                    </h3>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#ff5102]/15 text-[#ff5102] border border-[#ff5102]/30 font-mono">
+                    <TrendingDown size={12} strokeWidth={2} />
+                    Beban F&B
+                  </span>
+                </div>
+                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
+                  <p className="font-semibold text-white flex items-center gap-1">
+                    Bahan Baku & Dapur <ArrowRight size={13} className="text-[#ffc71f] group-hover:translate-x-0.5 transition-transform" />
+                  </p>
+                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
+                    Kulakan kopi, susu, sirup, kemasan & gas dapur
+                  </p>
+                </div>
+              </div>
+
+              {/* Cafe Card 3: Kas Bersih Cafe (Net Profit) */}
+              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-medium text-[#bbcbb2]">Kas Bersih Cafe</p>
+                    <h3 className={`text-2xl font-bold mt-1 font-mono tabular-nums tracking-tight ${segmentedExpenses.cafeNetProfit >= 0 ? 'text-[#ffc71f]' : 'text-[#ff5102]'}`}>
+                      {formatRupiah(segmentedExpenses.cafeNetProfit)}
+                    </h3>
+                  </div>
+                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md font-mono ${
+                    segmentedExpenses.cafeNetProfit >= 0 ? 'bg-[#ffc71f]/15 text-[#ffc71f] border border-[#ffc71f]/30' : 'bg-[#ff5102]/15 text-[#ff5102] border border-[#ff5102]/30'
+                  }`}>
+                    {segmentedExpenses.cafeNetProfit >= 0 ? <TrendingUp size={12} strokeWidth={2} /> : <TrendingDown size={12} strokeWidth={2} />}
+                    {segmentedExpenses.cafeProfitMargin}% Margin
+                  </span>
+                </div>
+                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
+                  <p className="font-semibold text-white flex items-center gap-1">
+                    Laba Bersih Operasional F&B <CheckCircle size={13} className="text-[#ffc71f]" />
+                  </p>
+                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
+                    Omzet F&B dikurangi beban bahan & dapur
+                  </p>
+                </div>
+              </div>
+
+              {/* Cafe Card 4: Top Seller Menu & AOV */}
+              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
+                <div className="flex justify-between items-start">
+                  <div className="min-w-0 pr-2">
+                    <p className="text-xs font-medium text-[#bbcbb2]">Menu Terlaris (Champion)</p>
+                    <h3 className="text-lg font-bold text-[#ffc71f] mt-1 tracking-tight truncate" title={cafeAnalytics.topMenus[0]?.nama || 'Kopi / Minuman'}>
+                      {cafeAnalytics.topMenus[0]?.nama || 'Menu Favorit'}
+                    </h3>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#ffc71f]/15 text-[#ffc71f] border border-[#ffc71f]/30 font-mono shrink-0">
+                    <Star size={12} strokeWidth={2} className="fill-[#ffc71f]" />
+                    {cafeAnalytics.topMenus[0]?.qty || 0} Porsi
+                  </span>
+                </div>
+                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
+                  <p className="font-semibold text-white flex items-center gap-1 truncate">
+                    AOV: <strong className="font-mono text-white">{formatRupiah(cafeAnalytics.cafeAOV)}</strong> • {formatRupiah(cafeAnalytics.topMenus[0]?.revenue || 0)}
+                  </p>
+                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
+                    Item F&B dengan volume pemesanan tertinggi
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Second Row - Charts in 6-6 columns (Sales Performance & Revenue Breakdown) */}
@@ -1058,94 +1524,286 @@ const Dashboard = () => {
 
             <div className="pt-3 border-t border-[#26272d] flex items-center justify-between text-xs text-[#bbcbb2]">
               <span>Rata-rata Omzet: <strong className="text-[#00ffff] font-mono">{formatRupiah(cfoHealth.avgDailyOmzet)}/hari</strong></span>
-              <span>Estimasi Laba: <strong className={`font-mono ${overviewStats.netProfit >= 0 ? 'text-[#00ffff]' : 'text-[#ff5102]'}`}>{formatRupiah(overviewStats.netProfit)}</strong></span>
+              <span>
+                Kas Bersih: <strong className={`font-mono ${
+                  activeSection === 'CAFE' ? (segmentedExpenses.cafeNetProfit >= 0 ? 'text-[#ffc71f]' : 'text-[#ff5102]')
+                  : activeSection === 'CARWASH' ? (segmentedExpenses.carwashNetProfit >= 0 ? 'text-[#00ffff]' : 'text-[#ff5102]')
+                  : (segmentedExpenses.holdingNetProfit >= 0 ? 'text-[#00ffff]' : 'text-[#ff5102]')
+                }`}>
+                  {formatRupiah(activeSection === 'CAFE' ? segmentedExpenses.cafeNetProfit : activeSection === 'CARWASH' ? segmentedExpenses.carwashNetProfit : segmentedExpenses.holdingNetProfit)}
+                </strong>
+              </span>
             </div>
           </div>
 
-          {/* Chart 2: Revenue Breakdown by Source */}
+          {/* Chart 2: Revenue & Expense Breakdown by Source */}
           <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between shadow-xs">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-4 border-b border-[#26272d]">
               <div>
-                <h3 className="text-base font-bold text-white">Revenue Breakdown</h3>
-                <p className="text-xs text-[#bbcbb2]">Distribusi pendapatan per divisi & sinergi usaha</p>
+                <h3 className="text-base font-bold text-white">
+                  {activeSection === 'CAFE' ? 'Struktur Beban & Penjualan Cafe' : activeSection === 'CARWASH' ? 'Struktur Beban & Layanan Carwash' : 'Struktur Beban & Pengeluaran Holding'}
+                </h3>
+                <p className="text-xs text-[#bbcbb2]">
+                  {activeSection === 'CAFE' ? 'Distribusi pengeluaran bahan baku, dapur & menu terlaris' : activeSection === 'CARWASH' ? 'Distribusi pengeluaran komisi, chemical & model mobil' : 'Rincian pengeluaran carwash, cafe & beban bersama'}
+                </p>
               </div>
               <button
-                onClick={() => navigate('/database')}
+                onClick={() => navigate('/reports')}
                 className="px-2.5 py-1 rounded-lg bg-[#18181c] hover:bg-[#242428] text-white border border-[#26272d] text-xs font-semibold transition-all cursor-pointer"
               >
-                Detail Master
+                Laporan Lengkap
               </button>
             </div>
 
             <div className="py-4 space-y-4">
-              {/* Category 1: Carwash Services */}
-              <div className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-[#00ffff]"></span>
-                    <span className="font-semibold text-white">Carwash & Detailing Services</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-mono font-bold text-white">{formatRupiah(carwashAnalytics.totalRevenue)}</span>
-                    <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">
-                      ({overviewStats.totalRevenue > 0 ? ((carwashAnalytics.totalRevenue / overviewStats.totalRevenue) * 100).toFixed(1) : 0}%)
-                    </span>
-                  </div>
-                </div>
-                <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
+              {activeSection === 'ALL' && (
+                <>
+                  {/* Category 1: Pengeluaran Carwash */}
                   <div
-                    className="bg-[#00ffff] h-full rounded-full transition-all duration-500"
-                    style={{ width: `${overviewStats.totalRevenue > 0 ? (carwashAnalytics.totalRevenue / overviewStats.totalRevenue) * 100 : 0}%` }}
-                  />
-                </div>
-              </div>
+                    onClick={() => { setSelectedExpenseDivision('CARWASH'); setShowExpenseModal(true) }}
+                    className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] hover:border-[#00ffff]/50 transition-all cursor-pointer group space-y-2"
+                    title="Klik untuk rincian pengeluaran divisi carwash"
+                  >
+                    <div className="flex justify-between items-center text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-[#00ffff]"></span>
+                        <span className="font-semibold text-white group-hover:text-[#00ffff] transition-colors flex items-center gap-1.5">
+                          Pengeluaran Divisi Carwash
+                          <Eye size={12} className="text-[#00ffff] opacity-80" />
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-mono font-bold text-[#00ffff]">{formatRupiah(segmentedExpenses.carwashExp)}</span>
+                        <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">
+                          ({segmentedExpenses.totalExpenses > 0 ? ((segmentedExpenses.carwashExp / segmentedExpenses.totalExpenses) * 100).toFixed(1) : 0}%)
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
+                      <div
+                        className="bg-[#00ffff] h-full rounded-full transition-all duration-500"
+                        style={{ width: `${segmentedExpenses.totalExpenses > 0 ? (segmentedExpenses.carwashExp / segmentedExpenses.totalExpenses) * 100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
 
-              {/* Category 2: Cafe F&B */}
-              <div className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-[#ffc71f]"></span>
-                    <span className="font-semibold text-white">Cafe, Resto & Beverages</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-mono font-bold text-[#ffc71f]">{formatRupiah(cafeAnalytics.totalRevenue)}</span>
-                    <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">
-                      ({overviewStats.totalRevenue > 0 ? ((cafeAnalytics.totalRevenue / overviewStats.totalRevenue) * 100).toFixed(1) : 0}%)
-                    </span>
-                  </div>
-                </div>
-                <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
+                  {/* Category 2: Pengeluaran Cafe */}
                   <div
-                    className="bg-[#ffc71f] h-full rounded-full transition-all duration-500"
-                    style={{ width: `${overviewStats.totalRevenue > 0 ? (cafeAnalytics.totalRevenue / overviewStats.totalRevenue) * 100 : 0}%` }}
-                  />
-                </div>
-              </div>
+                    onClick={() => { setSelectedExpenseDivision('CAFE'); setShowExpenseModal(true) }}
+                    className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] hover:border-[#ffc71f]/50 transition-all cursor-pointer group space-y-2"
+                    title="Klik untuk rincian pengeluaran divisi cafe"
+                  >
+                    <div className="flex justify-between items-center text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-[#ffc71f]"></span>
+                        <span className="font-semibold text-white group-hover:text-[#ffc71f] transition-colors flex items-center gap-1.5">
+                          Pengeluaran Divisi Cafe
+                          <Eye size={12} className="text-[#ffc71f] opacity-80" />
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-mono font-bold text-[#ffc71f]">{formatRupiah(segmentedExpenses.cafeExp)}</span>
+                        <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">
+                          ({segmentedExpenses.totalExpenses > 0 ? ((segmentedExpenses.cafeExp / segmentedExpenses.totalExpenses) * 100).toFixed(1) : 0}%)
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
+                      <div
+                        className="bg-[#ffc71f] h-full rounded-full transition-all duration-500"
+                        style={{ width: `${segmentedExpenses.totalExpenses > 0 ? (segmentedExpenses.cafeExp / segmentedExpenses.totalExpenses) * 100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
 
-              {/* Category 3: Cross-Order Sinergi Estafet */}
-              <div className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-[#f57733]"></span>
-                    <span className="font-semibold text-white">Cross-Order Sinergi Estafet</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-mono font-bold text-[#f57733]">{advancedKPIs.crossCount} Transaksi</span>
-                    <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">({advancedKPIs.crossConversionRate}%)</span>
-                  </div>
-                </div>
-                <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
+                  {/* Category 3: Pengeluaran Bersama (Shared Overhead) */}
                   <div
-                    className="bg-[#f57733] h-full rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(parseFloat(advancedKPIs.crossConversionRate) || 0, 100)}%` }}
-                  />
-                </div>
-              </div>
+                    onClick={() => { setSelectedExpenseDivision('SHARED'); setShowExpenseModal(true) }}
+                    className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] hover:border-[#f57733]/50 transition-all cursor-pointer group space-y-2"
+                    title="Klik untuk rincian pengeluaran bersama / overhead"
+                  >
+                    <div className="flex justify-between items-center text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-[#f57733]"></span>
+                        <span className="font-semibold text-white group-hover:text-[#f57733] transition-colors flex items-center gap-1.5">
+                          Pengeluaran Bersama (Gaji/Utilitas/Holding)
+                          <Eye size={12} className="text-[#f57733] opacity-80" />
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-mono font-bold text-[#f57733]">{formatRupiah(segmentedExpenses.sharedExp)}</span>
+                        <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">
+                          ({segmentedExpenses.totalExpenses > 0 ? ((segmentedExpenses.sharedExp / segmentedExpenses.totalExpenses) * 100).toFixed(1) : 0}%)
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
+                      <div
+                        className="bg-[#f57733] h-full rounded-full transition-all duration-500"
+                        style={{ width: `${segmentedExpenses.totalExpenses > 0 ? (segmentedExpenses.sharedExp / segmentedExpenses.totalExpenses) * 100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {activeSection === 'CARWASH' && (
+                <>
+                  {/* Row 1: Pengeluaran Operasional Cuci */}
+                  <div
+                    onClick={() => { setSelectedExpenseDivision('CARWASH'); setShowExpenseModal(true) }}
+                    className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] hover:border-[#ff5102]/50 transition-all cursor-pointer group space-y-2"
+                    title="Klik untuk rincian pengeluaran operasional & komisi cuci"
+                  >
+                    <div className="flex justify-between items-center text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-[#ff5102]"></span>
+                        <span className="font-semibold text-white group-hover:text-[#ff5102] transition-colors flex items-center gap-1.5">
+                          Beban Operasional & Chemical Cuci
+                          <Eye size={12} className="text-[#ff5102] opacity-80" />
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-mono font-bold text-[#ff5102]">{formatRupiah(segmentedExpenses.carwashExp)}</span>
+                        <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">
+                          ({carwashAnalytics.totalRevenue > 0 ? ((segmentedExpenses.carwashExp / carwashAnalytics.totalRevenue) * 100).toFixed(1) : 0}% omzet)
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
+                      <div
+                        className="bg-[#ff5102] h-full rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(carwashAnalytics.totalRevenue > 0 ? (segmentedExpenses.carwashExp / carwashAnalytics.totalRevenue) * 100 : 0, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 2: Kas Bersih Carwash */}
+                  <div className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-[#00ffff]"></span>
+                        <span className="font-semibold text-white">Kas Bersih Divisi Carwash</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-mono font-bold text-[#00ffff]">{formatRupiah(segmentedExpenses.carwashNetProfit)}</span>
+                        <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">({segmentedExpenses.carwashProfitMargin}% Margin)</span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
+                      <div
+                        className="bg-[#00ffff] h-full rounded-full transition-all duration-500"
+                        style={{ width: `${Math.max(Math.min(parseFloat(segmentedExpenses.carwashProfitMargin) || 0, 100), 0)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 3: Cross-sell to cafe */}
+                  <div className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-[#f57733]"></span>
+                        <span className="font-semibold text-white">Konversi Tambahan: Cross-Order ke Cafe</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-mono font-bold text-[#f57733]">{advancedKPIs.crossCount} Mobil</span>
+                        <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">({advancedKPIs.crossConversionRate}%)</span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
+                      <div className="bg-[#f57733] h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(parseFloat(advancedKPIs.crossConversionRate) || 0, 100)}%` }} />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {activeSection === 'CAFE' && (
+                <>
+                  {/* Row 1: Pengeluaran Bahan Baku & Operasional Cafe */}
+                  <div
+                    onClick={() => { setSelectedExpenseDivision('CAFE'); setShowExpenseModal(true) }}
+                    className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] hover:border-[#ff5102]/50 transition-all cursor-pointer group space-y-2"
+                    title="Klik untuk rincian pengeluaran bahan & operasional cafe"
+                  >
+                    <div className="flex justify-between items-center text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-[#ff5102]"></span>
+                        <span className="font-semibold text-white group-hover:text-[#ff5102] transition-colors flex items-center gap-1.5">
+                          Beban Bahan Baku & Operasional F&B
+                          <Eye size={12} className="text-[#ff5102] opacity-80" />
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-mono font-bold text-[#ff5102]">{formatRupiah(segmentedExpenses.cafeExp)}</span>
+                        <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">
+                          ({cafeAnalytics.totalRevenue > 0 ? ((segmentedExpenses.cafeExp / cafeAnalytics.totalRevenue) * 100).toFixed(1) : 0}% omzet)
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
+                      <div
+                        className="bg-[#ff5102] h-full rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(cafeAnalytics.totalRevenue > 0 ? (segmentedExpenses.cafeExp / cafeAnalytics.totalRevenue) * 100 : 0, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 2: Kas Bersih Cafe */}
+                  <div className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-[#ffc71f]"></span>
+                        <span className="font-semibold text-white">Kas Bersih Divisi Cafe & Resto</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-mono font-bold text-[#ffc71f]">{formatRupiah(segmentedExpenses.cafeNetProfit)}</span>
+                        <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">({segmentedExpenses.cafeProfitMargin}% Margin)</span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
+                      <div
+                        className="bg-[#ffc71f] h-full rounded-full transition-all duration-500"
+                        style={{ width: `${Math.max(Math.min(parseFloat(segmentedExpenses.cafeProfitMargin) || 0, 100), 0)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 3: Cafe Struk Count summary row */}
+                  <div className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-[#00ffff]"></span>
+                        <span className="font-semibold text-white">Struk Pesanan F&B Diterbitkan</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-mono font-bold text-white">{cafeAnalytics.cafeStrukCount} Struk</span>
+                        <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">(AOV: {formatRupiah(cafeAnalytics.cafeAOV)})</span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
+                      <div className="bg-[#00ffff] h-full rounded-full transition-all duration-500" style={{ width: '100%' }} />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="pt-3 border-t border-[#26272d] flex items-center justify-between text-xs text-[#bbcbb2]">
-              <span>Total Unit Usaha: <strong className="text-white">2 Divisi Aktif</strong></span>
-              <span>Total Omzet: <strong className="text-[#00ffff] font-mono">{formatRupiah(overviewStats.totalRevenue)}</strong></span>
+              <span>
+                {activeSection === 'CAFE' ? 'Total Pengeluaran Cafe: ' : activeSection === 'CARWASH' ? 'Total Pengeluaran CW: ' : 'Total Pengeluaran Holding: '}
+                <strong className="text-[#ff5102] font-mono">
+                  {formatRupiah(activeSection === 'CAFE' ? segmentedExpenses.cafeExp : activeSection === 'CARWASH' ? segmentedExpenses.carwashExp : segmentedExpenses.totalExpenses)}
+                </strong>
+              </span>
+              <span>
+                Kas Bersih: <strong className={`font-mono ${
+                  activeSection === 'CAFE' ? (segmentedExpenses.cafeNetProfit >= 0 ? 'text-[#ffc71f]' : 'text-[#ff5102]')
+                  : activeSection === 'CARWASH' ? (segmentedExpenses.carwashNetProfit >= 0 ? 'text-[#00ffff]' : 'text-[#ff5102]')
+                  : (segmentedExpenses.holdingNetProfit >= 0 ? 'text-[#00ffff]' : 'text-[#ff5102]')
+                }`}>
+                  {formatRupiah(activeSection === 'CAFE' ? segmentedExpenses.cafeNetProfit : activeSection === 'CARWASH' ? segmentedExpenses.carwashNetProfit : segmentedExpenses.holdingNetProfit)}
+                </strong>
+              </span>
             </div>
           </div>
         </div>
@@ -1445,6 +2103,31 @@ const Dashboard = () => {
           posAccountList,
           operatingDays
         }}
+      />
+
+      {/* Modal Rincian Pengeluaran Divisi & Holding */}
+      <ExpenseDetailModal
+        isOpen={showExpenseModal}
+        onClose={() => setShowExpenseModal(false)}
+        division={selectedExpenseDivision}
+        expenseData={{
+          carwashExpenses: segmentedExpenses.carwashExpenses || [],
+          cafeExpenses: segmentedExpenses.cafeExpenses || [],
+          sharedExpenses: segmentedExpenses.sharedExpenses || [],
+          carwashCommission: segmentedExpenses.carwashCommission || 0,
+          carwashBahan: segmentedExpenses.carwashBahan || 0,
+          carwashOperasional: segmentedExpenses.carwashOperasional || 0,
+          cafeBahanBaku: segmentedExpenses.cafeBahanBaku || 0,
+          cafeOperasional: segmentedExpenses.cafeOperasional || 0,
+          bebanBersamaUtilitas: segmentedExpenses.bebanBersamaUtilitas || 0,
+          bebanBersamaGaji: segmentedExpenses.bebanBersamaGaji || 0,
+          bebanBersamaLain: segmentedExpenses.bebanBersamaLain || 0,
+          totalCarwashExp: segmentedExpenses.carwashExp || 0,
+          totalCafeExp: segmentedExpenses.cafeExp || 0,
+          totalSharedExp: segmentedExpenses.sharedExp || 0,
+          totalExpenses: segmentedExpenses.totalExpenses || 0
+        }}
+        timeRangeLabel={timeRange === 'today' ? 'Hari Ini' : timeRange === 'month' ? 'Bulan Ini' : timeRange === 'custom' ? 'Kustom' : 'Semua'}
       />
     </div>
   )

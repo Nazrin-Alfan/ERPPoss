@@ -295,6 +295,8 @@ CREATE TABLE IF NOT EXISTS cafe (
     id_struk VARCHAR(50) NOT NULL,
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE RESTRICT,
     branch_id UUID REFERENCES branches(id) ON DELETE RESTRICT,
+    tanggal DATE NOT NULL DEFAULT CURRENT_DATE,
+    jam TIME NOT NULL DEFAULT CURRENT_TIME,
     nama_menu VARCHAR(255) NOT NULL,
     qty NUMERIC(18, 4) NOT NULL DEFAULT 1.0000,
     harga_satuan NUMERIC(18, 4) NOT NULL DEFAULT 0.0000,
@@ -303,6 +305,7 @@ CREATE TABLE IF NOT EXISTS cafe (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX idx_cafe_tenant_struk ON cafe(tenant_id, id_struk);
+CREATE INDEX idx_cafe_tenant_date ON cafe(tenant_id, branch_id, tanggal);
 
 -- ==============================================================================
 -- 7. MUTASI BAHAN BAKU, PENGELUARAN & CASHFLOW
@@ -516,9 +519,9 @@ BEGIN
     LOOP
         -- Simpan ke tabel cafe
         INSERT INTO cafe (
-            id_struk, tenant_id, branch_id, nama_menu, qty, harga_satuan, subtotal, status
+            id_struk, tenant_id, branch_id, tanggal, jam, nama_menu, qty, harga_satuan, subtotal, status
         ) VALUES (
-            p_id_struk, v_tenant_id, v_branch_id,
+            p_id_struk, v_tenant_id, v_branch_id, CURRENT_DATE, CURRENT_TIME,
             v_item->>'nama_menu',
             (v_item->>'qty')::NUMERIC,
             (v_item->>'harga')::NUMERIC,

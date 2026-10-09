@@ -256,6 +256,8 @@ describe('Finance Helpers', () => {
       expect(isPindahSaldo({ jenis: 'pindah', kategori: 'Transfer', keterangan_transaksi: 'Setor Kas ke Bank' })).toBe(true)
       expect(isPindahSaldo({ jenis: 'Pengeluaran', kategori: 'Operasional', keterangan_transaksi: 'Pindah Saldo Kas ke Rekening' })).toBe(true)
       expect(isPindahSaldo({ jenis: 'Pemasukan', kategori: 'Pemasukan Lain-lain', keterangan_transaksi: 'Mutasi Saldo Rekening Y' })).toBe(true)
+      expect(isPindahSaldo({ jenis: 'pengeluaran Bersama', kategori: 'Tukar Uang', nama_pengeluaran: 'Tukar Uang Cash Keluar - Cust: Avanza' })).toBe(true)
+      expect(isPindahSaldo({ jenis: 'Pengeluaran', kategori: 'Operasional', keterangan: 'Keluar Uang Cash ganti QRIS' })).toBe(true)
     })
 
     it('should return false for real income or expenses', () => {
