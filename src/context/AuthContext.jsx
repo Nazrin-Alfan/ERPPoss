@@ -238,7 +238,6 @@ export const AuthProvider = ({ children }) => {
 
   // Fungsi Login Universal (Username/Email & Password/PIN)
   const login = async (usernameOrEmail, password) => {
-    setLoading(true)
     try {
       const res = await api.auth.login(usernameOrEmail, password)
       let resolvedProfile = null
@@ -261,14 +260,11 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error('Login error:', err)
       return { success: false, error: err.message || 'Login gagal.' }
-    } finally {
-      setLoading(false)
     }
   }
 
   // Fungsi Pendaftaran Mandiri Toko Baru (Owner Onboarding)
   const registerTenantOwner = async ({ email, password, nama, tenantName, businessType }) => {
-    setLoading(true)
     try {
       const res = await api.auth.registerOwner({
         email,
@@ -286,8 +282,6 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error('Owner registration error:', err)
       return { success: false, error: err.message || 'Pendaftaran toko gagal.' }
-    } finally {
-      setLoading(false)
     }
   }
 

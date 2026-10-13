@@ -3143,6 +3143,28 @@
         - Waktu pengujian: **6.10 detik**.
         - Build produksi Vite (`npm run build`) sukses dalam **1.22 detik**.
 
+    77. **Pengujian Menyeluruh E2E Real-Browser & Perbaikan State Hydration Auth (`AuthContext.jsx`) (2026-10-13)**:
+      - **Deskripsi & Temuan**:
+        - Melakukan pengujian otomatis tingkat browser (Playwright Headless) terhadap seluruh halaman aplikasi: Login, Registrasi Mandiri, POS Hybrid, Antrean Carwash, CRM Loyalitas, Buku Kas Keuangan, Laporan SAK EMKM, dan Admin Toko.
+        - **Bug Kritis Ditemukan**: Pada `AuthContext.jsx`, pemanggilan `setLoading(true)` saat proses `login()` dan `registerTenantOwner()` menyebabkan `AppContent` me-render layar *Memuat Sesi...*, sehingga komponen `<Login />` ter-unmount seketika. Akibatnya, saat kredensial salah, unmount & remount mereset state lokal form menjadi kosong dan pesan kesalahan tidak tampil di layar pengguna.
+      - **Perbaikan yang Dilakukan**:
+        - Menghapus mutasi global `setLoading` dari fungsi `login()` dan `registerTenantOwner()` di `AuthContext.jsx` agar transisi autentikasi ditangani secara lokal oleh form tanpa meng-unmount router pohon komponen React.
+        - Menyusun skrip uji browser komprehensif (`scripts/e2e_full_verification.mjs` & `scripts/e2e_deep_workflow_verification.mjs`):
+          - Verifikasi penolakan password salah (*"Kata sandi salah"*).
+          - Verifikasi penolakan akun tidak terdaftar (*"Pengguna tidak ditemukan"*).
+          - Verifikasi tombol akses cepat demo role.
+          - Verifikasi alur onboarding tenant mandiri (*"Daftar Toko Baru"*).
+          - Verifikasi konfirmasi modal buka shift kasir di POS.
+          - Verifikasi papan Kanban antrean cuci mobil.
+          - Verifikasi modal CRM retensi WhatsApp & generator Spintax anti-banned.
+          - Verifikasi modul Keuangan dan neraca keseimbangan SAK EMKM.
+      - **Hasil Pengujian & Verifikasi**:
+        - **E2E Full Verification**: **14/14 checks PASSED (100% GREEN)**.
+        - **E2E Deep Workflow**: **7/7 checks PASSED (100% GREEN)**.
+        - Vitest Unit & Integration: **262/262 tests PASS (100% GREEN)** di 44 test files dalam 6.16 detik.
+        - Build produksi Vite: Berhasil dalam **1.22 detik**.
+
+
 
 
 
