@@ -16,7 +16,7 @@ const AuthContext = createContext({
   switchTenant: () => {},
   refreshTenants: async () => {},
   login: async () => {},
-  loginWithGoogle: async () => {},
+  registerTenantOwner: async () => {},
   logout: async () => {},
   registerKasir: async () => {},
 })
@@ -108,6 +108,14 @@ export const AuthProvider = ({ children }) => {
   // Fungsi mengubah tipe/model bisnis tenant aktif (Cafe / Carwash / Hybrid)
   const updateTenantBusinessType = useCallback(async (newBusinessType) => {
     if (!activeTenant) return false
+
+    // M2 Fix: Otorisasi role - Hanya Owner dan Super Admin yang berhak mengubah model bisnis
+    const userRole = profile?.role || user?.role || ROLES.KASIR
+    if (userRole !== ROLES.OWNER && userRole !== ROLES.SUPER_ADMIN) {
+      console.warn('Akses ditolak: Hanya Owner dan Super Admin yang berhak mengubah tipe bisnis tenant.')
+      return false
+    }
+
     const validTypes = ['HYBRID', 'CARWASH', 'CAFE']
     const upper = (newBusinessType || '').toUpperCase()
     if (!validTypes.includes(upper)) return false
@@ -129,7 +137,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Gagal memperbarui tipe bisnis tenant:', err)
       return false
     }
-  }, [activeTenant])
+  }, [activeTenant, profile, user])
 
   // Fungsi ganti tenant aktif (Hanya untuk Owner & Super Admin)
   const switchTenant = useCallback((tenantId) => {
@@ -258,37 +266,26 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  // Fungsi Login dengan Google (Khusus Pemilik Usaha / Owner)
-  const loginWithGoogle = async (customPayload = null) => {
+  // Fungsi Pendaftaran Mandiri Toko Baru (Owner Onboarding)
+  const registerTenantOwner = async ({ email, password, nama, tenantName, businessType }) => {
     setLoading(true)
     try {
-      const email = customPayload?.email || 'owner.google@gmail.com'
-      const nama = customPayload?.name || 'Pak Budi (Owner)'
-
-      // Cek atau buat user/profile Owner di localDbEngine
-      const mockGoogleUser = {
-        id: `usr_google_${Date.now()}`,
+      const res = await api.auth.registerOwner({
         email,
-        role: 'Owner',
-        user_metadata: { nama, provider: 'google' }
-      }
-
-      setUser(mockGoogleUser)
-      const p = {
-        id: mockGoogleUser.id,
+        password,
         nama,
-        email,
-        role: 'Owner',
-        tenant_id: DEFAULT_TENANT_ID,
-        created_at: new Date().toISOString()
+        tenantName,
+        businessType
+      })
+      if (res.user) {
+        setUser(res.user)
+        setProfile(res.profile)
+        await loadTenantsForUser(res.profile)
       }
-      setProfile(p)
-      await loadTenantsForUser(p)
-
-      return { success: true, user: mockGoogleUser, profile: p }
+      return { success: true, user: res.user, profile: res.profile, tenant: res.tenant }
     } catch (err) {
-      console.error('Google login error:', err)
-      return { success: false, error: err.message || 'Login Google gagal.' }
+      console.error('Owner registration error:', err)
+      return { success: false, error: err.message || 'Pendaftaran toko gagal.' }
     } finally {
       setLoading(false)
     }
@@ -333,7 +330,7 @@ export const AuthProvider = ({ children }) => {
       refreshTenants, 
       updateTenantBusinessType,
       login, 
-      loginWithGoogle, 
+      registerTenantOwner, 
       logout, 
       registerKasir 
     }}>

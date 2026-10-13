@@ -25,6 +25,10 @@ backup_*/
 Backup */
 Data Penuh CSV/
 csv file/
+pulled_supabase_data/
+src/services/realSeedData*.json
+*.full_backup.json
+data_archive/
 
 # OS / Editor
 .DS_Store

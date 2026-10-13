@@ -10,9 +10,9 @@ export const DEFAULT_TENANT_NAME = 'Jaya Bersama Enterprise'
 export const DEVELOPER_CONFIG = {
   brandName: 'RelayPOS Enterprise',
   founderName: 'RelayPOS Team',
-  whatsappNumber: '6281234567890', // Nomor WA Solo Founder untuk menerima order aktivasi
+  whatsappNumber: '628000000001', // Nomor kontak operasional RelayPOS
   supportEmail: 'support@relaypos.com',
-  bankName: 'BCA / Mandiri',
-  bankAccount: '123-456-7890 a.n. RelayPOS Solusi',
+  bankName: 'BCA / Mandiri / QRIS',
+  bankAccount: 'Konfirmasi WhatsApp CS RelayPOS',
   standardAnnualPrice: 3600000
 }

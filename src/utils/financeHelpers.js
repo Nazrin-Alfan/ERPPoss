@@ -85,13 +85,19 @@ export const formatExpensePayload = ({
   const isBahanBaku = normKat === 'Bahan Baku' && barangMasukList && barangMasukList.length > 0
   const txDate = form.tanggal || todayDate
 
+  const isEmployeeCasbon = (normKat.toLowerCase().includes('casbon') || normJenis.toLowerCase().includes('casbon')) && form.karyawan
+  const finalKet = isEmployeeCasbon && !form.keterangan.toUpperCase().includes(form.karyawan.toUpperCase())
+    ? `Casbon ${form.karyawan} (${form.keterangan || 'Tanpa catatan'})`
+    : form.keterangan
+  const finalKat = isEmployeeCasbon ? `Casbon - ${form.karyawan}` : normKat
+
   const cashflow = {
     id_cashflow: newCfId,
     id_sumber: null,
     tanggal: txDate,
-    keterangan_transaksi: form.keterangan,
+    keterangan_transaksi: finalKet,
     jenis: normJenis,
-    kategori: normKat,
+    kategori: finalKat,
     pemasukan: 0,
     pengeluaran: totalVal,
     pos: form.pos,
@@ -149,7 +155,11 @@ export const formatIncomePayload = ({ form, newCfId, todayDate, timestamp }) => 
 export const validatePosExpenseForm = (form) => {
   const nominalVal = parseFloat(form.nominal)
   const normKat = normalizeCategory(form.kategori)
-  if (['Casbon', 'Ambil Uang Paketan'].includes(normKat) && (!form.karyawan || !form.karyawan.trim())) {
+  const isCasbonCheck = normKat === 'Casbon' || 
+                       normKat === 'Ambil Uang Paketan' || 
+                       String(form.kategori || '').toLowerCase().includes('casbon') || 
+                       String(form.kategori || '').toLowerCase().includes('kasbon')
+  if (isCasbonCheck && (!form.karyawan || !form.karyawan.trim())) {
     return { isValid: false, error: 'Pilih karyawan penerima terlebih dahulu.' }
   }
   if (!form.keterangan || !form.keterangan.trim()) {
@@ -164,8 +174,10 @@ export const validatePosExpenseForm = (form) => {
 export const formatPosExpensePayload = ({ form, todayDate, currentTime, newExpId }) => {
   const nominalVal = parseFloat(form.nominal)
   const normKat = normalizeCategory(form.kategori || 'Operasional')
-  const isCasbon = normKat === 'Casbon'
-  const isPaketan = normKat === 'Ambil Uang Paketan'
+  const isCasbon = normKat === 'Casbon' || 
+                   String(form.kategori || '').toLowerCase().includes('casbon') || 
+                   String(form.kategori || '').toLowerCase().includes('kasbon')
+  const isPaketan = normKat === 'Ambil Uang Paketan' || String(form.kategori || '').toLowerCase().includes('paketan')
   const isTukarUang =
     normKat.toLowerCase().includes('tukar') ||
     normKat.toLowerCase().includes('pindah') ||

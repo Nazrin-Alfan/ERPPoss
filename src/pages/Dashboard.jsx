@@ -1207,13 +1207,15 @@ const Dashboard = () => {
                     {cfoHealth.expenseRatio}% Beban
                   </span>
                 </div>
-                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
-                  <p className="font-semibold text-white flex items-center gap-1">
-                    Beban Divisi & Operasional <ArrowRight size={13} className="text-[#ff5102] group-hover:translate-x-0.5 transition-transform" />
-                  </p>
-                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate" title={`CW: ${formatRupiah(segmentedExpenses.carwashExp)} • Cafe: ${formatRupiah(segmentedExpenses.cafeExp)} • Bersama: ${formatRupiah(segmentedExpenses.sharedExp)}`}>
-                    CW: {formatRupiah(segmentedExpenses.carwashExp)} • Cafe: {formatRupiah(segmentedExpenses.cafeExp)} • Bersama: {formatRupiah(segmentedExpenses.sharedExp)}
-                  </p>
+                <div className="mt-3 pt-2.5 border-t border-[#26272d] text-xs space-y-1">
+                  <div className="flex justify-between text-[11px] font-mono">
+                    <span className="text-[#00ffff]">CW: {formatRupiah(segmentedExpenses.carwashExp)}</span>
+                    <span className="text-[#ffc71f]">Cafe: {formatRupiah(segmentedExpenses.cafeExp)}</span>
+                  </div>
+                  <div className="flex justify-between text-[11px] font-mono">
+                    <span className="text-purple-400">Bersama: {formatRupiah(segmentedExpenses.sharedExp)}</span>
+                    <span className="text-[#bbcbb2] text-[10px]">Klik rincian ➔</span>
+                  </div>
                 </div>
               </div>
 

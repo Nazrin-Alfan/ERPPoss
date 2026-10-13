@@ -1,15 +1,16 @@
-// API Adapter: Pure Local SaaS ERP Adapter with Reset Password & RBAC support
-// 100% Offline & Local Execution without external network calls.
+// API Adapter: Unified SaaS ERP Adapter (Cloud PostgreSQL & Local Sandbox)
+// Compatible with both Supabase Cloud (with RLS) and local in-memory engine.
 
-import { supabase } from '../supabaseClient'
+import { supabase, isCloudBackend } from '../supabaseClient'
 
-export const BACKEND_PROVIDER = 'local'
+export const BACKEND_PROVIDER = isCloudBackend ? 'cloud' : 'local'
 export const isCloudflare = false
 
 export const api = {
   isCloudflare: false,
+  isCloud: isCloudBackend,
 
-  // 1. AUTENTIKASI LOKAL
+  // 1. AUTENTIKASI (DUAL-MODE CLOUD & LOCAL)
   auth: {
     async login(emailOrUsername, password) {
       const email = emailOrUsername.includes('@')
@@ -42,17 +43,51 @@ export const api = {
       const email = emailOrUsername.includes('@')
         ? emailOrUsername.trim()
         : `${emailOrUsername.trim().toLowerCase()}@jb.local`
+      const safeRole = role === 'Admin' ? 'Admin' : 'Kasir'
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { nama, role } },
+        options: { data: { nama, role: safeRole } },
       })
       if (error) throw error
       return { success: true, user: data.user }
     },
+
+    async registerOwner({ email, password, nama, tenantName, businessType }) {
+      if (isCloudBackend) {
+        // Alur registrasi Cloud Supabase Auth
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: {
+              nama: nama.trim(),
+              role: 'Owner',
+              tenant_name: tenantName.trim(),
+              business_type: businessType || 'HYBRID',
+            },
+          },
+        })
+        if (error) throw error
+        const profile = await this.getProfile(data.user?.id)
+        return { success: true, user: data.user, profile }
+      }
+
+      // Alur registrasi Local Sandbox Engine
+      const { data, error } = await supabase.auth.signUpOwner({
+        email,
+        password,
+        nama,
+        tenantName,
+        businessType,
+      })
+      if (error) throw error
+      const profile = await this.getProfile(data.user.id)
+      return { success: true, user: data.user, profile, tenant: data.tenant }
+    },
   },
 
-  // 2. MASTER DATA LOKAL
+  // 2. MASTER DATA
   master: {
     async getKasir() {
       const { data, error } = await supabase.from('kasir').select('*').order('nama', { ascending: true })
@@ -91,7 +126,7 @@ export const api = {
     },
   },
 
-  // 3. TRANSAKSI LOKAL
+  // 3. TRANSAKSI
   transaksi: {
     async createStruk(payload) {
       const { data, error } = await supabase.from('struk').insert(payload)

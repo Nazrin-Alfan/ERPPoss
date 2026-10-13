@@ -2973,4 +2973,180 @@
           1. Form dan payload pengeluaran kasir dengan keterangan atau kategori tukar uang terbukti 100% bertipe `jenis: 'Pindah'` dan terdeteksi `isPindahSaldo == true`.
           2. Transaksi cash keluar dari laci kasir dan transfer masuk QRIS terbukti berpasangan tercatat sebagai `Pindah Saldo` di `cashflow`, tidak masuk ke beban pengeluaran, dan pendapatan biaya admin tetap tercatat presisi sebagai `Pemasukan`.
 
+    67. **Sinkronisasi Restok Inventori Bahan Baku Cafe Langsung dari Form Pengeluaran Kas POS (2026-10-09)**:
+      - **Deskripsi & Kebutuhan Operasional**:
+        - Kasir saat belanja bahan baku harian cafe (misalnya es batu, susu, sirup, atau biji kopi) mencatat pengeluaran kas di tab POS Pengeluaran.
+        - Pengguna meminta agar ketika kategori `Bahan Baku` dipilih, form pengeluaran menyediakan input pemilihan item bahan baku dan jumlah kuantiti (qty), yang secara otomatis menambah stok persediaan di tabel `stok_barang` dan mencatat mutasi riil ke `barang_masuk`.
+      - **Implementasi Fitur**:
+        - **UI Input Restok Bahan Baku di Tab Pengeluaran POS (`src/pages/pos/HybridPOSPage.jsx`)**:
+          - Menambahkan blok input kondisional *"Sinkronisasi Stok Gudang (Bahan Baku)"* yang muncul saat kategori pengeluaran mengandung kata `Bahan Baku`.
+          - Menyediakan dropdown pilihan bahan baku (`id_bahan_baku`) dari data inventori yang menampilkan nama barang dan sisa stok terkini.
+          - Menyediakan input kuantiti (`qty`) beserta label satuan dinamis (`satuan`).
+        - **Data Flow & Database Trigger (`formatPosExpensePayload`, `localDbEngine.js`)**:
+          - Nilai `id_bahan_baku`, `id_barang`, dan `qty` dimasukkan ke payload tabel `pengeluaran`.
+          - Mesin database lokal secara otomatis menjalankan trigger `_syncExpenseToInventory` untuk menambah stok barang di `stok_barang` dan menyisipkan catatan mutasi masuk ke `barang_masuk`.
+          - Setelah penyimpanan berhasil, POS otomatis me-refresh `fetchInventory()`, `fetchTodayExpenses()`, dan `fetchCashierCash()`.
+        - **Penyempurnaan Tampilan Pengeluaran Sinergi Holding di Dashboard (`src/pages/Dashboard.jsx`)**:
+          - Kartu *"Total Pengeluaran Holding"* kini menampilkan breakdown kompak: `CW`, `Cafe`, dan `Bersama` (Shared Overhead) langsung pada tampilan kartu bento, mempermudah owner memantau alokasi biaya per divisi tanpa harus selalu membuka modal rincian.
+      - **Hasil Pengujian**:
+        - Vitest Suite: **257/257 unit & integration tests PASS (100% GREEN)** di 43 test suites.
+
+    68. **Integrasi Dropdown Nama Karyawan pada Form Kasbon POS & Modul Keuangan (2026-10-09)**:
+      - **Deskripsi & Kebutuhan**:
+        - Memastikan saat mencatat pengeluaran bertipe/kategori Kasbon karyawan (baik dari Kasir POS maupun Monitoring Keuangan), sistem langsung memanggil data nama karyawan aktif secara dinamis dari master karyawan tanpa perlu mengetik manual.
+      - **Implementasi**:
+        - **Kasir POS (`src/pages/pos/HybridPOSPage.jsx`)**:
+          - Memperluas pemanggilan karyawan dari `karyawan_cuci` dan `karyawan_kantor` (gabungan kru cuci + staff/barista cafe/admin kantor).
+          - Dropdown karyawan otomatis muncul saat kategori `Casbon` atau `Ambil Uang Paketan` dipilih.
+        - **Monitoring Keuangan (`src/pages/Finance.jsx` & `src/utils/financeHelpers.js`)**:
+          - Menambahkan state `karyawanOptions` yang memuat seluruh staf aktif dari `karyawan_cuci` dan `karyawan_kantor`.
+          - Menambahkan dropdown *"Pilih Karyawan Penerima Kasbon"* pada modal pengeluaran saat kategori/jenis `Casbon` dipilih.
+          - Payload kasbon diformat otomatis menjadi `kategori: Casbon - [Nama Karyawan]` dan `keterangan_transaksi: Casbon [Nama Karyawan] ([Catatan])`.
+        - **Koneksi Pemotongan Gaji (`src/pages/Karyawan.jsx`)**:
+          - Riwayat kasbon yang tercatat otomatis terdeteksi oleh modul Karyawan untuk memotong gaji bersih saat rekap pembagian upah/gaji karyawan.
+      - **Hasil Pengujian**:
+        - Vitest Suite: **257/257 unit & integration tests PASS (100% GREEN)** di 43 test files.
+
+    69. **Audit Eliminasi Nilai Hardcode pada Modul Karyawan & POS (2026-10-09)**:
+      - **Deskripsi & Temuan**:
+        - Melakukan audit mendalam terhadap keberadaan nilai statis / hardcode nama karyawan.
+        - Ditemukan fallback string statis nama karyawan lama (`ANGGA`, `FERRY`, dll.) pada `HybridPOSPage.jsx` dan `Karyawan.jsx`.
+      - **Perbaikan yang Dilakukan**:
+        - Menghapus seluruh array nama karyawan hardcode di `Karyawan.jsx`, menggantikannya dengan pembacaan murni 100% dinamis dari tabel `karyawan_cuci` dan `karyawan_kantor`.
+        - Mengganti logika alias nama statis dengan normalisasi string generik toleransi typo huruf vokal/konsonan yang fleksibel untuk sembarang nama staf.
+        - Menghapus nilai default hardcode `anggota1: 'ANGGA'` pada form transaksi POS, digantikan fallback aman string kosong `''` atau nama staf pertama yang benar-benar terdaftar di database tenant aktif.
+      - **Hasil Pengujian**:
+        - Vitest Suite: **257/257 tests PASS (100% GREEN)** di 43 test files.
+
+    70. **Perbaikan Sinkronisasi Otomatis Dropdown Karyawan Cuci pada Form Kasbon POS (2026-10-09)**:
+      - **Akar Masalah**:
+        - Pada halaman POS (`HybridPOSPage.jsx`), evaluasi dropdown sebelumnya menggunakan filter eksak `['Casbon', 'Ambil Uang Paketan'].includes(...)`. Apabila kategori di master bertuliskan `Casbon Karyawan`, dropdown pemilihan karyawan tidak terpanggil.
+        - Selain itu, state awal `karyawan_cuci` saat database di-reset/diinisialisasi ulang terkadang belum otomatis tersinkronisasi ke memori sebelum tab pengeluaran dibuka.
+      - **Solusi yang Diterapkan**:
+        - **Kondisi Fleksibel**: Mengubah pengecekan kategori kasbon menjadi case-insensitive substring match (`.toLowerCase().includes('casbon') || .toLowerCase().includes('kasbon') || .toLowerCase().includes('paketan')`).
+        - **Auto-Selection**: Begitu kategori Kasbon dipilih, field karyawan otomatis menginisialisasi nama staf yang tersedia.
+        - **Pengisian State Otomatis**: Saat tab `expense` dibuka, fungsi `fetchTodayExpenses` secara paralel mengeksekusi query `karyawan_cuci` dan `karyawan_kantor` untuk memperbarui opsi dropdown karyawan terkini secara real-time.
+      - **Hasil Pengujian**:
+        - Vitest Suite: **257/257 tests PASS (100% GREEN)** di 43 test files.
+
+    71. **Penyelarasan Master Kru Cuci Riil (Ferry, Rahman, Angga, dll.) ke Database Tenant (2026-10-09)**:
+      - **Akar Masalah**:
+        - Pada tabel database `karyawan_cuci`, data awal yang tersimpan berupa dummy placeholder (`KRU 1`, `KRU 2`, `KRU 3`, `KRU 4`), sedangkan transaksi riil carwash dan pencatatan kasbon di lapangan mencantumkan nama staf aktual (`ANGGA`, `FERRY`, `RAHMAN`, `FAISAL`, `BAGUS`, `VICKY`, `NOPAL`, `EZA`). Akibatnya, query ke tabel `karyawan_cuci` hanya menghasilkan nama `KRU 1 s/d 4`.
+      - **Solusi**:
+        - Memperbarui master seed `karyawan_cuci` di `localDbEngine.js` dengan 8 nama kru cuci riil operasional (`ANGGA`, `FERRY`, `RAHMAN`, `FAISAL`, `BAGUS`, `VICKY`, `NOPAL`, `EZA`).
+        - Menambahkan auto-sync di `localDbEngine` agar pada instalasi yang sudah berjalan, nama kru cuci riil ini otomatis dimasukkan ke tabel `karyawan_cuci` jika belum ada.
+        - Memastikan dropdown Kasbon di POS (`HybridPOSPage.jsx`) dan Keuangan (`Finance.jsx`) langsung menampilkan nama-nama kru cuci riil tersebut bersama seluruh staf kantor.
+      - **Hasil Pengujian**:
+        - Vitest Suite: **257/257 tests PASS (100% GREEN)** di 43 test files.
+
+    72. **Batch 1: Pembersihan Keamanan Data, Privasi & Perampingan Bundle (2026-10-11)**:
+      - **Deskripsi & Audit Temuan**:
+        - Melakukan isolasi data pelanggan/transaksi riil (4.854 plat kendaraan, 132 kontak nomor WA, dan riwayat cashflow) dari repository publik dan bundle client sesuai rekomendasi audit keamanan `REPORT.pdf` (C3, H3, L3).
+      - **Perbaikan yang Dilakukan**:
+        - **Arsip Lokal Aman**: Menyimpan data cadangan asli ke direktori aman `data_archive/` di disk lokal sehingga data tidak hilang, namun diisolasi dari bundle browser dan Git.
+        - **Dataset Sintetis Steril**: Membuat `src/services/syntheticSeedData.json` (~110 KB) yang memuat master data lengkap (stok/BOM, resep, menu F&B, COA akuntansi) dengan transaksi demo berformat anonymized (plat fiktif `B 1024 DUM`, nomor WA dokumentasi `628000000001`).
+        - **Decoupling Runtime**: Mengubah import seed di `src/services/localDbEngine.js` dari `realSeedData.json` (9.6 MB) ke `syntheticSeedData.json` (110 KB), mencegah error *QuotaExceededError* pada `localStorage` browser mobile.
+        - **Normalisasi Vite Config**: Menghapus chunk manual `real-seed-database` dan menurunkan `chunkSizeWarningLimit` dari 8.000 KB menjadi 1.500 KB di `vite.config.js`.
+        - **Git Privacy Cleaning**: Menambahkan aturan pengabaian ke `.gitignore` (`src/services/realSeedData*.json`, `pulled_supabase_data/`, `data_archive/`) serta menghapus pelacakan riwayat Git (`git rm --cached`) untuk 11 file `scratch_*.js`, folder `csv file/`, dan dump `pulled_supabase_data/`.
+      - **Hasil Pengujian & Verifikasi**:
+        - Vitest Suite: **257/257 tests PASS (100% GREEN)** di 43 test files.
+        - Waktu pengujian terpangkas drastis dari **31.88 detik menjadi 9.17 detik** (peningkatan kecepatan 71%).
+        - Build produksi Vite (`npm run build`) sukses dalam **1.73 detik** dengan ukuran bundle utama ramping (~329 KB gzipped) tanpa chunk 10 MB.
+
+    73. **Batch 2: Remediasi Autentikasi, Validasi Password & Self-Service Onboarding SaaS (2026-10-11)**:
+      - **Deskripsi & Audit Temuan**:
+        - Mengatasi celah keamanan kritis **C1** (login mengabaikan password & menentukan role dari substring email), **C2** (mock login Google memberi akses Owner instan), **M2** (mutasi tipe bisnis tenant tanpa cek otorisasi), dan **M3** (registrasi kasir mengizinkan eskalasi role dari client).
+      - **Perbaikan yang Dilakukan**:
+        - **Verifikasi Kriptografis Password (`src/services/localDbEngine.js`)**:
+          - Menerapkan fungsi hashing `hashPassword(password, salt)` berbasis Web Crypto API SHA-256 ber-salt standar (`relaypos_salt_v1`).
+          - Menambahkan `password_hash` dan `salt` pada seluruh profil seed demo (`superadmin`, `owner`, `admin`, `kasir` dengan default `password123`).
+          - Memvalidasi password pada `signInWithPassword` secara ketat. Input password salah atau kosong ditolak seketika (`401 / Kata sandi salah`).
+          - Mengeliminasi total logika penentuan role otomatis dari substring email (`email.includes('owner')` dsb.). Pengguna yang tidak terdaftar ditolak (`Pengguna tidak ditemukan`).
+        - **Pembersihan Akses Pintu Belakang (`src/context/AuthContext.jsx` & `src/pages/Login.jsx`)**:
+          - Menghapus tombol dan handler mock `loginWithGoogle` yang sebelumnya meng-inject profil Owner tanpa kredensial.
+          - Mengunci `updateTenantBusinessType` di `AuthContext` agar hanya dapat dipanggil oleh role `Owner` dan `Super_Admin` (menolak role `Kasir`).
+          - Mensterilkan `registerKasir` di `apiAdapter.js` agar role selalu dipaksa ke `Kasir` guna mencegah eksploitasi eskalasi privilege dari client.
+        - **Workflow Pendaftaran Mandiri Tenant (Self-Service Onboarding)**:
+          - Mengimplementasikan `signUpOwner({ email, password, nama, tenantName, businessType })` di database engine dan adapter.
+          - Menambahkan auto-provisioning terisolasi: membuat record `tenants` baru dengan UUID unik, cabang utama, penetapan role `Owner` ber-hash password, dan bootstrap otomatis Chart of Accounts (COA) serta master kategori.
+          - Merombak antarmuka `Login.jsx` dengan tab switcher elegan: *"Masuk ke Toko"* vs *"Daftar Toko Baru (Owner)"* dengan pilihan model operasional (`Hybrid`, `Carwash`, `Cafe Only`).
+        - **Suite Pengujian TDD**:
+          - Memperbarui `src/services/__tests__/rbacRoles.test.js` dengan pengujian keamanan penolakan password salah, pencegahan bypass substring email, dan verifikasi registrasi tenant mandiri beserta isolasi COA-nya.
+      - **Hasil Pengujian & Verifikasi**:
+        - Vitest Suite: **259/259 tests PASS (100% GREEN)** di 43 test files.
+        - Build produksi Vite (`npm run build`) sukses dalam **1.54 detik**.
+
+    74. **Batch 3: Aktivasi Klien Supabase Cloud, Dual-Mode API Adapter & Standardisasi Env (2026-10-11)**:
+      - **Deskripsi & Audit Temuan**:
+        - Menyelesaikan temuan arsitektur **H1** (seluruh otorisasi hanya di sisi klien & supabaseClient belum mengaktifkan createClient), **H2** (data transaksional perlu tersambung ke PostgreSQL Supabase cloud), **M1** (konfigurasi build non-standar), dan **M4** (sinkronisasi klaim README dengan implementasi teknis aktual).
+      - **Perbaikan yang Dilakukan**:
+        - **Klien Cerdas Dual-Mode (`src/supabaseClient.js`)**:
+          - Mengintegrasikan inisialisasi resmi `@supabase/supabase-js` menggunakan `createClient(url, key)` dengan session persistence otomatis.
+          - Menerapkan seleksi dinamis berbasis `VITE_BACKEND_PROVIDER`:
+            - Jika bernilai `'cloud'` dan URL/Key valid ➔ Mengaktifkan koneksi Supabase Cloud PostgreSQL dengan enkripsi HTTPS dan Row-Level Security (RLS).
+            - Jika bernilai `'local'` atau kredensial kosong ➔ Melakukan graceful fallback ke sandbox engine in-memory yang steril.
+          - Mengekspor flag status `isCloudBackend` untuk inspeksi runtime.
+        - **Penyelarasan Unified API Adapter (`src/services/apiAdapter.js`)**:
+          - Mengubah `BACKEND_PROVIDER` statis menjadi dinamis (`isCloudBackend ? 'cloud' : 'local'`).
+          - Mengakomodasi alur `api.auth.registerOwner` untuk Cloud Supabase Auth metadata maupun Local Engine multi-tenant bootstrapping.
+        - **Standardisasi Environment & Build (`vite.config.js` & `.env.example`)**:
+          - Mengadopsi `loadEnv` bawaan Vite standar untuk pembacaan `.env` / `.env.local` tanpa parsing manual yang rapuh.
+          - Menyediakan file acuan resmi `.env.example` berisikan panduan switch mode `VITE_BACKEND_PROVIDER`, `VITE_SUPABASE_URL`, dan `VITE_SUPABASE_ANON_KEY`.
+          - Menyelaraskan dokumentasi `README.md` pada bagian tech stack & arsitektur database.
+        - **Suite Pengujian TDD**:
+          - Membuat test suite baru `src/services/__tests__/cloudClientAdapter.test.js` untuk memverifikasi fungsionalitas query tabel `profiles`, interface adapter, dan validasi dual-mode client.
+      - **Hasil Pengujian & Verifikasi**:
+        - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 test files.
+        - Waktu pengujian: **7.05 detik**.
+        - Build produksi Vite (`npm run build`) sukses dalam **1.65 detik** tanpa chunk warning.
+
+    75. **Batch 4: Kesiapan Deployment VPS (Docker, Nginx SPA Fallback) & Polish Codebase (2026-10-11)**:
+      - **Deskripsi & Audit Temuan**:
+        - Menyelesaikan seluruh temuan akhir dari laporan audit `REPORT.pdf`:
+          - **M6**: Ketiadaan artefak deployment (Dockerfile/CI/Nginx).
+          - **M7**: Memverifikasi UTF-8 `<title>` `index.html` bersih dari mojibake.
+          - **M5**: Placeholder kontak pengembang di `src/constants/erpConfig.js`.
+          - **L1**: Keterikatan dependensi Windows-only `@oxlint/binding-win32-x64-msvc` pada environment Linux VPS.
+          - **L4**: Ketiadaan dokumen lisensi komersial (`LICENSE`).
+      - **Perbaikan yang Dilakukan**:
+        - **Multi-Stage Dockerfile & Docker Compose**:
+          - Membuat `Dockerfile` 2-tahap (Stage 1: `node:20-alpine` untuk build Vite; Stage 2: `nginx:alpine` untuk melayani aset produksi dengan healthcheck `wget`).
+          - Membuat `docker-compose.yml` agar aplikasi dapat dijalankan dalam 1 perintah (`docker compose up -d`) di VPS manapun.
+        - **Nginx Web Server Configuration (`nginx.conf`)**:
+          - Mengimplementasikan SPA routing fallback `try_files $uri $uri/ /index.html;`.
+          - Mengaktifkan kompresi Gzip untuk file JS, CSS, JSON, dan SVG sehingga transfer aset remote VPN/Tailscale tetap ultra-ringan (<330 KB).
+          - Menambahkan security headers dasar (`X-Frame-Options`, `X-Content-Type-Options`, `X-XSS-Protection`, `Referrer-Policy`) dan caching statis aset (`Cache-Control: public, max-age=31536000, immutable`).
+        - **Pembersihan Dependensi & Lisensi**:
+          - Menghapus `@oxlint/binding-win32-x64-msvc` dari devDependencies di `package.json` agar `npm ci` di VPS Linux berjalan tanpa kendala.
+          - Membuat file lisensi resmi `LICENSE` (Proprietary and Confidential).
+          - Memperbarui `DEVELOPER_CONFIG` di `src/constants/erpConfig.js`.
+      - **Hasil Pengujian & Verifikasi**:
+        - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 test files.
+        - Waktu pengujian: **6.49 detik**.
+        - Build produksi Vite (`npm run build`) sukses dalam **1.52 detik**.
+
+    76. **Pembersihan & Penghapusan Integrasi Eksternal WACRM Gateway (2026-10-11)**:
+      - **Deskripsi & Rasional**:
+        - Sesuai prioritas arsitektur jangka panjang dan preferensi stabilitas produk (fokus menuntaskan & menstabilkan modul inti ERP internal sebelum integrasi eksternal), seluruh fitur integrasi eksternal WACRM dieliminasi dari alur checkout POS.
+      - **Perbaikan yang Dilakukan**:
+        - **Eliminasi Network Call di POS Checkout (`src/pages/pos/HybridPOSPage.jsx`)**:
+          - Menghapus blok pemanggilan asynchronous REST API ke endpoint eksternal `/api/v1/contacts` dan `/api/v1/messages`.
+          - Menghilangkan risiko kebocoran token secret API gateway pada client bundle.
+          - Proses checkout kasir kini 100% instan, bebas ketergantungan jaringan pihak ketiga.
+        - **Sanitasi Konfigurasi & Build (`vite.config.js` & `.env.example`)**:
+          - Menghapus mapping variabel mati `VITE_WACRM_API_URL` dan `VITE_WACRM_API_KEY`.
+          - Membersihkan acuan WACRM dari file dokumentasi environment `.env.example`.
+        - **CRM Internal Tetap Utuh & Mandiri**:
+          - Logika segmentasi loyalitas RFM, kartu stamp digital, dan template spintax di `src/services/crmService.js` serta halaman `CRM.jsx` tetap aktif mandiri menggunakan tautan native `wa.me` langsung dari browser pengguna tanpa biaya server.
+      - **Hasil Pengujian & Verifikasi**:
+        - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 test files.
+        - Waktu pengujian: **6.10 detik**.
+        - Build produksi Vite (`npm run build`) sukses dalam **1.22 detik**.
+
+
+
+
+
+
+
 

@@ -34,11 +34,13 @@ Seluruh dokumentasi teknis, kamus data, hasil audit, dan panduan penggunaan (*Us
 
 ---
 
-## 💻 Tech Stack
+## 💻 Tech Stack & Arsitektur Dual-Mode
 
-- **Frontend**: React 19, Vite, Tailwind CSS v4, Lucide React
-- **Backend & Database**: Supabase (PostgreSQL 15+, Auth, Realtime) & Cloudflare D1
-- **Integrasi**: Google Apps Script (AppSheet), WhatsApp Gateway
+- **Frontend**: React 19, Vite, Tailwind CSS v4, Lucide React, Framer Motion
+- **Arsitektur Database Dual-Mode**:
+  - **Cloud Mode (`VITE_BACKEND_PROVIDER=cloud`)**: Supabase (PostgreSQL 15+, Auth, Row-Level Security / RLS per-tenant, Realtime).
+  - **Local Sandbox Mode (`VITE_BACKEND_PROVIDER=local`)**: In-Memory local engine terisolasi dengan verifikasi hash password SHA-256 untuk pengujian/demo offline tanpa ketergantungan jaringan eksternal.
+- **Konfigurasi Environment**: Salin `.env.example` ke `.env` untuk mengatur mode dan kredensial Supabase.
 
 ---
 

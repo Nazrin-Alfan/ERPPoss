@@ -116,6 +116,7 @@ const Finance = () => {
   const [expensesList, setExpensesList] = useState([])
   const [masterCategories, setMasterCategories] = useState([])
   const [stokBahan, setStokBahan] = useState([])
+  const [karyawanOptions, setKaryawanOptions] = useState([])
   const [summary, setSummary] = useState({ totalIncome: 0, totalExpense: 0, totalBalance: 0 })
 
   // Modal States
@@ -133,7 +134,8 @@ const Finance = () => {
     kategori: 'Listrik, Air & Utilitas',
     pos: 'SALDO CASH',
     keterangan: '',
-    total_harga: ''
+    total_harga: '',
+    karyawan: ''
   })
   const [incomeForm, setIncomeForm] = useState({
     tanggal: new Date().toLocaleDateString('en-CA'),
@@ -576,18 +578,27 @@ const Finance = () => {
         cafeData,
         expData,
         resMc,
-        resSb
+        resSb,
+        resKc,
+        resKk
       ] = await Promise.all([
         fetchAllData('cashflow', '*', 'tanggal'),
         fetchAllData('carwash', '*', 'tanggal'),
         fetchAllData('cafe', '*, struk(tanggal, jam, kasir, metode_bayar, status_bayar)'),
         fetchAllData('pengeluaran', '*', 'tanggal'),
         supabase.from('master_categories').select('*'),
-        supabase.from('stok_barang').select('*')
+        supabase.from('stok_barang').select('*'),
+        supabase.from('karyawan_cuci').select('*'),
+        supabase.from('karyawan_kantor').select('*')
       ])
 
       const mcData = resMc?.data
       const sbData = resSb?.data
+
+      const cuciNames = (resKc?.data || []).map(k => k.nama.toUpperCase().trim()).filter(Boolean)
+      const kantorNames = (resKk?.data || []).map(k => k.nama.toUpperCase().trim()).filter(Boolean)
+      const combinedStaff = Array.from(new Set([...cuciNames, ...kantorNames]))
+      setKaryawanOptions(combinedStaff)
 
       setCashflowList(cfData || [])
       setCarwashList(cwData || [])
@@ -1144,7 +1155,8 @@ const Finance = () => {
         kategori: 'Listrik, Air & Utilitas',
         total_harga: '',
         keterangan: '',
-        pos: 'SALDO CASH'
+        pos: 'SALDO CASH',
+        karyawan: ''
       })
       setIsCustomExpenseJenis(false)
       setIsCustomExpenseKategori(false)
@@ -2897,6 +2909,35 @@ const Finance = () => {
                       className="w-full"
                     />
                   </div>
+
+                  {/* Input Karyawan Penerima Kasbon jika kategori terkait Casbon */}
+                  {(String(expenseForm.kategori || '').toLowerCase().includes('casbon') || String(expenseForm.jenis || '').toLowerCase().includes('casbon')) && (
+                    <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+                      <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider">
+                        Pilih Karyawan Penerima Kasbon
+                      </label>
+                      <CustomSelect
+                        value={expenseForm.karyawan}
+                        onChange={(val) => {
+                          setExpenseForm(prev => ({
+                            ...prev,
+                            karyawan: val,
+                            keterangan: prev.keterangan || (val ? `Casbon ${val}` : '')
+                          }))
+                        }}
+                        options={[
+                          { value: '', label: '-- Pilih Nama Karyawan --' },
+                          ...karyawanOptions.map(name => ({ value: name, label: name }))
+                        ]}
+                        size="md"
+                        variant="rose"
+                        className="w-full"
+                      />
+                      <span className="text-[10px] text-[#bbcbb2]">
+                        * Otomatis memotong gaji bersih saat pembayaran upah di modul Karyawan.
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div>

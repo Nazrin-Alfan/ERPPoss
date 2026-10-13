@@ -5,7 +5,7 @@
  * Inventory Valuation, Auto-triggers, and Supabase-compatible Query Builder.
  */
 
-import realSeedData from './realSeedData.json' with { type: 'json' }
+import realSeedData from './syntheticSeedData.json' with { type: 'json' }
 import { DEFAULT_TENANT_ID, DEFAULT_BRANCH_ID } from '../constants/erpConfig.js'
 import { GeneralLedgerService, calculateMovingAverageCost } from './generalLedgerService.js'
 import { DEFAULT_CARWASH_PACKAGES } from '../utils/carwashHelpers.js'
@@ -15,6 +15,28 @@ const STORAGE_KEY = 'relaypos_real_sandbox_v2'
 const AUTH_STORAGE_KEY = 'relaypos_real_auth_v2'
 export const ACTIVE_TENANT_STORAGE_KEY = 'relaypos_active_tenant_id'
 let inMemoryActiveTenantId = null
+
+export const DEFAULT_SALT = 'relaypos_salt_v1'
+// Precomputed SHA-256 for 'password123:relaypos_salt_v1'
+export const DEFAULT_DEMO_PASSWORD_HASH = 'e34a55edf4750ae90b3c60399853c906bf01114dd7abcf7cc6980b9ca13a4b62'
+
+export async function hashPassword(password, salt = DEFAULT_SALT) {
+  if (typeof crypto !== 'undefined' && crypto?.subtle) {
+    const enc = new TextEncoder()
+    const data = enc.encode(`${password}:${salt}`)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    return Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
+  }
+  let hash = 0
+  const str = `${password}:${salt}`
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i)
+    hash |= 0
+  }
+  return String(Math.abs(hash))
+}
 
 // Helper global untuk membaca Tenant Aktif saat ini di browser/runtime
 export const getActiveTenantId = () => {
@@ -276,10 +298,14 @@ export const INITIAL_SEED_DATA = {
     { id: 'kat_ret_chemical', tenant_id: DEFAULT_TENANT_ID, nama_kategori: 'Chemical Retail & Lap', jenis: 'Kategori Retail / Merchandise', tipe_arus: 'PEMASUKAN', account_id: 'acc_4003', boleh_kasir: true, is_active: true },
   ],
   karyawan_cuci: [
-    { id: 1, nama: 'KRU 1', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
-    { id: 2, nama: 'KRU 2', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
-    { id: 3, nama: 'KRU 3', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
-    { id: 4, nama: 'KRU 4', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
+    { id: 1, nama: 'ANGGA', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
+    { id: 2, nama: 'FERRY', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
+    { id: 3, nama: 'RAHMAN', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
+    { id: 4, nama: 'FAISAL', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
+    { id: 5, nama: 'BAGUS', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
+    { id: 6, nama: 'VICKY', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
+    { id: 7, nama: 'NOPAL', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
+    { id: 8, nama: 'EZA', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
   ],
   karyawan_kantor: [
     { id: 'kk_owner', nama: 'Owner Demo', role: 'Owner', email: 'owner@relaypos.com', source: 'staff_registration', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
@@ -361,6 +387,8 @@ export const INITIAL_SEED_DATA = {
       nama: 'Solo Founder (Super Admin)',
       email: 'superadmin@relaypos.com',
       role: 'Super Admin',
+      password_hash: DEFAULT_DEMO_PASSWORD_HASH,
+      salt: DEFAULT_SALT,
       created_at: new Date().toISOString(),
     },
     {
@@ -370,6 +398,8 @@ export const INITIAL_SEED_DATA = {
       nama: 'Owner Demo',
       email: 'owner@relaypos.com',
       role: 'Owner',
+      password_hash: DEFAULT_DEMO_PASSWORD_HASH,
+      salt: DEFAULT_SALT,
       created_at: new Date().toISOString(),
     },
     {
@@ -379,6 +409,8 @@ export const INITIAL_SEED_DATA = {
       nama: 'Admin Supervisor',
       email: 'admin@relaypos.com',
       role: 'Admin',
+      password_hash: DEFAULT_DEMO_PASSWORD_HASH,
+      salt: DEFAULT_SALT,
       created_at: new Date().toISOString(),
     },
     {
@@ -388,6 +420,8 @@ export const INITIAL_SEED_DATA = {
       nama: 'Kasir Demo',
       email: 'kasir@relaypos.com',
       role: 'Kasir',
+      password_hash: DEFAULT_DEMO_PASSWORD_HASH,
+      salt: DEFAULT_SALT,
       created_at: new Date().toISOString(),
     },
     {
@@ -397,6 +431,8 @@ export const INITIAL_SEED_DATA = {
       nama: 'nazrinalfansyurihrp',
       email: 'owner@relaypos.com',
       role: 'Owner',
+      password_hash: DEFAULT_DEMO_PASSWORD_HASH,
+      salt: DEFAULT_SALT,
       created_at: new Date().toISOString(),
     },
   ],
@@ -479,6 +515,13 @@ export class LocalDatabaseStore {
         this.data.profiles.push(JSON.parse(JSON.stringify(p)))
       }
     })
+    // Pastikan semua profil memiliki password_hash & salt terisi (default demo password123)
+    this.data.profiles.forEach((p) => {
+      if (!p.password_hash) {
+        p.password_hash = DEFAULT_DEMO_PASSWORD_HASH
+        p.salt = DEFAULT_SALT
+      }
+    })
 
     if (!this.data.karyawan_kantor) this.data.karyawan_kantor = []
     INITIAL_SEED_DATA.karyawan_kantor.forEach((k) => {
@@ -489,6 +532,20 @@ export class LocalDatabaseStore {
         this.data.karyawan_kantor.push(JSON.parse(JSON.stringify(k)))
       }
     })
+
+    if (!this.data.karyawan_cuci || this.data.karyawan_cuci.length === 0) {
+      this.data.karyawan_cuci = JSON.parse(JSON.stringify(INITIAL_SEED_DATA.karyawan_cuci || []))
+    } else {
+      // Pastikan nama kru cuci standar (ANGGA, FERRY, RAHMAN, dll.) terdaftar jika masih pakai KRU 1 dsb.
+      INITIAL_SEED_DATA.karyawan_cuci.forEach((kc) => {
+        const exists = this.data.karyawan_cuci.some(
+          (existing) => (existing.nama || '').trim().toUpperCase() === kc.nama.trim().toUpperCase()
+        )
+        if (!exists) {
+          this.data.karyawan_cuci.push(JSON.parse(JSON.stringify(kc)))
+        }
+      })
+    }
 
     if (this.data.journal_entries.length === 0) {
       const gl = new GeneralLedgerService(this)
@@ -1652,32 +1709,54 @@ export const createLocalClient = () => {
       },
 
       async signInWithPassword({ email, password }) {
+        if (!email || !String(email).trim()) {
+          return { data: { user: null, session: null }, error: new Error('Username atau email wajib diisi.') }
+        }
+        if (!password || !String(password).trim()) {
+          return { data: { user: null, session: null }, error: new Error('Password wajib diisi.') }
+        }
+
         const profiles = localDbStore.getTable('profiles')
         const cleanInput = (email || '').trim().toLowerCase()
         const usernamePart = cleanInput.includes('@') ? cleanInput.split('@')[0] : cleanInput
         const normalizedEmail = cleanInput.includes('@') ? cleanInput : `${cleanInput}@jb.local`
 
-        const profile = profiles.find((p) => 
-          (p.email && p.email.toLowerCase() === normalizedEmail) ||
-          (p.email && p.email.toLowerCase() === cleanInput) ||
-          (p.nama && p.nama.toLowerCase() === cleanInput) ||
-          (p.nama && p.nama.toLowerCase() === usernamePart)
-        ) || {
-          id: `usr_${Date.now()}`,
-          nama: email.split('@')[0].toUpperCase(),
-          email: normalizedEmail,
-          role: email.toLowerCase().includes('owner') || email.toLowerCase().includes('nazrin')
-            ? 'Owner'
-            : (email.toLowerCase().includes('admin') || email.toLowerCase().includes('spv') || email.toLowerCase().includes('leader') ? 'Admin' : 'Kasir'),
+        const profile = profiles.find((p) => {
+          const pEmail = (p.email || '').toLowerCase()
+          const pName = (p.nama || '').toLowerCase()
+          const pUserPart = pEmail.split('@')[0]
+          return (
+            pEmail === normalizedEmail ||
+            pEmail === cleanInput ||
+            pUserPart === cleanInput ||
+            pName === cleanInput ||
+            pName === usernamePart
+          )
+        })
+
+        // C1 Fix: Reject unknown users immediately - NO arbitrary role guessing!
+        if (!profile) {
+          return { data: { user: null, session: null }, error: new Error('Pengguna tidak ditemukan.') }
+        }
+
+        // C1 Fix: Verify password hash securely
+        const salt = profile.salt || DEFAULT_SALT
+        const expectedHash = profile.password_hash || DEFAULT_DEMO_PASSWORD_HASH
+        const inputHash = await hashPassword(password, salt)
+
+        if (inputHash !== expectedHash) {
+          return { data: { user: null, session: null }, error: new Error('Kata sandi salah.') }
         }
 
         const userObj = {
           id: profile.id,
           email: profile.email || normalizedEmail,
           role: profile.role,
+          tenant_id: profile.tenant_id || DEFAULT_TENANT_ID,
           user_metadata: {
             nama: profile.nama,
             role: profile.role,
+            tenant_id: profile.tenant_id || DEFAULT_TENANT_ID,
           },
         }
 
@@ -1717,18 +1796,40 @@ export const createLocalClient = () => {
       },
 
       async signUp({ email, password, options = {} }) {
-        const normalizedEmail = email.includes('@') ? email.trim() : `${email.trim().toLowerCase()}@jb.local`
+        if (!email || !String(email).trim()) {
+          return { data: { user: null }, error: new Error('Email atau username wajib diisi.') }
+        }
+        if (!password || !String(password).trim()) {
+          return { data: { user: null }, error: new Error('Password wajib diisi.') }
+        }
+
+        const cleanEmail = email.trim().toLowerCase()
+        const normalizedEmail = cleanEmail.includes('@') ? cleanEmail : `${cleanEmail}@jb.local`
+        const profiles = localDbStore.getTable('profiles')
+
+        const existing = profiles.find((p) => p.email?.toLowerCase() === normalizedEmail)
+        if (existing) {
+          return { data: { user: null }, error: new Error('Email/Username sudah terdaftar.') }
+        }
+
         const newUserId = `usr_${Date.now()}`
         const nama = options.data?.nama || email.split('@')[0]
-        const role = options.data?.role || 'Kasir'
+        // M3 Fix: paksa role 'Kasir' jika didaftarkan via client registrasi kasir
+        const role = options.data?.role === 'Admin' ? 'Admin' : 'Kasir'
+        const currentActiveTenant = getActiveTenantId() || DEFAULT_TENANT_ID
+
+        const salt = DEFAULT_SALT
+        const password_hash = await hashPassword(password, salt)
 
         const profileRecord = {
           id: newUserId,
-          tenant_id: DEFAULT_TENANT_ID,
-          branch_id: DEFAULT_BRANCH_ID,
+          tenant_id: options.data?.tenant_id || currentActiveTenant,
+          branch_id: options.data?.branch_id || `branch_${currentActiveTenant}_main`,
           nama,
           email: normalizedEmail,
           role,
+          password_hash,
+          salt,
           created_at: new Date().toISOString(),
         }
 
@@ -1739,10 +1840,108 @@ export const createLocalClient = () => {
           id: newUserId,
           email: normalizedEmail,
           role,
-          user_metadata: { nama, role },
+          tenant_id: profileRecord.tenant_id,
+          user_metadata: { nama, role, tenant_id: profileRecord.tenant_id },
         }
 
         return { data: { user: userObj }, error: null }
+      },
+
+      async signUpOwner({ email, password, nama, tenantName, businessType = 'HYBRID' }) {
+        if (!email || !String(email).trim()) {
+          return { data: { user: null, session: null }, error: new Error('Email wajib diisi.') }
+        }
+        if (!password || !String(password).trim() || password.length < 6) {
+          return { data: { user: null, session: null }, error: new Error('Password minimal 6 karakter.') }
+        }
+        if (!tenantName || !String(tenantName).trim()) {
+          return { data: { user: null, session: null }, error: new Error('Nama toko/usaha wajib diisi.') }
+        }
+
+        const cleanEmail = email.trim().toLowerCase()
+        const profiles = localDbStore.getTable('profiles')
+        const existing = profiles.find((p) => p.email?.toLowerCase() === cleanEmail)
+        if (existing) {
+          return { data: { user: null, session: null }, error: new Error('Email ini sudah terdaftar.') }
+        }
+
+        const cleanType = ['HYBRID', 'CARWASH', 'CAFE'].includes(String(businessType).toUpperCase())
+          ? String(businessType).toUpperCase()
+          : 'HYBRID'
+
+        const randomSuffix = Math.random().toString(36).substring(2, 7)
+        const newTenantId = `tenant_${Date.now()}_${randomSuffix}`
+        const slug = tenantName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `toko-${randomSuffix}`
+
+        // 1. Buat record tenant
+        const newTenant = {
+          id: newTenantId,
+          nama: tenantName.trim(),
+          slug,
+          business_type: cleanType,
+          plan: 'TRIAL',
+          status: 'ACTIVE',
+          created_at: new Date().toISOString(),
+        }
+        localDbStore.getTable('tenants').push(newTenant)
+
+        // 2. Buat branch utama
+        const newBranchId = `branch_${newTenantId}_main`
+        localDbStore.getTable('branches').push({
+          id: newBranchId,
+          tenant_id: newTenantId,
+          nama: 'Cabang Utama',
+          is_active: true,
+          created_at: new Date().toISOString(),
+        })
+
+        // 3. Inisialisasi master data otomatis untuk tenant baru
+        localDbStore.ensureTenantMasterData(newTenantId, cleanType)
+
+        // 4. Buat profile owner
+        const newUserId = `usr_${Date.now()}`
+        const salt = DEFAULT_SALT
+        const password_hash = await hashPassword(password, salt)
+
+        const ownerProfile = {
+          id: newUserId,
+          tenant_id: newTenantId,
+          branch_id: newBranchId,
+          nama: (nama || 'Owner').trim(),
+          email: cleanEmail,
+          role: 'Owner',
+          password_hash,
+          salt,
+          created_at: new Date().toISOString(),
+        }
+        localDbStore.getTable('profiles').push(ownerProfile)
+
+        // 5. Simpan & buat session
+        localDbStore.saveToStorage()
+
+        const userObj = {
+          id: newUserId,
+          email: cleanEmail,
+          role: 'Owner',
+          tenant_id: newTenantId,
+          user_metadata: {
+            nama: ownerProfile.nama,
+            role: 'Owner',
+            tenant_id: newTenantId,
+          },
+        }
+
+        const session = {
+          user: userObj,
+          access_token: 'local-jwt-token-erp',
+          token_type: 'bearer',
+          expires_in: 86400,
+        }
+
+        localDbStore.saveAuth(session)
+        authListeners.forEach((fn) => fn('SIGNED_IN', session))
+
+        return { data: { user: userObj, session, tenant: newTenant, profile: ownerProfile }, error: null }
       },
     },
 

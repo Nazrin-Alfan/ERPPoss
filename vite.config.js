@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import fs from 'fs'
@@ -7,65 +7,54 @@ import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-// Parsing manual berkas JB.env / JB_dev.env
-const customEnv = {}
-const devEnvPath = path.resolve(__dirname, 'JB_dev.env')
-const prodEnvPath = path.resolve(__dirname, 'JB.env')
+export default defineConfig(({ mode }) => {
+  // 1. Muat env standar Vite (.env, .env.local, .env.[mode])
+  const env = loadEnv(mode, process.cwd(), '')
 
-// Gunakan JB.env jika di Vercel Production atau jika JB_dev.env tidak ada
-const isVercelProd = process.env.VERCEL_ENV === 'production'
-const envPath = (isVercelProd || !fs.existsSync(devEnvPath)) ? prodEnvPath : devEnvPath
+  // 2. Fallback parsing jika pengguna masih memiliki JB.env / JB_dev.env lokal
+  const fallbackEnv = {}
+  const devEnvPath = path.resolve(__dirname, 'JB_dev.env')
+  const prodEnvPath = path.resolve(__dirname, 'JB.env')
+  const envPath = fs.existsSync(devEnvPath) ? devEnvPath : prodEnvPath
 
-if (fs.existsSync(envPath)) {
-  const envContent = fs.readFileSync(envPath, 'utf-8')
-  envContent.split(/\r?\n/).forEach(line => {
-    // Abaikan komentar dan baris kosong
-    if (line.trim().startsWith('#') || !line.includes('=')) return
-    const [key, ...valueParts] = line.split('=')
-    const val = valueParts.join('=').trim()
-    const cleanKey = key.trim()
-    let cleanVal = val
-    // Hapus kutip jika ada
-    if ((cleanVal.startsWith('"') && cleanVal.endsWith('"')) || 
-        (cleanVal.startsWith("'") && cleanVal.endsWith("'"))) {
-      cleanVal = cleanVal.slice(1, -1)
-    }
-    if (cleanKey.startsWith('VITE_')) {
-      customEnv[cleanKey] = cleanVal
-    }
-  })
-}
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf-8')
+    envContent.split(/\r?\n/).forEach((line) => {
+      if (line.trim().startsWith('#') || !line.includes('=')) return
+      const [key, ...valueParts] = line.split('=')
+      const val = valueParts.join('=').trim()
+      const cleanKey = key.trim()
+      let cleanVal = val
+      if (
+        (cleanVal.startsWith('"') && cleanVal.endsWith('"')) ||
+        (cleanVal.startsWith("'") && cleanVal.endsWith("'"))
+      ) {
+        cleanVal = cleanVal.slice(1, -1)
+      }
+      if (cleanKey.startsWith('VITE_')) {
+        fallbackEnv[cleanKey] = cleanVal
+      }
+    })
+  }
 
-// https://vite.dev/config/
-export default defineConfig({
-  server: {
-    host: '0.0.0.0',
-    port: 5173,
-    cors: true,
-  },
-  plugins: [
-    react(),
-    tailwindcss(),
-  ],
-  build: {
-    chunkSizeWarningLimit: 8000,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('realSeedData.json')) {
-            return 'real-seed-database'
-          }
-        },
-      },
+  const supabaseUrl = env.VITE_SUPABASE_URL || fallbackEnv.VITE_SUPABASE_URL || ''
+  const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY || fallbackEnv.VITE_SUPABASE_ANON_KEY || ''
+  const backendProvider = env.VITE_BACKEND_PROVIDER || fallbackEnv.VITE_BACKEND_PROVIDER || 'local'
+
+  return {
+    server: {
+      host: '0.0.0.0',
+      port: 5173,
+      cors: true,
     },
-  },
-  define: {
-    // Ekspos variabel VITE_ dengan prioritas process.env (Vercel Dashboard) -> customEnv (file)
-    'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(process.env.VITE_SUPABASE_URL || customEnv.VITE_SUPABASE_URL || ''),
-    'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(process.env.VITE_SUPABASE_ANON_KEY || customEnv.VITE_SUPABASE_ANON_KEY || ''),
-    'import.meta.env.VITE_WACRM_API_URL': JSON.stringify(process.env.VITE_WACRM_API_URL || customEnv.VITE_WACRM_API_URL || ''),
-    'import.meta.env.VITE_WACRM_API_KEY': JSON.stringify(process.env.VITE_WACRM_API_KEY || customEnv.VITE_WACRM_API_KEY || '')
+    plugins: [react(), tailwindcss()],
+    build: {
+      chunkSizeWarningLimit: 1500,
+    },
+    define: {
+      'import.meta.env.VITE_BACKEND_PROVIDER': JSON.stringify(backendProvider),
+      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(supabaseUrl),
+      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseAnonKey),
+    },
   }
 })
-
-

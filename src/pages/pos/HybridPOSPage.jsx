@@ -334,7 +334,9 @@ const CafePOS = () => {
     unit: 'Cafe',
     kategori: 'Operasional',
     karyawan: '',
-    category_id: ''
+    category_id: '',
+    id_bahan_baku: '',
+    qty: ''
   })
   const [cashierAllowedCategories, setCashierAllowedCategories] = useState([])
   const [posMasterCategories, setPosMasterCategories] = useState([])
@@ -370,7 +372,7 @@ const CafePOS = () => {
     variant: 'Regular',
     ukuran: 'Small',
     paket: 'PAKET CUCI BIASA',
-    anggota1: 'ANGGA',
+    anggota1: '',
     anggota2: '',
     platNomor: '',
     model: 'Mobil',
@@ -399,6 +401,7 @@ const CafePOS = () => {
   // Master Paket & Karyawan Cuci Dinamis
   const [carwashPackages, setCarwashPackages] = useState(DEFAULT_CARWASH_PACKAGES)
   const [anggotaOptions, setAnggotaOptions] = useState([])
+  const [staffOptions, setStaffOptions] = useState([])
 
   const paketOptions = useMemo(() => {
     if (!carwashPackages || carwashPackages.length === 0) {
@@ -433,7 +436,9 @@ const CafePOS = () => {
         setCarwashPackages(dbPackages.data)
       }
       if (dbKaryawan.data && dbKaryawan.data.length > 0) {
-        setAnggotaOptions(dbKaryawan.data.map(k => k.nama || k.name).filter(Boolean))
+        const names = dbKaryawan.data.map(k => (k.nama || k.name || '').toUpperCase().trim()).filter(Boolean)
+        setAnggotaOptions(names)
+        setStaffOptions(names)
       }
 
       const defaultCashiers = dbCashiers.data && dbCashiers.data.length > 0 ? dbCashiers.data : null
@@ -455,19 +460,32 @@ const CafePOS = () => {
       if (defaultResep) setResepList(defaultResep)
       if (defaultDiskon) setDiscounts(defaultDiskon)
 
-      // Fetch dynamic washing employees from karyawan_cuci
+      // Fetch dynamic washing employees from karyawan_cuci & karyawan_kantor
       try {
-        const { data: dbKaryawan, error: karyawanErr } = await supabase
-          .from('karyawan_cuci')
-          .select('*')
-          .order('nama', { ascending: true })
+        const [resCuci, resKantor] = await Promise.allSettled([
+          supabase.from('karyawan_cuci').select('*').order('nama', { ascending: true }),
+          supabase.from('karyawan_kantor').select('*').order('nama', { ascending: true })
+        ])
 
-        if (!karyawanErr && dbKaryawan && dbKaryawan.length > 0) {
-          const names = dbKaryawan.map(k => k.nama.toUpperCase().trim())
-          setAnggotaOptions(names)
+        const cuciNames = (resCuci.status === 'fulfilled' && resCuci.value.data)
+          ? resCuci.value.data.map(k => k.nama.toUpperCase().trim()).filter(Boolean)
+          : []
+        const kantorNames = (resKantor.status === 'fulfilled' && resKantor.value.data)
+          ? resKantor.value.data.map(k => k.nama.toUpperCase().trim()).filter(Boolean)
+          : []
+
+        // Gabungkan seluruh daftar nama karyawan tanpa duplikasi
+        const combinedStaffNames = Array.from(new Set([...cuciNames, ...kantorNames]))
+        if (cuciNames.length > 0) {
+          setAnggotaOptions(cuciNames)
+        } else if (combinedStaffNames.length > 0) {
+          setAnggotaOptions(combinedStaffNames)
+        }
+        if (combinedStaffNames.length > 0) {
+          setStaffOptions(combinedStaffNames)
           setCarwashForm(prev => ({
             ...prev,
-            anggota1: names[0] || 'ANGGA'
+            anggota1: prev.anggota1 || cuciNames[0] || combinedStaffNames[0] || ''
           }))
         }
       } catch (err) {
@@ -707,6 +725,8 @@ const CafePOS = () => {
       fetchTodayTransactions(historyDate)
     } else if (activeTab === 'inventory') {
       fetchInventory()
+    } else if (activeTab === 'expense') {
+      fetchTodayExpenses()
     }
   }, [activeTab])
 
@@ -722,10 +742,12 @@ const CafePOS = () => {
       if (error) throw error
       setTodayExpenses(data || [])
 
-      // Fetch kategori yang diizinkan untuk kasir & seluruh master categories
-      const [resAllowed, resAll] = await Promise.allSettled([
+      // Fetch kategori yang diizinkan untuk kasir & seluruh master categories serta staf aktif
+      const [resAllowed, resAll, resCuci, resKantor] = await Promise.allSettled([
         supabase.from('master_categories').select('*').eq('boleh_kasir', true),
-        supabase.from('master_categories').select('*').eq('is_active', true)
+        supabase.from('master_categories').select('*').eq('is_active', true),
+        supabase.from('karyawan_cuci').select('*').order('nama', { ascending: true }),
+        supabase.from('karyawan_kantor').select('*').order('nama', { ascending: true })
       ])
 
       if (resAllowed.status === 'fulfilled' && resAllowed.value.data) {
@@ -733,6 +755,13 @@ const CafePOS = () => {
       }
       if (resAll.status === 'fulfilled' && resAll.value.data) {
         setPosMasterCategories(resAll.value.data)
+      }
+      const cNames = (resCuci.status === 'fulfilled' && resCuci.value.data) ? resCuci.value.data.map(k => (k.nama || '').toUpperCase().trim()).filter(Boolean) : []
+      const kNames = (resKantor.status === 'fulfilled' && resKantor.value.data) ? resKantor.value.data.map(k => (k.nama || '').toUpperCase().trim()).filter(Boolean) : []
+      const merged = Array.from(new Set([...cNames, ...kNames]))
+      if (merged.length > 0) {
+        setStaffOptions(merged)
+        if (cNames.length > 0) setAnggotaOptions(cNames)
       }
     } catch (err) {
       console.error('Error fetching today expenses:', err)
@@ -754,12 +783,18 @@ const CafePOS = () => {
     try {
       if (editingExpenseId) {
         // Mode Edit: Update data pengeluaran
-        const isCasbon = posExpenseForm.kategori === EXPENSE_CATEGORIES.CASBON
+        const isCasbon = String(posExpenseForm.kategori || '').toLowerCase().includes('casbon') || 
+                         String(posExpenseForm.kategori || '').toLowerCase().includes('kasbon') || 
+                         posExpenseForm.kategori === EXPENSE_CATEGORIES.CASBON
         const updatePayload = {
           jenis: isCasbon ? 'Casbon' : `pengeluaran ${posExpenseForm.unit}`,
           kategori: isCasbon ? `Casbon - ${posExpenseForm.karyawan}` : posExpenseForm.kategori,
           nominal: parseFloat(posExpenseForm.nominal),
           nama_pengeluaran: isCasbon ? `Casbon ${posExpenseForm.karyawan} (${posExpenseForm.keterangan})` : posExpenseForm.keterangan,
+          id_bahan_baku: posExpenseForm.id_bahan_baku || '',
+          id_barang: posExpenseForm.id_bahan_baku || '',
+          qty: parseFloat(posExpenseForm.qty || 0),
+          apakah_stok: posExpenseForm.id_bahan_baku ? 'Ya' : 'Tidak'
         }
 
         const { error: updErr } = await supabase
@@ -796,11 +831,15 @@ const CafePOS = () => {
         nominal: '',
         unit: 'Cafe',
         kategori: 'Operasional',
-        karyawan: ''
+        karyawan: '',
+        category_id: '',
+        id_bahan_baku: '',
+        qty: ''
       })
       setIsCustomPosExpenseKat(false)
       await fetchTodayExpenses()
       await fetchCashierCash()
+      await fetchInventory()
       setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
       console.error('Error saving POS expense:', err)
@@ -1025,7 +1064,7 @@ const CafePOS = () => {
         harga: 55000,
         gaji_pencuci: 12000,
         kehadiran: 'hadir',
-        anggota1: anggotaOptions[0] || 'ANGGA',
+        anggota1: anggotaOptions[0] || '',
         anggota2: ''
       })
       setSplitCashAmount('')
@@ -1054,7 +1093,10 @@ const CafePOS = () => {
       nominal: String(exp.nominal || ''),
       unit: exp.jenis ? exp.jenis.replace('pengeluaran ', '') : 'Cafe',
       kategori: isCasbon ? 'Casbon' : (exp.kategori || 'Operasional'),
-      karyawan: employeeName
+      karyawan: employeeName,
+      category_id: exp.category_id || '',
+      id_bahan_baku: exp.id_bahan_baku || exp.id_barang || '',
+      qty: exp.qty ? String(exp.qty) : ''
     })
     setEditingExpenseId(exp.id_pengeluaran)
   }
@@ -1075,6 +1117,7 @@ const CafePOS = () => {
       setSuccess(true)
       await fetchTodayExpenses()
       await fetchCashierCash()
+      await fetchInventory()
       setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
       console.error('Error deleting POS expense:', err)
@@ -1824,130 +1867,6 @@ const CafePOS = () => {
           }
         } catch (crmSyncErr) {
           console.warn('CRM sync warning in HybridPOS checkout:', crmSyncErr)
-        }
-
-        // Integrasi WA CRM: Daftarkan kontak & Kirim Kupon jika kunjungan pertama
-        if (carwashForm.noTelepon && cleanPlat) {
-          (async () => {
-            try {
-              const apiUrl = import.meta.env.VITE_WACRM_API_URL;
-              const apiKey = import.meta.env.VITE_WACRM_API_KEY;
-
-              if (apiUrl && apiKey) {
-                // Normalize phone
-                let phone = carwashForm.noTelepon.replace(/\D/g, '');
-                if (phone.startsWith('0')) {
-                  phone = '62' + phone.slice(1);
-                }
-                if (!phone.startsWith('62') && phone.length > 5) {
-                  phone = '62' + phone;
-                }
-
-                const model = carwashForm.model || 'Mobil';
-                const todayStr = new Date().toLocaleDateString('id-ID', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric'
-                });
-
-                // 1. Dapatkan jumlah kunjungan untuk plat tersebut dari database (termasuk hari ini)
-                let visitCount = 1;
-                try {
-                  const { count, error: countErr } = await supabase
-                    .from('carwash')
-                    .select('id_transaksi', { count: 'exact', head: true })
-                    .eq('plat', cleanPlat);
-                  if (!countErr && count !== null) {
-                    visitCount = count;
-                  }
-                } catch (countErr) {
-                  console.error('WACRM: Gagal menghitung jumlah kunjungan:', countErr);
-                }
-
-                // 2. Mendaftarkan / memperbarui data kehadiran pelanggan sebagai kontak di WACRM (dengan tag jumlah kehadiran & plat akumulatif)
-                try {
-                  // Kirim POST tanpa tag terlebih dahulu untuk find-or-create kontak
-                  const contactRes = await fetch(`${apiUrl}/api/v1/contacts`, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify({
-                      phone: '+' + phone,
-                      name: `${cleanPlat} (${model})`,
-                      company: getReceiptConfig().storeName || 'RelayPOS Carwash'
-                    })
-                  });
-
-                  if (contactRes.ok) {
-                    const resJson = await contactRes.json();
-                    const contactData = resJson.data || {};
-                    const contactId = contactData.id;
-
-                    // Dapatkan daftar tag lama
-                    const existingTags = Array.isArray(contactData.tags)
-                      ? contactData.tags.map(t => t.name)
-                      : [];
-
-                    // Gabungkan dengan tag baru (tambahkan Plat_X baru, Carwash, dan update Kehadiran_X)
-                    const cleanNewPlatTag = `Plat_${cleanPlat}`;
-                    const mergedTags = [
-                      ...existingTags.filter(t => !t.startsWith('Kehadiran_') && t !== cleanNewPlatTag && t !== 'Carwash'),
-                      'Carwash',
-                      cleanNewPlatTag,
-                      `Kehadiran_${visitCount}`
-                    ];
-
-                    // Perbarui tag di kontak WACRM via PATCH
-                    const patchRes = await fetch(`${apiUrl}/api/v1/contacts/${contactId}`, {
-                      method: 'PATCH',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
-                      },
-                      body: JSON.stringify({
-                        tags: mergedTags
-                      })
-                    });
-
-                    if (!patchRes.ok) {
-                      console.warn('WACRM: Gagal memperbarui tag kontak:', await patchRes.text());
-                    }
-                  } else {
-                    console.warn('WACRM: Gagal mendaftarkan kontak:', await contactRes.text());
-                  }
-                } catch (contactErr) {
-                  console.error('WACRM: Error saat sinkronisasi kontak:', contactErr);
-                }
-
-                // 3. Periksa apakah ini kunjungan pertama untuk plat tersebut untuk mengirim kupon
-                if (visitCount === 1) {
-                  const paket = carwashForm.paket || 'Cuci';
-                  // Kirim menggunakan template dari CRM
-                  await fetch(`${apiUrl}/api/v1/messages`, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify({
-                      to: phone,
-                      type: 'template',
-                      template: {
-                        name: 'first_visit_coupon',
-                        language: 'id',
-                        params: [cleanPlat, model, paket, todayStr]
-                      },
-                      name: cleanPlat
-                    })
-                  });
-                }
-              }
-            } catch (err) {
-              console.error('Failed to run WACRM integration:', err);
-            }
-          })();
         }
       }
 
@@ -3576,10 +3495,12 @@ const CafePOS = () => {
                           setPosExpenseForm(prev => ({ ...prev, kategori: '', category_id: '' }))
                         } else {
                           const selected = filteredCashierCategories.find(c => c.nama_kategori === val) || cashierAllowedCategories.find(c => c.nama_kategori === val)
+                          const isCasbonPicked = String(val).toLowerCase().includes('casbon') || String(val).toLowerCase().includes('kasbon')
                           setPosExpenseForm(prev => ({ 
                             ...prev, 
                             kategori: val,
-                            category_id: selected ? selected.id : ''
+                            category_id: selected ? selected.id : '',
+                            karyawan: isCasbonPicked ? (prev.karyawan || anggotaOptions[0] || '') : prev.karyawan
                           }))
                         }
                       }}
@@ -3602,7 +3523,10 @@ const CafePOS = () => {
                   )}
                 </div>
 
-                {['Casbon', 'Ambil Uang Paketan'].includes(posExpenseForm.kategori) && (
+                {/* Dropdown Karyawan Penerima Kasbon / Uang Paketan */}
+                {(String(posExpenseForm.kategori || '').toLowerCase().includes('casbon') || 
+                  String(posExpenseForm.kategori || '').toLowerCase().includes('kasbon') || 
+                  String(posExpenseForm.kategori || '').toLowerCase().includes('paketan')) && (
                   <div>
                     <label className="block text-xs font-semibold text-muted mb-1.5 uppercase">Karyawan</label>
                     <CustomSelect
@@ -3610,12 +3534,72 @@ const CafePOS = () => {
                       onChange={(val) => setPosExpenseForm(prev => ({ ...prev, karyawan: val }))}
                       options={[
                         { value: '', label: '-- Pilih Karyawan --' },
-                        ...anggotaOptions.map(name => ({ value: name, label: name }))
+                        ...(staffOptions.length > 0 ? staffOptions : anggotaOptions).map(name => ({ value: name, label: name }))
                       ]}
                       size="md"
                       variant="emerald"
                       className="w-full"
                     />
+                  </div>
+                )}
+
+                {/* Input Khusus Restock Bahan Baku Cafe */}
+                {String(posExpenseForm.kategori || '').toLowerCase().includes('bahan') && (
+                  <div className="md:col-span-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5 uppercase">
+                        <Package size={14} />
+                        Sinkronisasi Stok Gudang (Bahan Baku)
+                      </span>
+                      <span className="text-[10px] text-muted font-medium">
+                        * Otomatis menambah stok di sistem inventori
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-muted mb-1 uppercase">Pilih Bahan Baku yang Dibeli</label>
+                        <CustomSelect
+                          value={posExpenseForm.id_bahan_baku}
+                          onChange={(val) => {
+                            const selectedItem = inventoryList.find(i => (i.id_bahan_baku === val || i.id_barang === val))
+                            setPosExpenseForm(prev => ({
+                              ...prev,
+                              id_bahan_baku: val,
+                              id_barang: val,
+                              keterangan: prev.keterangan || (selectedItem ? `Beli ${selectedItem.nama_produk || selectedItem.nama_barang}` : '')
+                            }))
+                          }}
+                          options={[
+                            { value: '', label: '-- Pilih Item Bahan Baku --' },
+                            ...inventoryList.map(item => ({
+                              value: item.id_bahan_baku || item.id_barang,
+                              label: `${item.nama_produk || item.nama_barang} (Sisa: ${item.stok} ${item.satuan || 'unit'})`
+                            }))
+                          ]}
+                          size="md"
+                          variant="emerald"
+                          className="w-full"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-muted mb-1 uppercase">Jumlah / Qty Masuk</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            step="any"
+                            placeholder="Contoh: 5"
+                            value={posExpenseForm.qty}
+                            onChange={(e) => setPosExpenseForm(prev => ({ ...prev, qty: e.target.value }))}
+                            className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-amber-400"
+                          />
+                          <span className="text-xs font-bold text-amber-400 font-mono px-2 shrink-0">
+                            {inventoryList.find(i => (i.id_bahan_baku === posExpenseForm.id_bahan_baku || i.id_barang === posExpenseForm.id_bahan_baku))?.satuan || 'Porsi/Kg'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -3642,7 +3626,9 @@ const CafePOS = () => {
                 />
               </div>
 
-              {['Casbon', 'Ambil Uang Paketan'].includes(posExpenseForm.kategori) && (
+              {(String(posExpenseForm.kategori || '').toLowerCase().includes('casbon') || 
+                String(posExpenseForm.kategori || '').toLowerCase().includes('kasbon') || 
+                String(posExpenseForm.kategori || '').toLowerCase().includes('paketan')) && (
                 <p className="text-[10px] text-amber-500 font-medium italic">
                   * Catatan: Input satu per satu per karyawan jika kasbon/ambil paketan diwakili atau diambil oleh lebih dari 1 orang.
                 </p>

@@ -53,14 +53,14 @@ describe('3-Tier RBAC Architecture (Owner, Admin, Kasir)', () => {
     expect(kasirAuth.user.email).toBe('kasir@relaypos.com')
   })
 
-  it('3. should also resolve shorthand usernames (owner, admin, kasir)', async () => {
-    const { data: ownerAuth } = await db.auth.signInWithPassword({ email: 'owner' })
+  it('3. should also resolve shorthand usernames with valid password (owner, admin, kasir)', async () => {
+    const { data: ownerAuth } = await db.auth.signInWithPassword({ email: 'owner', password: 'password123' })
     expect(ownerAuth.user.role).toBe('Owner')
 
-    const { data: adminAuth } = await db.auth.signInWithPassword({ email: 'admin' })
+    const { data: adminAuth } = await db.auth.signInWithPassword({ email: 'admin', password: 'password123' })
     expect(adminAuth.user.role).toBe('Admin')
 
-    const { data: kasirAuth } = await db.auth.signInWithPassword({ email: 'kasir' })
+    const { data: kasirAuth } = await db.auth.signInWithPassword({ email: 'kasir', password: 'password123' })
     expect(kasirAuth.user.role).toBe('Kasir')
   })
 
@@ -121,5 +121,56 @@ describe('3-Tier RBAC Architecture (Owner, Admin, Kasir)', () => {
     Object.keys(routeRules).forEach((path) => {
       expect(checkAccess('Owner', path)).toBe(true)
     })
+  })
+
+  it('6. should reject invalid password and unknown users (C1 security fix)', async () => {
+    // 1. Wrong password for existing user
+    const { data: wrongPassData, error: wrongPassErr } = await db.auth.signInWithPassword({
+      email: 'owner@relaypos.com',
+      password: 'wrongpassword',
+    })
+    expect(wrongPassData.user).toBeNull()
+    expect(wrongPassErr).toBeDefined()
+    expect(wrongPassErr.message).toMatch(/Kata sandi salah/i)
+
+    // 2. Non-existent user must NOT guess role from email substring
+    const { data: evilData, error: evilErr } = await db.auth.signInWithPassword({
+      email: 'attacker_owner@malicious.com',
+      password: 'anypassword',
+    })
+    expect(evilData.user).toBeNull()
+    expect(evilErr).toBeDefined()
+    expect(evilErr.message).toMatch(/Pengguna tidak ditemukan/i)
+  })
+
+  it('7. should register new tenant owner via signUpOwner with isolated workspace', async () => {
+    const regRes = await db.auth.signUpOwner({
+      email: 'budi.test@autoclean.com',
+      password: 'mypassword123',
+      nama: 'Budi Test',
+      tenantName: 'AutoClean Express Test',
+      businessType: 'HYBRID',
+    })
+
+    expect(regRes.error).toBeNull()
+    expect(regRes.data.user).toBeDefined()
+    expect(regRes.data.user.role).toBe('Owner')
+    expect(regRes.data.tenant).toBeDefined()
+    expect(regRes.data.tenant.business_type).toBe('HYBRID')
+
+    const newTenantId = regRes.data.tenant.id
+
+    // Check that Chart of Accounts is bootstrapped for this new tenant
+    const { data: tenantCoa } = await db.from('chart_of_accounts').select('*').eq('tenant_id', newTenantId)
+    expect(tenantCoa.length).toBeGreaterThan(0)
+
+    // Verify login with the newly created owner credentials
+    const { data: loginData, error: loginErr } = await db.auth.signInWithPassword({
+      email: 'budi.test@autoclean.com',
+      password: 'mypassword123',
+    })
+    expect(loginErr).toBeNull()
+    expect(loginData.user.role).toBe('Owner')
+    expect(loginData.user.email).toBe('budi.test@autoclean.com')
   })
 })

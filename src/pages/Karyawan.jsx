@@ -269,7 +269,7 @@ const Karyawan = () => {
     const summary = {}
     const activeWorkers = karyawanCuciList.length > 0 
       ? karyawanCuciList.map(k => k.nama.toUpperCase().trim()) 
-      : ['ANGGA', 'FERRY', 'RAHMAN', 'FAISAL', 'BAGUS', 'VICKY', 'NOPAL', 'EZA']
+      : []
     
     activeWorkers.forEach(w => {
       summary[w] = { 
@@ -366,14 +366,17 @@ const Karyawan = () => {
       }
     })
 
-    // 2. Setup Alias Matching for name typos
+    // 2. Setup Alias Matching for name matching & normalization
     const getWorkerAliases = (name) => {
-      const n = name.toUpperCase().trim()
-      if (n === 'FERRY') return ['FERRY', 'FERY']
-      if (n === 'FAISAL') return ['FAISAL', 'FAIZAL', 'FASAL']
-      if (n === 'NOPAL') return ['NOPAL', 'NOVAL']
-      if (n === 'VICKY') return ['VICKY', 'VIKI']
-      return [n]
+      const n = (name || '').toUpperCase().trim()
+      if (!n) return []
+      const list = [n]
+      // Support typo toleransi umum nama pekerja
+      if (n.includes('Y')) list.push(n.replace(/Y/g, 'I'))
+      if (n.includes('I')) list.push(n.replace(/I/g, 'Y'))
+      if (n.includes('P')) list.push(n.replace(/P/g, 'V'))
+      if (n.includes('V')) list.push(n.replace(/V/g, 'P'))
+      return Array.from(new Set(list))
     }
 
     const isMatch = (descText, workerName) => {
