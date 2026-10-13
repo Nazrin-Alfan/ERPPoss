@@ -3164,6 +3164,20 @@
         - Vitest Unit & Integration: **262/262 tests PASS (100% GREEN)** di 44 test files dalam 6.16 detik.
         - Build produksi Vite: Berhasil dalam **1.22 detik**.
 
+    78. **Perbaikan Resolusi Role Super Admin & Dispatching Kontrol Panel Founder (`/founder`) (2026-10-13)**:
+      - **Akar Masalah**:
+        - Saat login menggunakan akun Super Admin (Solo Founder: `superadmin@relaypos.com`), query `getProfile` di `apiAdapter.js` terhalang oleh filter isolasi tenant lokal (`tenant_id: 'tenant_platform_root'` tidak sama dengan `activeTenantId: 'tenant_jb_enterprise'`).
+        - Karena query mengembalikan `null`, sistem mengembalikan fallback profil `role: 'Owner'`, sehingga pengguna diarahkan ke Dashboard Owner (`/konsolidasi`) alih-alih Kontrol Panel Founder (`/founder`).
+      - **Solusi yang Diterapkan**:
+        - **Bypass Tenant pada Identity Lookup**: Menambahkan pengecualian pada `LocalQueryBuilder._executeSelect` di `localDbEngine.js`: query pencarian pengguna spesifik berbasis ID pada tabel `profiles` (`this.hasSpecificIdFilter`) tidak lagi difilter oleh tenant aktif.
+        - **Konsistensi Role Metadata**: Menyelaraskan `getProfile` dan `api.auth.login` di `apiAdapter.js` agar selalu menghormati role asli pengguna (`Super Admin`) dari metadata sesi alih-alih me-reset paksa ke `'Owner'`.
+      - **Hasil Pengujian & Verifikasi**:
+        - Akses Cepat **Founder (superadmin)** kini 100% tepat mengarahkan ke Kontrol Panel Platform SaaS di `/founder` (Solo Founder Mission Control).
+        - Akses Cepat **Owner** tetap mengarahkan ke `/konsolidasi` (Dashboard Multi-Outlet).
+        - Akses Cepat **Admin & Kasir** mengarahkan ke `/pos`.
+        - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 file test.
+
+
 
 
 

@@ -1000,11 +1000,16 @@ export class LocalQueryBuilder {
 
     // Automatic Row-Level Security (RLS) Isolation untuk Multi-Tenant Table
     if (isMultiTenantTable(this.tableName) && !this.explicitTenantFilter && !this.bypassTenantIsolation) {
-      filteredResults = filteredResults.filter((row) => {
-        if (row.tenant_id) return row.tenant_id === activeTenantId
-        // Data bawaan awal tanpa tenant_id hanya boleh terlihat oleh DEFAULT_TENANT_ID
-        return activeTenantId === DEFAULT_TENANT_ID
-      })
+      // Lookup profil pengguna spesifik berbasis ID (autentikasi & session) tidak boleh terblokir tenant isolation
+      if (this.tableName === 'profiles' && this.hasSpecificIdFilter) {
+        // Izinkan identity lookup
+      } else {
+        filteredResults = filteredResults.filter((row) => {
+          if (row.tenant_id) return row.tenant_id === activeTenantId
+          // Data bawaan awal tanpa tenant_id hanya boleh terlihat oleh DEFAULT_TENANT_ID
+          return activeTenantId === DEFAULT_TENANT_ID
+        })
+      }
     }
 
     const totalCount = filteredResults.length

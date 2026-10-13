@@ -18,7 +18,12 @@ export const api = {
         : `${emailOrUsername.trim().toLowerCase()}@jb.local`
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
-      const profile = await this.getProfile(data.user.id)
+      const profile = (await this.getProfile(data.user.id)) || {
+        id: data.user.id,
+        nama: data.user.user_metadata?.nama || data.user.email,
+        role: data.user.role || data.user.user_metadata?.role || 'Kasir',
+        tenant_id: data.user.tenant_id,
+      }
       return { success: true, user: data.user, profile }
     },
 
@@ -29,14 +34,23 @@ export const api = {
     async getMe() {
       const { data } = await supabase.auth.getUser()
       if (!data?.user) return null
-      const profile = await this.getProfile(data.user.id)
+      const profile = (await this.getProfile(data.user.id)) || {
+        id: data.user.id,
+        nama: data.user.user_metadata?.nama || data.user.email,
+        role: data.user.role || data.user.user_metadata?.role || 'Kasir',
+        tenant_id: data.user.tenant_id,
+      }
       return { user: data.user, profile }
     },
 
     async getProfile(userId) {
-      const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*', { ignoreTenant: true })
+        .eq('id', userId)
+        .maybeSingle()
       if (error) throw error
-      return data || { id: userId, nama: 'User ERP', role: 'Owner' }
+      return data || null
     },
 
     async registerKasir(emailOrUsername, password, nama, role = 'Kasir') {
