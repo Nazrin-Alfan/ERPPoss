@@ -3177,6 +3177,32 @@
         - Akses Cepat **Admin & Kasir** mengarahkan ke `/pos`.
         - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 file test.
 
+    79. **Audit & Pengujian Menyeluruh Halaman Founder (`/founder`) dan Dukungan Upsert Engine (2026-10-13)**:
+      - **Deskripsi & Temuan Audit**:
+        - Melakukan audit mendalam terhadap seluruh tombol, fungsi, modal, filter, dan metrik di Halaman Kontrol Panel Solo Founder (`/founder`).
+        - **Bug 1 (Query Transaksi Salah)**: Pada `Founder.jsx`, pemanggilan `supabase.from('transaksi')` diganti dengan `supabase.from('struk')` agar kalkulasi GMV platform menghitung data riil struk pembayaran.
+        - **Bug 2 (Ketiadaan Metode .upsert() di Engine Lokal)**: Tombol *Perpanjang Lisensi* dan *Kill-Switch (Bekukan Akun)* memanggil `supabase.from('tenants').upsert(...)`. Pada `LocalQueryBuilder`, metode `upsert` belum diimplementasikan sehingga tombol melempar error dan modal perpanjangan lisensi tidak tertutup.
+      - **Perbaikan yang Dilakukan**:
+        - Mengimplementasikan `upsert(values, options)` dan `_executeUpsert()` pada `LocalQueryBuilder` di `src/services/localDbEngine.js` yang kompatibel dengan antarmuka Supabase resmi (update jika id cocok, insert jika belum ada).
+        - Menyelaraskan `calculateFounderPlatformMetrics` di `founderService.js` untuk mengakumulasi field `total_tagihan` atau `total_biaya`.
+        - Menyusun skrip pengujian otomatis 17-point audit (`scripts/e2e_founder_full_audit.mjs`):
+          1. Header Command Bar & status badge Super Admin.
+          2. Tombol navigasi Mode Owner (ke `/konsolidasi`).
+          3. 4 Kartu Metrik SaaS (Estimasi MRR, Platform GMV, Tenant Aktif, Dibekukan).
+          4. Tombol Refresh platform data.
+          5. Tombol Backup DB Snapshot JSON.
+          6. Modal "Terbitkan Tenant Baru" (form input, pembuatan branch, dan auto-insert ke tabel).
+          7. Input Search Bar real-time.
+          8. Filter dropdown Paket Lisensi (All / Enterprise / Pro / Basic).
+          9. Modal "Perpanjang Lisensi" (+12/+24 bulan) dengan auto-generate Serial License Key.
+          10. Tombol Kill-Switch pembekuan dan pengaktifan kembali status akun tenant.
+          11. Tombol Impersonasi untuk masuk langsung ke workspace tenant terkait.
+      - **Hasil Pengujian & Verifikasi**:
+        - **E2E Founder Audit**: **17/17 checks PASSED (100% GREEN)**.
+        - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 test files.
+        - Build produksi Vite: Berhasil dalam **1.22 detik**.
+
+
 
 
 

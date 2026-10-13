@@ -28,8 +28,8 @@ export function calculateFounderPlatformMetrics({
   const suspendedTenants = totalTenants - activeTenants
 
   // GMV Platform (Total transaksi sukses dari seluruh tenant di sistem)
-  const validTx = transactions.filter(t => t && t.status !== 'Batal' && t.status !== 'Void')
-  const platformGMV = validTx.reduce((sum, t) => sum + (Number(t.total_biaya) || 0), 0)
+  const validTx = transactions.filter(t => t && t.status !== 'Batal' && t.status !== 'Void' && t.status_bayar !== 'Batal')
+  const platformGMV = validTx.reduce((sum, t) => sum + (Number(t.total_tagihan || t.total_biaya) || 0), 0)
   const totalPlatformTransactions = validTx.length
 
   // Estimasi MRR (Monthly Recurring Revenue) platform

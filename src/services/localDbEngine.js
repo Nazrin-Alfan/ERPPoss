@@ -966,6 +966,14 @@ export class LocalQueryBuilder {
     return this
   }
 
+  // UPSERT initiation (Supabase-compatible)
+  upsert(values, options = {}) {
+    this.operation = 'UPSERT'
+    this.payload = values
+    this.upsertOptions = options
+    return this
+  }
+
   // DELETE initiation
   delete() {
     this.operation = 'DELETE'
@@ -979,6 +987,9 @@ export class LocalQueryBuilder {
     }
     if (this.operation === 'UPDATE') {
       return this._executeUpdate()
+    }
+    if (this.operation === 'UPSERT') {
+      return this._executeUpsert()
     }
     if (this.operation === 'DELETE') {
       return this._executeDelete()
@@ -1195,6 +1206,39 @@ export class LocalQueryBuilder {
 
     this.store.saveToStorage()
     return { data: updated, error: null }
+  }
+
+  // Execute UPSERT
+  async _executeUpsert() {
+    const table = this.store.getTable(this.tableName)
+    const records = Array.isArray(this.payload) ? this.payload : [this.payload]
+    const upserted = []
+
+    for (const item of records) {
+      const keyField = item.id ? 'id' : (item.id_struk ? 'id_struk' : (item.id_transaksi ? 'id_transaksi' : 'id'))
+      const matchIdx = table.findIndex((r) => r[keyField] && r[keyField] === item[keyField])
+
+      if (matchIdx > -1) {
+        table[matchIdx] = {
+          ...table[matchIdx],
+          ...item,
+          updated_at: new Date().toISOString(),
+        }
+        upserted.push(table[matchIdx])
+        this._applyTriggersOnUpdate(table[matchIdx], table[matchIdx])
+      } else {
+        const newRecord = {
+          created_at: new Date().toISOString(),
+          ...item,
+        }
+        table.push(newRecord)
+        upserted.push(newRecord)
+        this._applyTriggersOnInsert(newRecord)
+      }
+    }
+
+    this.store.saveToStorage()
+    return { data: Array.isArray(this.payload) ? upserted : upserted[0], error: null }
   }
 
   // Execute DELETE

@@ -75,7 +75,7 @@ export default function Founder() {
     setIsLoading(true)
     try {
       const { data: allTenants } = await supabase.from('tenants').select('*')
-      const { data: allTx } = await supabase.from('transaksi').select('*')
+      const { data: allTx } = await supabase.from('struk').select('*', { ignoreTenant: true })
 
       setTenants(allTenants || [])
       setTransactions(allTx || [])
