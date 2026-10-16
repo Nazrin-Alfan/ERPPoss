@@ -3202,6 +3202,20 @@
         - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 test files.
         - Build produksi Vite: Berhasil dalam **1.22 detik**.
 
+    80. **Otomasi Provisioning Akun Login Owner & Lisensi pada Penerbitan Tenant Founder (`/founder`) (2026-10-13)**:
+      - **Deskripsi & Kebutuhan**:
+        - Memastikan klien yang diterbitkan manual oleh Solo Founder via modal *"Terbitkan Tenant Baru"* langsung memiliki akun login aktif di tabel `profiles` dan lisensi resmi di tabel `tenant_licenses`.
+      - **Perbaikan yang Dilakukan**:
+        - Menambahkan default `password_hash` (`password123`) dan `salt` pada payload `ownerProfile` di `src/utils/superAdminHelpers.js`.
+        - Memperbarui fungsi `handleCreateNewTenant` di `src/pages/Founder.jsx` agar secara atomik meng-insert `payload.ownerProfile` ke tabel `profiles` dan `payload.license` ke tabel `tenant_licenses`.
+        - Menambahkan kotak panduan kredensial default di modal penerbitan tenant:
+          - Username / Email: sesuai input email pemilik toko.
+          - Password Default: `password123`.
+      - **Hasil Pengujian & Verifikasi**:
+        - Diuji langsung pada browser nyata (Playwright): Tenant diterbitkan di Founder Console ➔ Akun Owner baru langsung berhasil login di `/login` dengan `password123` ➔ Masuk ke Dashboard Konsolidasi.
+        - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 file test.
+
+
 
 
 

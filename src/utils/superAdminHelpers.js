@@ -82,6 +82,8 @@ export const createCleanTenantPayload = ({
       nama: ownerName || 'Owner Toko',
       email: ownerEmail,
       role: 'Owner',
+      password_hash: 'e34a55edf4750ae90b3c60399853c906bf01114dd7abcf7cc6980b9ca13a4b62', // default: password123
+      salt: 'relaypos_salt_v1',
       created_at: now.toISOString()
     },
     license: {

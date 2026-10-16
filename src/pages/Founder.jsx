@@ -158,8 +158,14 @@ export default function Founder() {
       if (payload.branch) {
         await supabase.from('branches').insert([payload.branch])
       }
+      if (payload.ownerProfile) {
+        await supabase.from('profiles').insert([payload.ownerProfile])
+      }
+      if (payload.license) {
+        await supabase.from('tenant_licenses').insert([payload.license])
+      }
       setTenants(prev => [payload.tenant, ...prev])
-      showNotification(`✨ Tenant baru "${payload.tenant.nama}" berhasil diterbitkan!`)
+      showNotification(`✨ Tenant baru "${payload.tenant.nama}" berhasil diterbitkan! Akun login Owner siap digunakan.`)
       setShowCreateModal(false)
       setCreateForm({
         storeName: '',
@@ -555,6 +561,12 @@ export default function Founder() {
                     <option value={1}>1 Bulan (Trial)</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-500/20 text-[11px] text-purple-200">
+                <p className="font-bold text-white mb-0.5">Kredensial Default Login Owner:</p>
+                <p>Username / Email: <span className="font-mono text-purple-300">{createForm.ownerEmail || 'email-owner@toko.com'}</span></p>
+                <p>Password Default: <span className="font-mono text-purple-300 font-bold">password123</span> (dapat diganti oleh Owner setelah login)</p>
               </div>
 
               <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
