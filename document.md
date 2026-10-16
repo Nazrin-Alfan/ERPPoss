@@ -3242,6 +3242,20 @@
         - Seluruh tenant di Founder Console kini menampilkan identitas pemilik nyata secara individual (tidak ada lagi label monoton *"Owner Toko"*).
         - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 file test.
 
+    83. **Fitur Penghapusan Tenant Permanen (Cascade Purge) di Founder Console (`/founder`) (2026-10-13)**:
+      - **Deskripsi & Fitur**:
+        - Menambahkan tombol aksi icon tempat sampah (*Trash2*) pada setiap baris tenant di tabel Master Tenant `/founder` untuk menghapus tenant dan seluruh relasi datanya secara permanen.
+        - **Proteksi Khusus**:
+          - Tenant bawaan sistem (`tenant_jb_enterprise`) dikunci dan diproteksi agar tidak dapat dihapus secara tidak sengaja.
+        - **Dialog Konfirmasi Kritis**:
+          - Menampilkan modal konfirmasi dengan peringatan tegas bahwa penghapusan bersifat permanen dan mencakup seluruh cabang, lisensi, profil staf/owner, master katalog, dan riwayat transaksi.
+        - **Pembersihan Bersih (Cascade Delete)**:
+          - Memanfaatkan fungsi `deleteTenantCompletely` di `superAdminHelpers.js` yang menyapu bersih seluruh 24 tabel sistem yang berelasi dengan `tenant_id` target.
+      - **Hasil Pengujian & Verifikasi**:
+        - Diuji langsung pada browser nyata (Playwright): Pembuatan tenant uji coba ➔ Klik icon tempat sampah ➔ Modal konfirmasi muncul ➔ Klik *"Hapus Permanen"* ➔ Tenant dan datanya terhapus tuntas dari memori dan tabel UI.
+        - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 file test.
+
+
 
 
 

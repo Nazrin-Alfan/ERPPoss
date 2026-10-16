@@ -6,7 +6,10 @@ import {
   toggleTenantSubscriptionStatus,
   generateLicenseRenewalPayload
 } from '../services/founderService'
-import { createCleanTenantPayload } from '../utils/superAdminHelpers'
+import {
+  createCleanTenantPayload,
+  deleteTenantCompletely
+} from '../utils/superAdminHelpers'
 import { formatRupiah } from '../utils/helpers'
 import {
   Crown,
@@ -37,7 +40,8 @@ import {
   Mail,
   Phone,
   MapPin,
-  Clock
+  Clock,
+  Trash2
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -70,6 +74,9 @@ export default function Founder() {
   // Modal State: Perpanjang Lisensi
   const [renewingTenant, setRenewingTenant] = useState(null)
   const [renewalMonths, setRenewalMonths] = useState(12)
+
+  // Modal State: Hapus Tenant Permanen
+  const [tenantToDelete, setTenantToDelete] = useState(null)
 
   // Status feedback toast
   const [toastMessage, setToastMessage] = useState('')
@@ -190,6 +197,35 @@ export default function Founder() {
       })
     } catch (err) {
       showNotification('Gagal membuat tenant baru.')
+    }
+  }
+
+  // Aksi Hapus Tenant Permanen
+  const handleConfirmDelete = async () => {
+    if (!tenantToDelete) return
+
+    if (tenantToDelete.id === 'tenant_jb_enterprise') {
+      showNotification('Tenant Bawaan Sistem (Demo Utama) dikunci dan tidak dapat dihapus.')
+      setTenantToDelete(null)
+      return
+    }
+
+    try {
+      if (supabase.isLocal && supabase.localDb?.store) {
+        deleteTenantCompletely(supabase.localDb.store, tenantToDelete.id)
+      } else {
+        await supabase.from('tenants').delete().eq('id', tenantToDelete.id)
+      }
+
+      setTenants(prev => prev.filter(t => t.id !== tenantToDelete.id))
+      showNotification(`🗑️ Tenant "${tenantToDelete.nama}" beserta seluruh datanya berhasil dihapus permanen.`)
+      setTenantToDelete(null)
+      if (expandedTenantId === tenantToDelete.id) {
+        setExpandedTenantId(null)
+      }
+    } catch (err) {
+      console.error('Gagal menghapus tenant:', err)
+      showNotification('Gagal menghapus tenant dari database.')
     }
   }
 
@@ -513,6 +549,18 @@ export default function Founder() {
                           >
                             <ExternalLink size={13} />
                           </button>
+
+                          {/* Tombol Hapus Tenant Permanen */}
+                          {t.id !== 'tenant_jb_enterprise' && (
+                            <button
+                              type="button"
+                              onClick={() => setTenantToDelete(t)}
+                              className="p-1 rounded-lg bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-700 hover:border-rose-500/50 transition-all cursor-pointer"
+                              title="Hapus Tenant Permanen"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -751,6 +799,59 @@ export default function Founder() {
                 className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs cursor-pointer shadow-lg"
               >
                 Konfirmasi Perpanjang
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal Konfirmasi Hapus Tenant Permanen */}
+      {tenantToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
+          <div className="w-full max-w-sm bg-slate-900 border border-rose-500/40 rounded-3xl p-6 shadow-2xl relative my-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400">
+                  <Trash2 size={18} />
+                </div>
+                <h3 className="font-bold text-white text-base">Hapus Tenant Permanen</h3>
+              </div>
+              <button
+                onClick={() => setTenantToDelete(null)}
+                className="text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3 mb-5 text-xs text-slate-300">
+              <p>
+                Apakah Anda yakin ingin menghapus tenant <strong className="text-white font-bold">{tenantToDelete.nama}</strong> ({tenantToDelete.id})?
+              </p>
+              <div className="p-3 rounded-xl bg-rose-950/30 border border-rose-500/30 text-rose-300 space-y-1 text-[11px]">
+                <p className="font-bold flex items-center gap-1.5">
+                  <AlertTriangle size={14} className="text-rose-400" />
+                  <span>Peringatan Tindakan Kritis</span>
+                </p>
+                <p>
+                  Seluruh data cabang, akun login staf/owner, katalog produk, lisensi, dan catatan transaksi tenant ini akan <strong>dihapus permanen</strong> dari sistem. Tindakan ini tidak dapat dibatalkan.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => setTenantToDelete(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold cursor-pointer shadow-lg shadow-rose-600/30"
+              >
+                Hapus Permanen
               </button>
             </div>
           </div>
