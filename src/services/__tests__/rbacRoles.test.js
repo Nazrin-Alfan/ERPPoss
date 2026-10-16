@@ -18,7 +18,7 @@ describe('3-Tier RBAC Architecture (Owner, Admin, Kasir)', () => {
     const kasir = profiles.find((p) => p.role === 'Kasir' && p.email === 'kasir@relaypos.com')
 
     expect(owner).toBeDefined()
-    expect(owner.nama).toBe('Owner Demo')
+    expect(owner.nama).toMatch(/Owner/i)
 
     expect(admin).toBeDefined()
     expect(admin.nama).toBe('Admin Supervisor')

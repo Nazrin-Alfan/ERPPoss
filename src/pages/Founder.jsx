@@ -409,11 +409,16 @@ export default function Founder() {
 
                 // Cari data profil Owner dari tenant ini
                 const ownerProfile = profiles.find(p => p.tenant_id === t.id && p.role === 'Owner') || {
-                  nama: t.owner_name || 'Owner Toko',
+                  nama: t.owner_name || `Owner ${t.nama}`,
                   email: t.owner_email || 'Belum terdaftar',
                   telepon: t.telepon || '-',
                   alamat: t.alamat || '-'
                 }
+
+                const displayOwnerName = ownerProfile.nama || t.owner_name || `Owner ${t.nama}`
+                const displayOwnerEmail = ownerProfile.email || t.owner_email || '-'
+                const displayPhone = t.telepon || ownerProfile.telepon || '-'
+                const displayAddress = t.alamat || ownerProfile.alamat || '-'
 
                 return (
                   <React.Fragment key={t.id}>
@@ -525,7 +530,7 @@ export default function Founder() {
                                 </div>
                                 <div>
                                   <span className="text-[10px] text-slate-400 uppercase font-semibold block">Nama Pemilik</span>
-                                  <span className="font-bold text-white">{ownerProfile.nama || t.nama}</span>
+                                  <span className="font-bold text-white">{displayOwnerName}</span>
                                 </div>
                               </div>
 
@@ -536,7 +541,7 @@ export default function Founder() {
                                 </div>
                                 <div>
                                   <span className="text-[10px] text-slate-400 uppercase font-semibold block">Email Login Owner</span>
-                                  <span className="font-mono text-purple-300">{ownerProfile.email || t.owner_email || '-'}</span>
+                                  <span className="font-mono text-purple-300">{displayOwnerEmail}</span>
                                 </div>
                               </div>
 
@@ -547,7 +552,7 @@ export default function Founder() {
                                 </div>
                                 <div>
                                   <span className="text-[10px] text-slate-400 uppercase font-semibold block">No. WhatsApp / Telepon</span>
-                                  <span className="font-mono text-slate-200">{t.telepon || ownerProfile.telepon || '-'}</span>
+                                  <span className="font-mono text-slate-200">{displayPhone}</span>
                                 </div>
                               </div>
 
@@ -558,15 +563,15 @@ export default function Founder() {
                                 </div>
                                 <div>
                                   <span className="text-[10px] text-slate-400 uppercase font-semibold block">Lokasi / Alamat</span>
-                                  <span className="text-slate-200">{t.alamat || '-'}</span>
+                                  <span className="text-slate-200">{displayAddress}</span>
                                 </div>
                               </div>
                             </div>
 
                             {/* Tombol Kontak Cepat WhatsApp Owner */}
-                            {t.telepon && t.telepon !== '-' && (
+                            {displayPhone && displayPhone !== '-' && (
                               <a
-                                href={`https://wa.me/${t.telepon.replace(/\D/g, '').replace(/^0/, '62')}?text=${encodeURIComponent(`Halo ${ownerProfile.nama || t.nama}, kami dari Tim Support RelayPOS...`)}`}
+                                href={`https://wa.me/${displayPhone.replace(/\D/g, '').replace(/^0/, '62')}?text=${encodeURIComponent(`Halo ${displayOwnerName}, kami dari Tim Support RelayPOS...`)}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[11px] flex items-center gap-1.5 shadow-md shadow-emerald-500/20 transition-all active:scale-95"

@@ -3228,6 +3228,21 @@
         - Diuji langsung pada browser nyata (Playwright): Klik baris tenant ➔ Drawer informasi pemilik terbuka mulus ➔ Klik kembali ➔ Drawer tertutup rapi.
         - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 file test.
 
+    82. **Dinamisasi Identitas Pemilik Tenant & Eliminasi Fallback Generik (2026-10-13)**:
+      - **Akar Masalah**:
+        - Sebelumnya, nama pemilik pada tabel tenant menampilkan nilai fallback statis `Owner Toko` karena pada seed awal tenant bawaan (`tenant_demo_cafe` dan `tenant_demo_carwash`), kolom `owner_name` belum terisi di master `tenants` dan profil owner-nya belum memiliki relasi nama eksplisit.
+      - **Solusi yang Diterapkan**:
+        - Melengkapi data master tenant awal di `src/services/localDbEngine.js` dengan identitas nama pemilik, email, nomor kontak telepon WhatsApp, dan alamat ruko:
+          - **RelayPOS Demo Holding**: *Nazrin Alfan (Holding Owner)* (`owner@relaypos.com` / `0812-6688-9900` / Jl. Ringroad No. 88, Medan).
+          - **Kopi Senja & Bistro**: *Hendra Gunawan (Owner Cafe)* (`hendra.cafe@senja.com` / `0813-7722-1100` / Jl. Merak Jingga No. 12, Medan).
+          - **Kilat Auto Detailing**: *Bambang Pratama (Owner Carwash)* (`bambang@kilatdetailing.com` / `0819-3344-5566` / Jl. Setiabudi No. 45, Medan).
+        - Menyelaraskan helper `createCleanTenantPayload` di `superAdminHelpers.js` agar menyimpan atribut `owner_name` dan `owner_email` ke dalam objek record tenant, serta menggunakan fallback dinamis `Owner [Nama Toko]` jika form nama owner dikosongkan.
+        - Memperbarui `src/pages/Founder.jsx` agar pembacaan nama pemilik mengutamakan profil owner terdaftar atau atribut `owner_name` spesifik toko terkait.
+      - **Hasil Pengujian & Verifikasi**:
+        - Seluruh tenant di Founder Console kini menampilkan identitas pemilik nyata secara individual (tidak ada lagi label monoton *"Owner Toko"*).
+        - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 file test.
+
+
 
 
 

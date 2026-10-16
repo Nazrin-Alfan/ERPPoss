@@ -47,6 +47,8 @@ export const createCleanTenantPayload = ({
   const tenantId = `tenant_${cleanSlug}_${Math.random().toString(36).substring(2, 6)}`
   const branchId = `branch_${cleanSlug}_main`
 
+  const resolvedOwnerName = ownerName?.trim() || `Owner ${storeName}`
+
   const now = new Date()
   const expiryDate = new Date(now)
   expiryDate.setMonth(expiryDate.getMonth() + (licenseDurationMonths || 12))
@@ -58,6 +60,8 @@ export const createCleanTenantPayload = ({
       id: tenantId,
       nama: storeName,
       slug: cleanSlug,
+      owner_name: resolvedOwnerName,
+      owner_email: ownerEmail,
       business_type: businessType, // 'HYBRID' | 'CARWASH' | 'CAFE'
       plan: tier === 'PRO_ANNUAL' ? 'ENTERPRISE' : 'BASIC',
       status: 'ACTIVE',
@@ -79,7 +83,7 @@ export const createCleanTenantPayload = ({
       id: `usr_${cleanSlug}_owner`,
       tenant_id: tenantId,
       branch_id: branchId,
-      nama: ownerName || 'Owner Toko',
+      nama: resolvedOwnerName,
       email: ownerEmail,
       role: 'Owner',
       password_hash: 'e34a55edf4750ae90b3c60399853c906bf01114dd7abcf7cc6980b9ca13a4b62', // default: password123
