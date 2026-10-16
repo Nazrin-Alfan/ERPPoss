@@ -266,8 +266,11 @@ export default function Founder() {
   // Aksi Impersonation Mode: Masuk sebagai Tenant Ini untuk Troubleshooting
   const handleImpersonate = (tenantId) => {
     switchTenant(tenantId)
-    showNotification(`Masuk ke workspace tenant ${tenantId}...`)
-    navigate('/dashboard')
+    const target = tenants.find(t => t.id === tenantId)
+    showNotification(`⚡ Mengalihkan ke workspace "${target?.nama || tenantId}"...`)
+    setTimeout(() => {
+      navigate('/konsolidasi')
+    }, 150)
   }
 
   // Aksi Ekspor Snapshot Database Platform

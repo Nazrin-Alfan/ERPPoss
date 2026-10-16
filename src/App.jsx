@@ -153,11 +153,11 @@ const AppContent = () => {
               {/* Rute Root Aplikasi: Smart Landing Dispatcher Berdasarkan Peran */}
               <Route path="/" element={<RootDispatcher />} />
 
-              {/* Rute Dashboard Executive Cabang Terpilih (Owner Only) */}
+              {/* Rute Dashboard Executive Cabang Terpilih (Owner & Super Admin) */}
               <Route 
                 path="/dashboard" 
                 element={
-                  <ProtectedRoute allowedRoles={['Owner']}>
+                  <ProtectedRoute allowedRoles={['Owner', 'Super Admin']}>
                     <Dashboard />
                   </ProtectedRoute>
                 } 

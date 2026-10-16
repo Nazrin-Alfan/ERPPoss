@@ -141,7 +141,21 @@ export const AuthProvider = ({ children }) => {
 
   // Fungsi ganti tenant aktif (Hanya untuk Owner & Super Admin)
   const switchTenant = useCallback((tenantId) => {
-    const targetTenant = userTenants.find(t => t.id === tenantId)
+    let targetTenant = userTenants.find(t => t.id === tenantId)
+
+    // Jika Super Admin berpindah ke tenant yang baru saja dibuat di halaman Founder
+    if (!targetTenant && (profile?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.SUPER_ADMIN)) {
+      try {
+        const storedTenants = JSON.parse(localStorage.getItem('relaypos_real_sandbox_v2') || '{}').tenants || []
+        targetTenant = storedTenants.find(t => t.id === tenantId)
+        if (targetTenant) {
+          setUserTenants(prev => [...prev.filter(t => t.id !== targetTenant.id), targetTenant])
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     if (!targetTenant) {
       console.warn(`Tenant ID ${tenantId} tidak ditemukan dalam daftar akses user.`)
       return false
@@ -158,7 +172,7 @@ export const AuthProvider = ({ children }) => {
       }))
     }
     return true
-  }, [userTenants])
+  }, [userTenants, profile, user])
 
   const refreshTenants = useCallback(async () => {
     if (profile) {

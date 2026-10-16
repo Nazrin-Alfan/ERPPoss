@@ -3271,6 +3271,20 @@
         - Diuji langsung pada browser nyata (Playwright): Terbitkan toko uji coba ➔ Arsipkan toko ➔ Toko hilang dari daftar aktif ➔ Ganti filter ke status arsip ➔ Toko muncul dengan badge *"Diarsipkan"* ➔ Klik *"Pulihkan"* ➔ Toko kembali aktif 100%.
         - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 file test.
 
+    85. **Perbaikan Fungsionalitas & Navigasi Impersonasi Tenant di Founder Console (2026-10-13)**:
+      - **Akar Masalah**:
+        - Saat tombol Impersonasi (`ExternalLink`) diklik pada baris tenant di `/founder`, tombol seolah tidak merespons karena:
+          1. Handler mengarahkan ke `/dashboard`, di mana rute `/dashboard` di `App.jsx` sebelumnya hanya mengizinkan role `Owner`, sehingga Super Admin tertolak.
+          2. Fungsi `switchTenant` di `AuthContext.jsx` belum menyertakan fallback pembacaan tenant dinamis baru bagi Super Admin.
+      - **Solusi yang Diterapkan**:
+        - **Otorisasi Rute**: Memperbarui rute `/dashboard` di `src/App.jsx` agar mengizinkan `allowedRoles={['Owner', 'Super Admin']}`.
+        - **Target Navigasi Impersonasi**: Mengarahkan perpindahan impersonasi ke `/konsolidasi` (Dashboard Konsolidasi Toko Terpilih) dengan notifikasi visual transisi: *"⚡ Mengalihkan ke workspace [Nama Toko]..."*.
+        - **Resolusi Tenant Dinamis**: Menambahkan pencarian fallback di `switchTenant` (`AuthContext.jsx`) agar Super Admin dapat beralih ke tenant mana pun secara instan.
+      - **Hasil Pengujian & Verifikasi**:
+        - Diuji langsung pada browser nyata (Playwright): Klik tombol Impersonasi pada baris tenant ➔ Notifikasi transisi muncul ➔ Browser langsung berpindah ke Dashboard Konsolidasi toko terkait dengan identitas workspace aktif yang sesuai.
+        - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 file test.
+
+
 
 
 
