@@ -16,6 +16,7 @@ const AuthContext = createContext({
   switchTenant: () => {},
   refreshTenants: async () => {},
   login: async () => {},
+  loginWithGoogle: async () => {},
   registerTenantOwner: async () => {},
   logout: async () => {},
   registerKasir: async () => {},
@@ -277,6 +278,22 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  // Fungsi Login / Register Cepat dengan Google OAuth
+  const loginWithGoogle = async (customPayload = {}) => {
+    try {
+      const res = await api.auth.signInWithGoogle(customPayload)
+      if (res.user) {
+        setUser(res.user)
+        setProfile(res.profile)
+        await loadTenantsForUser(res.profile)
+      }
+      return { success: true, user: res.user, profile: res.profile, tenant: res.tenant }
+    } catch (err) {
+      console.error('Google OAuth error:', err)
+      return { success: false, error: err.message || 'Login dengan Google gagal.' }
+    }
+  }
+
   // Fungsi Pendaftaran Mandiri Toko Baru (Owner Onboarding)
   const registerTenantOwner = async ({ email, password, nama, tenantName, businessType }) => {
     try {
@@ -338,6 +355,7 @@ export const AuthProvider = ({ children }) => {
       refreshTenants, 
       updateTenantBusinessType,
       login, 
+      loginWithGoogle,
       registerTenantOwner, 
       logout, 
       registerKasir 

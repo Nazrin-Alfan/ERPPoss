@@ -2026,6 +2026,94 @@ export const createLocalClient = () => {
 
         return { data: { user: userObj, session, tenant: newTenant, profile: ownerProfile }, error: null }
       },
+
+      async signInWithOAuth({ provider, options = {} }) {
+        if (provider !== 'google') {
+          return { data: { user: null, session: null }, error: new Error(`OAuth provider ${provider} belum didukung.`) }
+        }
+
+        const email = options?.data?.email || options?.queryParams?.email || 'owner.google@gmail.com'
+        const nama = options?.data?.nama || options?.queryParams?.nama || 'Owner Google'
+        const cleanEmail = email.trim().toLowerCase()
+
+        const profiles = localDbStore.getTable('profiles')
+        let profile = profiles.find((p) => p.email?.toLowerCase() === cleanEmail)
+        let tenant = null
+
+        if (profile) {
+          // Akun sudah ada -> login langsung
+          tenant = localDbStore.getTable('tenants').find((t) => t.id === profile.tenant_id)
+        } else {
+          // Akun baru -> Buat tenant baru (Trial 14 Hari)
+          const randomSuffix = Math.random().toString(36).substring(2, 7)
+          const tenantName = options?.data?.tenantName || `${nama}'s Store`
+          const newTenantId = `tenant_${Date.now()}_${randomSuffix}`
+          const slug = tenantName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `toko-${randomSuffix}`
+
+          tenant = {
+            id: newTenantId,
+            nama: tenantName,
+            slug,
+            owner_name: nama,
+            owner_email: cleanEmail,
+            business_type: options?.data?.businessType || 'HYBRID',
+            plan: 'TRIAL',
+            status: 'ACTIVE',
+            created_at: new Date().toISOString(),
+          }
+          localDbStore.getTable('tenants').push(tenant)
+
+          const newBranchId = `branch_${newTenantId}_main`
+          localDbStore.getTable('branches').push({
+            id: newBranchId,
+            tenant_id: newTenantId,
+            nama: 'Cabang Utama',
+            is_active: true,
+            created_at: new Date().toISOString(),
+          })
+
+          localDbStore.ensureTenantMasterData(newTenantId, tenant.business_type)
+
+          const newUserId = `usr_google_${Date.now()}`
+          profile = {
+            id: newUserId,
+            tenant_id: newTenantId,
+            branch_id: newBranchId,
+            nama,
+            email: cleanEmail,
+            role: 'Owner',
+            provider: 'google',
+            created_at: new Date().toISOString(),
+          }
+          profiles.push(profile)
+          localDbStore.saveToStorage()
+        }
+
+        const userObj = {
+          id: profile.id,
+          email: profile.email,
+          role: 'Owner',
+          tenant_id: profile.tenant_id,
+          user_metadata: {
+            nama: profile.nama,
+            role: 'Owner',
+            tenant_id: profile.tenant_id,
+            provider: 'google',
+          },
+        }
+
+        const session = {
+          user: userObj,
+          access_token: 'google-oauth-jwt-token-erp',
+          token_type: 'bearer',
+          expires_in: 86400,
+        }
+
+        localDbStore.saveAuth(session)
+        authListeners.forEach((fn) => fn('SIGNED_IN', session))
+
+        return { data: { user: userObj, session, tenant, profile }, error: null }
+      },
     },
 
     erp: {

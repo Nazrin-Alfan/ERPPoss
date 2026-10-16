@@ -99,6 +99,30 @@ export const api = {
       const profile = await this.getProfile(data.user.id)
       return { success: true, user: data.user, profile, tenant: data.tenant }
     },
+
+    async signInWithGoogle(options = {}) {
+      if (isCloudBackend) {
+        // Di mode Cloud: Eksekusi Google OAuth resmi via Supabase Auth
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/konsolidasi` : undefined,
+            ...options,
+          },
+        })
+        if (error) throw error
+        return { success: true, data }
+      }
+
+      // Di mode Local/Sandbox: Eksekusi mock Google OAuth engine
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options,
+      })
+      if (error) throw error
+      const profile = await this.getProfile(data.user.id)
+      return { success: true, user: data.user, profile, tenant: data.tenant }
+    },
   },
 
   // 2. MASTER DATA

@@ -3284,6 +3284,22 @@
         - Diuji langsung pada browser nyata (Playwright): Klik tombol Impersonasi pada baris tenant ➔ Notifikasi transisi muncul ➔ Browser langsung berpindah ke Dashboard Konsolidasi toko terkait dengan identitas workspace aktif yang sesuai.
         - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 file test.
 
+    86. **Integrasi Google OAuth Terpadu (Anti-Spam Self-Registration & Instant Login) (2026-10-13)**:
+      - **Deskripsi & Rasional**:
+        - Mencegah spam bot otomatis dan disposable email fiktif pada proses pendaftaran mandiri (Free Trial 14 Hari) menggunakan autentikasi resmi Google OAuth.
+      - **Perbaikan yang Dilakukan**:
+        - **Konektor Dual-Mode OAuth (`src/services/apiAdapter.js`)**:
+          - Mengimplementasikan `signInWithGoogle(options)` yang secara otomatis memanggil `supabase.auth.signInWithOAuth({ provider: 'google' })` pada mode Cloud, dan mengeksekusi Google OAuth Sandbox engine pada mode Lokal.
+        - **Engine Sandbox Google OAuth (`src/services/localDbEngine.js`)**:
+          - Menerapkan fungsi `signInWithOAuth` yang membedakan akun lama (login instan ke toko miliknya) vs akun baru (auto-provisioning toko baru dengan lisensi Trial 14 Hari dan COA siap pakai).
+        - **UI Tombol Google Resmi di Form Login & Registrasi (`src/pages/Login.jsx`)**:
+          - Menyediakan tombol *"Lanjutkan dengan Google"* di tab Masuk.
+          - Menyediakan tombol *"Daftar Toko Cepat dengan Google"* di tab Pendaftaran Toko Baru.
+      - **Hasil Pengujian & Verifikasi**:
+        - Diuji langsung pada browser nyata (Playwright): Klik tombol Google Auth ➔ Toko baru langsung terdaftar dan pengguna dialihkan ke Dashboard Konsolidasi.
+        - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 file test.
+
+
 
 
 
