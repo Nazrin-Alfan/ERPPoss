@@ -41,7 +41,8 @@ import {
   Phone,
   MapPin,
   Clock,
-  Trash2
+  Archive,
+  ArchiveRestore
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -55,6 +56,7 @@ export default function Founder() {
   const [transactions, setTransactions] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPlanFilter, setSelectedPlanFilter] = useState('ALL')
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState('ACTIVE') // 'ACTIVE' | 'ARCHIVED' | 'ALL'
   const [lastRefreshed, setLastRefreshed] = useState(new Date())
   const [expandedTenantId, setExpandedTenantId] = useState(null)
 
@@ -75,8 +77,8 @@ export default function Founder() {
   const [renewingTenant, setRenewingTenant] = useState(null)
   const [renewalMonths, setRenewalMonths] = useState(12)
 
-  // Modal State: Hapus Tenant Permanen
-  const [tenantToDelete, setTenantToDelete] = useState(null)
+  // Modal State: Arsipkan Tenant (Soft Delete)
+  const [tenantToArchive, setTenantToArchive] = useState(null)
 
   // Status feedback toast
   const [toastMessage, setToastMessage] = useState('')
@@ -125,9 +127,18 @@ export default function Founder() {
                           (t.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (t.owner_email || '').toLowerCase().includes(searchQuery.toLowerCase())
       const matchPlan = selectedPlanFilter === 'ALL' || (t.plan || 'BASIC').toUpperCase() === selectedPlanFilter
-      return matchSearch && matchPlan
+      
+      const isArchived = t.status === 'ARCHIVED' || t.subscription_status === 'ARCHIVED'
+      let matchStatus = true
+      if (selectedStatusFilter === 'ACTIVE') {
+        matchStatus = !isArchived
+      } else if (selectedStatusFilter === 'ARCHIVED') {
+        matchStatus = isArchived
+      }
+
+      return matchSearch && matchPlan && matchStatus
     })
-  }, [tenants, searchQuery, selectedPlanFilter])
+  }, [tenants, searchQuery, selectedPlanFilter, selectedStatusFilter])
 
   // Aksi Kill-Switch: Bekukan atau Aktifkan Tenant
   const handleToggleSubscription = async (tenant) => {
@@ -200,32 +211,55 @@ export default function Founder() {
     }
   }
 
-  // Aksi Hapus Tenant Permanen
-  const handleConfirmDelete = async () => {
-    if (!tenantToDelete) return
+  // Aksi Arsipkan Tenant (Soft Delete)
+  const handleConfirmArchive = async () => {
+    if (!tenantToArchive) return
 
-    if (tenantToDelete.id === 'tenant_jb_enterprise') {
-      showNotification('Tenant Bawaan Sistem (Demo Utama) dikunci dan tidak dapat dihapus.')
-      setTenantToDelete(null)
+    if (tenantToArchive.id === 'tenant_jb_enterprise') {
+      showNotification('Tenant Bawaan Sistem (Demo Utama) dikunci dan tidak dapat diarsipkan.')
+      setTenantToArchive(null)
       return
     }
 
     try {
-      if (supabase.isLocal && supabase.localDb?.store) {
-        deleteTenantCompletely(supabase.localDb.store, tenantToDelete.id)
-      } else {
-        await supabase.from('tenants').delete().eq('id', tenantToDelete.id)
+      const updated = {
+        ...tenantToArchive,
+        status: 'ARCHIVED',
+        subscription_status: 'ARCHIVED',
+        is_active: false,
+        updated_at: new Date().toISOString()
       }
 
-      setTenants(prev => prev.filter(t => t.id !== tenantToDelete.id))
-      showNotification(`🗑️ Tenant "${tenantToDelete.nama}" beserta seluruh datanya berhasil dihapus permanen.`)
-      setTenantToDelete(null)
-      if (expandedTenantId === tenantToDelete.id) {
+      await supabase.from('tenants').upsert(updated)
+      setTenants(prev => prev.map(t => t.id === tenantToArchive.id ? updated : t))
+      showNotification(`📦 Tenant "${tenantToArchive.nama}" berhasil dipindahkan ke Arsip (Data tetap aman).`)
+      setTenantToArchive(null)
+      if (expandedTenantId === tenantToArchive.id) {
         setExpandedTenantId(null)
       }
     } catch (err) {
-      console.error('Gagal menghapus tenant:', err)
-      showNotification('Gagal menghapus tenant dari database.')
+      console.error('Gagal mengarsipkan tenant:', err)
+      showNotification('Gagal mengarsipkan tenant.')
+    }
+  }
+
+  // Aksi Pulihkan Tenant dari Arsip
+  const handleRestoreTenant = async (tenant) => {
+    try {
+      const updated = {
+        ...tenant,
+        status: 'ACTIVE',
+        subscription_status: 'ACTIVE',
+        is_active: true,
+        updated_at: new Date().toISOString()
+      }
+
+      await supabase.from('tenants').upsert(updated)
+      setTenants(prev => prev.map(t => t.id === tenant.id ? updated : t))
+      showNotification(`✨ Tenant "${tenant.nama}" berhasil dipulihkan dari arsip dan aktif kembali!`)
+    } catch (err) {
+      console.error('Gagal memulihkan tenant:', err)
+      showNotification('Gagal memulihkan tenant.')
     }
   }
 
@@ -398,8 +432,8 @@ export default function Founder() {
             </p>
           </div>
 
-          {/* Search Bar & Filter Plan */}
-          <div className="flex items-center gap-2">
+          {/* Search Bar & Filter Plan & Status */}
+          <div className="flex flex-wrap items-center gap-2">
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
@@ -407,9 +441,21 @@ export default function Founder() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari nama, ID, email..."
-                className="pl-8 pr-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-purple-500 w-48 sm:w-60"
+                className="pl-8 pr-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-purple-500 w-44 sm:w-56"
               />
             </div>
+
+            {/* Filter Status Aktif vs Arsip */}
+            <select
+              value={selectedStatusFilter}
+              onChange={(e) => setSelectedStatusFilter(e.target.value)}
+              className="px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 focus:outline-none focus:border-purple-500 cursor-pointer font-bold"
+            >
+              <option value="ACTIVE">Status: Toko Aktif</option>
+              <option value="ARCHIVED">Status: Diarsipkan (Soft Delete)</option>
+              <option value="ALL">Status: Semua Toko</option>
+            </select>
+
             <select
               value={selectedPlanFilter}
               onChange={(e) => setSelectedPlanFilter(e.target.value)}
@@ -438,9 +484,10 @@ export default function Founder() {
             </thead>
             <tbody className="divide-y divide-slate-800/60">
               {filteredTenants.map((t) => {
-                const isActive = t.is_active !== false && t.subscription_status !== 'SUSPENDED'
+                const isArchived = t.status === 'ARCHIVED' || t.subscription_status === 'ARCHIVED'
+                const isActive = !isArchived && t.is_active !== false && t.subscription_status !== 'SUSPENDED'
                 const expiresAt = t.license_expires_at ? new Date(t.license_expires_at) : null
-                const isExpiringSoon = expiresAt && (expiresAt - new Date()) < (30 * 24 * 60 * 60 * 1000)
+                const isExpiringSoon = !isArchived && expiresAt && (expiresAt - new Date()) < (30 * 24 * 60 * 60 * 1000)
                 const isExpanded = expandedTenantId === t.id
 
                 // Cari data profil Owner dari tenant ini
@@ -507,59 +554,76 @@ export default function Founder() {
                       </td>
                       <td className="py-3 text-center">
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                          isActive 
-                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
-                            : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                          isArchived
+                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                            : (isActive 
+                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
+                                : 'bg-rose-500/10 text-rose-400 border-rose-500/30')
                         }`}>
-                          {isActive ? 'Aktif' : 'Dibekukan'}
+                          {isArchived ? 'Diarsipkan' : (isActive ? 'Aktif' : 'Dibekukan')}
                         </span>
                       </td>
                       <td className="py-3 text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-center gap-1.5">
-                          {/* Tombol Perpanjang */}
-                          <button
-                            type="button"
-                            onClick={() => setRenewingTenant(t)}
-                            className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-purple-950 text-slate-300 hover:text-purple-300 text-[10px] font-bold border border-slate-700 transition-all cursor-pointer"
-                            title="Perpanjang masa aktif lisensi"
-                          >
-                            Perpanjang
-                          </button>
-
-                          {/* Kill-Switch Pembekuan Akun */}
-                          <button
-                            type="button"
-                            onClick={() => handleToggleSubscription(t)}
-                            className={`p-1 rounded-lg border transition-all cursor-pointer ${
-                              isActive
-                                ? 'bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border-slate-700 hover:border-rose-500/50'
-                                : 'bg-emerald-950/60 text-emerald-400 border-emerald-500/40 hover:bg-emerald-900'
-                            }`}
-                            title={isActive ? 'Bekukan Tenant (Kill Switch)' : 'Buka Blokir Tenant'}
-                          >
-                            {isActive ? <Ban size={13} /> : <Play size={13} />}
-                          </button>
-
-                          {/* Impersonation: Masuk sebagai Tenant Ini */}
-                          <button
-                            type="button"
-                            onClick={() => handleImpersonate(t.id)}
-                            className="p-1 rounded-lg bg-slate-800 hover:bg-indigo-950 text-slate-400 hover:text-indigo-300 border border-slate-700 transition-all cursor-pointer"
-                            title="Impersonasi: Masuk dan cek workspace tenant ini"
-                          >
-                            <ExternalLink size={13} />
-                          </button>
-
-                          {/* Tombol Hapus Tenant Permanen */}
-                          {t.id !== 'tenant_jb_enterprise' && (
+                          {isArchived ? (
+                            /* Tombol Pulihkan dari Arsip */
                             <button
                               type="button"
-                              onClick={() => setTenantToDelete(t)}
-                              className="p-1 rounded-lg bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-700 hover:border-rose-500/50 transition-all cursor-pointer"
-                              title="Hapus Tenant Permanen"
+                              onClick={() => handleRestoreTenant(t)}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-950/70 hover:bg-emerald-900 text-emerald-400 border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer"
+                              title="Pulihkan Toko dari Arsip"
                             >
-                              <Trash2 size={13} />
+                              <ArchiveRestore size={13} />
+                              <span>Pulihkan</span>
                             </button>
+                          ) : (
+                            <>
+                              {/* Tombol Perpanjang */}
+                              <button
+                                type="button"
+                                onClick={() => setRenewingTenant(t)}
+                                className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-purple-950 text-slate-300 hover:text-purple-300 text-[10px] font-bold border border-slate-700 transition-all cursor-pointer"
+                                title="Perpanjang masa aktif lisensi"
+                              >
+                                Perpanjang
+                              </button>
+
+                              {/* Kill-Switch Pembekuan Akun */}
+                              <button
+                                type="button"
+                                onClick={() => handleToggleSubscription(t)}
+                                className={`p-1 rounded-lg border transition-all cursor-pointer ${
+                                  isActive
+                                    ? 'bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border-slate-700 hover:border-rose-500/50'
+                                    : 'bg-emerald-950/60 text-emerald-400 border-emerald-500/40 hover:bg-emerald-900'
+                                }`}
+                                title={isActive ? 'Bekukan Tenant (Kill Switch)' : 'Buka Blokir Tenant'}
+                              >
+                                {isActive ? <Ban size={13} /> : <Play size={13} />}
+                              </button>
+
+                              {/* Impersonation: Masuk sebagai Tenant Ini */}
+                              <button
+                                type="button"
+                                onClick={() => handleImpersonate(t.id)}
+                                className="p-1 rounded-lg bg-slate-800 hover:bg-indigo-950 text-slate-400 hover:text-indigo-300 border border-slate-700 transition-all cursor-pointer"
+                                title="Impersonasi: Masuk dan cek workspace tenant ini"
+                              >
+                                <ExternalLink size={13} />
+                              </button>
+
+                              {/* Tombol Arsipkan Tenant (Soft Delete) */}
+                              {t.id !== 'tenant_jb_enterprise' && (
+                                <button
+                                  type="button"
+                                  onClick={() => setTenantToArchive(t)}
+                                  className="p-1 rounded-lg bg-slate-800 hover:bg-amber-950 text-slate-400 hover:text-amber-400 border border-slate-700 hover:border-amber-500/50 transition-all cursor-pointer"
+                                  title="Arsipkan Toko (Soft Delete)"
+                                >
+                                  <Archive size={13} />
+                                </button>
+                              )}
+                            </>
                           )}
                         </div>
                       </td>
@@ -804,19 +868,19 @@ export default function Founder() {
           </div>
         </div>
       )}
-      {/* Modal Konfirmasi Hapus Tenant Permanen */}
-      {tenantToDelete && (
+      {/* Modal Konfirmasi Arsipkan Tenant (Soft Delete) */}
+      {tenantToArchive && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
-          <div className="w-full max-w-sm bg-slate-900 border border-rose-500/40 rounded-3xl p-6 shadow-2xl relative my-auto">
+          <div className="w-full max-w-sm bg-slate-900 border border-amber-500/40 rounded-3xl p-6 shadow-2xl relative my-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400">
-                  <Trash2 size={18} />
+                <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400">
+                  <Archive size={18} />
                 </div>
-                <h3 className="font-bold text-white text-base">Hapus Tenant Permanen</h3>
+                <h3 className="font-bold text-white text-base">Arsipkan Tenant Toko</h3>
               </div>
               <button
-                onClick={() => setTenantToDelete(null)}
+                onClick={() => setTenantToArchive(null)}
                 className="text-slate-400 hover:text-white cursor-pointer"
               >
                 <X size={18} />
@@ -825,15 +889,15 @@ export default function Founder() {
 
             <div className="space-y-3 mb-5 text-xs text-slate-300">
               <p>
-                Apakah Anda yakin ingin menghapus tenant <strong className="text-white font-bold">{tenantToDelete.nama}</strong> ({tenantToDelete.id})?
+                Apakah Anda ingin mengarsipkan toko <strong className="text-white font-bold">{tenantToArchive.nama}</strong> ({tenantToArchive.id})?
               </p>
-              <div className="p-3 rounded-xl bg-rose-950/30 border border-rose-500/30 text-rose-300 space-y-1 text-[11px]">
+              <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 text-amber-300 space-y-1 text-[11px]">
                 <p className="font-bold flex items-center gap-1.5">
-                  <AlertTriangle size={14} className="text-rose-400" />
-                  <span>Peringatan Tindakan Kritis</span>
+                  <ShieldCheck size={14} className="text-emerald-400" />
+                  <span>Data Tetap Aman (Bukan Dihapus)</span>
                 </p>
                 <p>
-                  Seluruh data cabang, akun login staf/owner, katalog produk, lisensi, dan catatan transaksi tenant ini akan <strong>dihapus permanen</strong> dari sistem. Tindakan ini tidak dapat dibatalkan.
+                  Toko akan dinonaktifkan dan disembunyikan dari daftar aktif. Seluruh data transaksi, keuangan, stok, dan akun staf <strong>tetap tersimpan utuh</strong> dan dapat dipulihkan kembali kapan saja klien memperpanjang langganan.
                 </p>
               </div>
             </div>
@@ -841,17 +905,17 @@ export default function Founder() {
             <div className="flex justify-end gap-2 text-xs">
               <button
                 type="button"
-                onClick={() => setTenantToDelete(null)}
+                onClick={() => setTenantToArchive(null)}
                 className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 cursor-pointer"
               >
                 Batal
               </button>
               <button
                 type="button"
-                onClick={handleConfirmDelete}
-                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold cursor-pointer shadow-lg shadow-rose-600/30"
+                onClick={handleConfirmArchive}
+                className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 font-black cursor-pointer shadow-lg shadow-amber-600/30"
               >
-                Hapus Permanen
+                Arsipkan Toko
               </button>
             </div>
           </div>

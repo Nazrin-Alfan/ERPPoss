@@ -3255,6 +3255,23 @@
         - Diuji langsung pada browser nyata (Playwright): Pembuatan tenant uji coba ➔ Klik icon tempat sampah ➔ Modal konfirmasi muncul ➔ Klik *"Hapus Permanen"* ➔ Tenant dan datanya terhapus tuntas dari memori dan tabel UI.
         - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 file test.
 
+    84. **Penerapan Sistem Arsip Toko & Pemulihan (Soft Delete & Restore) di Founder Console (2026-10-13)**:
+      - **Deskripsi & Rasional Arsitektur**:
+        - Sesuai standar industri SaaS dan kaidah integritas buku besar ERP, tombol hard delete (hapus permanen) diubah menjadi **Sistem Arsip (Soft Delete)** untuk mencegah hilangnya jejak keuangan (*audit trail*) dan memungkinkan re-aktivasi saat klien memperpanjang langganan.
+      - **Perbaikan yang Dilakukan**:
+        - **Ikon & Mekanisme**: Mengganti ikon tempat sampah dengan ikon **Arsip (`Archive`)** berwarna amber.
+        - **Pengubahan Status Aman**: Saat diarsipkan, sistem mengubah atribut record menjadi `status: 'ARCHIVED'`, `subscription_status: 'ARCHIVED'`, dan `is_active: false`. Seluruh data transaksi, keuangan, stok, resep, dan kredensial staf **tetap tersimpan utuh di database**.
+        - **Dropdown Filter Status di Tabel Master**:
+          - `Status: Toko Aktif` (Default: menyembunyikan toko yang diarsipkan agar tabel rapi).
+          - `Status: Diarsipkan (Soft Delete)` (Menampilkan daftar toko yang sedang diarsipkan).
+          - `Status: Semua Toko`.
+        - **Tombol Pulihkan (Restore)**:
+          - Pada tampilan toko yang diarsipkan, muncul tombol **"Pulihkan"** (`ArchiveRestore` hijau). Satu klik langsung mengembalikan toko ke status aktif dan memindahkannya kembali ke tabel operasional utama.
+      - **Hasil Pengujian & Verifikasi**:
+        - Diuji langsung pada browser nyata (Playwright): Terbitkan toko uji coba ➔ Arsipkan toko ➔ Toko hilang dari daftar aktif ➔ Ganti filter ke status arsip ➔ Toko muncul dengan badge *"Diarsipkan"* ➔ Klik *"Pulihkan"* ➔ Toko kembali aktif 100%.
+        - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 file test.
+
+
 
 
 

@@ -96,8 +96,8 @@ async function runFounderFullAudit() {
     await page.locator('input[placeholder*="Nama Lengkap"]').fill('Pak Haji Supardi')
     await page.locator('input[placeholder*="email@owner.com"]').fill(testOwnerEmail)
 
-    // Pilih paket Enterprise
-    await page.locator('select').first().selectOption('ENTERPRISE')
+    // Pilih paket Enterprise di dalam form modal
+    await page.locator('form select').first().selectOption('ENTERPRISE')
 
     // Submit form pembuatan tenant
     await page.locator('button[type="submit"]:has-text("Terbitkan & Aktivasi")').click()
@@ -166,9 +166,25 @@ async function runFounderFullAudit() {
     logPass('Status tenant dikembalikan aktif via Kill-Switch')
 
     // -------------------------------------------------------------
-    // 8. AKSI TABEL: IMPERSONASI TENANT
+    // 8. AKSI TABEL: ARSIPKAN TENANT (SOFT DELETE)
     // -------------------------------------------------------------
-    console.log('\n--- 8. Aksi Tabel: Impersonasi Masuk ke Workspace Tenant ---')
+    console.log('\n--- 8. Aksi Tabel: Arsipkan Tenant (Soft Delete) ---')
+    const archiveBtn = page.locator('button[title*="Arsipkan Toko"]').first()
+    if (await archiveBtn.isVisible()) {
+      await archiveBtn.click()
+      await page.waitForTimeout(400)
+      const archiveModal = page.locator('h3:has-text("Arsipkan Tenant Toko")')
+      if (await archiveModal.isVisible()) {
+        logPass('Modal Arsipkan Tenant Toko (Soft Delete) berhasil terbuka')
+        await page.locator('button:has-text("Batal")').click()
+        await page.waitForTimeout(300)
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 9. AKSI TABEL: IMPERSONASI TENANT
+    // -------------------------------------------------------------
+    console.log('\n--- 9. Aksi Tabel: Impersonasi Masuk ke Workspace Tenant ---')
     const impersonateBtn = page.locator('button[title*="Impersonasi"]').first()
     await impersonateBtn.click()
     await page.waitForTimeout(1000)
