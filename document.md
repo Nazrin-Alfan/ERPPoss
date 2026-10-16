@@ -3215,6 +3215,20 @@
         - Diuji langsung pada browser nyata (Playwright): Tenant diterbitkan di Founder Console ➔ Akun Owner baru langsung berhasil login di `/login` dengan `password123` ➔ Masuk ke Dashboard Konsolidasi.
         - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 file test.
 
+    81. **Penyediaan Accordion Drawer Informasi Pemilik Tenant di Founder Console (`/founder`) (2026-10-13)**:
+      - **Deskripsi & Fitur**:
+        - Menyediakan fitur ekspansi baris (*interactive accordion drawer*) saat baris tenant diklik pada tabel Master Tenant di halaman `/founder`.
+        - Menampilkan sebaris informasi lengkap terkait pemilik tenant tanpa harus membuka halaman lain atau modal baru:
+          - **Nama Pemilik**: Memetakan profil Owner dari tabel `profiles`.
+          - **Email Login Owner**: Menampilkan alamat email yang digunakan untuk login.
+          - **No. WhatsApp / Telepon**: Menampilkan kontak seluler pemilik.
+          - **Lokasi / Alamat**: Menampilkan domisili toko.
+          - **Tombol Quick WhatsApp**: Tautan langsung `wa.me` ke nomor WhatsApp pemilik toko untuk memudahkan Founder menghubungi klien secara instan.
+      - **Hasil Pengujian & Verifikasi**:
+        - Diuji langsung pada browser nyata (Playwright): Klik baris tenant ➔ Drawer informasi pemilik terbuka mulus ➔ Klik kembali ➔ Drawer tertutup rapi.
+        - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 file test.
+
+
 
 
 

@@ -30,7 +30,14 @@ import {
   Sparkles,
   Layers,
   ArrowRight,
-  Download
+  Download,
+  ChevronDown,
+  ChevronUp,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Clock
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -40,10 +47,12 @@ export default function Founder() {
 
   const [isLoading, setIsLoading] = useState(true)
   const [tenants, setTenants] = useState([])
+  const [profiles, setProfiles] = useState([])
   const [transactions, setTransactions] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPlanFilter, setSelectedPlanFilter] = useState('ALL')
   const [lastRefreshed, setLastRefreshed] = useState(new Date())
+  const [expandedTenantId, setExpandedTenantId] = useState(null)
 
   // Modal State: Buat Tenant Baru
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -76,9 +85,11 @@ export default function Founder() {
     try {
       const { data: allTenants } = await supabase.from('tenants').select('*')
       const { data: allTx } = await supabase.from('struk').select('*', { ignoreTenant: true })
+      const { data: allProfiles } = await supabase.from('profiles').select('*', { ignoreTenant: true })
 
       setTenants(allTenants || [])
       setTransactions(allTx || [])
+      setProfiles(allProfiles || [])
       setLastRefreshed(new Date())
     } catch (err) {
       console.error('Gagal memuat data platform founder:', err)
@@ -394,85 +405,182 @@ export default function Founder() {
                 const isActive = t.is_active !== false && t.subscription_status !== 'SUSPENDED'
                 const expiresAt = t.license_expires_at ? new Date(t.license_expires_at) : null
                 const isExpiringSoon = expiresAt && (expiresAt - new Date()) < (30 * 24 * 60 * 60 * 1000)
+                const isExpanded = expandedTenantId === t.id
+
+                // Cari data profil Owner dari tenant ini
+                const ownerProfile = profiles.find(p => p.tenant_id === t.id && p.role === 'Owner') || {
+                  nama: t.owner_name || 'Owner Toko',
+                  email: t.owner_email || 'Belum terdaftar',
+                  telepon: t.telepon || '-',
+                  alamat: t.alamat || '-'
+                }
 
                 return (
-                  <tr key={t.id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="py-3 pl-1">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-purple-400 font-bold shrink-0">
-                          {t.nama?.substring(0, 1) || 'T'}
+                  <React.Fragment key={t.id}>
+                    <tr 
+                      onClick={() => setExpandedTenantId(isExpanded ? null : t.id)}
+                      className={`hover:bg-slate-800/40 transition-colors cursor-pointer select-none ${
+                        isExpanded ? 'bg-purple-950/20 border-l-2 border-purple-500' : ''
+                      }`}
+                    >
+                      <td className="py-3 pl-1">
+                        <div className="flex items-center gap-2.5">
+                          <button
+                            type="button"
+                            className="p-1 text-slate-500 hover:text-purple-400 transition-colors"
+                            title={isExpanded ? "Tutup detail pemilik" : "Buka detail pemilik"}
+                          >
+                            {isExpanded ? <ChevronUp size={14} className="text-purple-400" /> : <ChevronDown size={14} />}
+                          </button>
+                          <div className="w-8 h-8 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-purple-400 font-bold shrink-0">
+                            {t.nama?.substring(0, 1) || 'T'}
+                          </div>
+                          <div>
+                            <p className="font-bold text-white flex items-center gap-1.5">
+                              <span>{t.nama}</span>
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono">
+                                {t.business_type || 'HYBRID'}
+                              </span>
+                            </p>
+                            <p className="text-[10px] text-slate-500 font-mono truncate max-w-[180px]">
+                              {t.id} {t.owner_email ? `• ${t.owner_email}` : ''}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-bold text-white">{t.nama}</p>
-                          <p className="text-[10px] text-slate-500 font-mono truncate max-w-[180px]">
-                            {t.id} {t.owner_email ? `• ${t.owner_email}` : ''}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/10 text-purple-300 border border-purple-500/30 uppercase">
-                        {t.plan || 'BASIC'}
-                      </span>
-                    </td>
-                    <td className="py-3 font-mono text-slate-300">
-                      {expiresAt ? expiresAt.toLocaleDateString('id-ID') : 'Aktif Selamanya'}
-                      {isExpiringSoon && (
-                        <span className="block text-[9px] text-amber-400 font-sans font-bold">
-                          ⚠️ Segera Berakhir
+                      </td>
+                      <td className="py-3">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/10 text-purple-300 border border-purple-500/30 uppercase">
+                          {t.plan || 'BASIC'}
                         </span>
-                      )}
-                    </td>
-                    <td className="py-3 font-mono text-[10px] text-slate-400">
-                      {t.serial_key || 'RLPOS-LEGACY-DEFAULT'}
-                    </td>
-                    <td className="py-3 text-center">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                        isActive 
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
-                          : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                      }`}>
-                        {isActive ? 'Aktif' : 'Dibekukan'}
-                      </span>
-                    </td>
-                    <td className="py-3 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        {/* Tombol Perpanjang */}
-                        <button
-                          type="button"
-                          onClick={() => setRenewingTenant(t)}
-                          className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-purple-950 text-slate-300 hover:text-purple-300 text-[10px] font-bold border border-slate-700 transition-all cursor-pointer"
-                          title="Perpanjang masa aktif lisensi"
-                        >
-                          Perpanjang
-                        </button>
+                      </td>
+                      <td className="py-3 font-mono text-slate-300">
+                        {expiresAt ? expiresAt.toLocaleDateString('id-ID') : 'Aktif Selamanya'}
+                        {isExpiringSoon && (
+                          <span className="block text-[9px] text-amber-400 font-sans font-bold">
+                            ⚠️ Segera Berakhir
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 font-mono text-[10px] text-slate-400">
+                        {t.serial_key || 'RLPOS-LEGACY-DEFAULT'}
+                      </td>
+                      <td className="py-3 text-center">
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                          isActive 
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
+                            : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                        }`}>
+                          {isActive ? 'Aktif' : 'Dibekukan'}
+                        </span>
+                      </td>
+                      <td className="py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-center gap-1.5">
+                          {/* Tombol Perpanjang */}
+                          <button
+                            type="button"
+                            onClick={() => setRenewingTenant(t)}
+                            className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-purple-950 text-slate-300 hover:text-purple-300 text-[10px] font-bold border border-slate-700 transition-all cursor-pointer"
+                            title="Perpanjang masa aktif lisensi"
+                          >
+                            Perpanjang
+                          </button>
 
-                        {/* Kill-Switch Pembekuan Akun */}
-                        <button
-                          type="button"
-                          onClick={() => handleToggleSubscription(t)}
-                          className={`p-1 rounded-lg border transition-all cursor-pointer ${
-                            isActive
-                              ? 'bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border-slate-700 hover:border-rose-500/50'
-                              : 'bg-emerald-950/60 text-emerald-400 border-emerald-500/40 hover:bg-emerald-900'
-                          }`}
-                          title={isActive ? 'Bekukan Tenant (Kill Switch)' : 'Buka Blokir Tenant'}
-                        >
-                          {isActive ? <Ban size={13} /> : <Play size={13} />}
-                        </button>
+                          {/* Kill-Switch Pembekuan Akun */}
+                          <button
+                            type="button"
+                            onClick={() => handleToggleSubscription(t)}
+                            className={`p-1 rounded-lg border transition-all cursor-pointer ${
+                              isActive
+                                ? 'bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border-slate-700 hover:border-rose-500/50'
+                                : 'bg-emerald-950/60 text-emerald-400 border-emerald-500/40 hover:bg-emerald-900'
+                            }`}
+                            title={isActive ? 'Bekukan Tenant (Kill Switch)' : 'Buka Blokir Tenant'}
+                          >
+                            {isActive ? <Ban size={13} /> : <Play size={13} />}
+                          </button>
 
-                        {/* Impersonation: Masuk sebagai Tenant Ini */}
-                        <button
-                          type="button"
-                          onClick={() => handleImpersonate(t.id)}
-                          className="p-1 rounded-lg bg-slate-800 hover:bg-indigo-950 text-slate-400 hover:text-indigo-300 border border-slate-700 transition-all cursor-pointer"
-                          title="Impersonasi: Masuk dan cek workspace tenant ini"
-                        >
-                          <ExternalLink size={13} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                          {/* Impersonation: Masuk sebagai Tenant Ini */}
+                          <button
+                            type="button"
+                            onClick={() => handleImpersonate(t.id)}
+                            className="p-1 rounded-lg bg-slate-800 hover:bg-indigo-950 text-slate-400 hover:text-indigo-300 border border-slate-700 transition-all cursor-pointer"
+                            title="Impersonasi: Masuk dan cek workspace tenant ini"
+                          >
+                            <ExternalLink size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* BARIS DETAIL INFORMASI PEMILIK (ACCORDION DRAWER) */}
+                    {isExpanded && (
+                      <tr className="bg-slate-950/70 border-b border-purple-500/30 animate-fade-in">
+                        <td colSpan={6} className="p-3.5 pl-6">
+                          <div className="flex flex-wrap items-center justify-between gap-4 bg-purple-950/20 border border-purple-500/20 p-3.5 rounded-2xl">
+                            <div className="flex flex-wrap items-center gap-6 text-xs">
+                              {/* Nama Owner */}
+                              <div className="flex items-center gap-2">
+                                <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400">
+                                  <User size={14} />
+                                </div>
+                                <div>
+                                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">Nama Pemilik</span>
+                                  <span className="font-bold text-white">{ownerProfile.nama || t.nama}</span>
+                                </div>
+                              </div>
+
+                              {/* Email Owner */}
+                              <div className="flex items-center gap-2">
+                                <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400">
+                                  <Mail size={14} />
+                                </div>
+                                <div>
+                                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">Email Login Owner</span>
+                                  <span className="font-mono text-purple-300">{ownerProfile.email || t.owner_email || '-'}</span>
+                                </div>
+                              </div>
+
+                              {/* Telepon Owner */}
+                              <div className="flex items-center gap-2">
+                                <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400">
+                                  <Phone size={14} />
+                                </div>
+                                <div>
+                                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">No. WhatsApp / Telepon</span>
+                                  <span className="font-mono text-slate-200">{t.telepon || ownerProfile.telepon || '-'}</span>
+                                </div>
+                              </div>
+
+                              {/* Alamat Toko */}
+                              <div className="flex items-center gap-2">
+                                <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400">
+                                  <MapPin size={14} />
+                                </div>
+                                <div>
+                                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">Lokasi / Alamat</span>
+                                  <span className="text-slate-200">{t.alamat || '-'}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Tombol Kontak Cepat WhatsApp Owner */}
+                            {t.telepon && t.telepon !== '-' && (
+                              <a
+                                href={`https://wa.me/${t.telepon.replace(/\D/g, '').replace(/^0/, '62')}?text=${encodeURIComponent(`Halo ${ownerProfile.nama || t.nama}, kami dari Tim Support RelayPOS...`)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[11px] flex items-center gap-1.5 shadow-md shadow-emerald-500/20 transition-all active:scale-95"
+                                title="Hubungi Owner via WhatsApp"
+                              >
+                                <Phone size={13} />
+                                <span>Hubungi Owner</span>
+                              </a>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 )
               })}
             </tbody>
