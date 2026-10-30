@@ -42,8 +42,11 @@ import {
   ShoppingBag,
   Lock,
   Filter,
-  Layers
+  Layers,
+  ArrowRight,
+  Info
 } from 'lucide-react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { formatRupiah, calculateTutupKasirRecap } from '../utils/helpers'
 import { getTenantFeatures } from '../utils/businessCapabilities'
 import InteractiveCalendar from '../components/InteractiveCalendar'
@@ -58,18 +61,27 @@ import { DEFAULT_CARWASH_PACKAGES } from '../utils/carwashHelpers'
 import { getReceiptConfig } from '../utils/receiptHelpers'
 
 const Admin = () => {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const tabParam = searchParams.get('tab')
   const { registerKasir, activeTenant } = useAuth()
   const features = getTenantFeatures(activeTenant?.business_type)
-  const defaultTab = features.isCarwashOnly ? 'carwash-packages' : 'menu'
+  const defaultTab = tabParam || (features.isCarwashOnly ? 'carwash-packages' : 'menu')
   const [activeTab, setActiveTab] = useState(defaultTab)
 
   useEffect(() => {
-    if (features.isCarwashOnly && activeTab === 'menu') {
+    if (tabParam) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam])
+
+  useEffect(() => {
+    if (!tabParam && features.isCarwashOnly && activeTab === 'menu') {
       setActiveTab('carwash-packages')
-    } else if (features.isCafeOnly && activeTab === 'carwash-packages') {
+    } else if (!tabParam && features.isCafeOnly && activeTab === 'carwash-packages') {
       setActiveTab('menu')
     }
-  }, [features.isCarwashOnly, features.isCafeOnly])
+  }, [features.isCarwashOnly, features.isCafeOnly, tabParam])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -113,6 +125,21 @@ const Admin = () => {
   const [cashiers, setCashiers] = useState([])
   const [paymentMethods, setPaymentMethods] = useState([])
   const [menuItems, setMenuItems] = useState([])
+  const [selectedMenuCategory, setSelectedMenuCategory] = useState('Semua')
+
+  const activeMenuCategories = useMemo(() => {
+    const counts = {}
+    menuItems.forEach(m => {
+      const cat = m.kategori || 'Cafe'
+      counts[cat] = (counts[cat] || 0) + 1
+    })
+    return counts
+  }, [menuItems])
+
+  const filteredMenuItems = useMemo(() => {
+    if (selectedMenuCategory === 'Semua') return menuItems
+    return menuItems.filter(m => (m.kategori || 'Cafe') === selectedMenuCategory)
+  }, [menuItems, selectedMenuCategory])
   const [stokBahan, setStokBahan] = useState([])
   const [resepList, setResepList] = useState([])
 
@@ -1418,9 +1445,9 @@ const Admin = () => {
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-3">
           <Settings size={32} className="text-[#00ffff]" />
-          Kelola Admin
+          Pengaturan Toko & Admin
         </h1>
-        <p className="text-[#bbcbb2] text-sm mt-1">Konfigurasi menu cafe, stok bahan baku, kasir/metode bayar, & hak akses staf</p>
+        <p className="text-[#bbcbb2] text-sm mt-1">Konfigurasi profil toko, printer struk thermal, katalog menu, & kasir/metode bayar</p>
       </div>
 
       {/* Popups Alert */}
@@ -1439,12 +1466,12 @@ const Admin = () => {
       )}
 
       {/* Navigation Sub-Tabs */}
-      <div className="bg-[#121215] border border-[#26272d] p-2 rounded-xl flex flex-wrap gap-2 border border-[#26272d] shrink-0">
+      <div className="bg-[#121215] border border-[#26272d] p-1.5 rounded-2xl flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth shrink-0">
         {features.hasMenuCatalog && (
           <button
             onClick={() => setActiveTab('menu')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
-              activeTab === 'menu' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs transition-all whitespace-nowrap shrink-0 ${
+              activeTab === 'menu' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white hover:bg-[#18181c]'
             }`}
           >
             <Utensils size={14} />
@@ -1454,85 +1481,85 @@ const Admin = () => {
         {features.hasCarwashPackages && (
           <button
             onClick={() => setActiveTab('carwash-packages')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
-              activeTab === 'carwash-packages' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs transition-all whitespace-nowrap shrink-0 ${
+              activeTab === 'carwash-packages' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white hover:bg-[#18181c]'
             }`}
           >
             <Sparkles size={14} />
-            Paket & Tarif Cuci
+            Paket Cuci
           </button>
         )}
         <button
           onClick={() => setActiveTab('merchandise')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
-            activeTab === 'merchandise' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs transition-all whitespace-nowrap shrink-0 ${
+            activeTab === 'merchandise' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white hover:bg-[#18181c]'
           }`}
         >
           <ShoppingBag size={14} />
-          Produk Merchandise
+          Merchandise
         </button>
         <button
           onClick={() => setActiveTab('cashier-pay')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
-            activeTab === 'cashier-pay' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs transition-all whitespace-nowrap shrink-0 ${
+            activeTab === 'cashier-pay' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white hover:bg-[#18181c]'
           }`}
         >
           <CreditCard size={14} />
-          Kasir & Metode Bayar
+          Kasir & Bayar
         </button>
         <button
           onClick={() => setActiveTab('calibration')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
-            activeTab === 'calibration' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs transition-all whitespace-nowrap shrink-0 ${
+            activeTab === 'calibration' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white hover:bg-[#18181c]'
           }`}
         >
           <Wallet size={14} />
-          Rekening & Saldo Likuiditas
+          Rekening Kas
         </button>
         <button
           onClick={() => setActiveTab('discounts')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
-            activeTab === 'discounts' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs transition-all whitespace-nowrap shrink-0 ${
+            activeTab === 'discounts' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white hover:bg-[#18181c]'
           }`}
         >
           <Percent size={14} />
-          Kelola Diskon
+          Diskon/Promo
         </button>
         <button
           onClick={() => setActiveTab('categories')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
-            activeTab === 'categories' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs transition-all whitespace-nowrap shrink-0 ${
+            activeTab === 'categories' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white hover:bg-[#18181c]'
           }`}
         >
           <Tag size={14} />
-          Kategori & Akun Kasir
+          Kategori Transaksi
         </button>
         <button
           onClick={() => setActiveTab('manual-eod')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
-            activeTab === 'manual-eod' ? 'bg-[#ffc71f] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#ffc71f] hover:text-white'
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs transition-all whitespace-nowrap shrink-0 ${
+            activeTab === 'manual-eod' ? 'bg-[#ffc71f] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#ffc71f] hover:text-white hover:bg-[#18181c]'
           }`}
         >
           <CalendarCheck size={14} />
-          Tutup Kasir Manual (Susulan)
+          Tutup Kasir (EOD)
         </button>
         <button
           onClick={() => setActiveTab('receipt-settings')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs transition-all whitespace-nowrap shrink-0 ${
             activeTab === 'receipt-settings' ? 'bg-cyan-400 text-[#0f0f0f] shadow-md ring-2 ring-cyan-400/30' : 'text-cyan-400 hover:text-cyan-200 hover:bg-[#26272d]/60'
           }`}
         >
           <Printer size={14} />
-          Printer Thermal & Kustomisasi Struk
+          Printer & Struk
         </button>
         <button
           onClick={() => setActiveTab('license')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${
-            activeTab === 'license' ? 'bg-[#ffc71f] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#ffc71f] hover:text-white'
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs transition-all whitespace-nowrap shrink-0 ${
+            activeTab === 'license' ? 'bg-[#ffc71f] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#ffc71f] hover:text-white hover:bg-[#18181c]'
           }`}
         >
           <ShieldCheck size={14} />
-          Lisensi & Langganan
+          Lisensi
         </button>
       </div>
 
@@ -1553,37 +1580,54 @@ const Admin = () => {
             </button>
           </div>
 
-          {/* Quick Category Manager Bar (Admin Filter & Overview) */}
-          <div className="bg-[#121215] border border-[#26272d] p-3 rounded-2xl border border-[#26272d] flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full scrollbar-none">
+          {/* Quick Category Filter Bar */}
+          <div className="bg-[#121215] border border-[#26272d] p-3 rounded-2xl flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full no-scrollbar">
               <span className="text-[11px] font-bold text-[#bbcbb2] uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
-                <Tag size={13} className="text-[#00ffff]" /> Kategori:
+                <Tag size={13} className="text-[#00ffff]" /> Filter Kategori:
               </span>
-              {cafeCategories.map((cat) => {
-                const count = menuItems.filter(m => m.kategori === cat).length
+              <button
+                type="button"
+                onClick={() => setSelectedMenuCategory('Semua')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold shrink-0 transition-all ${
+                  selectedMenuCategory === 'Semua'
+                    ? 'bg-[#00ffff] text-[#0f0f0f] shadow-sm'
+                    : 'bg-[#18181c] border border-[#26272d] text-slate-300 hover:text-white'
+                }`}
+              >
+                <span>Semua</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                  selectedMenuCategory === 'Semua' ? 'bg-black/20 text-[#0f0f0f]' : 'bg-[#18181c] text-[#00ffff]'
+                }`}>
+                  {menuItems.length}
+                </span>
+              </button>
+              {Object.entries(activeMenuCategories).map(([cat, count]) => {
+                const isSelected = selectedMenuCategory === cat
                 return (
-                  <span
+                  <button
                     key={cat}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#18181c] border border-[#26272d] text-xs font-bold text-white shrink-0"
+                    type="button"
+                    onClick={() => setSelectedMenuCategory(isSelected ? 'Semua' : cat)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold shrink-0 transition-all ${
+                      isSelected
+                        ? 'bg-[#00ffff] text-[#0f0f0f] shadow-sm'
+                        : 'bg-[#18181c] border border-[#26272d] text-slate-300 hover:text-white'
+                    }`}
                   >
                     <span>{cat}</span>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#18181c] text-[#00ffff] font-mono">
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                      isSelected ? 'bg-black/20 text-[#0f0f0f]' : 'bg-[#18181c] text-[#00ffff]'
+                    }`}>
                       {count}
                     </span>
-                  </span>
+                  </button>
                 )
               })}
             </div>
-            <button
-              type="button"
-              onClick={openAddMenuModal}
-              className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors shrink-0"
-            >
-              <Plus size={13} /> Tambah Menu Baru
-            </button>
           </div>
 
-          <div className="bg-[#121215] border border-[#26272d] rounded-2xl border border-[#26272d] overflow-hidden">
+          <div className="bg-[#121215] border border-[#26272d] rounded-2xl overflow-hidden">
             <TableContainer>
               <Table>
                 <thead>
@@ -1597,7 +1641,7 @@ const Admin = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/50">
-                  {menuItems.map((item) => {
+                  {filteredMenuItems.map((item) => {
                     const menuRecipes = resepList.filter(r => r.nama_menu === item.nama_menu)
                     return (
                       <tr key={item.nama_menu} className="hover:bg-[#26272d]/20 transition-colors">
@@ -1697,26 +1741,59 @@ const Admin = () => {
 
       {/* CONTENT TAB 3: Kasir & Metode Bayar */}
       {activeTab === 'cashier-pay' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Kelola Nama Kasir */}
-          <div className="bg-[#121215] border border-[#26272d] p-5 rounded-2xl border border-[#26272d] space-y-4">
-            <h3 className="text-base font-bold text-white">Daftar Pilihan Kasir Aktif</h3>
-            
-            <form onSubmit={handleAddCashier} className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Tambah nama kasir (misal: RISA)"
-                value={newCashier}
-                onChange={(e) => setNewCashier(e.target.value)}
-                className="flex-1 bg-[#18181c] border border-[#26272d] rounded-lg px-3 py-1.5 text-white text-xs uppercase focus:outline-none focus:border-[#00ffff]"
-              />
-              <button
-                type="submit"
-                className="px-4 py-1.5 bg-[#00ffff] text-[#0f0f0f] font-bold rounded-lg text-xs"
-              >
-                + Tambah
-              </button>
-            </form>
+        <div className="space-y-6">
+          {/* Banner Edukasi: Pembeda Akun Login Kasir vs Pilihan Nama Kasir POS */}
+          <div className="p-4 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-lg">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-[#00ffff]/10 text-[#00ffff] border border-cyan-500/20 shrink-0">
+                <Users size={20} />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-bold text-sm text-white flex items-center gap-2">
+                  <span>Ingin Membuat Akun Login Kasir (Email & Password)?</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#00ffff]/20 text-[#00ffff] font-bold">
+                    Akun Login Sistem
+                  </span>
+                </h4>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Untuk mendaftarkan akun kasir resmi yang memiliki <strong>Email & Kata Sandi Login</strong>, buat akun melalui modul Karyawan.
+                  Kolom daftar kasir di bawah ini difungsikan khusus untuk memilih nama kasir yang aktif bertugas saat mencetak struk transaksi.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/karyawan?tab=staff')}
+              className="px-4 py-2.5 rounded-xl bg-[#00ffff] hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition cursor-pointer shrink-0 shadow-md"
+            >
+              <span>+ Daftarkan Akun Login Kasir</span>
+              <ArrowRight size={14} />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Kelola Nama Kasir */}
+            <div className="bg-[#121215] border border-[#26272d] p-5 rounded-2xl space-y-4">
+              <div>
+                <h3 className="text-base font-bold text-white">Daftar Pilihan Nama Kasir (POS)</h3>
+                <p className="text-[11px] text-[#6b7367]">Pilihan nama kasir yang bertugas saat transaksi & cetak struk</p>
+              </div>
+              
+              <form onSubmit={handleAddCashier} className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Tambah nama kasir (misal: RISA)"
+                  value={newCashier}
+                  onChange={(e) => setNewCashier(e.target.value)}
+                  className="flex-1 bg-[#18181c] border border-[#26272d] rounded-lg px-3 py-1.5 text-white text-xs uppercase focus:outline-none focus:border-[#00ffff]"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 bg-[#00ffff] text-[#0f0f0f] font-bold rounded-lg text-xs hover:bg-cyan-400 cursor-pointer"
+                >
+                  + Tambah
+                </button>
+              </form>
 
             <div className="divide-y divide-slate-800/50 pt-2">
               {cashiers.map(c => (
@@ -1776,6 +1853,7 @@ const Admin = () => {
             </div>
           </div>
         </div>
+      </div>
       )}
 
 

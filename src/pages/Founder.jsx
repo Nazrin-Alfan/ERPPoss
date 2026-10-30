@@ -42,7 +42,10 @@ import {
   MapPin,
   Clock,
   Archive,
-  ArchiveRestore
+  ArchiveRestore,
+  Copy,
+  Check,
+  MessageSquare
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -62,6 +65,8 @@ export default function Founder() {
 
   // Modal State: Buat Tenant Baru
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [createdTenantResult, setCreatedTenantResult] = useState(null)
+  const [copiedWhatsApp, setCopiedWhatsApp] = useState(false)
   const [createForm, setCreateForm] = useState({
     storeName: '',
     slug: '',
@@ -194,8 +199,16 @@ export default function Founder() {
         await supabase.from('tenant_licenses').insert([payload.license])
       }
       setTenants(prev => [payload.tenant, ...prev])
-      showNotification(`✨ Tenant baru "${payload.tenant.nama}" berhasil diterbitkan! Akun login Owner siap digunakan.`)
       setShowCreateModal(false)
+      setCreatedTenantResult({
+        tenant: payload.tenant,
+        branch: payload.branch,
+        ownerProfile: payload.ownerProfile,
+        license: payload.license,
+        plainPassword: 'password123',
+        loginUrl: `${window.location.origin}/login`
+      })
+      showNotification(`✨ Tenant baru "${payload.tenant.nama}" berhasil diterbitkan! Kredensial akun siap disalin/dikirim.`)
       setCreateForm({
         storeName: '',
         slug: '',
@@ -209,6 +222,55 @@ export default function Founder() {
     } catch (err) {
       showNotification('Gagal membuat tenant baru.')
     }
+  }
+
+  // Helper Pembuat Teks WhatsApp Onboarding Kredensial
+  const getWhatsAppMessageText = (data) => {
+    if (!data) return ''
+    const t = data.tenant
+    const o = data.ownerProfile
+    const l = data.license
+    const expiryFormatted = l?.expires_at ? new Date(l.expires_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '1 Tahun'
+
+    return `Halo Kak ${t.owner_name || 'Owner'}! 👋
+
+Selamat, akun sistem kasir & operasional toko *${t.nama}* di *RelayPOS* sudah resmi aktif dan siap digunakan! 🚀
+
+Berikut kredensial login akun Anda:
+🌐 *Link Akses Login*: ${data.loginUrl}
+📧 *Email / Username*: ${o.email}
+🔑 *Password Default*: ${data.plainPassword}
+🏷️ *Paket Lisensi*: ${l?.tier_name || l?.tier || 'Pro Annual'}
+📅 *Masa Aktif*: s/d ${expiryFormatted}
+🔐 *Kunci Serial*: ${l?.license_key || '-'}
+
+📌 *Langkah Mudah Memulai*:
+1. Buka tautan login di atas via browser laptop, tablet, atau HP (disarankan Google Chrome).
+2. Masuk menggunakan Email & Password di atas.
+3. Anda dapat langsung melengkapi profil toko, printer struk thermal, dan mengganti kata sandi di menu *Pengaturan Toko*.
+
+Jika butuh panduan awal atau ada pertanyaan teknis, silakan hubungi kami via chat ini. Selamat mengelola usaha dengan RelayPOS! 🙌`
+  }
+
+  const handleCopyWhatsAppText = () => {
+    if (!createdTenantResult) return
+    const text = getWhatsAppMessageText(createdTenantResult)
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text)
+    }
+    setCopiedWhatsApp(true)
+    showNotification('📋 Format teks WhatsApp berhasil disalin ke clipboard!')
+    setTimeout(() => setCopiedWhatsApp(false), 2500)
+  }
+
+  const handleOpenWhatsApp = () => {
+    if (!createdTenantResult) return
+    const rawPhone = createdTenantResult.tenant?.telepon || ''
+    const cleanPhone = rawPhone.replace(/[^0-9]/g, '')
+    const targetPhone = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone
+    const text = encodeURIComponent(getWhatsAppMessageText(createdTenantResult))
+    const url = targetPhone ? `https://wa.me/${targetPhone}?text=${text}` : `https://api.whatsapp.com/send?text=${text}`
+    window.open(url, '_blank')
   }
 
   // Aksi Arsipkan Tenant (Soft Delete)
@@ -762,6 +824,17 @@ export default function Founder() {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Nomor WhatsApp / Telepon Owner (Opsional)</label>
+                <input
+                  type="tel"
+                  placeholder="Contoh: 081234567890"
+                  value={createForm.telepon}
+                  onChange={(e) => setCreateForm({ ...createForm, telepon: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-400 font-semibold mb-1">Paket Lisensi</label>
@@ -813,6 +886,119 @@ export default function Founder() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Kredensial Tenant Baru (WhatsApp Ready & Salin Kredensial) */}
+      {createdTenantResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in overflow-y-auto">
+          <div className="w-full max-w-lg bg-slate-900 border border-emerald-500/40 rounded-3xl p-6 shadow-2xl relative max-h-[92dvh] overflow-y-auto my-auto overscroll-contain">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base">Kredensial Tenant Siap Dikirim!</h3>
+                  <p className="text-xs text-slate-400">Akun Owner aktif dan siap diserahkan via WhatsApp</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setCreatedTenantResult(null)}
+                className="text-slate-400 hover:text-white cursor-pointer p-1 rounded-lg hover:bg-slate-800"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
+              {/* Ringkasan Akun */}
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                <div className="flex justify-between items-center pb-2 border-b border-slate-800/60">
+                  <span className="text-slate-400">Toko / Outlet</span>
+                  <span className="text-white font-bold">{createdTenantResult.tenant?.nama}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-slate-800/60">
+                  <span className="text-slate-400">Nama Owner</span>
+                  <span className="text-white font-semibold">{createdTenantResult.tenant?.owner_name || '-'}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-slate-800/60">
+                  <span className="text-slate-400">Email Login</span>
+                  <span className="text-emerald-400 font-mono font-semibold">{createdTenantResult.ownerProfile?.email}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-slate-800/60">
+                  <span className="text-slate-400">Password Default</span>
+                  <span className="text-purple-300 font-mono font-bold bg-purple-950/40 px-2 py-0.5 rounded border border-purple-500/30">
+                    {createdTenantResult.plainPassword}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Lisensi & Kuota</span>
+                  <span className="text-amber-400 font-medium">
+                    {createdTenantResult.license?.tier_name || createdTenantResult.license?.tier} ({createdTenantResult.license?.max_branches || 1} Cabang)
+                  </span>
+                </div>
+              </div>
+
+              {/* Preview Format Pesan WhatsApp */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-slate-400 font-semibold flex items-center gap-1.5">
+                    <MessageSquare size={13} className="text-emerald-400" />
+                    Format Pesan WhatsApp untuk Owner:
+                  </label>
+                  <span className="text-[10px] text-slate-500">Siap dikirimkan langsung</span>
+                </div>
+                <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl max-h-48 overflow-y-auto font-mono text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed select-all">
+                  {getWhatsAppMessageText(createdTenantResult)}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                <button
+                  type="button"
+                  onClick={handleCopyWhatsAppText}
+                  className={`flex-1 py-2.5 px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 transition cursor-pointer text-xs ${
+                    copiedWhatsApp
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+                  }`}
+                >
+                  {copiedWhatsApp ? (
+                    <>
+                      <Check size={15} />
+                      Tersalin ke Clipboard!
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={15} />
+                      Salin Format WhatsApp
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleOpenWhatsApp}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-950/40 text-xs"
+                >
+                  <MessageSquare size={15} />
+                  Kirim via WhatsApp
+                </button>
+              </div>
+
+              <div className="pt-2 border-t border-slate-800 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setCreatedTenantResult(null)}
+                  className="px-4 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer text-xs"
+                >
+                  Selesai & Tutup
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

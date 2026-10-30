@@ -25,7 +25,9 @@ import {
   Trash2,
   AlertCircle,
   CheckCircle,
+  Check,
   FileText,
+  Wallet,
   TrendingDown,
   Car,
   Coffee,
@@ -55,15 +57,19 @@ import {
   isPindahSaldo,
   normalizeCategory,
   normalizeJenis,
-  getLockedCategoriesForJenis
+  getLockedCategoriesForJenis,
+  formatCurrencyInput,
+  parseCurrencyInput
 } from '../utils/financeHelpers'
+import OwnerWithdrawalModal from '../components/finance/OwnerWithdrawalModal'
 
 const Finance = () => {
-  const { activeTenant } = useAuth()
+  const { activeTenant, profile } = useAuth()
   const features = getTenantFeatures(activeTenant?.business_type)
 
   // Navigation & Loading States
   const [activeTab, setActiveTab] = useState('cashflow') // 'cashflow' | 'carwash' | 'cafe' | 'expenses'
+  const [showWithdrawalModal, setShowWithdrawalModal] = useState(false)
 
   useEffect(() => {
     if (activeTab === 'carwash' && !features.hasCarwash) {
@@ -153,6 +159,8 @@ const Finance = () => {
     keterangan: ''
   })
   const [barangMasukList, setBarangMasukList] = useState([])
+  const [posAccountList, setPosAccountList] = useState([])
+  const [isRestockDetail, setIsRestockDetail] = useState(false)
 
   // Edit Form State
   const [editForm, setEditForm] = useState({
@@ -327,6 +335,174 @@ const Finance = () => {
   const kategoriOptions = allKategoriOptions
   const incomeKategoriOptions = allIncomeKategoriOptions
 
+  // Structured single-dropdown categorization for expenses & incomes
+  const structuredExpenseCategories = useMemo(() => {
+    const expenseCats = (masterCategories || []).filter(c => c.is_active !== false && (c.tipe_arus === 'PENGELUARAN' || !c.tipe_arus))
+    const groups = {
+      'Cafe (F&B)': [],
+      'Carwash': [],
+      'Operasional & Bersama': [],
+      'Casbon & Personalia': [],
+      'Lainnya': []
+    }
+    const processed = new Set()
+
+    expenseCats.forEach(c => {
+      const name = normalizeCategory(c.nama_kategori)
+      if (!name || processed.has(name.toLowerCase())) return
+      processed.add(name.toLowerCase())
+
+      const j = (c.jenis || '').toLowerCase()
+      const n = name.toLowerCase()
+
+      let grp = 'Operasional & Bersama'
+      if (j.includes('cafe') || n.includes('cafe') || n.includes('f&b')) {
+        grp = 'Cafe (F&B)'
+      } else if (j.includes('carwash') || n.includes('cuci') || n.includes('chemical') || n.includes('hidrolik')) {
+        grp = 'Carwash'
+      } else if (j.includes('casbon') || n.includes('casbon') || n.includes('gaji')) {
+        grp = 'Casbon & Personalia'
+      } else if (j.includes('bersama') || j.includes('operasional')) {
+        grp = 'Operasional & Bersama'
+      } else {
+        grp = 'Lainnya'
+      }
+
+      groups[grp].push({
+        kategori: name,
+        jenis: c.jenis || (grp === 'Cafe (F&B)' ? 'Pengeluaran Cafe' : grp === 'Carwash' ? 'Pengeluaran Carwash' : 'Pengeluaran Bersama'),
+        group: grp
+      })
+    })
+
+    const defaults = [
+      { kategori: 'Bahan Baku F&B', jenis: 'Pengeluaran Cafe', group: 'Cafe (F&B)' },
+      { kategori: 'Operasional Cafe', jenis: 'Pengeluaran Cafe', group: 'Cafe (F&B)' },
+      { kategori: 'Listrik Cafe', jenis: 'Pengeluaran Cafe', group: 'Cafe (F&B)' },
+      { kategori: 'Servis Mesin Cafe', jenis: 'Pengeluaran Cafe', group: 'Cafe (F&B)' },
+
+      { kategori: 'Bahan Cuci & Chemical', jenis: 'Pengeluaran Carwash', group: 'Carwash' },
+      { kategori: 'Operasional Carwash', jenis: 'Pengeluaran Carwash', group: 'Carwash' },
+      { kategori: 'Air PAM & Perawatan Mesin Air', jenis: 'Pengeluaran Carwash', group: 'Carwash' },
+      { kategori: 'Servis Hidrolik & Kompresor', jenis: 'Pengeluaran Carwash', group: 'Carwash' },
+      { kategori: 'Perlengkapan Cuci Mobil', jenis: 'Pengeluaran Carwash', group: 'Carwash' },
+
+      { kategori: 'Sewa Tempat Usaha (Bang Awal)', jenis: 'Pengeluaran Bersama', group: 'Operasional & Bersama' },
+      { kategori: 'Listrik, Air & Utilitas', jenis: 'Pengeluaran Bersama', group: 'Operasional & Bersama' },
+      { kategori: 'Biaya Admin Bank / QRIS', jenis: 'Pengeluaran Bersama', group: 'Operasional & Bersama' },
+      { kategori: 'Operasional Umum', jenis: 'Pengeluaran Bersama', group: 'Operasional & Bersama' },
+
+      { kategori: 'Gaji Karyawan Tetap & Leader', jenis: 'Pengeluaran Bersama', group: 'Casbon & Personalia' },
+      { kategori: 'Casbon Karyawan', jenis: 'Casbon', group: 'Casbon & Personalia' }
+    ]
+
+    defaults.forEach(d => {
+      if (!processed.has(d.kategori.toLowerCase())) {
+        processed.add(d.kategori.toLowerCase())
+        groups[d.group].push({ kategori: d.kategori, jenis: d.jenis, group: d.group })
+      }
+    })
+
+    ;(customKategoriList || []).forEach(name => {
+      if (name && !processed.has(name.toLowerCase())) {
+        processed.add(name.toLowerCase())
+        groups['Lainnya'].push({ kategori: name, jenis: 'Pengeluaran Bersama', group: 'Lainnya' })
+      }
+    })
+
+    return groups
+  }, [masterCategories, customKategoriList])
+
+  const flattenedExpenseCategoryOptions = useMemo(() => {
+    const list = []
+    Object.entries(structuredExpenseCategories).forEach(([groupName, items]) => {
+      if (items.length > 0) {
+        items.forEach(it => {
+          list.push({
+            value: it.kategori,
+            label: it.kategori,
+            badge: it.group,
+            subtitle: it.jenis
+          })
+        })
+      }
+    })
+    list.push({
+      value: '__CUSTOM__',
+      label: '+ Ketik Kategori Baru...',
+      badge: 'CUSTOM'
+    })
+    return list
+  }, [structuredExpenseCategories])
+
+  const structuredIncomeCategories = useMemo(() => {
+    const incCats = (masterCategories || []).filter(c => c.is_active !== false && c.tipe_arus === 'PEMASUKAN')
+    const groups = {
+      'Penjualan & Omzet': [],
+      'Pendapatan Lain-lain & Non-Operasional': [],
+      'Lainnya': []
+    }
+    const processed = new Set()
+
+    incCats.forEach(c => {
+      const name = normalizeCategory(c.nama_kategori)
+      if (!name || processed.has(name.toLowerCase())) return
+      processed.add(name.toLowerCase())
+
+      const j = (c.jenis || '').toLowerCase()
+      let grp = 'Pendapatan Lain-lain & Non-Operasional'
+      if (j.includes('penjualan') || name.toLowerCase().includes('omzet') || name.toLowerCase().includes('penjualan')) {
+        grp = 'Penjualan & Omzet'
+      }
+
+      groups[grp].push({
+        kategori: name,
+        jenis: c.jenis || (grp === 'Penjualan & Omzet' ? 'Penjualan' : 'Pemasukan Lain-lain'),
+        group: grp
+      })
+    })
+
+    const defaults = [
+      { kategori: 'Omzet Penjualan F&B', jenis: 'Penjualan Cafe', group: 'Penjualan & Omzet' },
+      { kategori: 'Omzet Penjualan Cuci', jenis: 'Penjualan Carwash', group: 'Penjualan & Omzet' },
+      { kategori: 'Pendapatan Sewa Tenant', jenis: 'Pemasukan Lain-lain', group: 'Pendapatan Lain-lain & Non-Operasional' },
+      { kategori: 'Suntikan Modal Pemilik', jenis: 'Pemasukan Lain-lain', group: 'Pendapatan Lain-lain & Non-Operasional' },
+      { kategori: 'Pelunasan Casbon', jenis: 'Pemasukan Lain-lain', group: 'Pendapatan Lain-lain & Non-Operasional' },
+      { kategori: 'Pemasukan Lain-lain', jenis: 'Pemasukan Lain-lain', group: 'Pendapatan Lain-lain & Non-Operasional' }
+    ]
+
+    defaults.forEach(d => {
+      if (!processed.has(d.kategori.toLowerCase())) {
+        processed.add(d.kategori.toLowerCase())
+        groups[d.group].push({ kategori: d.kategori, jenis: d.jenis, group: d.group })
+      }
+    })
+
+    return groups
+  }, [masterCategories])
+
+  const flattenedIncomeCategoryOptions = useMemo(() => {
+    const list = []
+    Object.entries(structuredIncomeCategories).forEach(([groupName, items]) => {
+      if (items.length > 0) {
+        items.forEach(it => {
+          list.push({
+            value: it.kategori,
+            label: it.kategori,
+            badge: it.group,
+            subtitle: it.jenis
+          })
+        })
+      }
+    })
+    list.push({
+      value: '__CUSTOM__',
+      label: '+ Ketik Kategori Baru...',
+      badge: 'CUSTOM'
+    })
+    return list
+  }, [structuredIncomeCategories])
+
   // Available Categories Locked to the Selected Jenis in Modal Forms
   const availableExpenseCategories = useMemo(() => {
     return getLockedCategoriesForJenis(expenseForm.jenis, masterCategories, customKategoriList, false)
@@ -348,8 +524,7 @@ const Finance = () => {
         return {
           ...prev,
           jenis: selectedJenis,
-          kategori: newCat,
-          total_harga: newCat === 'Bahan Baku' ? 0 : prev.total_harga
+          kategori: newCat
         }
       })
       if (nextCats[0] !== 'Bahan Baku') setBarangMasukList([])
@@ -571,7 +746,7 @@ const Finance = () => {
         return allData
       }
 
-      // 2-6. Fetch Cashflow, Carwash, Cafe, Expenses, Master Categories, & Stok Barang secara paralel
+      // 2-6. Fetch Cashflow, Carwash, Cafe, Expenses, Master Categories, Stok Barang, & POS Balances secara paralel
       const [
         cfData,
         cwData,
@@ -580,7 +755,8 @@ const Finance = () => {
         resMc,
         resSb,
         resKc,
-        resKk
+        resKk,
+        resPb
       ] = await Promise.all([
         fetchAllData('cashflow', '*', 'tanggal'),
         fetchAllData('carwash', '*', 'tanggal'),
@@ -589,11 +765,16 @@ const Finance = () => {
         supabase.from('master_categories').select('*'),
         supabase.from('stok_barang').select('*'),
         supabase.from('karyawan_cuci').select('*'),
-        supabase.from('karyawan_kantor').select('*')
+        supabase.from('karyawan_kantor').select('*'),
+        supabase.from('pos_balances').select('*')
       ])
 
       const mcData = resMc?.data
       const sbData = resSb?.data
+
+      if (resPb?.data && Array.isArray(resPb.data) && resPb.data.length > 0) {
+        setPosAccountList(resPb.data)
+      }
 
       const cuciNames = (resKc?.data || []).map(k => k.nama.toUpperCase().trim()).filter(Boolean)
       const kantorNames = (resKk?.data || []).map(k => k.nama.toUpperCase().trim()).filter(Boolean)
@@ -758,20 +939,43 @@ const Finance = () => {
     let rekY = 0
     let rekN = 0
     let rekR = 0
+    const byPos = {}
 
     cashflowList.forEach(item => {
       const p = parseFloat(item.pemasukan || 0)
       const k = parseFloat(item.pengeluaran || 0)
       const net = p - k
+      const posKey = item.pos || 'SALDO CASH'
 
-      if (item.pos === 'SALDO CASH') cash += net
-      else if (item.pos === 'SALDO REKENING Y') rekY += net
-      else if (item.pos === 'SALDO REKENING N') rekN += net
-      else if (item.pos === 'SALDO REKENING R') rekR += net
+      byPos[posKey] = (byPos[posKey] || 0) + net
+
+      if (posKey === 'SALDO CASH') cash += net
+      else if (posKey === 'SALDO REKENING Y') rekY += net
+      else if (posKey === 'SALDO REKENING N') rekN += net
+      else if (posKey === 'SALDO REKENING R') rekR += net
     })
 
-    return { cash, rekY, rekN, rekR }
+    return { cash, rekY, rekN, rekR, byPos }
   }, [cashflowList])
+
+  const dynamicPosAccounts = useMemo(() => {
+    if (posAccountList && posAccountList.length > 0) {
+      return posAccountList.map(acc => {
+        const net = posAllTimeBalances.byPos?.[acc.pos] ?? 0
+        return {
+          ...acc,
+          label: acc.label || acc.nama_pos || acc.nama_bank || acc.pos,
+          currentBalance: net
+        }
+      })
+    }
+    return [
+      { pos: 'SALDO CASH', label: 'Laci Kasir (Cash Fisik)', type: 'CASH', currentBalance: posAllTimeBalances.cash },
+      { pos: 'SALDO REKENING Y', label: 'Mandiri Utama (Rek Y)', type: 'BANK', currentBalance: posAllTimeBalances.rekY },
+      { pos: 'SALDO REKENING N', label: 'Mandiri Ops (Rek N)', type: 'BANK', currentBalance: posAllTimeBalances.rekN },
+      { pos: 'SALDO REKENING R', label: 'Saldo Rekening R (Cadangan)', type: 'BANK', currentBalance: posAllTimeBalances.rekR }
+    ]
+  }, [posAccountList, posAllTimeBalances])
 
   const cashflowKpis = useMemo(() => {
     let inc = 0
@@ -1118,7 +1322,7 @@ const Finance = () => {
     setError('')
     setSuccess('')
 
-    const validation = validateExpenseForm(expenseForm, barangMasukList)
+    const validation = validateExpenseForm(expenseForm, barangMasukList, isRestockDetail)
     if (!validation.isValid) return setError(validation.error)
 
     setSubmitting(true)
@@ -1133,7 +1337,8 @@ const Finance = () => {
         stokBahan,
         newCfId,
         todayDate,
-        timestamp
+        timestamp,
+        isRestockDetail
       })
 
       const { error: cfErr } = await supabase.from('cashflow').insert(payload.cashflow)
@@ -1160,6 +1365,7 @@ const Finance = () => {
       })
       setIsCustomExpenseJenis(false)
       setIsCustomExpenseKategori(false)
+      setIsRestockDetail(false)
       setBarangMasukList([])
       setShowExpenseModal(false)
       await fetchFinanceData()
@@ -1555,6 +1761,14 @@ const Finance = () => {
             <RotateCcw size={14} />
             ⇄ Pindah Saldo
           </button>
+          <button
+            onClick={() => setShowWithdrawalModal(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-sm transition-all text-xs active:scale-[0.98]"
+            title="Tarik Prive Pemilik / Dividen tanpa merusak EBITDA"
+          >
+            <Wallet size={14} />
+            Tarik Prive Owner
+          </button>
         </div>
       </div>
 
@@ -1605,60 +1819,38 @@ const Finance = () => {
         </div>
       </div>
 
-      {/* Real-Time Wallet Balances Cards (Laci Cash, Mandiri Utama, Mandiri Ops, Rekening R) */}
+      {/* Real-Time Wallet Balances Cards (Laci Cash, Mandiri Utama, Mandiri Ops, Rekening R & Akun Tambahan) */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-xs text-[#bbcbb2] px-1">
-          <span className="font-bold uppercase tracking-wider text-[11px] text-[#bbcbb2]">Posisi Saldo Riil per Dompet / Rekening (Saat Ini)</span>
-          <span className="text-[10px] text-[#6b7367]">Saldo fisik di laci kasir & mutasi bank</span>
+          <div className="flex items-center gap-2">
+            <span className="font-bold uppercase tracking-wider text-[11px] text-[#bbcbb2]">Posisi Saldo Riil per Dompet / Rekening</span>
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/20">REAL-TIME</span>
+          </div>
+          <span className="text-[10px] text-[#6b7367]">Saldo fisik kasir & mutasi perbankan terintegrasi</span>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-          <div className="bg-[#121215] border border-[#26272d] p-3.5 rounded-xl border border-[#26272d] flex items-center justify-between hover:border-slate-700 transition-colors">
-            <div>
-              <span className="text-[#6b7367] text-[10px] font-bold uppercase tracking-wider block">Laci Kasir (Cash Fisik)</span>
-              <h4 className={`text-base md:text-lg font-black mt-0.5 ${posAllTimeBalances.cash >= 0 ? 'text-white' : 'text-rose-400'}`}>
-                {formatRupiah(posAllTimeBalances.cash)}
-              </h4>
-            </div>
-            <div className="w-8 h-8 rounded-lg bg-slate-800/80 text-white flex items-center justify-center font-bold text-xs">
-              CASH
-            </div>
-          </div>
-
-          <div className="bg-[#121215] border border-[#26272d] p-3.5 rounded-xl border border-[#26272d] flex items-center justify-between hover:border-slate-700 transition-colors">
-            <div>
-              <span className="text-[#6b7367] text-[10px] font-bold uppercase tracking-wider block">Mandiri Utama (Rek Y)</span>
-              <h4 className={`text-base md:text-lg font-black mt-0.5 ${posAllTimeBalances.rekY >= 0 ? 'text-primary' : 'text-rose-400'}`}>
-                {formatRupiah(posAllTimeBalances.rekY)}
-              </h4>
-            </div>
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-xs">
-              Y
-            </div>
-          </div>
-
-          <div className="bg-[#121215] border border-[#26272d] p-3.5 rounded-xl border border-[#26272d] flex items-center justify-between hover:border-slate-700 transition-colors">
-            <div>
-              <span className="text-[#6b7367] text-[10px] font-bold uppercase tracking-wider block">Mandiri Ops (Rek N)</span>
-              <h4 className={`text-base md:text-lg font-black mt-0.5 ${posAllTimeBalances.rekN >= 0 ? 'text-[#00ffff]' : 'text-rose-400'}`}>
-                {formatRupiah(posAllTimeBalances.rekN)}
-              </h4>
-            </div>
-            <div className="w-8 h-8 rounded-lg bg-brand-blue/10 text-[#00ffff] flex items-center justify-center font-bold text-xs">
-              N
-            </div>
-          </div>
-
-          <div className="bg-[#121215] border border-[#26272d] p-3.5 rounded-xl border border-[#26272d] flex items-center justify-between hover:border-slate-700 transition-colors">
-            <div>
-              <span className="text-[#6b7367] text-[10px] font-bold uppercase tracking-wider block">Saldo Rekening R (Cadangan)</span>
-              <h4 className={`text-base md:text-lg font-black mt-0.5 ${posAllTimeBalances.rekR >= 0 ? 'text-purple-400' : 'text-rose-400'}`}>
-                {formatRupiah(posAllTimeBalances.rekR)}
-              </h4>
-            </div>
-            <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold text-xs">
-              R
-            </div>
-          </div>
+          {dynamicPosAccounts.map((acc, idx) => {
+            const isCash = acc.type === 'CASH' || (acc.pos && acc.pos.includes('CASH'))
+            const bal = acc.currentBalance ?? 0
+            const shortBadge = isCash ? 'CASH' : (acc.type || (acc.pos?.includes('REKENING Y') ? 'Y' : acc.pos?.includes('REKENING N') ? 'N' : acc.pos?.includes('REKENING R') ? 'R' : 'BANK'))
+            return (
+              <div key={acc.pos || idx} className="bg-[#121215] border border-[#26272d] p-3.5 rounded-xl border border-[#26272d] flex items-center justify-between hover:border-slate-700 transition-colors">
+                <div className="min-w-0 pr-2">
+                  <span className="text-[#6b7367] text-[10px] font-bold uppercase tracking-wider block truncate" title={acc.label || acc.pos}>
+                    {acc.label || acc.pos}
+                  </span>
+                  <h4 className={`text-base md:text-lg font-black mt-0.5 truncate ${bal >= 0 ? (isCash ? 'text-white' : acc.pos?.includes('REKENING Y') ? 'text-primary' : acc.pos?.includes('REKENING N') ? 'text-[#00ffff]' : acc.pos?.includes('REKENING R') ? 'text-purple-400' : 'text-[#00ffff]') : 'text-rose-400'}`}>
+                    {formatRupiah(bal)}
+                  </h4>
+                </div>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                  isCash ? 'bg-slate-800/80 text-white' : acc.pos?.includes('REKENING Y') ? 'bg-emerald-500/10 text-emerald-400' : acc.pos?.includes('REKENING N') ? 'bg-brand-blue/10 text-[#00ffff]' : 'bg-purple-500/10 text-purple-400'
+                }`}>
+                  {shortBadge}
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
 
@@ -2779,93 +2971,86 @@ const Finance = () => {
                 </div>
               )}
 
-              <form onSubmit={handleSaveExpense} className="space-y-4 overflow-y-auto max-h-[50vh] pr-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <form onSubmit={handleSaveExpense} className="space-y-4 overflow-y-auto max-h-[60vh] pr-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Tanggal */}
                   <div>
                     <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
-                      Tanggal
+                      Tanggal Transaksi
                     </label>
                     <input
                       type="date"
                       value={expenseForm.tanggal}
                       onChange={(e) => setExpenseForm(prev => ({ ...prev, tanggal: e.target.value }))}
-                      className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-rose"
+                      className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2.5 px-3 text-white text-sm focus:outline-none focus:border-brand-rose"
                       required
                     />
                   </div>
 
+                  {/* POS Kas / Rekening */}
                   <div>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider">
-                        Jenis Pengeluaran
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setIsCustomExpenseJenis(!isCustomExpenseJenis)}
-                        className="text-[11px] text-primary hover:underline font-medium"
-                      >
-                        {isCustomExpenseJenis ? '← List' : '+ Custom'}
-                      </button>
-                    </div>
-                    {isCustomExpenseJenis ? (
-                      <input
-                        type="text"
-                        placeholder="Ketik jenis..."
-                        value={expenseForm.jenis}
-                        onChange={(e) => handleExpenseJenisSelect(e.target.value)}
-                        className="w-full bg-[#18181c] border border-brand-emerald rounded-xl py-2 px-3 text-white text-xs md:text-sm focus:outline-none"
-                        autoFocus
-                      />
-                    ) : (
-                      <CustomSelect
-                        value={expenseForm.jenis}
-                        onChange={(val) => {
-                          if (val === '__CUSTOM__') {
-                            setIsCustomExpenseJenis(true)
-                            setExpenseForm(prev => ({ ...prev, jenis: '' }))
-                          } else {
-                            handleExpenseJenisSelect(val)
-                          }
-                        }}
-                        options={[
-                          ...allJenisOptions.map(o => ({ value: o, label: o })),
-                          { value: '__CUSTOM__', label: '✨ + Custom (Ketik Sendiri)...' }
-                        ]}
-                        size="md"
-                        variant="rose"
-                        className="w-full"
-                      />
-                    )}
+                    <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
+                      POS Kas / Sumber Dana
+                    </label>
+                    <CustomSelect
+                      value={expenseForm.pos}
+                      onChange={(val) => setExpenseForm(prev => ({ ...prev, pos: val }))}
+                      options={dynamicPosAccounts.map(p => ({
+                        value: p.pos,
+                        label: `${p.label || p.pos} (Saldo: ${formatRupiah(p.currentBalance)})`,
+                        badge: p.type || 'KAS'
+                      }))}
+                      size="md"
+                      variant="rose"
+                      className="w-full"
+                    />
+                    {(() => {
+                      const currentAcc = dynamicPosAccounts.find(p => p.pos === expenseForm.pos)
+                      const currentBal = currentAcc?.currentBalance ?? 0
+                      const expenseNom = parseFloat(expenseForm.total_harga || 0)
+                      const remBal = currentBal - expenseNom
+                      const isOverdraft = remBal < 0
+                      return (
+                        <div className={`mt-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono flex items-center justify-between border ${
+                          isOverdraft ? 'bg-rose-500/10 border-rose-500/30 text-rose-300' : 'bg-[#18181c] border-[#26272d] text-[#bbcbb2]'
+                        }`}>
+                          <span>Saldo Kas: {formatRupiah(currentBal)}</span>
+                          <span className={isOverdraft ? 'text-rose-400 font-bold' : 'text-slate-400'}>
+                            Sisa: {formatRupiah(remBal)} {isOverdraft ? '⚠️ (Overdraft)' : ''}
+                          </span>
+                        </div>
+                      )
+                    })()}
                   </div>
 
-                  <div>
+                  {/* Kategori Pengeluaran */}
+                  <div className="md:col-span-2">
                     <div className="flex justify-between items-center mb-1.5">
                       <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider">
-                        Kategori (Terkunci)
+                        Kategori Pengeluaran
                       </label>
                       <button
                         type="button"
                         onClick={() => setIsCustomExpenseKategori(!isCustomExpenseKategori)}
                         className="text-[11px] text-primary hover:underline font-medium"
                       >
-                        {isCustomExpenseKategori ? '← List' : '+ Custom'}
+                        {isCustomExpenseKategori ? '← Pilih dari Daftar' : '+ Ketik Kategori Baru'}
                       </button>
                     </div>
                     {isCustomExpenseKategori ? (
                       <input
                         type="text"
-                        placeholder="Ketik kategori..."
+                        placeholder="Ketik kategori pengeluaran..."
                         value={expenseForm.kategori}
                         onChange={(e) => {
                           const newCat = e.target.value
                           setExpenseForm(prev => ({ 
                             ...prev, 
                             kategori: newCat,
-                            total_harga: newCat === 'Bahan Baku' ? 0 : prev.total_harga
+                            jenis: prev.jenis || 'Pengeluaran Bersama'
                           }))
-                          if (newCat !== 'Bahan Baku') setBarangMasukList([])
                         }}
-                        className="w-full bg-[#18181c] border border-brand-emerald rounded-xl py-2 px-3 text-white text-xs md:text-sm focus:outline-none"
+                        className="w-full bg-[#18181c] border border-brand-rose rounded-xl py-2.5 px-3 text-white text-xs md:text-sm focus:outline-none"
                         autoFocus
                       />
                     ) : (
@@ -2875,161 +3060,196 @@ const Finance = () => {
                           if (val === '__CUSTOM__') {
                             setIsCustomExpenseKategori(true)
                             setExpenseForm(prev => ({ ...prev, kategori: '' }))
-                            setBarangMasukList([])
                           } else {
+                            const flatList = Object.values(structuredExpenseCategories).flat()
+                            const found = flatList.find(x => x.kategori.toLowerCase() === val.toLowerCase())
+                            const assignedJenis = found?.jenis || 'Pengeluaran Bersama'
                             setExpenseForm(prev => ({ 
                               ...prev, 
                               kategori: val,
-                              total_harga: val === 'Bahan Baku' ? 0 : prev.total_harga
+                              jenis: assignedJenis
                             }))
-                            if (val !== 'Bahan Baku') setBarangMasukList([])
                           }
                         }}
-                        options={[
-                          ...availableExpenseCategories.map(o => ({ value: o, label: o })),
-                          { value: '__CUSTOM__', label: '✨ + Custom (Ketik Sendiri)...' }
-                        ]}
+                        options={flattenedExpenseCategoryOptions}
                         size="md"
+                        searchable={true}
+                        searchPlaceholder="Ketik untuk mencari kategori..."
                         variant="rose"
                         className="w-full"
                       />
                     )}
                   </div>
+                </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
-                      POS Kas
+                {/* Input Karyawan Penerima Kasbon jika kategori terkait Casbon */}
+                {(String(expenseForm.kategori || '').toLowerCase().includes('casbon') || String(expenseForm.jenis || '').toLowerCase().includes('casbon')) && (
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+                    <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider">
+                      Pilih Karyawan Penerima Kasbon
                     </label>
                     <CustomSelect
-                      value={expenseForm.pos}
-                      onChange={(val) => setExpenseForm(prev => ({ ...prev, pos: val }))}
-                      options={posOptions.map(o => ({ value: o, label: o }))}
+                      value={expenseForm.karyawan}
+                      onChange={(val) => {
+                        setExpenseForm(prev => ({
+                          ...prev,
+                          karyawan: val,
+                          keterangan: prev.keterangan || (val ? `Casbon ${val}` : '')
+                        }))
+                      }}
+                      options={[
+                        { value: '', label: '-- Pilih Nama Karyawan --' },
+                        ...karyawanOptions.map(name => ({ value: name, label: name }))
+                      ]}
                       size="md"
                       variant="rose"
                       className="w-full"
                     />
+                    <span className="text-[10px] text-[#bbcbb2]">
+                      * Otomatis memotong gaji bersih saat pembayaran upah di modul Karyawan.
+                    </span>
                   </div>
+                )}
 
-                  {/* Input Karyawan Penerima Kasbon jika kategori terkait Casbon */}
-                  {(String(expenseForm.kategori || '').toLowerCase().includes('casbon') || String(expenseForm.jenis || '').toLowerCase().includes('casbon')) && (
-                    <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2">
-                      <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider">
-                        Pilih Karyawan Penerima Kasbon
-                      </label>
-                      <CustomSelect
-                        value={expenseForm.karyawan}
-                        onChange={(val) => {
-                          setExpenseForm(prev => ({
-                            ...prev,
-                            karyawan: val,
-                            keterangan: prev.keterangan || (val ? `Casbon ${val}` : '')
-                          }))
-                        }}
-                        options={[
-                          { value: '', label: '-- Pilih Nama Karyawan --' },
-                          ...karyawanOptions.map(name => ({ value: name, label: name }))
-                        ]}
-                        size="md"
-                        variant="rose"
-                        className="w-full"
-                      />
-                      <span className="text-[10px] text-[#bbcbb2]">
-                        * Otomatis memotong gaji bersih saat pembayaran upah di modul Karyawan.
-                      </span>
-                    </div>
-                  )}
-                </div>
-
+                {/* Keterangan Transaksi */}
                 <div>
                   <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Keterangan
                   </label>
                   <textarea
-                    placeholder="Beli sabun cuci mobil, bayar listrik cafe, casbon staff..."
+                    placeholder="Contoh: Beli sabun cuci mobil, bayar tagihan listrik, servis kompresor..."
                     value={expenseForm.keterangan}
                     onChange={(e) => setExpenseForm(prev => ({ ...prev, keterangan: e.target.value }))}
-                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm h-20 placeholder-slate-600 focus:outline-none focus:border-brand-rose"
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm h-16 placeholder-slate-600 focus:outline-none focus:border-brand-rose"
                   />
                 </div>
 
-                {expenseForm.kategori !== 'Bahan Baku' ? (
-                  <div>
-                    <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
-                      Total Nominal (Rp)
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="0"
-                      value={expenseForm.total_harga}
-                      onChange={(e) => setExpenseForm(prev => ({ ...prev, total_harga: e.target.value }))}
-                      className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm font-mono focus:outline-none focus:border-brand-rose"
-                    />
-                  </div>
-                ) : (
-                  <div className="space-y-3 pt-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-[#bbcbb2] uppercase tracking-wider">
-                        Detail Restok Bahan Baku (Barang Masuk)
-                      </span>
-                      <button
-                        type="button"
-                        onClick={addBarangMasukItem}
-                        className="px-3 py-1 bg-brand-blue/10 border border-brand-blue/20 text-[#00ffff] font-bold rounded-lg text-xs"
-                      >
-                        + Tambah Item
-                      </button>
+                {/* Nominal Input dengan Formatting Ribuan */}
+                <div>
+                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
+                    Total Nominal Pengeluaran (Rp)
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0"
+                    disabled={isRestockDetail}
+                    value={formatCurrencyInput(expenseForm.total_harga)}
+                    onChange={(e) => {
+                      const parsed = parseCurrencyInput(e.target.value)
+                      setExpenseForm(prev => ({ ...prev, total_harga: parsed }))
+                    }}
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2.5 px-3 text-white text-base font-mono font-bold focus:outline-none focus:border-brand-rose disabled:opacity-60"
+                  />
+                  {parseFloat(expenseForm.total_harga || 0) > 0 && !isRestockDetail && (
+                    <div className="flex items-center gap-1.5 text-xs text-brand-rose font-medium mt-1">
+                      <Check size={14} />
+                      <span>Terbaca: {formatRupiah(expenseForm.total_harga)}</span>
                     </div>
+                  )}
+                </div>
 
-                    {barangMasukList.map((item, idx) => (
-                      <div key={idx} className="flex gap-2 items-center p-3 rounded-lg bg-[#18181c]/60 border border-[#26272d]">
-                        <div className="flex-1 min-w-[120px]">
-                          <select
-                            value={item.id_bahan_baku}
-                            onChange={(e) => updateBarangMasukItem(idx, 'id_bahan_baku', e.target.value)}
-                            className="w-full bg-[#18181c] border border-[#26272d] rounded py-1.5 px-2 text-white text-xs font-semibold focus:outline-none focus:border-brand-rose"
-                          >
-                            {stokBahan.map(b => (
-                              <option key={b.id_bahan_baku} value={b.id_bahan_baku}>
-                                {b.nama_produk} ({b.satuan})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="w-20">
-                          <input
-                            type="number"
-                            placeholder="Qty"
-                            value={item.jumlah}
-                            onChange={(e) => updateBarangMasukItem(idx, 'jumlah', e.target.value)}
-                            className="w-full bg-[#18181c] border border-[#26272d] rounded py-1.5 px-2 text-white text-xs text-center font-mono focus:outline-none focus:border-brand-rose"
-                          />
-                        </div>
-                        <span className="text-[10px] text-[#bbcbb2] w-12 font-mono">{item.satuan}</span>
-                        <div className="flex-1 min-w-[100px]">
-                          <input
-                            type="number"
-                            placeholder="Harga Satuan"
-                            value={item.harga_satuan}
-                            onChange={(e) => updateBarangMasukItem(idx, 'harga_satuan', e.target.value)}
-                            className="w-full bg-[#18181c] border border-[#26272d] rounded py-1.5 px-2 text-white text-xs text-right font-mono focus:outline-none focus:border-brand-rose"
-                          />
-                        </div>
+                {/* Toggle Detail Restok SKU Barang Masuk */}
+                <div className="space-y-3 pt-2">
+                  <div className="p-3 rounded-xl bg-[#18181c] border border-[#26272d]">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={isRestockDetail}
+                        onChange={(e) => {
+                          const checked = e.target.checked
+                          setIsRestockDetail(checked)
+                          if (!checked) {
+                            setBarangMasukList([])
+                          } else if (stokBahan.length > 0 && barangMasukList.length === 0) {
+                            const first = stokBahan[0]
+                            setBarangMasukList([{
+                              id_bahan_baku: first.id_bahan_baku,
+                              nama_bahan: first.nama_produk,
+                              satuan: first.satuan || 'Pcs',
+                              jumlah: 1,
+                              harga_satuan: 0,
+                              subtotal: 0
+                            }])
+                          }
+                        }}
+                        className="w-4 h-4 rounded border-[#26272d] text-brand-rose focus:ring-brand-rose"
+                      />
+                      <span className="text-xs font-semibold text-white">
+                        Catat Rincian Restok Barang Masuk (Sinkron ke Gudang / Inventori)
+                      </span>
+                    </label>
+                    <p className="text-[10px] text-[#6b7367] mt-1 ml-6">
+                      Aktifkan jika Anda ingin mencatat penambahan stok fisik SKU dan HPP per item ke database inventori. Jika tidak dicentang, transaksi dicatat cepat sebagai pengeluaran biaya langsung.
+                    </p>
+                  </div>
+
+                  {isRestockDetail && (
+                    <div className="space-y-3 p-3.5 rounded-xl bg-[#18181c]/60 border border-[#26272d]">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-[#bbcbb2] uppercase tracking-wider">
+                          Daftar Item Barang Masuk ({barangMasukList.length})
+                        </span>
                         <button
                           type="button"
-                          onClick={() => removeBarangMasukItem(idx)}
-                          className="text-rose-400 hover:text-rose-500 p-1"
+                          onClick={addBarangMasukItem}
+                          className="px-3 py-1 bg-brand-blue/10 border border-brand-blue/20 text-[#00ffff] font-bold rounded-lg text-xs hover:bg-brand-blue/20 transition-colors"
                         >
-                          <Trash2 size={14} />
+                          + Tambah Item
                         </button>
                       </div>
-                    ))}
 
-                    <div className="p-3 rounded-lg bg-brand-rose/5 border border-brand-rose/10 flex justify-between items-center text-xs font-bold mt-2">
-                      <span className="text-[#bbcbb2]">Total Biaya Restok</span>
-                      <span className="text-brand-rose text-sm font-black">{formatRupiah(expenseForm.total_harga)}</span>
+                      {barangMasukList.map((item, idx) => (
+                        <div key={idx} className="flex flex-wrap sm:flex-nowrap gap-2 items-center p-3 rounded-lg bg-[#121215] border border-[#26272d]">
+                          <div className="flex-1 min-w-[140px]">
+                            <select
+                              value={item.id_bahan_baku}
+                              onChange={(e) => updateBarangMasukItem(idx, 'id_bahan_baku', e.target.value)}
+                              className="w-full bg-[#18181c] border border-[#26272d] rounded py-1.5 px-2 text-white text-xs font-semibold focus:outline-none focus:border-brand-rose"
+                            >
+                              {stokBahan.map(b => (
+                                <option key={b.id_bahan_baku} value={b.id_bahan_baku}>
+                                  {b.nama_produk} ({b.satuan})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="w-20">
+                            <input
+                              type="number"
+                              placeholder="Qty"
+                              value={item.jumlah}
+                              onChange={(e) => updateBarangMasukItem(idx, 'jumlah', e.target.value)}
+                              className="w-full bg-[#18181c] border border-[#26272d] rounded py-1.5 px-2 text-white text-xs text-center font-mono focus:outline-none focus:border-brand-rose"
+                            />
+                          </div>
+                          <span className="text-[10px] text-[#bbcbb2] w-12 font-mono truncate">{item.satuan}</span>
+                          <div className="flex-1 min-w-[120px]">
+                            <input
+                              type="text"
+                              placeholder="Harga Satuan"
+                              value={formatCurrencyInput(item.harga_satuan)}
+                              onChange={(e) => updateBarangMasukItem(idx, 'harga_satuan', parseCurrencyInput(e.target.value))}
+                              className="w-full bg-[#18181c] border border-[#26272d] rounded py-1.5 px-2 text-white text-xs text-right font-mono focus:outline-none focus:border-brand-rose"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeBarangMasukItem(idx)}
+                            className="text-rose-400 hover:text-rose-500 p-1.5 hover:bg-rose-500/10 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      ))}
+
+                      <div className="p-3 rounded-lg bg-brand-rose/5 border border-brand-rose/10 flex justify-between items-center text-xs font-bold">
+                        <span className="text-[#bbcbb2]">Total Biaya Restok (Otomatis Dihitung)</span>
+                        <span className="text-brand-rose text-sm font-black">{formatRupiah(expenseForm.total_harga)}</span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </form>
             </div>
 
@@ -3074,85 +3294,80 @@ const Finance = () => {
                 </div>
               )}
 
-              <form onSubmit={handleSaveIncome} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <form onSubmit={handleSaveIncome} className="space-y-4 overflow-y-auto max-h-[60vh] pr-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Tanggal */}
                   <div>
                     <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
-                      Tanggal
+                      Tanggal Transaksi
                     </label>
                     <input
                       type="date"
                       value={incomeForm.tanggal}
                       onChange={(e) => setIncomeForm(prev => ({ ...prev, tanggal: e.target.value }))}
-                      className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-emerald"
+                      className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2.5 px-3 text-white text-sm focus:outline-none focus:border-brand-emerald"
                       required
                     />
                   </div>
 
+                  {/* POS Kas Tujuan */}
                   <div>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider">
-                        Jenis Pemasukan
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setIsCustomIncomeJenis(!isCustomIncomeJenis)}
-                        className="text-[11px] text-primary hover:underline font-medium"
-                      >
-                        {isCustomIncomeJenis ? '← List' : '+ Custom'}
-                      </button>
-                    </div>
-                    {isCustomIncomeJenis ? (
-                      <input
-                        type="text"
-                        placeholder="Ketik jenis..."
-                        value={incomeForm.jenis}
-                        onChange={(e) => handleIncomeJenisSelect(e.target.value)}
-                        className="w-full bg-[#18181c] border border-brand-emerald rounded-xl py-2 px-3 text-white text-xs md:text-sm focus:outline-none"
-                        autoFocus
-                      />
-                    ) : (
-                      <CustomSelect
-                        value={incomeForm.jenis}
-                        onChange={(val) => {
-                          if (val === '__CUSTOM__') {
-                            setIsCustomIncomeJenis(true)
-                            setIncomeForm(prev => ({ ...prev, jenis: '' }))
-                          } else {
-                            handleIncomeJenisSelect(val)
-                          }
-                        }}
-                        options={[
-                          ...allIncomeJenisOptions.map(o => ({ value: o, label: o })),
-                          { value: '__CUSTOM__', label: '✨ + Custom (Ketik Sendiri)...' }
-                        ]}
-                        size="md"
-                        variant="emerald"
-                        className="w-full"
-                      />
-                    )}
+                    <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
+                      POS Kas Tujuan
+                    </label>
+                    <CustomSelect
+                      value={incomeForm.pos}
+                      onChange={(val) => setIncomeForm(prev => ({ ...prev, pos: val }))}
+                      options={dynamicPosAccounts.map(p => ({
+                        value: p.pos,
+                        label: `${p.label || p.pos} (Saldo: ${formatRupiah(p.currentBalance)})`,
+                        badge: p.type || 'KAS'
+                      }))}
+                      size="md"
+                      variant="emerald"
+                      className="w-full"
+                    />
+                    {(() => {
+                      const currentAcc = dynamicPosAccounts.find(p => p.pos === incomeForm.pos)
+                      const currentBal = currentAcc?.currentBalance ?? 0
+                      const incNom = parseFloat(incomeForm.nominal || 0)
+                      const nextBal = currentBal + incNom
+                      return (
+                        <div className="mt-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono flex items-center justify-between border bg-[#18181c] border-[#26272d] text-[#bbcbb2]">
+                          <span>Saldo Kas: {formatRupiah(currentBal)}</span>
+                          <span className="text-emerald-400 font-bold">
+                            Setelah Masuk: {formatRupiah(nextBal)}
+                          </span>
+                        </div>
+                      )
+                    })()}
                   </div>
 
-                  <div>
+                  {/* Kategori Pemasukan */}
+                  <div className="md:col-span-2">
                     <div className="flex justify-between items-center mb-1.5">
                       <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider">
-                        Kategori Pemasukan (Terkunci)
+                        Kategori Pemasukan
                       </label>
                       <button
                         type="button"
                         onClick={() => setIsCustomIncomeKategori(!isCustomIncomeKategori)}
                         className="text-[11px] text-primary hover:underline font-medium"
                       >
-                        {isCustomIncomeKategori ? '← List' : '+ Custom'}
+                        {isCustomIncomeKategori ? '← Pilih dari Daftar' : '+ Ketik Kategori Baru'}
                       </button>
                     </div>
                     {isCustomIncomeKategori ? (
                       <input
                         type="text"
-                        placeholder="Ketik kategori..."
+                        placeholder="Ketik kategori pemasukan baru..."
                         value={incomeForm.kategori}
-                        onChange={(e) => setIncomeForm(prev => ({ ...prev, kategori: e.target.value }))}
-                        className="w-full bg-[#18181c] border border-brand-emerald rounded-xl py-2 px-3 text-white text-xs md:text-sm focus:outline-none"
+                        onChange={(e) => setIncomeForm(prev => ({ 
+                          ...prev, 
+                          kategori: e.target.value,
+                          jenis: prev.jenis || 'Pemasukan Lain-lain'
+                        }))}
+                        className="w-full bg-[#18181c] border border-brand-emerald rounded-xl py-2.5 px-3 text-white text-xs md:text-sm focus:outline-none"
                         autoFocus
                       />
                     ) : (
@@ -3163,59 +3378,63 @@ const Finance = () => {
                             setIsCustomIncomeKategori(true)
                             setIncomeForm(prev => ({ ...prev, kategori: '' }))
                           } else {
-                            setIncomeForm(prev => ({ ...prev, kategori: val }))
+                            const flatList = Object.values(structuredIncomeCategories).flat()
+                            const found = flatList.find(x => x.kategori.toLowerCase() === val.toLowerCase())
+                            const assignedJenis = found?.jenis || 'Pemasukan Lain-lain'
+                            setIncomeForm(prev => ({ 
+                              ...prev, 
+                              kategori: val,
+                              jenis: assignedJenis
+                            }))
                           }
                         }}
-                        options={[
-                          ...availableIncomeCategories.map(o => ({ value: o, label: o })),
-                          { value: '__CUSTOM__', label: '✨ + Custom (Ketik Sendiri)...' }
-                        ]}
+                        options={flattenedIncomeCategoryOptions}
                         size="md"
+                        searchable={true}
+                        searchPlaceholder="Ketik untuk mencari kategori pemasukan..."
                         variant="emerald"
                         className="w-full"
                       />
                     )}
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
-                      POS Kas Tujuan
-                    </label>
-                    <CustomSelect
-                      value={incomeForm.pos}
-                      onChange={(val) => setIncomeForm(prev => ({ ...prev, pos: val }))}
-                      options={posOptions.map(o => ({ value: o, label: o }))}
-                      size="md"
-                      variant="emerald"
-                      className="w-full"
-                    />
-                  </div>
                 </div>
 
+                {/* Keterangan */}
                 <div>
                   <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Keterangan
                   </label>
                   <input
                     type="text"
-                    placeholder="Contoh: Setoran modal awal owner, pendapatan iklan..."
+                    placeholder="Contoh: Setoran modal awal owner, pendapatan sewa tenant luar, pelunasan casbon..."
                     value={incomeForm.keterangan}
                     onChange={(e) => setIncomeForm(prev => ({ ...prev, keterangan: e.target.value }))}
                     className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-emerald"
                   />
                 </div>
 
+                {/* Nominal Input dengan Formatting Ribuan */}
                 <div>
                   <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Nominal Pemasukan (Rp)
                   </label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     placeholder="0"
-                    value={incomeForm.nominal}
-                    onChange={(e) => setIncomeForm(prev => ({ ...prev, nominal: e.target.value }))}
-                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm font-mono focus:outline-none focus:border-brand-emerald"
+                    value={formatCurrencyInput(incomeForm.nominal)}
+                    onChange={(e) => {
+                      const parsed = parseCurrencyInput(e.target.value)
+                      setIncomeForm(prev => ({ ...prev, nominal: parsed }))
+                    }}
+                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2.5 px-3 text-white text-base font-mono font-bold focus:outline-none focus:border-brand-emerald"
                   />
+                  {parseFloat(incomeForm.nominal || 0) > 0 && (
+                    <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium mt-1">
+                      <Check size={14} />
+                      <span>Terbaca: {formatRupiah(incomeForm.nominal)}</span>
+                    </div>
+                  )}
                 </div>
               </form>
             </div>
@@ -3285,15 +3504,32 @@ const Finance = () => {
                     <CustomSelect
                       value={transferForm.pos_asal}
                       onChange={(val) => setTransferForm(prev => ({ ...prev, pos_asal: val }))}
-                      options={posOptions.map(p => ({
-                        value: p,
-                        label: `${p} (${formatRupiah(posAllTimeBalances[p === 'SALDO CASH' ? 'cash' : p === 'SALDO REKENING Y' ? 'rekY' : p === 'SALDO REKENING N' ? 'rekN' : 'rekR'])})`
+                      options={dynamicPosAccounts.map(p => ({
+                        value: p.pos,
+                        label: `${p.label || p.pos} (Saldo: ${formatRupiah(p.currentBalance)})`,
+                        badge: p.type || 'KAS'
                       }))}
                       size="sm"
                       variant="rose"
                       className="w-full"
                     />
-                    <span className="text-[10px] text-[#6b7367] block">Saldo akan berkurang (-)</span>
+                    {(() => {
+                      const asalAcc = dynamicPosAccounts.find(p => p.pos === transferForm.pos_asal)
+                      const asalBal = asalAcc?.currentBalance ?? 0
+                      const tfNom = parseFloat(transferForm.nominal || 0)
+                      const remBal = asalBal - tfNom
+                      const isOverdraft = remBal < 0
+                      return (
+                        <div className={`px-2 py-1 rounded text-[10px] font-mono flex justify-between border ${
+                          isOverdraft ? 'bg-rose-500/10 border-rose-500/30 text-rose-300' : 'bg-[#121215] border-[#26272d] text-[#bbcbb2]'
+                        }`}>
+                          <span>Saldo Asal: {formatRupiah(asalBal)}</span>
+                          <span className={isOverdraft ? 'text-rose-400 font-bold' : 'text-slate-400'}>
+                            Sisa: {formatRupiah(remBal)} {isOverdraft ? '⚠️ Kurang' : ''}
+                          </span>
+                        </div>
+                      )
+                    })()}
                   </div>
 
                   <div className="p-3.5 rounded-xl bg-[#18181c]/80 border border-[#26272d] space-y-2">
@@ -3303,15 +3539,27 @@ const Finance = () => {
                     <CustomSelect
                       value={transferForm.pos_tujuan}
                       onChange={(val) => setTransferForm(prev => ({ ...prev, pos_tujuan: val }))}
-                      options={posOptions.map(p => ({
-                        value: p,
-                        label: `${p} (${formatRupiah(posAllTimeBalances[p === 'SALDO CASH' ? 'cash' : p === 'SALDO REKENING Y' ? 'rekY' : p === 'SALDO REKENING N' ? 'rekN' : 'rekR'])})`
+                      options={dynamicPosAccounts.map(p => ({
+                        value: p.pos,
+                        label: `${p.label || p.pos} (Saldo: ${formatRupiah(p.currentBalance)})`,
+                        badge: p.type || 'KAS'
                       }))}
                       size="sm"
                       variant="emerald"
                       className="w-full"
                     />
-                    <span className="text-[10px] text-[#6b7367] block">Saldo akan bertambah (+)</span>
+                    {(() => {
+                      const tujAcc = dynamicPosAccounts.find(p => p.pos === transferForm.pos_tujuan)
+                      const tujBal = tujAcc?.currentBalance ?? 0
+                      const tfNom = parseFloat(transferForm.nominal || 0)
+                      const nextBal = tujBal + tfNom
+                      return (
+                        <div className="px-2 py-1 rounded text-[10px] font-mono flex justify-between border bg-[#121215] border-[#26272d] text-[#bbcbb2]">
+                          <span>Saldo Tujuan: {formatRupiah(tujBal)}</span>
+                          <span className="text-emerald-400 font-bold">Setelah Masuk: {formatRupiah(nextBal)}</span>
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
 
@@ -3321,13 +3569,23 @@ const Finance = () => {
                     Nominal Perpindahan (Rp)
                   </label>
                   <input
-                    type="number"
-                    placeholder="Contoh: 1500000"
-                    value={transferForm.nominal}
-                    onChange={(e) => setTransferForm(prev => ({ ...prev, nominal: e.target.value }))}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Contoh: 1.500.000"
+                    value={formatCurrencyInput(transferForm.nominal)}
+                    onChange={(e) => {
+                      const parsed = parseCurrencyInput(e.target.value)
+                      setTransferForm(prev => ({ ...prev, nominal: parsed }))
+                    }}
                     className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2.5 px-3 text-white text-base font-mono font-bold focus:outline-none focus:border-sky-400"
                     required
                   />
+                  {parseFloat(transferForm.nominal || 0) > 0 && (
+                    <div className="flex items-center gap-1.5 text-xs text-sky-400 font-medium mt-1">
+                      <Check size={14} />
+                      <span>Terbaca: {formatRupiah(transferForm.nominal)}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Keterangan */}
@@ -3374,6 +3632,17 @@ const Finance = () => {
           </div>
         </div>
       )}
+
+      {/* MODAL PENARIKAN SALDO / PRIVE OWNER */}
+      <OwnerWithdrawalModal
+        isOpen={showWithdrawalModal}
+        onClose={() => setShowWithdrawalModal(false)}
+        onSuccess={() => {
+          setSuccess('Penarikan dana prive pemilik berhasil dicatat!')
+          fetchFinanceData()
+        }}
+        currentBalances={dynamicPosAccounts}
+      />
 
       {/* MODAL 3: EDIT TRANSAKSI (UNIVERSAL) */}
       {showEditModal && editForm.id && (

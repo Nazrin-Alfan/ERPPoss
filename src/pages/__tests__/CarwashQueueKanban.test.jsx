@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
 import { renderToString } from 'react-dom/server'
+import { MemoryRouter } from 'react-router-dom'
 import CarwashQueue from '../CarwashQueue.jsx'
 
 // Mock Supabase Client with simulated operational dataset
@@ -117,7 +118,7 @@ describe('Simulasi Pengujian Langsung: Kanban Bay Carwash', () => {
   })
 
   it('SIM-01: Verifikasi Struktur UI Kanban Bay & Elemen Visual Kritis', () => {
-    const html = renderToString(React.createElement(CarwashQueue))
+    const html = renderToString(React.createElement(MemoryRouter, null, React.createElement(CarwashQueue)))
 
     // Header & Info Judul
     expect(html).toContain('Antrean Carwash')

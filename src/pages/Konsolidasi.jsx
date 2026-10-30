@@ -24,7 +24,10 @@ import {
   ShieldCheck,
   ChevronRight,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Settings,
+  Users,
+  Layers
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import OnboardingWizardModal from '../components/auth/OnboardingWizardModal'
@@ -42,7 +45,7 @@ export default function Konsolidasi() {
   const [cashAccounts, setCashAccounts] = useState([])
   const [lastRefreshed, setLastRefreshed] = useState(new Date())
 
-  // Muat data dari seluruh tenant milik owner
+  // Muat data dari seluruh tenant milik owner yang berhak diakses
   const loadConsolidatedData = async () => {
     setIsLoading(true)
     try {
@@ -50,9 +53,14 @@ export default function Konsolidasi() {
       const { data: allExp } = await supabase.from('pengeluaran').select('*')
       const { data: allAcc } = await supabase.from('akun_keuangan').select('*')
 
-      setTransactions(allTx || [])
-      setExpenses(allExp || [])
-      setCashAccounts(allAcc || [])
+      const allowedTenantIds = new Set((userTenants || []).map(t => t.id))
+      const myTx = (allTx || []).filter(t => allowedTenantIds.has(t.tenant_id) || (allowedTenantIds.size === 0))
+      const myExp = (allExp || []).filter(e => allowedTenantIds.has(e.tenant_id) || (allowedTenantIds.size === 0))
+      const myAcc = (allAcc || []).filter(a => allowedTenantIds.has(a.tenant_id) || (allowedTenantIds.size === 0))
+
+      setTransactions(myTx)
+      setExpenses(myExp)
+      setCashAccounts(myAcc)
       setLastRefreshed(new Date())
     } catch (err) {
       console.error('Gagal memuat data konsolidasi:', err)
@@ -63,7 +71,7 @@ export default function Konsolidasi() {
 
   useEffect(() => {
     loadConsolidatedData()
-  }, [])
+  }, [userTenants])
 
   // Filter waktu transaksi & pengeluaran
   const filteredData = useMemo(() => {
@@ -160,7 +168,7 @@ export default function Konsolidasi() {
             <span>Portofolio Finansial Gabungan</span>
           </div>
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-wide mt-1 truncate">
-            Konsolidasi Portofolio Bisnis
+            Ringkasan Finansial Multi-Cabang
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
             Data ringkasan eksekutif seluruh outlet tanpa bias operasional harian.
@@ -286,10 +294,143 @@ export default function Konsolidasi() {
           </div>
           <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400">
             <span>Kas Laci & Bank</span>
-            <span className="text-purple-400 font-bold">Siap Prive</span>
+            <span className="text-purple-400 font-bold">Kas Likuid Siap Pakai</span>
           </div>
         </div>
       </div>
+
+      {/* Panduan Langkah Awal Memulai Toko (First-Time Store Onboarding Guide) */}
+      {(metrics.totalRevenue === 0 || userTenants.length === 1) && (
+        <div className="bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 p-5 sm:p-6 rounded-3xl border border-emerald-500/30 shadow-2xl space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-emerald-500/20">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                <Sparkles size={20} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  Langkah Awal Memulai Toko Baru
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold">
+                    Setup Cepat 4 Langkah
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Ikuti panduan berikut agar toko siap melayani transaksi pelanggan pertama Anda.
+                </p>
+              </div>
+            </div>
+
+            {userTenants.length > 0 && (
+              <button
+                type="button"
+                onClick={() => handleJumpToTenant(userTenants[0].id)}
+                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition cursor-pointer shrink-0 shadow-lg"
+              >
+                <span>Masuk ke Workspace Toko ({userTenants[0].nama})</span>
+                <ArrowRight size={14} />
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            {/* Step 1 */}
+            <div className="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between text-slate-400 mb-2">
+                  <span className="font-mono text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300">LANGKAH 1</span>
+                  <Settings size={14} className="text-emerald-400" />
+                </div>
+                <h4 className="font-bold text-white mb-1">Pengaturan Toko & Struk</h4>
+                <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
+                  Atur nama toko, alamat, footer struk, dan koneksi printer thermal Bluetooth/USB.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (userTenants[0]) switchTenant(userTenants[0].id)
+                  navigate('/admin?tab=receipt-settings')
+                }}
+                className="w-full py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 font-semibold text-center text-[11px] transition cursor-pointer"
+              >
+                Buka Pengaturan Struk →
+              </button>
+            </div>
+
+            {/* Step 2 */}
+            <div className="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between text-slate-400 mb-2">
+                  <span className="font-mono text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300">LANGKAH 2</span>
+                  <Users size={14} className="text-cyan-400" />
+                </div>
+                <h4 className="font-bold text-white mb-1">Daftarkan Akun Kasir</h4>
+                <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
+                  Buat akun login staf kasir agar kasir bisa langsung melayani pelanggan di POS.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (userTenants[0]) switchTenant(userTenants[0].id)
+                  navigate('/admin?tab=cashier-pay')
+                }}
+                className="w-full py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 font-semibold text-center text-[11px] transition cursor-pointer"
+              >
+                Tambah Akun Kasir →
+              </button>
+            </div>
+
+            {/* Step 3 */}
+            <div className="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between text-slate-400 mb-2">
+                  <span className="font-mono text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300">LANGKAH 3</span>
+                  <Layers size={14} className="text-amber-400" />
+                </div>
+                <h4 className="font-bold text-white mb-1">Atur Katalog Produk</h4>
+                <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
+                  Sesuaikan menu kafe, paket cuci/detailing, harga, dan metode pembayaran.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (userTenants[0]) switchTenant(userTenants[0].id)
+                  navigate('/admin?tab=menu')
+                }}
+                className="w-full py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold text-center text-[11px] transition cursor-pointer"
+              >
+                Kelola Katalog →
+              </button>
+            </div>
+
+            {/* Step 4 */}
+            <div className="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between text-slate-400 mb-2">
+                  <span className="font-mono text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300">LANGKAH 4</span>
+                  <CheckCircle2 size={14} className="text-emerald-400" />
+                </div>
+                <h4 className="font-bold text-white mb-1">Mulai Transaksi Kasir</h4>
+                <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
+                  Buka layar kasir POS untuk menguji transaksi perdana dan mencetak struk.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (userTenants[0]) switchTenant(userTenants[0].id)
+                  navigate('/pos')
+                }}
+                className="w-full py-1.5 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-center text-[11px] transition cursor-pointer shadow"
+              >
+                Buka Kasir POS →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Outlet Entity Cards Grid (Tampilan Representasi Toko Mandiri) */}
       <div>

@@ -17,6 +17,20 @@ export const formatRupiah = (val) => {
   }).format(val)
 }
 
+export const getLocalDateString = (val) => {
+  if (!val) return ''
+  if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val.trim())) {
+    return val.trim()
+  }
+  try {
+    const d = new Date(val)
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString('en-CA')
+    }
+  } catch (_) {}
+  return String(val || '').substring(0, 10)
+}
+
 export const parseDateSafe = (dateStr) => {
   if (!dateStr) return new Date()
   if (dateStr instanceof Date) return dateStr
@@ -108,16 +122,20 @@ export const calculateTutupKasirRecap = ({
 
       const totalItems = cwAmount + cfAmount
       const totalStruk = parseFloat(s.total_tagihan || 0)
+      const method = String(s.metode_bayar || '').toUpperCase().trim()
+      const isCash = method === 'CASH' || method === 'TUNAI' || method.includes('CASH') || method.includes('TUNAI')
+      const isQris = method === 'QRIS' || method === 'TRANSFER' || method === 'EDC' || method === 'DEBIT' || method.includes('QRIS') || method.includes('TRANSFER')
+      const isSplit = method === 'SPLIT'
 
       if (totalItems > 0) {
         // Terdapat rincian item (Tunggal Carwash, Tunggal Cafe, atau Hybrid)
-        if (s.metode_bayar === 'CASH') {
+        if (isCash) {
           carwashCash += cwAmount
           cafeCash += cfAmount
-        } else if (s.metode_bayar === 'QRIS' || s.metode_bayar === 'TRANSFER' || s.metode_bayar === 'DEBIT') {
+        } else if (isQris) {
           carwashQris += cwAmount
           cafeQris += cfAmount
-        } else if (s.metode_bayar === 'SPLIT') {
+        } else if (isSplit) {
           const cashPart = parseFloat(s.nominal_cash || 0)
           const qrisPart = parseFloat(s.nominal_qris || 0)
           const cwRatio = totalItems > 0 ? (cwAmount / totalItems) : 0
@@ -133,11 +151,11 @@ export const calculateTutupKasirRecap = ({
         }
       } else if (totalStruk > 0) {
         // Struk legacy tanpa detail item
-        if (s.metode_bayar === 'CASH') {
+        if (isCash) {
           legacyCash += totalStruk
-        } else if (s.metode_bayar === 'QRIS' || s.metode_bayar === 'TRANSFER' || s.metode_bayar === 'DEBIT') {
+        } else if (isQris) {
           legacyQris += totalStruk
-        } else if (s.metode_bayar === 'SPLIT') {
+        } else if (isSplit) {
           legacyCash += parseFloat(s.nominal_cash || 0)
           legacyQris += parseFloat(s.nominal_qris || 0)
         } else {
@@ -276,11 +294,14 @@ export const calculateDailyCashierRecap = (receipts, targetDate = null) => {
       const total = parseFloat(s.total_tagihan || 0)
       const cashPart = parseFloat(s.nominal_cash || 0)
       const qrisPart = parseFloat(s.nominal_qris || 0)
+      const method = String(s.metode_bayar || '').toUpperCase().trim()
+      const isCash = method === 'CASH' || method === 'TUNAI' || method.includes('CASH') || method.includes('TUNAI')
+      const isSplit = method === 'SPLIT'
 
-      if (s.metode_bayar === 'CASH') {
+      if (isCash) {
         totalCash += total > 0 ? total : cashPart
         cashTxCount += 1
-      } else if (s.metode_bayar === 'SPLIT') {
+      } else if (isSplit) {
         totalCash += cashPart
         totalNonCash += qrisPart
         splitTxCount += 1
@@ -310,4 +331,62 @@ export const calculateDailyCashierRecap = (receipts, targetDate = null) => {
     nonCashPercentage
   }
 }
+
+export const calculateCashierDrawerStatus = ({
+  strukList = [],
+  expenses = [],
+  startingCapital = 0,
+  targetDate = new Date().toLocaleDateString('en-CA')
+}) => {
+  let todayIn = 0
+  let todayQRIS = 0
+
+  if (Array.isArray(strukList)) {
+    strukList.forEach((s) => {
+      if (!s || s.status_bayar === 'Batal' || s.status_bayar === 'Cancelled') return
+
+      const settleDate = (s.waktu_dibayar ? getLocalDateString(s.waktu_dibayar) : null) || s.tanggal
+      if (settleDate === targetDate || s.tanggal === targetDate) {
+        const method = String(s.metode_bayar || '').toUpperCase().trim()
+        const nCash = parseFloat(s.nominal_cash || 0)
+        const nQris = parseFloat(s.nominal_qris || 0)
+        const total = parseFloat(s.total_tagihan || 0)
+
+        const isCash = method === 'CASH' || method === 'TUNAI' || method.includes('CASH') || method.includes('TUNAI')
+        const isQris = method === 'QRIS' || method === 'TRANSFER' || method === 'EDC' || method === 'DEBIT' || method.includes('QRIS') || method.includes('TRANSFER')
+        const isSplit = method === 'SPLIT'
+
+        if (isSplit) {
+          todayIn += nCash
+          todayQRIS += nQris
+        } else if (isCash) {
+          todayIn += nCash > 0 ? nCash : total
+        } else if (isQris) {
+          todayQRIS += nQris > 0 ? nQris : total
+        } else {
+          if (nCash > 0) todayIn += nCash
+          if (nQris > 0) todayQRIS += nQris
+          if (nCash === 0 && nQris === 0) {
+            todayIn += total
+          }
+        }
+      }
+    })
+  }
+
+  const todayOut = Array.isArray(expenses)
+    ? expenses.reduce((sum, item) => sum + (parseFloat(item?.nominal || 0)), 0)
+    : 0
+
+  const physicalDrawerCash = parseFloat(startingCapital || 0) + todayIn - todayOut
+
+  return {
+    todayIn,
+    todayQRIS,
+    todayOut,
+    startingCapital: parseFloat(startingCapital || 0),
+    physicalDrawerCash
+  }
+}
+
 

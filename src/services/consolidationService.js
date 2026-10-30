@@ -3,7 +3,7 @@
  * Domain Service layer untuk agregasi data finansial multi-tenant eksekutif (Owner view)
  * Dilengkapi pertahanan RBAC Fail-Safe (Zero-Trust Data Protection).
  */
-import { ROLES, isOwnerOrSuperAdmin } from '../constants/roles'
+import { ROLES, isOwnerOrSuperAdmin } from '../constants/roles.js'
 
 /**
  * Filter transaksi valid (mengecualikan transaksi Batal / Void)

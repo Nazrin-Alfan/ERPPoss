@@ -9,7 +9,9 @@ import {
   validateEditCashflowForm,
   generateCSVString,
   isPindahSaldo,
-  getLockedCategoriesForJenis
+  getLockedCategoriesForJenis,
+  formatCurrencyInput,
+  parseCurrencyInput
 } from '../financeHelpers'
 
 describe('Finance Helpers', () => {
@@ -28,11 +30,41 @@ describe('Finance Helpers', () => {
       expect(res.error).toBe('Daftar barang masuk/restok wajib diisi untuk kategori Bahan Baku.')
     })
 
+    it('should pass validation for Bahan Baku in quick mode when isRestockDetail is false', () => {
+      const form = { total_harga: 15000, kategori: 'Bahan Baku', keterangan: 'Beli es batu darurat di warung' }
+      const res = validateExpenseForm(form, [], false)
+      expect(res.isValid).toBe(true)
+    })
+
     it('should pass validation if inputs are valid', () => {
       const form = { total_harga: 50000, kategori: 'Bahan Baku', keterangan: 'Restok Kopi' }
       const barangMasukList = [{ id_bahan_baku: 'kopi-arabika', jumlah: 5, harga_satuan: 10000 }]
       const res = validateExpenseForm(form, barangMasukList)
       expect(res.isValid).toBe(true)
+    })
+
+    it('should format expense payload correctly for Bahan Baku in quick mode (isRestockDetail: false)', () => {
+      const form = {
+        total_harga: 15000,
+        kategori: 'Bahan Baku F&B',
+        keterangan: 'Beli es batu warung',
+        jenis: 'Pengeluaran Cafe',
+        pos: 'SALDO CASH'
+      }
+
+      const payload = formatExpensePayload({
+        form,
+        barangMasukList: [],
+        stokBahan: [],
+        newCfId: 'cf-quick-1',
+        todayDate: '2026-10-30',
+        timestamp: '2026-10-30T10:00:00.000Z',
+        isRestockDetail: false
+      })
+
+      expect(payload.cashflow.pengeluaran).toBe(15000)
+      expect(payload.cashflow.apakah_stok).toBe('Tidak')
+      expect(payload.details).toEqual([])
     })
 
     it('should format expense payload correctly for non-Bahan Baku', () => {
@@ -299,6 +331,24 @@ describe('Finance Helpers', () => {
       const cats = getLockedCategoriesForJenis('Pemasukan Non-POS', sampleMasterCategories, [], true)
       expect(cats).toContain('Sewa Tenant Luar')
       expect(cats).not.toContain('Bahan Baku F&B')
+    })
+  })
+
+  describe('Currency Input Masking Helpers', () => {
+    it('formatCurrencyInput should format digits with thousand separator dots', () => {
+      expect(formatCurrencyInput(50000)).toBe('50.000')
+      expect(formatCurrencyInput('1500000')).toBe('1.500.000')
+      expect(formatCurrencyInput('15000')).toBe('15.000')
+      expect(formatCurrencyInput('')).toBe('')
+      expect(formatCurrencyInput(null)).toBe('')
+      expect(formatCurrencyInput(0)).toBe('0')
+    })
+
+    it('parseCurrencyInput should extract integer cleanly from formatted string', () => {
+      expect(parseCurrencyInput('50.000')).toBe(50000)
+      expect(parseCurrencyInput('Rp 1.500.000')).toBe(1500000)
+      expect(parseCurrencyInput('')).toBe(0)
+      expect(parseCurrencyInput(null)).toBe(0)
     })
   })
 })

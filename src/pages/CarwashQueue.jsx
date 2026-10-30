@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import { 
@@ -19,7 +20,8 @@ import {
   Square,
   Columns3,
   List,
-  Play
+  Play,
+  Plus
 } from 'lucide-react'
 
 const CarwashQueue = () => {
@@ -344,6 +346,15 @@ const CarwashQueue = () => {
             </button>
           )}
 
+          <Link
+            to="/pos?tab=carwash"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#00ffff] hover:bg-[#26d6d6] text-[#0f0f0f] font-black text-xs rounded-xl shadow-md transition-all tap-tactile shrink-0"
+            title="Daftarkan mobil baru di POS Carwash"
+          >
+            <Plus size={15} strokeWidth={2.5} />
+            <span>+ Kendaraan Masuk</span>
+          </Link>
+
           <button
             onClick={fetchQueue}
             disabled={loading}
@@ -425,7 +436,14 @@ const CarwashQueue = () => {
               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#6b7367]">
                 <Clock size={28} strokeWidth={1.5} className="mb-2 text-[#6b7367]" />
                 <p className="text-xs font-semibold text-[#bbcbb2]">Tidak ada antrean baru</p>
-                <p className="text-[10px] text-[#6b7367] mt-0.5">Semua mobil sudah berada di bay cuci.</p>
+                <p className="text-[10px] text-[#6b7367] mt-0.5 mb-3">Daftarkan mobil masuk melalui kasir.</p>
+                <Link
+                  to="/pos?tab=carwash"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#00ffff]/15 hover:bg-[#00ffff]/25 text-[#00ffff] border border-[#00ffff]/30 rounded-lg text-xs font-bold transition-all tap-tactile"
+                >
+                  <Plus size={13} strokeWidth={2} />
+                  <span>+ Input Kendaraan di POS</span>
+                </Link>
               </div>
             ) : (
               <div className="space-y-3">
@@ -741,6 +759,13 @@ const CarwashQueue = () => {
               <p className="text-xs text-[#bbcbb2] max-w-md mb-2">
                 Tidak ditemukan data kendaraan pada {selectedDate} untuk filter ini.
               </p>
+              <Link
+                to="/pos?tab=carwash"
+                className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-[#00ffff] hover:bg-[#26d6d6] text-[#0f0f0f] rounded-xl font-bold text-xs transition-all tap-tactile"
+              >
+                <Plus size={14} strokeWidth={2.5} />
+                <span>Daftarkan Kendaraan Baru di Kasir</span>
+              </Link>
               {!isToday && (
                 <button
                   onClick={() => setSelectedDate(new Date().toLocaleDateString('en-CA'))}

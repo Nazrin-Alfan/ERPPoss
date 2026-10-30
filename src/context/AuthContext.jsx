@@ -47,9 +47,16 @@ export const AuthProvider = ({ children }) => {
           { id: DEFAULT_TENANT_ID, nama: 'RelayPOS Demo Outlet', slug: 'relaypos-demo', plan: 'ENTERPRISE', status: 'ACTIVE' }
         ]
       } else if (role === ROLES.OWNER) {
-        // Owner memiliki akses ke semua tenant miliknya atau default jika baru
-        allowedTenants = tenantList.length > 0 ? tenantList : [
-          { id: userTenantId, nama: 'Outlet Utama Owner', slug: 'outlet-owner', plan: 'ENTERPRISE', status: 'ACTIVE' }
+        // Owner HANYA memiliki akses ke tenant miliknya (berdasarkan tenant_id profil atau owner_email)
+        const profileEmail = (currentProfile?.email || '').toLowerCase().trim()
+        const myTenants = tenantList.filter(t => {
+          const matchTenantId = t.id === userTenantId
+          const matchEmail = Boolean(profileEmail && t.owner_email && t.owner_email.toLowerCase().trim() === profileEmail)
+          return matchTenantId || matchEmail
+        })
+
+        allowedTenants = myTenants.length > 0 ? myTenants : [
+          { id: userTenantId, nama: currentProfile?.nama ? `Outlet ${currentProfile.nama}` : 'Outlet Utama Owner', slug: 'outlet-owner', plan: 'ENTERPRISE', status: 'ACTIVE' }
         ]
       } else {
         // Kasir dan Staf 100% terkunci pada tenant_id profil mereka
@@ -265,6 +272,10 @@ export const AuthProvider = ({ children }) => {
           tenant_id: DEFAULT_TENANT_ID
         }
         setProfile(resolvedProfile)
+        if (resolvedProfile.tenant_id) {
+          localStorage.setItem(ACTIVE_TENANT_STORAGE_KEY, resolvedProfile.tenant_id)
+          setActiveTenantId(resolvedProfile.tenant_id)
+        }
         await loadTenantsForUser(resolvedProfile)
       }
       return { 
@@ -334,13 +345,34 @@ export const AuthProvider = ({ children }) => {
   }
 
   // Fungsi Pendaftaran Kasir Baru
-  const registerKasir = async (usernameOrEmail, password, nama, role = 'Kasir') => {
+  const registerKasir = async (usernameOrEmail, password, nama, role = 'Kasir', explicitTenantId = null) => {
     try {
-      const res = await api.auth.registerKasir(usernameOrEmail, password, nama, role)
+      const targetTenantId = explicitTenantId || activeTenant?.id || null
+      const res = await api.auth.registerKasir(usernameOrEmail, password, nama, role, targetTenantId)
       return { success: true, user: res.user }
     } catch (err) {
       console.error('Registration error:', err)
       return { success: false, error: err.message }
+    }
+  }
+
+  // Fungsi Ganti Password Pengguna Aktif
+  const changePassword = async ({ currentPassword, newPassword }) => {
+    try {
+      if (!currentPassword || !String(currentPassword).trim()) {
+        return { success: false, error: 'Kata sandi saat ini wajib diisi.' }
+      }
+      if (!newPassword || newPassword.length < 6) {
+        return { success: false, error: 'Kata sandi baru minimal 6 karakter.' }
+      }
+      if (currentPassword === newPassword) {
+        return { success: false, error: 'Kata sandi baru tidak boleh sama dengan kata sandi saat ini.' }
+      }
+      const res = await api.auth.changePassword({ currentPassword, newPassword })
+      return res || { success: true }
+    } catch (err) {
+      console.error('Ganti password gagal:', err)
+      return { success: false, error: err.message || 'Gagal mengubah kata sandi.' }
     }
   }
 
@@ -358,7 +390,8 @@ export const AuthProvider = ({ children }) => {
       loginWithGoogle,
       registerTenantOwner, 
       logout, 
-      registerKasir 
+      registerKasir,
+      changePassword
     }}>
       {children}
     </AuthContext.Provider>

@@ -70,7 +70,7 @@ const fetchCafeRows = async (start = null, end = null) => {
 const Reports = () => {
   const { activeTenant } = useAuth()
   const features = getTenantFeatures(activeTenant?.business_type)
-  const [reportViewMode, setReportViewMode] = useState('general_ledger') // 'general_ledger' | 'operational'
+  const [reportViewMode, setReportViewMode] = useState('operational') // 'operational' | 'general_ledger'
   const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState('month') // 'today', 'month', 'custom', 'all'
   const [startDate, setStartDate] = useState('')
@@ -490,30 +490,41 @@ const Reports = () => {
         </div>
       )}
 
-      {/* Primary Report Mode Switcher: General Ledger (ERP) vs Operational Segment */}
-      <div className="flex items-center gap-2 bg-[#18181c]/80 p-1.5 rounded-2xl border border-[#26272d] w-fit print:hidden">
-        <button
-          onClick={() => setReportViewMode('general_ledger')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
-            reportViewMode === 'general_ledger'
-              ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm'
-              : 'text-[#bbcbb2] hover:text-white'
-          }`}
-        >
-          <Scale size={16} />
-          Buku Besar & Akuntansi ERP (Double-Entry)
-        </button>
-        <button
-          onClick={() => setReportViewMode('operational')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
-            reportViewMode === 'operational'
-              ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/20'
-              : 'text-[#bbcbb2] hover:text-white'
-          }`}
-        >
-          <FileText size={16} />
-          Rekap Operasional Segmen (Kasir POS)
-        </button>
+      {/* Primary Report Mode Switcher: Operational vs General Ledger */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-[#18181c]/80 p-2 rounded-2xl border border-[#26272d] print:hidden">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setReportViewMode('operational')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+              reportViewMode === 'operational'
+                ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/20'
+                : 'text-[#bbcbb2] hover:text-white'
+            }`}
+          >
+            <FileText size={16} />
+            <span>Rekap Operasional Segmen (Kasir POS)</span>
+            <span className="text-[9px] bg-white/20 text-white px-1.5 py-0.5 rounded font-extrabold normal-case">
+              Rekomendasi
+            </span>
+          </button>
+          <button
+            onClick={() => setReportViewMode('general_ledger')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+              reportViewMode === 'general_ledger'
+                ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm'
+                : 'text-[#bbcbb2] hover:text-white'
+            }`}
+          >
+            <Scale size={16} />
+            <span>Buku Besar & Jurnal ERP (Double-Entry)</span>
+          </button>
+        </div>
+
+        <p className="text-[11px] text-[#8e978a] px-2 italic">
+          {reportViewMode === 'operational'
+            ? '💡 Menampilkan omzet riil kasir, beban operasional unit, dan margin bersih tanpa istilah akuntansi rumit.'
+            : '📘 Modul pembukuan akuntansi formal dengan bagan akun (COA), neraca saldo, debit/kredit, dan rekonsiliasi.'}
+        </p>
       </div>
 
       {reportViewMode === 'general_ledger' ? (

@@ -380,7 +380,12 @@ const Dashboard = () => {
 
   // Overview Stats
   const overviewStats = useMemo(() => {
-    const totalRevenue = filteredStrukByTime.reduce((sum, item) => sum + parseFloat(item.total_tagihan || 0), 0)
+    const strukRevenue = filteredStrukByTime.reduce((sum, item) => sum + parseFloat(item.total_tagihan || 0), 0)
+    // Sinergikan pendapatan dari divisi operasional agar tidak terjadi inkonsistensi (omzet 0 padahal ada transaksi CW/Cafe)
+    const cwRevenue = carwashAnalytics.totalRevenue || 0
+    const cafeRevenue = cafeAnalytics.totalRevenue || 0
+    const totalRevenue = Math.max(strukRevenue, cwRevenue + cafeRevenue)
+
     const totalLiquid = posAccountList.length > 0
       ? posAccountList.reduce((sum, item) => sum + (parseFloat(item.balance) || 0), 0)
       : (posBalances.cash + posBalances.rekY + posBalances.rekN + posBalances.rekR)
@@ -539,9 +544,9 @@ const Dashboard = () => {
     const cafeNetProfit = cafeAnalytics.totalRevenue - totalCafeExp
     const holdingNetProfit = overviewStats.totalRevenue - totalExpenses
 
-    const carwashProfitMargin = carwashAnalytics.totalRevenue > 0 ? ((carwashNetProfit / carwashAnalytics.totalRevenue) * 100).toFixed(1) : '0.0'
-    const cafeProfitMargin = cafeAnalytics.totalRevenue > 0 ? ((cafeNetProfit / cafeAnalytics.totalRevenue) * 100).toFixed(1) : '0.0'
-    const holdingProfitMargin = overviewStats.totalRevenue > 0 ? ((holdingNetProfit / overviewStats.totalRevenue) * 100).toFixed(1) : '0.0'
+    const carwashProfitMargin = carwashAnalytics.totalRevenue > 0 ? ((carwashNetProfit / carwashAnalytics.totalRevenue) * 100).toFixed(1) : (totalCarwashExp > 0 ? '-100.0' : '0.0')
+    const cafeProfitMargin = cafeAnalytics.totalRevenue > 0 ? ((cafeNetProfit / cafeAnalytics.totalRevenue) * 100).toFixed(1) : (totalCafeExp > 0 ? '-100.0' : '0.0')
+    const holdingProfitMargin = overviewStats.totalRevenue > 0 ? ((holdingNetProfit / overviewStats.totalRevenue) * 100).toFixed(1) : (totalExpenses > 0 ? '-100.0' : '0.0')
 
     return {
       cafeExp: totalCafeExp,
@@ -640,9 +645,12 @@ const Dashboard = () => {
 
   // CFO Health & Expense Ratio
   const cfoHealth = useMemo(() => {
-    const expenseRatio = overviewStats.totalRevenue > 0
-      ? ((segmentedExpenses.totalExpenses / overviewStats.totalRevenue) * 100).toFixed(1)
-      : '0.0'
+    let expenseRatio = '0.0'
+    if (overviewStats.totalRevenue > 0) {
+      expenseRatio = ((segmentedExpenses.totalExpenses / overviewStats.totalRevenue) * 100).toFixed(1)
+    } else if (segmentedExpenses.totalExpenses > 0) {
+      expenseRatio = '>100'
+    }
     const avgDailyOmzet = operatingDays > 0
       ? Math.round(overviewStats.totalRevenue / operatingDays)
       : 0
@@ -1159,23 +1167,24 @@ const Dashboard = () => {
           {/* Mode ALL (Sinergi Holding) */}
           {activeSection === 'ALL' && (
             <>
-              {/* Metric 1: Total Revenue Holding */}
+              {/* Metric 1: Total Pendapatan (Omzet) */}
               <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-xs font-medium text-[#bbcbb2]">Total Revenue Holding</p>
+                    <p className="text-xs font-medium text-[#bbcbb2]">Total Pendapatan (Omzet)</p>
                     <h3 className="text-2xl font-bold text-white mt-1 font-mono tabular-nums tracking-tight">
                       {formatRupiah(overviewStats.totalRevenue)}
                     </h3>
                   </div>
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30 font-mono">
-                    <TrendingUp size={12} strokeWidth={2} />
-                    +12.4%
+                    <Receipt size={12} strokeWidth={2} />
+                    {filteredStrukByTime.length > 0 ? `${filteredStrukByTime.length} Struk` : (overviewStats.totalRevenue > 0 ? 'Aktif' : '0 Transaksi')}
                   </span>
                 </div>
                 <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
                   <p className="font-semibold text-white flex items-center gap-1">
-                    Trending up this month <TrendingUp size={13} className="text-[#00ffff]" />
+                    {overviewStats.totalRevenue > 0 ? 'Omzet Penjualan Aktif' : 'Belum Ada Transaksi'} 
+                    {overviewStats.totalRevenue > 0 ? <CheckCircle size={13} className="text-[#00ffff]" /> : null}
                   </p>
                   <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
                     CW: {formatRupiah(carwashAnalytics.totalRevenue)} • Cafe: {formatRupiah(cafeAnalytics.totalRevenue)}
@@ -1183,16 +1192,16 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Metric 2: Total Pengeluaran Konsolidasi */}
+              {/* Metric 2: Total Pengeluaran & Biaya */}
               <div
                 onClick={() => { setSelectedExpenseDivision('ALL'); setShowExpenseModal(true) }}
                 className="bg-[#121215] border border-[#26272d] hover:border-[#ff5102]/50 rounded-xl p-5 flex flex-col justify-between transition-all shadow-xs group cursor-pointer"
-                title="Klik untuk melihat rincian seluruh pengeluaran holding"
+                title="Klik untuk melihat rincian seluruh pengeluaran toko"
               >
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <p className="text-xs font-medium text-[#bbcbb2]">Total Pengeluaran Holding</p>
+                      <p className="text-xs font-medium text-[#bbcbb2]">Total Pengeluaran & Biaya</p>
                       <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#ff5102]/10 text-[#ff5102] font-semibold flex items-center gap-0.5">
                         <Eye size={10} />
                         Detail
@@ -1204,7 +1213,7 @@ const Dashboard = () => {
                   </div>
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#ff5102]/15 text-[#ff5102] border border-[#ff5102]/30 font-mono">
                     <TrendingDown size={12} strokeWidth={2} />
-                    {cfoHealth.expenseRatio}% Beban
+                    {cfoHealth.expenseRatio === '0.0' && segmentedExpenses.totalExpenses > 0 ? 'Beban Riil' : `${cfoHealth.expenseRatio}% Beban`}
                   </span>
                 </div>
                 <div className="mt-3 pt-2.5 border-t border-[#26272d] text-xs space-y-1">
@@ -1219,11 +1228,11 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Metric 3: Kas Bersih (Net Profit) Holding */}
+              {/* Metric 3: Laba Bersih Operasional */}
               <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-xs font-medium text-[#bbcbb2]">Kas Bersih Holding (Net Profit)</p>
+                    <p className="text-xs font-medium text-[#bbcbb2]">Laba Bersih Operasional</p>
                     <h3 className={`text-2xl font-bold mt-1 font-mono tabular-nums tracking-tight ${segmentedExpenses.holdingNetProfit >= 0 ? 'text-[#00ffff]' : 'text-[#ff5102]'}`}>
                       {formatRupiah(segmentedExpenses.holdingNetProfit)}
                     </h3>
@@ -1232,24 +1241,39 @@ const Dashboard = () => {
                     segmentedExpenses.holdingNetProfit >= 0 ? 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30' : 'bg-[#ff5102]/15 text-[#ff5102] border border-[#ff5102]/30'
                   }`}>
                     {segmentedExpenses.holdingNetProfit >= 0 ? <TrendingUp size={12} strokeWidth={2} /> : <TrendingDown size={12} strokeWidth={2} />}
-                    {segmentedExpenses.holdingProfitMargin}% Margin
+                    {segmentedExpenses.holdingProfitMargin === '0.0' && segmentedExpenses.holdingNetProfit < 0 
+                      ? 'Defisit' 
+                      : `${segmentedExpenses.holdingProfitMargin}% Margin`}
                   </span>
                 </div>
                 <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
-                  <p className="font-semibold text-white flex items-center gap-1">
-                    Likuiditas Sehat & Terjaga <CheckCircle size={13} className="text-[#00ffff]" />
-                  </p>
-                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
-                    Omzet dikurangi beban CW, Cafe & bersama
-                  </p>
+                  {segmentedExpenses.holdingNetProfit < 0 ? (
+                    <>
+                      <p className="font-semibold text-[#ff5102] flex items-center gap-1">
+                        Defisit Operasional <AlertTriangle size={13} className="text-[#ff5102]" />
+                      </p>
+                      <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
+                        Pengeluaran & beban melebihi omzet pemasukan
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-semibold text-white flex items-center gap-1">
+                        Laba Bersih Sehat <CheckCircle size={13} className="text-[#00ffff]" />
+                      </p>
+                      <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
+                        Omzet dikurangi beban CW, Cafe & bersama
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
 
-              {/* Metric 4: Conversion Rate & Likuiditas Kas */}
+              {/* Metric 4: Likuiditas Kas & Sinergi Toko */}
               <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-xs font-medium text-[#bbcbb2]">Sinergi Estafet & Kas</p>
+                    <p className="text-xs font-medium text-[#bbcbb2]">Likuiditas Kas & Sinergi Toko</p>
                     <h3 className="text-2xl font-bold text-white mt-1 font-mono tabular-nums tracking-tight">
                       {advancedKPIs.crossConversionRate}% <span className="text-xs text-[#bbcbb2] font-normal font-sans">Estafet</span>
                     </h3>
@@ -1264,7 +1288,7 @@ const Dashboard = () => {
                     Total Kas Aktif: <strong className="text-[#00ffff] font-mono">{formatRupiah(overviewStats.totalLiquid)}</strong>
                   </p>
                   <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
-                    {filteredStrukByTime.length} struk • AOV: {formatRupiah(advancedKPIs.combinedARPU)}
+                    {filteredStrukByTime.length} struk • Rata-rata: {formatRupiah(advancedKPIs.combinedARPU)}
                   </p>
                 </div>
               </div>

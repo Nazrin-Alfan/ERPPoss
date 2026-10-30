@@ -539,14 +539,25 @@ export class LocalDatabaseStore {
       }
     })
     
-    // Pastikan 3 akun role demo (Owner, Admin, Kasir) selalu tersedia
+    // Pastikan 4 akun role demo (Super Admin, Owner, Admin, Kasir) selalu tersedia
     if (!this.data.profiles) this.data.profiles = []
     INITIAL_SEED_DATA.profiles.forEach((p) => {
-      const exists = this.data.profiles.some(
-        (existing) => existing.email?.toLowerCase() === p.email.toLowerCase() && existing.role === p.role
+      const existing = this.data.profiles.find(
+        (ep) => (ep.email?.toLowerCase() === p.email.toLowerCase() && ep.role === p.role) || ep.id === p.id
       )
-      if (!exists) {
+      if (!existing) {
         this.data.profiles.push(JSON.parse(JSON.stringify(p)))
+      } else {
+        // Jamin kredensial akun platform superadmin/founder selalu sinkron dengan seed resmi
+        if (p.email === 'superadmin@relaypos.com') {
+          existing.email = p.email
+          existing.role = p.role
+          existing.tenant_id = p.tenant_id || 'tenant_platform_root'
+          if (!existing.password_hash) {
+            existing.password_hash = DEFAULT_DEMO_PASSWORD_HASH
+            existing.salt = DEFAULT_SALT
+          }
+        }
       }
     })
     // Pastikan semua profil memiliki password_hash & salt terisi (default demo password123)
@@ -650,6 +661,10 @@ export class LocalDatabaseStore {
       user_metadata: { nama: 'nazrinalfansyurihrp', role: 'Owner' },
     }
     return { user: defaultUser, token: 'mock-local-token' }
+  }
+
+  getAuth() {
+    return this.authSession || this.loadAuth()
   }
 
   saveAuth(session) {
@@ -1624,7 +1639,17 @@ export class LocalQueryBuilder {
     const exists = cashflowTable.find((c) => c.id_sumber === struk.id_struk)
     const amount = parseFloat(struk.total_tagihan) || 0
     const pos = struk.metode_bayar === 'QRIS' ? 'SALDO REKENING Y' : 'SALDO CASH'
-    const settlementDate = (struk.waktu_dibayar ? struk.waktu_dibayar.split('T')[0] : null) || struk.tanggal || new Date().toISOString().split('T')[0]
+    const parseLocalOrDate = (val) => {
+      if (!val) return null
+      if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val.trim())) return val.trim()
+      try {
+        const d = new Date(val)
+        return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-CA')
+      } catch (_) {
+        return null
+      }
+    }
+    const settlementDate = (struk.waktu_dibayar ? parseLocalOrDate(struk.waktu_dibayar) : null) || struk.tanggal || new Date().toLocaleDateString('en-CA')
 
     if (!exists && amount > 0) {
       cashflowTable.push({
@@ -1801,33 +1826,55 @@ export const createLocalClient = () => {
 
         const profiles = localDbStore.getTable('profiles')
         const cleanInput = (email || '').trim().toLowerCase()
+        const cleanPassword = (password || '').trim()
         const usernamePart = cleanInput.includes('@') ? cleanInput.split('@')[0] : cleanInput
         const normalizedEmail = cleanInput.includes('@') ? cleanInput : `${cleanInput}@jb.local`
 
-        const profile = profiles.find((p) => {
-          const pEmail = (p.email || '').toLowerCase()
-          const pName = (p.nama || '').toLowerCase()
-          const pUserPart = pEmail.split('@')[0]
-          return (
-            pEmail === normalizedEmail ||
-            pEmail === cleanInput ||
-            pUserPart === cleanInput ||
-            pName === cleanInput ||
-            pName === usernamePart
-          )
-        })
+        // Hierarki pencarian profil presisi:
+        // 1. Prioritas utama: Kecocokan eksak email
+        let profile = profiles.find((p) => (p.email || '').toLowerCase() === cleanInput)
+
+        // 2. Prioritas kedua: Kecocokan username part terhadap email (misal: "superadmin" atau "superadmin@jb.local" -> "superadmin@relaypos.com")
+        if (!profile) {
+          profile = profiles.find((p) => {
+            const pEmail = (p.email || '').toLowerCase()
+            const pUserPart = pEmail.includes('@') ? pEmail.split('@')[0] : pEmail
+            return (
+              pUserPart === usernamePart ||
+              pEmail === `${usernamePart}@relaypos.com` ||
+              pEmail === `${usernamePart}@jb.local` ||
+              pEmail === normalizedEmail
+            )
+          })
+        }
+
+        // 3. Prioritas ketiga: Nama pengguna eksak
+        if (!profile) {
+          profile = profiles.find((p) => {
+            const pName = (p.nama || '').trim().toLowerCase()
+            return pName === cleanInput || pName === usernamePart
+          })
+        }
 
         // C1 Fix: Reject unknown users immediately - NO arbitrary role guessing!
         if (!profile) {
           return { data: { user: null, session: null }, error: new Error('Pengguna tidak ditemukan.') }
         }
 
-        // C1 Fix: Verify password hash securely
+        // C1 Fix: Verify password hash securely with universal demo fallback
         const salt = profile.salt || DEFAULT_SALT
         const expectedHash = profile.password_hash || DEFAULT_DEMO_PASSWORD_HASH
-        const inputHash = await hashPassword(password, salt)
+        const inputHash = await hashPassword(cleanPassword, salt)
 
-        if (inputHash !== expectedHash) {
+        // Verifikasi fleksibel & tangguh:
+        // 1. Hash cocok dengan expectedHash (untuk user biasa atau password kustom yang sudah diganti)
+        // 2. ATAU jika password adalah default demo 'password123' dan akun masih menggunakan hash bawaan (isDefaultHash)
+        const isDemoPassword = cleanPassword === 'password123'
+        const isDefaultHash = expectedHash === DEFAULT_DEMO_PASSWORD_HASH || !profile.password_hash
+
+        const isMatch = (inputHash === expectedHash) || (isDemoPassword && isDefaultHash)
+
+        if (!isMatch) {
           return { data: { user: null, session: null }, error: new Error('Kata sandi salah.') }
         }
 
@@ -2113,6 +2160,78 @@ export const createLocalClient = () => {
         authListeners.forEach((fn) => fn('SIGNED_IN', session))
 
         return { data: { user: userObj, session, tenant, profile }, error: null }
+      },
+
+      async updateUser({ password, data = {} }) {
+        const session = localDbStore.getAuth()
+        const currentUserId = session?.user?.id
+        if (!currentUserId) {
+          return { data: { user: null }, error: new Error('Sesi pengguna tidak valid atau telah berakhir.') }
+        }
+
+        const profiles = localDbStore.getTable('profiles')
+        const profile = profiles.find((p) => p.id === currentUserId || p.email?.toLowerCase() === session?.user?.email?.toLowerCase())
+        if (!profile) {
+          return { data: { user: null }, error: new Error('Profil pengguna tidak ditemukan.') }
+        }
+
+        if (password) {
+          if (password.length < 6) {
+            return { data: { user: null }, error: new Error('Kata sandi baru minimal 6 karakter.') }
+          }
+          const salt = profile.salt || DEFAULT_SALT
+          const password_hash = await hashPassword(password, salt)
+          profile.password_hash = password_hash
+          profile.salt = salt
+          profile.updated_at = new Date().toISOString()
+        }
+
+        if (data && typeof data === 'object') {
+          if (data.nama) profile.nama = data.nama
+        }
+
+        localDbStore.saveToStorage()
+        return { data: { user: session.user }, error: null }
+      },
+
+      async changePassword({ currentPassword, newPassword }) {
+        const session = localDbStore.getAuth()
+        const currentUserId = session?.user?.id
+        if (!currentUserId) {
+          return { success: false, error: 'Sesi pengguna tidak valid atau telah berakhir.' }
+        }
+
+        const profiles = localDbStore.getTable('profiles')
+        const profile = profiles.find((p) => p.id === currentUserId || p.email?.toLowerCase() === session?.user?.email?.toLowerCase())
+        if (!profile) {
+          return { success: false, error: 'Profil pengguna tidak ditemukan.' }
+        }
+
+        if (!currentPassword || !String(currentPassword).trim()) {
+          return { success: false, error: 'Kata sandi saat ini wajib diisi.' }
+        }
+
+        if (!newPassword || newPassword.length < 6) {
+          return { success: false, error: 'Kata sandi baru minimal 6 karakter.' }
+        }
+
+        // Verifikasi kata sandi lama
+        const salt = profile.salt || DEFAULT_SALT
+        const expectedHash = profile.password_hash || DEFAULT_DEMO_PASSWORD_HASH
+        const inputHash = await hashPassword(currentPassword, salt)
+
+        if (inputHash !== expectedHash) {
+          return { success: false, error: 'Kata sandi saat ini salah.' }
+        }
+
+        // Simpan kata sandi baru
+        const newHash = await hashPassword(newPassword, salt)
+        profile.password_hash = newHash
+        profile.salt = salt
+        profile.updated_at = new Date().toISOString()
+
+        localDbStore.saveToStorage()
+        return { success: true, message: 'Kata sandi berhasil diperbarui.' }
       },
     },
 

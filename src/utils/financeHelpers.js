@@ -59,14 +59,74 @@ export const normalizeJenis = (jenis) => {
     .join(' ')
 }
 
-export const validateExpenseForm = (form, barangMasukList) => {
+export const formatCurrencyInput = (value) => {
+  if (value === null || value === undefined || value === '') return ''
+  const digits = String(value).replace(/\D/g, '')
+  if (!digits) return ''
+  return Number(digits).toLocaleString('id-ID')
+}
+
+export const parseCurrencyInput = (formattedValue) => {
+  if (formattedValue === null || formattedValue === undefined || formattedValue === '') return 0
+  const digits = String(formattedValue).replace(/\D/g, '')
+  return digits ? parseInt(digits, 10) : 0
+}
+
+export const validateExpenseForm = (form, barangMasukList, isRestockDetail) => {
   const totalVal = parseFloat(form.total_harga)
   if (isNaN(totalVal) || totalVal <= 0) {
     return { isValid: false, error: 'Total harga pengeluaran harus lebih besar dari 0.' }
   }
   const normKat = normalizeCategory(form.kategori)
-  if (normKat === 'Bahan Baku' && (!barangMasukList || barangMasukList.length === 0)) {
+  const requiresRestock = isRestockDetail !== undefined
+    ? Boolean(isRestockDetail)
+    : (form?.is_restock_detail !== undefined ? Boolean(form.is_restock_detail) : normKat === 'Bahan Baku')
+
+  if (requiresRestock && (!barangMasukList || barangMasukList.length === 0)) {
     return { isValid: false, error: 'Daftar barang masuk/restok wajib diisi untuk kategori Bahan Baku.' }
+  }
+  return { isValid: true }
+}
+
+export const validateExpenseWithPosBalance = (form, posBalances = {}, isRestockDetail = false, barangMasukList = []) => {
+  const baseValid = validateExpenseForm(form, barangMasukList, isRestockDetail)
+  if (!baseValid.isValid) {
+    return { ...baseValid, isOverdraft: false }
+  }
+  const pos = form.pos
+  const nominal = parseFloat(form.total_harga || 0)
+  if (pos && posBalances && typeof posBalances[pos] === 'number') {
+    const available = posBalances[pos]
+    if (nominal > available) {
+      return {
+        isValid: false,
+        isOverdraft: true,
+        error: `Saldo pada pos ${pos} tidak mencukupi (Tersedia: ${available}, Dibutuhkan: ${nominal})`
+      }
+    }
+  }
+  return { isValid: true, isOverdraft: false }
+}
+
+export const validateTransferForm = (form, posBalances = {}) => {
+  if (!form.pos_asal || !form.pos_tujuan) {
+    return { isValid: false, error: 'Pos asal dan pos tujuan wajib dipilih.' }
+  }
+  if (form.pos_asal === form.pos_tujuan) {
+    return { isValid: false, error: 'Pos asal dan pos tujuan tidak boleh sama.' }
+  }
+  const nominal = parseFloat(form.nominal || 0)
+  if (isNaN(nominal) || nominal <= 0) {
+    return { isValid: false, error: 'Nominal transfer harus lebih besar dari 0.' }
+  }
+  if (posBalances && typeof posBalances[form.pos_asal] === 'number') {
+    const available = posBalances[form.pos_asal]
+    if (nominal > available) {
+      return {
+        isValid: false,
+        error: `Saldo pada pos asal ${form.pos_asal} tidak mencukupi (Tersedia: ${available}, Dibutuhkan: ${nominal})`
+      }
+    }
   }
   return { isValid: true }
 }
@@ -77,12 +137,16 @@ export const formatExpensePayload = ({
   stokBahan,
   newCfId,
   todayDate,
-  timestamp
+  timestamp,
+  isRestockDetail
 }) => {
   const totalVal = parseFloat(form.total_harga)
   const normKat = normalizeCategory(form.kategori || 'Operasional')
   const normJenis = normalizeJenis(form.jenis || 'Pengeluaran')
-  const isBahanBaku = normKat === 'Bahan Baku' && barangMasukList && barangMasukList.length > 0
+  const requiresRestock = isRestockDetail !== undefined
+    ? Boolean(isRestockDetail)
+    : (form?.is_restock_detail !== undefined ? Boolean(form.is_restock_detail) : normKat === 'Bahan Baku')
+  const isBahanBaku = requiresRestock && barangMasukList && barangMasukList.length > 0
   const txDate = form.tanggal || todayDate
 
   const isEmployeeCasbon = (normKat.toLowerCase().includes('casbon') || normJenis.toLowerCase().includes('casbon')) && form.karyawan

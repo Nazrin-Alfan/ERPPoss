@@ -21,17 +21,20 @@ import {
   FileText,
   UserCheck,
   Boxes,
-  Building2
+  Building2,
+  KeyRound
 } from 'lucide-react'
 
 import { getTenantFeatures } from '../utils/businessCapabilities'
 import { ROLES } from '../constants/roles'
+import ChangePasswordModal from './auth/ChangePasswordModal'
 
 const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const location = useLocation()
   const { profile, activeTenant, logout } = useAuth()
   const [showMobileNav, setShowMobileNav] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
   const profileMenuRef = useRef(null)
   const currentRole = profile?.role || 'Kasir'
   const currentBusinessType = activeTenant?.business_type || 'HYBRID'
@@ -142,12 +145,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           path: '/karyawan',
           icon: Users,
           allowedRoles: [ROLES.OWNER, ROLES.ADMIN]
-        },
-        {
-          name: 'Database Master',
-          path: '/database',
-          icon: Database,
-          allowedRoles: [ROLES.OWNER, ROLES.ADMIN]
         }
       ]
     },
@@ -155,7 +152,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       title: 'SISTEM',
       items: [
         {
-          name: 'Kelola Admin',
+          name: 'Pengaturan Toko',
           path: '/admin',
           icon: Settings,
           allowedRoles: [ROLES.OWNER, ROLES.SUPER_ADMIN]
@@ -164,6 +161,12 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           name: 'Console Founder',
           path: '/founder',
           icon: ShieldAlert,
+          allowedRoles: [ROLES.SUPER_ADMIN]
+        },
+        {
+          name: 'Database Master (Dev)',
+          path: '/database',
+          icon: Database,
           allowedRoles: [ROLES.SUPER_ADMIN]
         }
       ]
@@ -260,6 +263,17 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
               )
             })}
             <div className="h-[1px] w-full bg-[#26272d] my-1"></div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowMobileNav(false)
+                setShowChangePasswordModal(true)
+              }}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs text-slate-300 hover:bg-[#1b1b1d] hover:text-white transition-colors w-full text-left font-semibold cursor-pointer"
+            >
+              <KeyRound size={15} className="text-[#00ffff]" />
+              <span>Ganti Kata Sandi</span>
+            </button>
             <button
               onClick={() => {
                 setShowMobileNav(false)
@@ -404,6 +418,18 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                 </div>
 
                 <button
+                  type="button"
+                  onClick={() => {
+                    setShowProfileMenu(false)
+                    setShowChangePasswordModal(true)
+                  }}
+                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all tap-tactile text-left cursor-pointer mb-1"
+                >
+                  <KeyRound size={14} strokeWidth={1.75} className="text-[#00ffff]" />
+                  <span>Ganti Kata Sandi</span>
+                </button>
+
+                <button
                   onClick={() => {
                     setShowProfileMenu(false)
                     logout()
@@ -464,6 +490,12 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           </nav>
         </div>
       </aside>
+
+      {/* Modal Ubah Kata Sandi Akun */}
+      <ChangePasswordModal 
+        isOpen={showChangePasswordModal} 
+        onClose={() => setShowChangePasswordModal(false)} 
+      />
     </>
   )
 }

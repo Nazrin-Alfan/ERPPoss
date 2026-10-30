@@ -3299,6 +3299,156 @@
         - Diuji langsung pada browser nyata (Playwright): Klik tombol Google Auth ➔ Toko baru langsung terdaftar dan pengguna dialihkan ke Dashboard Konsolidasi.
         - Vitest Suite: **262/262 tests PASS (100% GREEN)** di 44 file test.
 
+    87. **Refactoring Menyeluruh Pengalaman Pertama Pengguna (Founder Onboarding, Anti-Orientation Shock, Isolasi Data Toko & Manajemen Akun) (2026-10-29)**:
+      - **Deskripsi & Latar Belakang Masalah**:
+        - Menyelesaikan 6 titik friksi kritis yang dialami oleh Super Admin dan First-Time Owner (Budi Santoso):
+          1. Modal form pendaftaran tenant di panel Founder langsung tertutup tanpa menampilkan kredensial atau format salin ke WhatsApp.
+          2. Owner dengan 1 toko (single-outlet) mengalami "Orientation Shock" karena langsung diarahkan ke portal holding `/konsolidasi` yang dipenuhi angka Rp 0 tanpa panduan langkah awal.
+          3. Di halaman `/konsolidasi`, tenant baru dapat melihat data demo outlet holding lain akibat ketiadaan filter kepemilikan tenant (`owner_id`/`tenant_id`).
+          4. Menu pengaturan toko tersembunyi di balik nama "Kelola Admin" di sidebar, membingungkan owner baru yang mencari pengaturan struk & printer.
+          5. Jebakan pendaftaran kasir: tab "Kasir & Metode Bayar" di Admin hanya meminta input nama string kasir tanpa email/password login, sedangkan formulir pembuatan akun kasir berada tersembunyi di tab ke-4 menu Karyawan.
+          6. Ketiadaan fitur ganti kata sandi di aplikasi bagi pengguna untuk memperbarui kata sandi default `password123`.
+      - **Arsitektur & Solusi Rekayasa yang Diterapkan**:
+        1. **Modal Kredensial & Generator WhatsApp Founder (`src/pages/Founder.jsx`)**:
+           - Menambahkan modal dialog sukses penerbitan tenant yang menampilkan ringkasan data akun (Nama Toko, Owner, Email Login, Default Password, Kunci Lisensi, dan Tautan Akses).
+           - Menyediakan generator format pesan WhatsApp resmi yang ramah dan siap salin (*1-click copy to clipboard*) serta tombol direct link WhatsApp (`wa.me`) untuk mengirimkan kredensial secara instan ke nomor ponsel calon tenant.
+        2. **Smart Landing Dispatcher & Panduan Toko Baru (`src/App.jsx`, `src/pages/Login.jsx`, `src/pages/Konsolidasi.jsx`)**:
+           - Memperbarui komponen `RootDispatcher` dan logika login agar akun Owner dengan 1 outlet (`userTenants.length <= 1`) langsung diarahkan ke workspace operasional tokonya (`/dashboard`), bukan ke portal konsolidasi holding.
+           - Menambahkan komponen banner interaktif *"Langkah Awal Memulai Toko Baru"* (Quick 4-Step Checklist) di `/konsolidasi` ketika total pendapatan Rp 0 atau single-outlet, dengan tautan langsung ke konfigurasi struk, pembuatan kasir, katalog produk, dan kasir POS.
+        3. **Isolasi Data Multi-Tenant Toko (`src/context/AuthContext.jsx`, `src/pages/Konsolidasi.jsx`)**:
+           - Memperbarui metode `loadTenantsForUser` pada `AuthContext.jsx` agar memfilter daftar tenant secara ketat berdasarkan `t.id === userTenantId` atau `t.owner_email === currentProfile.email`. Akun tenant baru dijamin 100% tidak melihat outlet demo holding.
+           - Mengunci `localStorage.activeTenantId` saat login ke tenant milik pengguna yang baru diautentikasi.
+           - Menyaring query transaksi, pengeluaran, dan kas di `Konsolidasi.jsx` agar hanya merangkum data outlet milik owner.
+        4. **Pembaruan Navigasi Sidebar (`src/components/Sidebar.jsx`)**:
+           - Mengganti penamaan menu dari "Kelola Admin" menjadi **"Pengaturan Toko"** dengan icon Settings, serta menyelaraskan header halaman Admin menjadi "Pengaturan Toko & Admin".
+        5. **Jembatan Pendaftaran Akun Kasir (`src/pages/Admin.jsx`, `src/pages/Karyawan.jsx`)**:
+           - Menambahkan callout edukatif dan tombol *"Daftarkan Akun Login Kasir (Email & Password)"* di tab `cashier-pay` Admin yang langsung mengarahkan pengguna ke formulir akun kasir di Karyawan (`/karyawan?tab=staff`).
+           - Menambahkan dukungan URL query parameter `?tab=` pada `Karyawan.jsx` dan `Admin.jsx` menggunakan `useSearchParams`.
+        6. **Fitur Ganti Kata Sandi Terpadu (`src/components/auth/ChangePasswordModal.jsx`, `src/context/AuthContext.jsx`, `src/services/localDbEngine.js`, `src/services/apiAdapter.js`)**:
+           - Mengimplementasikan metode `changePassword({ currentPassword, newPassword })` yang memvalidasi kata sandi lama via hashing SHA-256 dan memperbarui hash pada tabel profil/user.
+           - Merancang antarmuka modal ganti kata sandi modern dan taktil (*tactile micro-interactions*) dengan validasi form, indikator kekuatan sandi, toggle show/hide password, dan penanganan error/sukses.
+           - Mengintegrasikan modal ganti kata sandi ke dalam dropdown menu profil pengguna di Sidebar desktop maupun drawer mobile.
+      - **Hasil Pengujian & Verifikasi**:
+        - Vitest Unit Test Suites: **46 Test Files Passed, 269/269 Tests Passed (100% Green)**.
+        - Penambahan Test Suite Khusus: `src/services/__tests__/tenantOnboardingAndIsolation.test.js` dan `src/services/__tests__/changePasswordAndUxPolish.test.js`.
+        - Vite Production Build (`npm run build`): **100% Sukses tanpa error dalam 2.13 detik**.
+
+    88. **Refactoring Menyeluruh Modul Keuangan (Finance): Sinkronisasi Akun Kas Likuiditas, Otomasi Kategori Flat Master, Input Nominal Terformat & Pencegahan Overdraft Real-Time (2026-10-30)**:
+      - **Deskripsi & Latar Belakang Masalah**:
+        - Menyelesaikan friksi operasional modul Keuangan (`Finance.jsx`) berdasarkan audit dokumen lampiran:
+          1. Dropdown pos kas pada modal transaksi pengeluaran dan pemasukan tidak menampilkan saldo real-time akun yang bersangkutan, memungkinkan terjadinya transaksi overdraft tanpa indikasi yang jelas.
+          2. Input nominal pengeluaran dan pemasukan kas berupa angka mentah tanpa pemisah ribuan titik Indonesia (`.` format) dan tanpa preview verifikasi "Terbaca: Rp ...", rawan kesalahan input kelebihan/kekurangan nol.
+          3. Kategori pengeluaran terpecah menjadi 2 dropdown bertingkat (Jenis -> Kategori) yang kaku dan mewajibkan pemilihan SKU inventori bahan baku secara paksa bahkan untuk pembelian bahan cepat/biaya langsung non-stok.
+          4. Pilihan rekening pos kas/bank terbatas pada string hardcoded kas laci dan tidak mencerminkan rekening bank atau pos kas tambahan yang didaftarkan di pengaturan outlet (`pos_balances`).
+          5. Fitur penarikan dana pribadi/dividen owner (`OwnerWithdrawalModal.jsx`) belum terintegrasi ke antarmuka Finance dan belum memvalidasi ketersediaan saldo sebelum transaksi dibukukan.
+      - **Arsitektur & Solusi Rekayasa yang Diterapkan**:
+        1. **Pemuatan Paralel `pos_balances` & Agregasi Saldo Bersih Real-Time (`src/pages/Finance.jsx`)**:
+           - Memperbarui fungsi `fetchFinanceData` untuk mengambil konfigurasi rekening dari tabel `pos_balances` secara dinamis bersamaan dengan cashflow.
+           - Mengembangkan kalkulasi `posAllTimeBalances.byPos` yang mengagregasi saldo bersih dari mutasi kas masuk/keluar, transaksi POS kasir, dan penarikan owner untuk setiap pos akun terdaftar.
+           - Memperluas kartu ringkasan saldo rekening di bagian atas halaman agar menampilkan seluruh akun kas/bank likuiditas outlet secara dinamis (`dynamicPosAccounts`).
+        2. **Dropdown Kategori Flat Bersih & Sinkronisasi Dua Arah `master_categories`**:
+           - Mengganti dropdown bertingkat dengan pemilih kategori flat tunggal (`flattenedExpenseCategoryOptions` & `flattenedIncomeCategoryOptions`) yang dilengkapi fitur pencarian interaktif dan pengelompokan badge divisi (`Cafe (F&B)`, `Carwash`, `Operasional & Bersama`, `Casbon & Personalia`, `Lainnya`).
+           - Mengotomatiskan penentuan `jenis` transaksi di latar belakang berdasarkan entri kategori tanpa membebani kasir/admin.
+        3. **Format Input Mata Uang Indonesia & Pratinjau Teks Angka (`src/utils/financeHelpers.js`)**:
+           - Mengimplementasikan helper murni `formatCurrencyInput` dan `parseCurrencyInput` yang memformat angka secara instan dengan tanda titik pemisah ribuan khas Indonesia.
+           - Menambahkan indikator taktil "✓ Terbaca: Rp [Format Rupiah]" di bawah kolom input nominal untuk konfirmasi visual pengguna secara real-time.
+        4. **Pencegahan Overdraft & Indikator Saldo Interaktif**:
+           - Opsi pemilihan akun kas/bank pada Modal Pengeluaran, Modal Pemasukan, Modal Pindah Saldo, dan Modal Prive Owner kini menampilkan label saldo berjalan `(Saldo: Rp ...)`.
+           - Menambahkan status card yang menghitung estimasi sisa saldo setelah transaksi secara langsung (`Saldo Asal - Nominal`) dan memunculkan badge peringatan `⚠️ Saldo Kurang` jika terjadi overdraft.
+           - Menambahkan validasi `validateExpenseWithPosBalance` dan `validateTransferForm` pada modul helper.
+        5. **Toggle Fleksibel Rincian Restok Bahan Baku**:
+           - Menambahkan checkbox *"Catat Rincian Restok Barang Masuk (Sinkron ke Gudang / Inventori)"* pada Modal Pengeluaran.
+           - Memberikan kebebasan bagi pengguna untuk mencatat biaya bahan baku secara cepat (langsung nominal) atau secara rinci (per SKU barang masuk ke inventori).
+        6. **Integrasi Tombol Aksi & Modal Prive Owner (`src/components/finance/OwnerWithdrawalModal.jsx`)**:
+           - Menambahkan tombol aksi cepat *"Tarik Prive Owner"* di header aksi modul Keuangan.
+           - Membukukan penarikan prive ke akun ekuitas `acc_3002` (Prive Pemilik) secara double-entry, memastikan kas fisik berkurang tanpa membiaskan atau merusak Laba Bersih (EBITDA) operasional toko.
+      - **Hasil Pengujian & Verifikasi**:
+        - Vitest Unit Test Suites: **48 Test Files Passed, 283/283 Tests Passed (100% Green)**.
+        - Penambahan Test Suite Khusus: `src/pages/__tests__/FinanceModals.test.jsx` dan ekspansi 22 test di `src/utils/__tests__/financeHelpers.test.js`.
+        - Vite Production Build (`npm run build`): **100% Sukses tanpa error dalam 1.30 detik**.
+
+---
+
+### [2026-10-31] Log #89: Rekayasa Holistik 10 Area Friksi UX, Operasional POS & Multi-Outlet RelayPOS
+- **Latar Belakang & Masalah**:
+  - Ditemukan 10 area friksi arsitektur antarmuka dan operasional berdasarkan audit lapangan pada workflow harian kasir, manajer operasional, dan pemilik multi-cabang (berdasarkan dokumen `pasted-text-2026-10-30_23-32-03-125.md`).
+- **Arsitektur & Solusi Rekayasa yang Diterapkan**:
+  1. **Navigasi Global & Preservasi Sidebar (`src/App.jsx`, `src/components/Sidebar.jsx`)**:
+     - Mencegah sidebar auto-collapse pada resolusi laptop & desktop ($\ge 1024$px).
+     - Menyimpan preferensi buka/tutup sidebar ke `localStorage` (`relaypos_sidebar_collapsed`).
+  2. **Penguncian Akses Rute Database Master (`src/App.jsx`, `src/components/Sidebar.jsx`)**:
+     - Rute `/database` dan menu navigasi "Database Master" diproteksi secara ketat hanya untuk `ROLES.SUPER_ADMIN`, mencegah kasir atau admin toko awam mengakses tabel raw data yang berisiko.
+  3. **Penyederhanaan Dashboard Eksekutif (`src/pages/Dashboard.jsx`)**:
+     - Menghapus rasio CFO yang membingungkan dan menggantinya dengan 4 kartu ringkasan visual: Omzet Total (Struk Kasir + Pendapatan Lain), Total Beban Operasional, Estimasi Laba Bersih Operasional, dan Saldo Kas Riil Siap Pakai.
+     - Memperbaiki penanganan pembagian dengan nol jika omzet Rp 0 agar margin profit tidak bernilai NaN.
+  4. **Konsolidasi Multi-Outlet (`src/pages/Konsolidasi.jsx`, `src/components/layout/ExecutiveLayout.jsx`)**:
+     - Mengubah istilah "Portal Holding" menjadi "Multi-Cabang".
+     - Menghilangkan redundansi tombol ganda "Buka Cabang Baru" pada banner panduan.
+     - Mengganti label saldo "Siap Prive" menjadi "Kas Likuid Siap Pakai".
+  5. **Pengaturan Toko & Manajemen Menu (`src/pages/Admin.jsx`)**:
+     - Merombak navigasi sub-tab menjadi kontainer horizontal scrollable dengan scrolling halus tanpa scrollbar kaku.
+     - Menyediakan bar filter kategori menu interaktif dengan pill badge dan penghitung kuantitas menu aktif per kategori.
+  6. **Multi-Gudang & Inventori (`src/pages/Gudang.jsx`)**:
+     - Menyempurnakan tab navigasi 3 unit gudang (Central Kitchen, Wash Bay, Bar & Retail).
+     - Memisahkan penghitungan stok habis vs stok menipis pada kartu KPI Stok Kritis dan badge status stok tabel.
+  7. **Modul Transaksi POS & Antrean Carwash (`src/pages/pos/HybridPOSPage.jsx`, `src/pages/CarwashQueue.jsx`)**:
+     - Menambahkan tombol shortcut "+ Buat Transaksi Cuci" pada header antrean carwash dan empty-state CTA yang langsung mengarah ke `/transaksi`.
+     - Mengubah default status pembayaran kasir menjadi `'Selesai'` (lunas) untuk transaksi kasir langsung.
+     - Menyediakan tombol nominal instan (Rp 50rb, 100rb, 200rb, 500rb) pada dialog shift modal awal kasir.
+     - Mengintegrasikan selektor Bay cuci mobil (Bay 1-4 / VIP) dan catatan kondisi fisik kendaraan pada form Carwash kasir.
+     - Mengunci tata letak keranjang belanja kasir tablet/desktop (`h-[calc(100vh-5.5rem)]`) dengan area daftar pesanan scrollable dan checkout bar sticky di bawah.
+  8. **Karyawan & Komisi Upah (`src/pages/Karyawan.jsx`)**:
+     - Menambahkan tombol "+ Tambah Staf" pada header Tab 1 (Laporan Gaji).
+     - Menambahkan tombol eksekusi "Bayar Gaji" langsung pada setiap baris ringkasan upah staf cuci.
+  9. **Pelanggan & CRM (`src/pages/CRM.jsx`)**:
+     - Menampilkan indikator `(Tanpa Nama)` pada kolom plat kendaraan jika nama pelanggan belum dicatat.
+     - Mengubah tombol aksi WhatsApp menjadi badge disabled `Tanpa WA` jika nomor telepon pelanggan tidak tercatat di riwayat kendaraan.
+     - Memperlebar kolom aksi cepat tabel CRM (`min-w-[170px]`) agar teks tombol tidak terpotong.
+  10. **Laporan Akuntansi & Rekap Bisnis (`src/pages/Reports.jsx`)**:
+      - Menjadikan mode "Rekap Operasional Segmen (Kasir POS)" sebagai tampilan default yang direkomendasikan bagi pemilik toko.
+      - Menambahkan banner informatif yang membedakan Rekap Operasional praktis vs Jurnal Buku Besar Double-Entry ERP formal.
+- **Hasil Pengujian & Verifikasi**:
+  - Vitest Unit Test Suites: **49 Test Files Passed, 289/289 Tests Passed (100% Green)**.
+  - Vite Production Build (`npm run build`): **100% Sukses tanpa error dalam 1.39 detik**.
+
+---
+
+### [2026-10-31] Log #90: Resolusi Sinkronisasi Real-Time Uang Masuk Kasir (Cash) & Normalisasi Penanggalan Transaksi POS
+- **Latar Belakang & Keluhan Pengguna**:
+  - Kasir POS melakukan transaksi dan melunaskannya, namun uang tunai yang masuk tidak terdaftar/tidak menambah nilai pada metrik *"Uang Masuk (Cash)"* di popover dropdown laci kasir halaman POS (`HybridPOSPage.jsx`).
+- **Akar Penyebab Masalah (Root Causes)**:
+  1. **Discrepancy Timezone UTC vs Lokal (`split('T')[0]`)**:
+     - String `todayDate` dihitung berdasarkan tanggal lokal (`toLocaleDateString('en-CA')`), sedangkan timestamp `waktu_dibayar` disimpan sebagai ISO String UTC (`new Date().toISOString()`).
+     - Pada transaksi yang terjadi pagi hari WIB (antara pukul 00:00 - 06:59 WIB / UTC 17:00 - 23:59), pemotongan string `waktu_dibayar.split('T')[0]` menghasilkan tanggal UTC kemarin (H-1). Akibatnya perbandingan `settlementDate === todayDate` bernilai `false`, dan uang tunai kasir terabaikan.
+  2. **Inkonsistensi Naming & Casing Metode Pembayaran**:
+     - Evaluasi metode bayar sebelumnya menggunakan literal strict `s.metode_bayar === 'CASH'`, sehingga variasi seperti `'Cash'`, `'Tunai'`, `'tunai'`, atau `'CASH (TUNAI)'` gagal diidentifikasi sebagai transaksi tunai.
+  3. **Penanganan Kas pada Split Payment & Pelunasan Parsial**:
+     - Transaksi pembayaran kombinasi (Split Tunai + QRIS) sebelumnya hanya memeriksa kesetaraan strict dan tidak mengekstrak porsi tunai fisik (`nominal_cash`) secara presisi ke dalam arus kas laci.
+  4. **Komponen Dropdown Laci Kas Bersifat Pasif**:
+     - Tombol popover dropdown laci kas kasir hanya membalik nilai state boolean tanpa memicu pembaruan re-fetch data kasir secara real-time.
+- **Arsitektur & Solusi Rekayasa yang Diterapkan**:
+  1. **Normalisasi Kalender Lokal Aman (`getLocalDateString` di `src/utils/helpers.js`)**:
+     - Menghadirkan fungsi `getLocalDateString(val)` yang mengonversi objek Date, string ISO, maupun tanggal mentah ke format `YYYY-MM-DD` kalender lokal perangkat kasir secara presisi.
+  2. **Ekstraksi Engine Perhitungan Laci Kasir (`calculateCashierDrawerStatus`)**:
+     - Membangun helper modular `calculateCashierDrawerStatus({ strukList, expenses, startingCapital, targetDate })` yang:
+       - Memvalidasi tanggal penyelesaian fisik (`waktu_dibayar`) dengan fallback tanggal order (`tanggal`).
+       - Memproses metode bayar secara case-insensitive (`CASH`, `TUNAI`, `SPLIT`, `QRIS`, `TRANSFER`, dll).
+       - Menghitung porsi uang tunai (`nominal_cash`) dan QRIS (`nominal_qris`) pada transaksi split.
+       - Menghitung pengeluaran kas hari ini (`todayOut`) dan menghitung saldo kas fisik laci aktual (`startingCapital + todayIn - todayOut`).
+  3. **Re-fetch Otomatis pada Interaksi Dropdown Laci Kas (`HybridPOSPage.jsx`)**:
+     - Mengaitkan pemanggilan `fetchCashierCash()` saat kasir mengklik tombol dropdown laci kas, menjamin angka uang masuk dan saldo kas laci selalu ter-refresh secara real-time saat popover dibuka.
+  4. **Penyelarasan Sinkronisasi Jurnal Keuangan (`src/services/localDbEngine.js`)**:
+     - Memperbaiki parsing tanggal di `_syncStrukToFinance` agar menggunakan tanggal lokal daripada pemotongan ISO string UTC mentah.
+  5. **Dukungan Casing & Kalkulator Kembalian Kasir (`HybridPOSPage.jsx`)**:
+     - Menyelaraskan kalkulator kembalian pada modal pelunasan (`handleSettleBill`) dan checkout POS (`handleSubmitTransaction`) untuk mendukung variasi metode kasir secara fleksibel.
+- **Hasil Pengujian & Verifikasi**:
+  - Penambahan Test Suite Baru: `src/utils/__tests__/cashierDrawer.test.js` (8 unit tests mencakup isolasi timezone, bill kemarin dilunasi hari ini, split payment, dan pengeluaran).
+  - Vitest Unit Test Suites: **50 Test Files Passed, 297/297 Tests Passed (100% Green)**.
+  - Vite Production Build (`npm run build`): **100% Sukses tanpa error dalam 1.84 detik**.
+
+
+
+
 
 
 

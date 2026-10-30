@@ -650,7 +650,8 @@ const CRM = () => {
               key: 'plat',
               label: 'Plat / Nama Pelanggan',
               sortable: true,
-              className: 'font-mono font-bold text-white',
+              headerClassName: 'min-w-[150px]',
+              className: 'font-mono font-bold text-white min-w-[150px]',
               render: (val, c) => (
                 <div className="flex flex-col gap-0.5">
                   <div className="flex items-center gap-1.5">
@@ -661,9 +662,13 @@ const CRM = () => {
                       <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="Memiliki catatan khusus" />
                     )}
                   </div>
-                  {c.nama && (
+                  {c.nama ? (
                     <span className="text-[11px] text-white font-semibold truncate max-w-[140px]">
                       {c.nama}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-muted-dark italic truncate max-w-[140px]">
+                      (Tanpa Nama)
                     </span>
                   )}
                 </div>
@@ -777,27 +782,42 @@ const CRM = () => {
               key: 'actions',
               label: 'Aksi Cepat',
               align: 'center',
-              render: (_, c) => (
-                <div className="flex items-center justify-center gap-1.5">
-                  <button
-                    onClick={() => handleOpenRetentionModal(c)}
-                    className="p-1.5 rounded-lg bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30 hover:bg-emerald-500/20 transition-all flex items-center gap-1 text-[11px] font-semibold active:scale-[0.98]"
-                    title="Buat Pesan Retensi WhatsApp"
-                  >
-                    <MessageSquare size={13} />
-                    <span>Follow-Up</span>
-                  </button>
+              headerClassName: 'min-w-[170px]',
+              className: 'min-w-[170px]',
+              render: (_, c) => {
+                const hasWhatsApp = Boolean(c.noTelepon && c.noTelepon !== '-' && c.noTelepon.trim().length > 5)
+                return (
+                  <div className="flex items-center justify-center gap-1.5">
+                    {hasWhatsApp ? (
+                      <button
+                        onClick={() => handleOpenRetentionModal(c)}
+                        className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all flex items-center gap-1 text-[11px] font-bold active:scale-[0.98] whitespace-nowrap"
+                        title="Buat Pesan Retensi WhatsApp"
+                      >
+                        <MessageSquare size={13} />
+                        <span>Follow-Up</span>
+                      </button>
+                    ) : (
+                      <span
+                        className="p-1.5 rounded-lg bg-[#18181c] text-muted-dark border border-[#26272d] flex items-center gap-1 text-[10px] cursor-not-allowed select-none whitespace-nowrap"
+                        title="Nomor WhatsApp belum terdaftar di riwayat kendaraan"
+                      >
+                        <MessageSquare size={12} className="opacity-40" />
+                        <span>Tanpa WA</span>
+                      </span>
+                    )}
 
-                  <button
-                    onClick={() => setSelectedCustomerPlat(c.plat)}
-                    className="p-1.5 rounded-lg bg-[#18181c] hover:bg-slate-700 text-white hover:text-white transition-all flex items-center gap-1 text-[11px] font-semibold active:scale-[0.98]"
-                    title="Lihat Detail Riwayat & Stamp"
-                  >
-                    <span>Detail</span>
-                    <ChevronRight size={13} />
-                  </button>
-                </div>
-              ),
+                    <button
+                      onClick={() => setSelectedCustomerPlat(c.plat)}
+                      className="p-1.5 rounded-lg bg-[#18181c] hover:bg-slate-700 text-white hover:text-white transition-all flex items-center gap-1 text-[11px] font-semibold active:scale-[0.98] whitespace-nowrap"
+                      title="Lihat Detail Riwayat & Stamp"
+                    >
+                      <span>Detail</span>
+                      <ChevronRight size={13} />
+                    </button>
+                  </div>
+                )
+              },
             },
           ]}
         />

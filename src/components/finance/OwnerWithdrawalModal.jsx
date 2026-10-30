@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
-import { Wallet, ArrowDownRight, CheckCircle2, AlertCircle, X, ShieldAlert } from 'lucide-react'
+import { Wallet, ArrowDownRight, CheckCircle2, AlertCircle, X, ShieldAlert, Check } from 'lucide-react'
 import { supabase } from '../../supabaseClient'
 import { formatRupiah } from '../../utils/helpers'
+import { formatCurrencyInput, parseCurrencyInput } from '../../utils/financeHelpers'
 import { useAuth } from '../../context/AuthContext'
 import { DEFAULT_TENANT_ID, DEFAULT_BRANCH_ID } from '../../constants/erpConfig'
 
@@ -12,6 +13,17 @@ export default function OwnerWithdrawalModal({ isOpen, onClose, onSuccess, curre
   const [keterangan, setKeterangan] = useState('Penarikan Prive Pemilik Toko')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const selectedBalance = (() => {
+    if (!currentBalances || currentBalances.length === 0) return null
+    if (sumberDana === 'SALDO CASH') {
+      const match = currentBalances.find(b => b.pos === 'SALDO CASH' || b.type === 'CASH')
+      return match ? (match.currentBalance ?? match.saldo ?? 0) : null
+    } else {
+      const match = currentBalances.find(b => b.pos === 'SALDO REKENING Y' || b.pos === 'SALDO REKENING OPERASIONAL' || b.type === 'BANK')
+      return match ? (match.currentBalance ?? match.saldo ?? 0) : null
+    }
+  })()
 
   if (!isOpen) return null
 
@@ -153,18 +165,30 @@ export default function OwnerWithdrawalModal({ isOpen, onClose, onSuccess, curre
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                 Jumlah Nominal Penarikan (Rp) <span className="text-rose-400">*</span>
               </label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-2.5 text-slate-400 font-bold text-sm">Rp</span>
-                <input
-                  type="number"
-                  placeholder="0"
-                  value={nominal}
-                  onChange={(e) => setNominal(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-base font-mono font-bold focus:outline-none focus:border-brand-emerald"
-                  required
-                  autoFocus
-                />
-              </div>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="0"
+                value={formatCurrencyInput(nominal)}
+                onChange={(e) => setNominal(parseCurrencyInput(e.target.value))}
+                className="w-full px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-base font-mono font-bold focus:outline-none focus:border-brand-emerald"
+                required
+                autoFocus
+              />
+              {parseFloat(nominal || 0) > 0 && (
+                <div className="flex items-center justify-between text-xs mt-1.5 font-medium">
+                  <div className="flex items-center gap-1.5 text-emerald-400">
+                    <Check size={14} />
+                    <span>Terbaca: {formatRupiah(nominal)}</span>
+                  </div>
+                  {selectedBalance !== null && (
+                    <span className={selectedBalance - parseFloat(nominal) < 0 ? 'text-rose-400 font-bold' : 'text-slate-400'}>
+                      Sisa Saldo: {formatRupiah(selectedBalance - parseFloat(nominal))}
+                      {selectedBalance - parseFloat(nominal) < 0 ? ' (⚠️ Saldo Kurang)' : ''}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>

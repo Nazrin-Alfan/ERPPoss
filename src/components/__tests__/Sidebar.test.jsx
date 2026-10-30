@@ -62,14 +62,13 @@ describe('Sidebar UI/UX Component & Interactive Profile Menu Test', () => {
     expect(html).toContain('Buku Kas Keuangan')
     expect(html).toContain('Laporan Akuntansi')
     expect(html).toContain('Karyawan &amp; Komisi')
-    expect(html).toContain('Database Master')
-    expect(html).toContain('Kelola Admin')
+    // Verify Database Master & Console Founder are NOT accessible / visible for normal Owner role (Protected)
+    expect(html).not.toContain('Database Master')
+    expect(html).not.toContain('Console Founder')
+    expect(html).toContain('Pengaturan Toko')
     // Verify profile trigger button has title for account/logout
     expect(html).toContain('Klik profil')
     expect(html).toContain('overflow-y-auto')
-
-    // Verify Console Founder is NOT accessible / visible for Owner role
-    expect(html).not.toContain('Console Founder')
   })
 
   it('TC_02: Renders collapsed sidebar with proper compact profile trigger and collapse classes', () => {

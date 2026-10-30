@@ -30,18 +30,27 @@ import { syncStaffToKaryawanKantor, getRoleBadgeConfig, calculateCarwashWorkerWa
 import { getTenantFeatures } from '../utils/businessCapabilities'
 import { ROLES } from '../constants/roles'
 import InteractiveCalendar from '../components/InteractiveCalendar'
+import { useSearchParams } from 'react-router-dom'
 
 const Karyawan = () => {
+  const [searchParams] = useSearchParams()
+  const tabParam = searchParams.get('tab')
   const { registerKasir, activeTenant } = useAuth()
   const features = getTenantFeatures(activeTenant?.business_type)
-  const defaultTab = features.isCafeOnly ? 'office' : 'wages'
+  const defaultTab = tabParam || (features.isCafeOnly ? 'office' : 'wages')
   const [activeTab, setActiveTab] = useState(defaultTab)
 
   useEffect(() => {
-    if (!features.hasCarwash && (activeTab === 'wages' || activeTab === 'crew')) {
+    if (tabParam) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam])
+
+  useEffect(() => {
+    if (!tabParam && !features.hasCarwash && (activeTab === 'wages' || activeTab === 'crew')) {
       setActiveTab('office')
     }
-  }, [features.hasCarwash, activeTab])
+  }, [features.hasCarwash, activeTab, tabParam])
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -440,13 +449,17 @@ const Karyawan = () => {
 
   const selectedWorkerDetails = selectedWageWorker ? wagesSummary.find(w => w.name === selectedWageWorker) : null
 
-  const handleOpenPayModal = () => {
+  const handleOpenPayModal = (workerItem = null) => {
+    const targetWorker = workerItem || (selectedWageWorker ? wagesSummary.find(w => w.name === selectedWageWorker) : null)
+    if (!targetWorker) return
+
+    setSelectedWageWorker(targetWorker.name)
     setPayForm({
-      workerName: selectedWageWorker,
-      calculatedOutstanding: selectedWorkerDetails?.netWage || 0,
-      amountToPay: selectedWorkerDetails?.netWage || 0,
+      workerName: targetWorker.name,
+      calculatedOutstanding: targetWorker.netWage || 0,
+      amountToPay: targetWorker.netWage || 0,
       fundSource: 'REKENING Y',
-      note: `Pelunasan Gaji ${selectedWageWorker}`
+      note: `Pelunasan Gaji ${targetWorker.name}`
     })
     setShowPayModal(true)
   }
@@ -731,30 +744,41 @@ const Karyawan = () => {
                 <p className="text-xs text-[#6b7367] mt-1">Akumulasi upah karyawan cuci dari transaksi berstatus Selesai</p>
               </div>
 
-              {/* Date Filters with InteractiveCalendar */}
-              <div className="relative flex items-center text-xs">
+              {/* Date Filters with InteractiveCalendar & Tambah Staf CTA */}
+              <div className="flex flex-wrap items-center gap-2 text-xs">
                 <button
                   type="button"
-                  onClick={() => setShowWagesCalendar(!showWagesCalendar)}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#18181c] hover:bg-[#26272d] border border-[#26272d] hover:border-slate-700 text-[#bbcbb2] hover:text-white rounded-xl font-bold transition-all text-xs"
+                  onClick={() => setActiveTab(features.hasCarwash ? 'crew' : 'office')}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-md shadow-emerald-500/10 cursor-pointer active:scale-[0.98]"
                 >
-                  <Calendar size={14} className="text-[#00ffff]" />
-                  <span>Periode Gaji: {wagesStartDate || 'Mulai'} s/d {wagesEndDate || 'Selesai'}</span>
+                  <UserPlus size={14} />
+                  <span>+ Tambah Staf</span>
                 </button>
 
-                {showWagesCalendar && (
-                  <div className="absolute right-0 top-full mt-2 z-50">
-                    <InteractiveCalendar
-                      startDate={wagesStartDate}
-                      endDate={wagesEndDate}
-                      onChange={(start, end) => {
-                        setWagesStartDate(start)
-                        setWagesEndDate(end)
-                      }}
-                      onClose={() => setShowWagesCalendar(false)}
-                    />
-                  </div>
-                )}
+                <div className="relative flex items-center text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setShowWagesCalendar(!showWagesCalendar)}
+                    className="flex items-center gap-2 px-4 py-2 bg-[#18181c] hover:bg-[#26272d] border border-[#26272d] hover:border-slate-700 text-[#bbcbb2] hover:text-white rounded-xl font-bold transition-all text-xs"
+                  >
+                    <Calendar size={14} className="text-[#00ffff]" />
+                    <span>Periode Gaji: {wagesStartDate || 'Mulai'} s/d {wagesEndDate || 'Selesai'}</span>
+                  </button>
+
+                  {showWagesCalendar && (
+                    <div className="absolute right-0 top-full mt-2 z-50">
+                      <InteractiveCalendar
+                        startDate={wagesStartDate}
+                        endDate={wagesEndDate}
+                        onChange={(start, end) => {
+                          setWagesStartDate(start)
+                          setWagesEndDate(end)
+                        }}
+                        onClose={() => setShowWagesCalendar(false)}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -788,12 +812,23 @@ const Karyawan = () => {
                           {formatRupiah(item.netWage)}
                         </td>
                         <td className="p-4 text-center">
-                          <button
-                            onClick={() => setSelectedWageWorker(item.name)}
-                            className="px-3 py-1 bg-[#18181c] hover:bg-[#26272d] border border-[#26272d] hover:border-slate-700 text-[#00ffff] font-bold rounded-lg text-[10px] transition-all"
-                          >
-                            Detail Riwayat
-                          </button>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => handleOpenPayModal(item)}
+                              disabled={item.netWage <= 0}
+                              className="px-2.5 py-1 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 font-bold rounded-lg text-[11px] transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer"
+                              title="Eksekusi Bayar Gaji Pencuci"
+                            >
+                              <DollarSign size={12} />
+                              <span>Bayar Gaji</span>
+                            </button>
+                            <button
+                              onClick={() => setSelectedWageWorker(item.name)}
+                              className="px-2.5 py-1 bg-[#18181c] hover:bg-[#26272d] border border-[#26272d] text-[#bbcbb2] hover:text-white font-bold rounded-lg text-[11px] transition-all cursor-pointer"
+                            >
+                              Rincian
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

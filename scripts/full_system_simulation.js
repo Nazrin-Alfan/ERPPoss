@@ -205,12 +205,13 @@ async function runComprehensiveSimulation() {
   // MODUL 4: CAFE & MERCHANDISE POS CHECKOUT (BOM DEDUCTION & AUTO-JOURNAL)
   // ====================================================================
   console.log('\n--- 4. POS CAFE & MERCHANDISE, BOM DEDUCTION & AUTO-JOURNAL ---')
+  store.setSyncStrukToCashflow(true)
   const posStrukId = `STRUK-POS-${Date.now()}`
   
   // Setup Cart belanja pelanggan
   let cart = []
   cart = addToCart(cart, { id_menu: 'menu_01', nama_menu: 'Americano Dingin', harga: 15000, kategori: 'Kopi' })
-  cart = updateQty(cart, 'Americano Dingin', 2) // 2x Americano = 30.000
+  cart = updateQty(cart, 'Americano Dingin', 1) // 2x Americano = 30.000
   cart = addToCart(cart, { id_menu: 'menu_02', nama_menu: 'Croissant Butter', harga: 20000, kategori: 'Pastry' })
   cart = addToCart(cart, { id_menu: 'merch_01', nama_menu: 'Parfum Kopi Mobil Gantung', harga: 25000, kategori: 'Merchandise' })
 

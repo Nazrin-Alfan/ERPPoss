@@ -73,7 +73,9 @@ import {
   formatRupiah,
   parseDateSafe,
   getShiftForCashier,
-  calculateTutupKasirRecap
+  calculateTutupKasirRecap,
+  getLocalDateString,
+  calculateCashierDrawerStatus
 } from '../../utils/helpers'
 import { addToCart as cartAdd, updateQty as cartUpdate, updateItemNotes as cartUpdateNotes, removeFromCart as cartRemove } from '../../utils/cartHelpers'
 import { validatePosExpenseForm, formatPosExpensePayload } from '../../utils/financeHelpers'
@@ -214,7 +216,7 @@ const CafePOS = () => {
     const active = (DEFAULT_MASTER_DATA.metode_bayar || []).filter(p => p.is_active)
     return active.length > 0 ? active[0].nama : 'CASH'
   })
-  const [paymentStatus, setPaymentStatus] = useState('Pending') // 'Pending' or 'Selesai'
+  const [paymentStatus, setPaymentStatus] = useState('Selesai') // 'Selesai' (default) or 'Pending' (bon)
 
   // Modal Hari Ini (Starting Capital)
   const [showModalModal, setShowModalModal] = useState(false)
@@ -372,6 +374,7 @@ const CafePOS = () => {
     variant: 'Regular',
     ukuran: 'Small',
     paket: 'PAKET CUCI BIASA',
+    bay: 'Bay 1',
     anggota1: '',
     anggota2: '',
     platNomor: '',
@@ -385,6 +388,13 @@ const CafePOS = () => {
     catatan_kendaraan: ''
   })
   const [hasCarwash, setHasCarwash] = useState(false)
+
+  // Otomatis aktifkan layanan carwash saat tab carwash dibuka
+  useEffect(() => {
+    if (activeTab === 'carwash' && features.hasCarwash && !hasCarwash) {
+      setHasCarwash(true)
+    }
+  }, [activeTab, features.hasCarwash, hasCarwash])
 
   // Reset status carwash jika tenant tidak mendukung fitur carwash (murni Cafe)
   useEffect(() => {
@@ -527,27 +537,8 @@ const CafePOS = () => {
       const todayDate = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD
       const { data: todayStruk } = await supabase
         .from('struk')
-        .select('total_tagihan, metode_bayar, nominal_cash, nominal_qris, waktu_dibayar, tanggal')
+        .select('total_tagihan, metode_bayar, nominal_cash, nominal_qris, waktu_dibayar, tanggal, status_bayar')
         .eq('status_bayar', 'Selesai')
-
-      let todayIn = 0
-      let todayQRIS = 0
-      if (todayStruk) {
-        todayStruk.forEach(s => {
-          // Uang masuk ke kasir dihitung berdasarkan tanggal penyelesaian/pembayaran fisik
-          const settlementDate = (s.waktu_dibayar ? s.waktu_dibayar.split('T')[0] : null) || s.tanggal
-          if (settlementDate === todayDate) {
-            if (s.metode_bayar === 'CASH') {
-              todayIn += parseFloat(s.total_tagihan || 0)
-            } else if (s.metode_bayar === 'QRIS') {
-              todayQRIS += parseFloat(s.total_tagihan || 0)
-            } else if (s.metode_bayar === 'SPLIT') {
-              todayIn += parseFloat(s.nominal_cash || 0)
-              todayQRIS += parseFloat(s.nominal_qris || 0)
-            }
-          }
-        })
-      }
 
       // 3. Fetch today's cash outflow
       const { data: todayExp } = await supabase
@@ -555,13 +546,18 @@ const CafePOS = () => {
         .select('nominal')
         .eq('tanggal', todayDate)
 
-      const todayOut = todayExp ? todayExp.reduce((sum, item) => sum + parseFloat(item.nominal || 0), 0) : 0
+      const drawerStatus = calculateCashierDrawerStatus({
+        strukList: todayStruk || [],
+        expenses: todayExp || [],
+        startingCapital: todayStartingCapital,
+        targetDate: todayDate
+      })
 
       setCashierCash({
         balance: bal,
-        todayIn: todayIn,
-        todayOut: todayOut,
-        todayQRIS: todayQRIS
+        todayIn: drawerStatus.todayIn,
+        todayOut: drawerStatus.todayOut,
+        todayQRIS: drawerStatus.todayQRIS
       })
     } catch (err) {
       console.error('Error fetching cashier cash status:', err)
@@ -593,7 +589,7 @@ const CafePOS = () => {
 
       if (data) {
         const filtered = data.filter(item => {
-          const settleDate = (item.waktu_dibayar ? item.waktu_dibayar.split('T')[0] : null) || item.tanggal
+          const settleDate = (item.waktu_dibayar ? getLocalDateString(item.waktu_dibayar) : null) || item.tanggal
           return item.tanggal === targetDate || settleDate === targetDate
         })
 
@@ -1388,7 +1384,8 @@ const CafePOS = () => {
 
       let nCash = 0
       let nQris = 0
-      if (settlePaymentMethod === 'SPLIT') {
+      const settleMethodUpper = String(settlePaymentMethod || '').toUpperCase().trim()
+      if (settleMethodUpper === 'SPLIT') {
         nCash = parseFloat(splitCashAmount || 0)
         nQris = parseFloat(splitQrisAmount || 0)
         if (Math.abs((nCash + nQris) - finalTotal) > 0.01) {
@@ -1396,10 +1393,12 @@ const CafePOS = () => {
           setLoading(false)
           return
         }
-      } else if (settlePaymentMethod === 'CASH') {
+      } else if (settleMethodUpper === 'CASH' || settleMethodUpper === 'TUNAI' || settleMethodUpper.includes('CASH') || settleMethodUpper.includes('TUNAI')) {
         nCash = finalTotal
-      } else if (settlePaymentMethod === 'QRIS') {
+      } else if (settleMethodUpper === 'QRIS' || settleMethodUpper.includes('QRIS') || settleMethodUpper === 'TRANSFER' || settleMethodUpper === 'EDC' || settleMethodUpper === 'DEBIT') {
         nQris = finalTotal
+      } else {
+        nCash = finalTotal
       }
 
       // 1. Simpan item biaya inap / cas tambahan jika ada
@@ -1687,7 +1686,8 @@ const CafePOS = () => {
 
       let nCash = 0
       let nQris = 0
-      if (effectivePayment === 'SPLIT') {
+      const paymentUpper = String(effectivePayment || '').toUpperCase().trim()
+      if (paymentUpper === 'SPLIT') {
         nCash = parseFloat(splitCashAmount || 0)
         nQris = parseFloat(splitQrisAmount || 0)
         if (Math.abs((nCash + nQris) - grandTotal) > 0.01) {
@@ -1695,10 +1695,12 @@ const CafePOS = () => {
           setLoading(false)
           return
         }
-      } else if (effectivePayment === 'CASH') {
+      } else if (paymentUpper === 'CASH' || paymentUpper === 'TUNAI' || paymentUpper.includes('CASH') || paymentUpper.includes('TUNAI')) {
         nCash = grandTotal
-      } else if (effectivePayment === 'QRIS') {
+      } else if (paymentUpper === 'QRIS' || paymentUpper.includes('QRIS') || paymentUpper === 'TRANSFER' || paymentUpper === 'EDC' || paymentUpper === 'DEBIT') {
         nQris = grandTotal
+      } else {
+        nCash = grandTotal
       }
 
       if (editingStrukId) {
@@ -2164,7 +2166,12 @@ const CafePOS = () => {
           <div className="relative">
             <button
               type="button"
-              onClick={() => setShowCashDrawerDetail(!showCashDrawerDetail)}
+              onClick={() => {
+                if (!showCashDrawerDetail) {
+                  fetchCashierCash()
+                }
+                setShowCashDrawerDetail(!showCashDrawerDetail)
+              }}
               className="flex items-center gap-2 bg-subsurface hover:bg-[#26272d] border border-border rounded-lg px-2.5 py-1 text-xs transition-colors"
               title="Klik untuk melihat rincian modal & arus kas laci"
             >
@@ -2371,33 +2378,54 @@ const CafePOS = () => {
                 <h3 className="text-lg font-bold text-white">Layanan Cuci Mobil</h3>
                 <p className="text-xs text-muted-dark mt-0.5">Lengkapi form transaksi cucian mobil pelanggan</p>
               </div>
-              <button
-                type="button"
-                onClick={() => setHasCarwash(!hasCarwash)}
-                className={`px-3.5 py-1.5 rounded-lg font-bold text-xs transition-all border active:scale-[0.98] ${hasCarwash
-                  ? 'bg-primary text-primary-foreground border-primary shadow-xs'
-                  : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
-                  }`}
-              >
-                {hasCarwash ? '✓ Aktif dalam Transaksi' : '+ Tambah ke Transaksi'}
-              </button>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                  ✓ Masuk ke Transaksi
+                </span>
+              </div>
             </div>
 
-            {hasCarwash && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Plat Nomor */}
-                <div className="flex flex-col">
-                  <label className="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
-                    Plat Nomor Kendaraan
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: AD 1234 AB"
-                    value={carwashForm.platNomor}
-                    onChange={(e) => setCarwashForm(prev => ({ ...prev, platNomor: e.target.value.toUpperCase() }))}
-                    className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-primary text-sm uppercase font-mono tracking-widest font-bold"
-                  />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Plat Nomor */}
+              <div className="flex flex-col">
+                <label className="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
+                  Plat Nomor Kendaraan <span className="text-rose-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Contoh: AD 1234 AB"
+                  value={carwashForm.platNomor}
+                  onChange={(e) => {
+                    const val = e.target.value.toUpperCase()
+                    setCarwashForm(prev => ({ ...prev, platNomor: val }))
+                    if (!hasCarwash) setHasCarwash(true)
+                  }}
+                  className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-primary text-sm uppercase font-mono tracking-widest font-bold"
+                />
+              </div>
+
+              {/* Bay Pengerjaan */}
+              <div className="flex flex-col">
+                <label className="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
+                  Bay Pengerjaan / Lokasi Antre
+                </label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {['Bay 1', 'Bay 2', 'Bay 3', 'Antre Luar'].map((b) => (
+                    <button
+                      key={b}
+                      type="button"
+                      onClick={() => setCarwashForm(prev => ({ ...prev, bay: b }))}
+                      className={`py-2 px-1 rounded-lg font-bold text-xs transition-all border active:scale-[0.98] ${
+                        (carwashForm.bay || 'Bay 1') === b
+                          ? 'bg-primary text-primary-foreground border-primary shadow-xs font-black'
+                          : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
+                      }`}
+                    >
+                      {b}
+                    </button>
+                  ))}
                 </div>
+              </div>
 
                 {/* Paket Cuci */}
                 <div className="flex flex-col">
@@ -2647,21 +2675,6 @@ const CafePOS = () => {
                   </div>
                 </div>
               </div>
-            )}
-
-            {!hasCarwash && (
-              <div className="flex-1 flex flex-col items-center justify-center p-8 border border-dashed border-border rounded-xl text-muted-dark">
-                <Car size={36} className="mb-2" />
-                <p className="text-sm font-medium">Layanan cuci mobil belum ditambahkan.</p>
-                <button
-                  type="button"
-                  onClick={() => setHasCarwash(true)}
-                  className="mt-3 px-4 py-1.5 bg-surface border border-border hover:border-border-hover text-slate-200 font-bold rounded-lg text-xs transition-colors"
-                >
-                  + Aktifkan Carwash
-                </button>
-              </div>
-            )}
           </div>
         )}
 
@@ -2969,7 +2982,7 @@ const CafePOS = () => {
 
                 {filteredTodayTransactions.map(tx => {
                   const isSelesai = tx.status_bayar === 'Selesai'
-                  const isCash = tx.metode_bayar === 'CASH'
+                  const isCash = (tx.metode_bayar || '').toUpperCase().includes('CASH') || (tx.metode_bayar || '').toUpperCase().includes('TUNAI')
                   const merkWash = tx.carwash?.[0]?.merk_mobil
                   const platWash = tx.carwash?.[0]?.plat_nomor
                   return (
@@ -3808,8 +3821,8 @@ const CafePOS = () => {
 
       {/* Kolom Kanan: Rincian Belanja & Checkout (36% di tablet landscape) */}
       {isOrderTab && (
-        <div className="hidden md:flex md:w-[36%] bg-surface border border-border p-4 rounded-xl flex-col h-fit min-w-0 shrink-0 sticky top-2">
-          <div className="flex items-center justify-between border-b border-border pb-3 mb-3 shrink-0">
+        <div className="hidden md:flex md:w-[36%] bg-surface border border-border p-4 rounded-xl flex-col h-[calc(100vh-5.5rem)] max-h-[calc(100vh-5.5rem)] min-w-0 shrink-0 sticky top-2">
+          <div className="flex items-center justify-between border-b border-border pb-3 mb-2 shrink-0">
             <div className="flex items-center gap-2">
               <ShoppingCart className="text-primary" size={20} />
               <h3 className="font-bold text-base text-white">Struk Belanja</h3>
@@ -3825,59 +3838,101 @@ const CafePOS = () => {
             )}
           </div>
 
-          {/* Alert Popups */}
-          {success && (
-            <div className="mb-3 p-3 rounded-xl bg-primary text-primary-foreground/10 border border-brand-emerald/20 text-primary text-xs flex items-center gap-2 shrink-0">
-              <CheckCircle size={15} />
-              <span>Transaksi berhasil disimpan!</span>
-            </div>
-          )}
+          {/* Scrollable Cart Content (Header, Item, Diskon, Metode Bayar) */}
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-2.5 pr-1">
+            {/* Alert Popups */}
+            {success && (
+              <div className="p-3 rounded-xl bg-primary text-primary-foreground/10 border border-brand-emerald/20 text-primary text-xs flex items-center gap-2 shrink-0">
+                <CheckCircle size={15} />
+                <span>Transaksi berhasil disimpan!</span>
+              </div>
+            )}
 
-          {error && (
-            <div className="mb-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2 shrink-0">
-              <AlertCircle size={15} />
-              <span>{error}</span>
-            </div>
-          )}
+            {error && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2 shrink-0">
+                <AlertCircle size={15} />
+                <span>{error}</span>
+              </div>
+            )}
 
-          {/* Quick Header: Tipe Pesanan & Meja/Nomor Antrean Akrilik */}
-          <div className="bg-surface p-2.5 rounded-xl border border-border mb-2.5 space-y-2 shrink-0">
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setOrderType('DINE IN')}
-                className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
-                  orderType === 'DINE IN'
-                    ? 'bg-primary text-primary-foreground border-primary shadow-xs'
-                    : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
-                }`}
-              >
-                <Coffee size={13} />
-                <span>Dine In</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setOrderType('TAKE AWAY')}
-                className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
-                  orderType === 'TAKE AWAY'
-                    ? 'bg-primary text-primary-foreground border-primary shadow-xs'
-                    : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
-                }`}
-              >
-                <ShoppingBag size={13} />
-                <span>Take Away</span>
-              </button>
-            </div>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder={orderType === 'DINE IN' ? "No. Meja / No. Akrilik / Pager (Cth: #12)" : "Nama / Panggilan Pembungkus"}
-                value={tableOrQueueNumber}
-                onChange={(e) => setTableOrQueueNumber(e.target.value)}
-                className="w-full bg-subsurface border border-border rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-muted-dark focus:outline-hidden focus:border-primary"
-              />
-            </div>
-          </div>
+            {/* Quick Header: Tipe Pesanan & Meja/Nomor Antrean Akrilik */}
+            {hasCarwash ? (
+              <div className="bg-surface p-2.5 rounded-xl border border-border space-y-2 shrink-0">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setCarwashForm(prev => ({ ...prev, kehadiran: 'TUNGGU' }))}
+                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
+                      carwashForm.kehadiran === 'TUNGGU'
+                        ? 'bg-primary text-primary-foreground border-primary shadow-xs font-black'
+                        : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
+                    }`}
+                  >
+                    <Coffee size={13} />
+                    <span>Ditunggu di Cafe</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCarwashForm(prev => ({ ...prev, kehadiran: 'TINGGAL' }))}
+                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
+                      carwashForm.kehadiran === 'TINGGAL'
+                        ? 'bg-primary text-primary-foreground border-primary shadow-xs font-black'
+                        : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
+                    }`}
+                  >
+                    <Car size={13} />
+                    <span>Mobil Ditinggal</span>
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder={carwashForm.kehadiran === 'TUNGGU' ? "No. Meja Tunggu / Pager (#12)" : "No. WA / HP Pemilik Mobil"}
+                    value={tableOrQueueNumber}
+                    onChange={(e) => setTableOrQueueNumber(e.target.value)}
+                    className="w-full bg-subsurface border border-border rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-muted-dark focus:outline-hidden focus:border-primary"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="bg-surface p-2.5 rounded-xl border border-border space-y-2 shrink-0">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setOrderType('DINE IN')}
+                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
+                      orderType === 'DINE IN'
+                        ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                        : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
+                    }`}
+                  >
+                    <Coffee size={13} />
+                    <span>Dine In</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOrderType('TAKE AWAY')}
+                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
+                      orderType === 'TAKE AWAY'
+                        ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                        : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
+                    }`}
+                  >
+                    <ShoppingBag size={13} />
+                    <span>Take Away</span>
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder={orderType === 'DINE IN' ? "No. Meja / No. Akrilik / Pager (Cth: #12)" : "Nama / Panggilan Pembungkus"}
+                    value={tableOrQueueNumber}
+                    onChange={(e) => setTableOrQueueNumber(e.target.value)}
+                    className="w-full bg-subsurface border border-border rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-muted-dark focus:outline-hidden focus:border-primary"
+                  />
+                </div>
+              </div>
+            )}
 
           {/* List Cart Items (Scrollable jika item banyak, tanpa paksaan tinggi palsu) */}
           <div className="max-h-[320px] overflow-y-auto space-y-2 pr-1 my-1">
@@ -3950,9 +4005,18 @@ const CafePOS = () => {
                   <div>
                     <span className="text-[9px] bg-primary/15 text-primary border border-primary/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Carwash</span>
                     <h5 className="font-bold text-xs text-white mt-1.5">{carwashForm.paket}</h5>
-                    <p className="text-[11px] text-muted mt-0.5 font-mono">
-                      {carwashForm.platNomor || '(PLAT KOSONG)'} • {carwashForm.ukuran} • {carwashForm.variant}
-                    </p>
+                    <div className="flex items-center gap-1.5 mt-1 font-mono text-xs">
+                      {carwashForm.platNomor ? (
+                        <span className="font-extrabold text-white bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700">
+                          {carwashForm.platNomor}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-rose-400 font-bold bg-rose-500/20 px-2 py-0.5 rounded border border-rose-500/30">
+                          ⚠️ Plat Belum Diisi
+                        </span>
+                      )}
+                      <span className="text-[11px] text-muted">• {carwashForm.ukuran} • {carwashForm.variant}</span>
+                    </div>
                   </div>
                   <button
                     onClick={() => setHasCarwash(false)}
@@ -3971,7 +4035,7 @@ const CafePOS = () => {
           </div>
 
         {/* Ringkasan & Checkout Button */}
-        <div className="border-t border-border pt-4 mt-4 shrink-0 space-y-4">
+        <div className="border-t border-border pt-3 mt-3 space-y-3">
           <div className="space-y-1.5 text-xs text-muted">
             {cart.length > 0 && (
               <div className="flex justify-between">
@@ -4127,7 +4191,7 @@ const CafePOS = () => {
            )}
 
            {/* Input Uang Diterima & Kembalian */}
-           {paymentStatus === 'Selesai' && (selectedPayment === 'CASH' || selectedPayment === 'SPLIT') && (
+           {paymentStatus === 'Selesai' && (selectedPayment === 'CASH' || selectedPayment === 'SPLIT' || (selectedPayment || '').toUpperCase().includes('CASH') || (selectedPayment || '').toUpperCase().includes('TUNAI')) && (
              <div className="p-3.5 rounded-xl bg-surface border border-slate-850 space-y-3 my-1">
                <span className="text-[10px] text-muted-dark uppercase tracking-wider font-extrabold block">Kalkulator Kembalian</span>
                <div className="space-y-1">
@@ -4171,20 +4235,29 @@ const CafePOS = () => {
                  className="w-full py-1.5 bg-subsurface hover:bg-slate-700 active:bg-slate-750 text-slate-350 font-bold rounded-lg text-[10px] transition-colors"
                >
                  Batal Edit
-               </button>
-             </div>
-           )}
+                 </button>
+                 </div>
+                 )}
+                 </div>
+                 </div>
 
-           <button
-             onClick={handleCheckout}
-             disabled={loading || (cart.length === 0 && !hasCarwash) || isUangKurang}
-             className="w-full h-14 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black rounded-xl shadow-lg shadow-emerald-950/40 transition-all flex items-center justify-center gap-2 text-base disabled:opacity-50 tap-tactile cursor-pointer"
-           >
-             {loading ? 'Memproses Transaksi...' : editingStrukId ? 'Simpan Perubahan' : `Simpan & Cetak (${paymentStatus})`}
-           </button>
-           </div>
-           </div>
-           )}
+                 {/* Fixed Footer: Grand Total & Big Checkout Button */}
+                 <div className="border-t border-border pt-3 mt-auto shrink-0 space-y-2.5">
+                 <div className="flex justify-between items-center px-1">
+                 <span className="text-xs uppercase tracking-wider text-muted font-bold">Total Bayar</span>
+                 <span className="text-xl font-black text-primary font-mono">{formatRupiah(grandTotal)}</span>
+                 </div>
+
+                 <button
+                 onClick={handleCheckout}
+                 disabled={loading || (cart.length === 0 && !hasCarwash) || isUangKurang}
+                 className="w-full h-12 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black rounded-xl shadow-lg shadow-emerald-950/40 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 tap-tactile cursor-pointer"
+                 >
+                 {loading ? 'Memproses Transaksi...' : editingStrukId ? 'Simpan Perubahan' : `Simpan & Cetak (${paymentStatus})`}
+                 </button>
+                 </div>
+                 </div>
+                 )}
            </div>
 
            {/* Floating Cart Bar for Mobile */}
@@ -4343,9 +4416,18 @@ const CafePOS = () => {
                     <div>
                       <span className="text-[9px] bg-primary/15 text-primary border border-primary/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Carwash</span>
                       <h5 className="font-bold text-xs text-white mt-1.5">{carwashForm.paket}</h5>
-                      <p className="text-[11px] text-muted mt-0.5 font-mono">
-                        {carwashForm.platNomor || '(PLAT KOSONG)'} • {carwashForm.ukuran} • {carwashForm.variant}
-                      </p>
+                      <div className="flex items-center gap-1.5 mt-1 font-mono text-xs">
+                        {carwashForm.platNomor ? (
+                          <span className="font-extrabold text-white bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700">
+                            {carwashForm.platNomor}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-rose-400 font-bold bg-rose-500/20 px-2 py-0.5 rounded border border-rose-500/30">
+                            ⚠️ Plat Belum Diisi
+                          </span>
+                        )}
+                        <span className="text-[11px] text-muted">• {carwashForm.ukuran} • {carwashForm.variant}</span>
+                      </div>
                     </div>
                     <button
                       onClick={() => setHasCarwash(false)}
@@ -4738,7 +4820,7 @@ const CafePOS = () => {
                       )}
 
                       {/* Kalkulator Kembalian untuk Pelunasan (CASH / SPLIT) */}
-                      {(settlePaymentMethod === 'CASH' || settlePaymentMethod === 'SPLIT') && (() => {
+                      {((settlePaymentMethod || '').toUpperCase().includes('CASH') || (settlePaymentMethod || '').toUpperCase().includes('TUNAI') || settlePaymentMethod === 'SPLIT') && (() => {
                         const targetCash = settlePaymentMethod === 'SPLIT' ? (parseFloat(splitCashAmount) || 0) : finalTotalToPay
                         const sKembalian = settleCashReceived ? parseFloat(settleCashReceived) - targetCash : 0
                         const isSKurang = settleCashReceived && sKembalian < 0
@@ -4805,12 +4887,12 @@ const CafePOS = () => {
       {showModalModal && (
         <div className="fixed inset-0 bg-subsurface backdrop-blur-md flex items-center justify-center p-4 z-[70] animate-fade-in">
           <div className="glass-panel w-full max-w-md p-6 rounded-2xl shadow-2xl border border-border animate-pop-in">
-            <div className="text-center mb-6">
+            <div className="text-center mb-5">
               <div className="w-12 h-12 mx-auto rounded-xl bg-gradient-to-tr from-brand-emerald to-brand-blue flex items-center justify-center font-bold text-lg text-slate-900 shadow-md mb-3">
                 JB
               </div>
-              <h3 className="text-lg font-bold text-white">Masukkan Modal Hari Ini</h3>
-              <p className="text-muted text-xs mt-1">Sistem mendeteksi modal awal untuk hari ini belum dimasukkan.</p>
+              <h3 className="text-lg font-bold text-white">Masukkan Modal Kasir Hari Ini</h3>
+              <p className="text-muted text-xs mt-1">Isi saldo kas awal laci kasir atau lewati untuk langsung melihat menu.</p>
             </div>
 
             <form onSubmit={handleSaveStartingCapital} className="space-y-4">
@@ -4820,13 +4902,27 @@ const CafePOS = () => {
                 </label>
                 <input
                   type="number"
-                  placeholder="Contoh: 100000"
+                  placeholder="0 jika tanpa kas awal"
                   value={startingCapitalInput}
                   onChange={(e) => setStartingCapitalInput(e.target.value)}
                   className="w-full bg-surface border border-border rounded-xl py-3 px-4 text-white text-sm text-center font-bold text-primary focus:outline-none focus:border-primary placeholder-slate-700"
                   required
                   min="0"
                 />
+
+                {/* Quick Presets */}
+                <div className="grid grid-cols-4 gap-1.5 mt-2.5">
+                  {[0, 50000, 100000, 200000].map((amt) => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setStartingCapitalInput(String(amt))}
+                      className="py-1 px-1.5 text-[10px] font-bold bg-subsurface hover:bg-slate-800 text-slate-300 rounded-lg border border-border transition-all active:scale-95"
+                    >
+                      {amt === 0 ? 'Rp 0' : `${amt / 1000}rb`}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {error && (
@@ -4835,13 +4931,22 @@ const CafePOS = () => {
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 bg-primary text-primary-foreground hover:bg-emerald-500 active:bg-emerald-600 text-slate-950 font-bold rounded-xl shadow-lg shadow-brand-emerald/10 transition-all text-sm disabled:opacity-50"
-              >
-                {loading ? 'Menyimpan...' : 'Konfirmasi & Mulai Shift'}
-              </button>
+              <div className="flex gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowModalModal(false)}
+                  className="flex-1 py-3 bg-subsurface hover:bg-slate-800 text-slate-300 font-bold rounded-xl border border-border transition-all text-xs tap-tactile"
+                >
+                  Lewati (Lihat Menu Saja)
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 py-3 bg-primary text-primary-foreground hover:bg-emerald-500 active:bg-emerald-600 font-bold rounded-xl shadow-lg shadow-brand-emerald/10 transition-all text-xs disabled:opacity-50 tap-tactile"
+                >
+                  {loading ? 'Menyimpan...' : 'Mulai Shift'}
+                </button>
+              </div>
             </form>
           </div>
         </div>

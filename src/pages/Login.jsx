@@ -33,13 +33,16 @@ const Login = () => {
     setSuccessMsg('')
     setLoading(true)
 
-    if (!email || !password) {
+    const cleanEmail = (email || '').trim()
+    const cleanPass = (password || '').trim()
+
+    if (!cleanEmail || !cleanPass) {
       setError('Username / Email dan password wajib diisi.')
       setLoading(false)
       return
     }
 
-    const res = await login(email, password)
+    const res = await login(cleanEmail, cleanPass)
     if (!res.success) {
       setError(res.error || 'Gagal masuk. Periksa kembali username dan password Anda.')
     } else {
@@ -48,7 +51,12 @@ const Login = () => {
       if (userRole === ROLES.SUPER_ADMIN) {
         navigate('/founder', { replace: true })
       } else if (userRole === ROLES.OWNER) {
-        navigate('/konsolidasi', { replace: true })
+        const tenantCount = (res.userTenants && res.userTenants.length) || 1
+        if (tenantCount > 1) {
+          navigate('/konsolidasi', { replace: true })
+        } else {
+          navigate('/dashboard', { replace: true })
+        }
       } else {
         navigate('/pos', { replace: true })
       }
@@ -86,9 +94,9 @@ const Login = () => {
       setError(res.error || 'Pendaftaran toko gagal. Silakan coba lagi.')
       setLoading(false)
     } else {
-      setSuccessMsg('Toko Anda berhasil dibuat! Mengalihkan ke dashboard...')
+      setSuccessMsg('Toko Anda berhasil dibuat! Mengalihkan ke dashboard toko...')
       setTimeout(() => {
-        navigate('/konsolidasi', { replace: true })
+        navigate('/dashboard', { replace: true })
       }, 800)
     }
   }
@@ -268,6 +276,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => {
+                    setError('')
                     setEmail('superadmin@relaypos.com')
                     setPassword('password123')
                   }}
@@ -281,6 +290,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => {
+                    setError('')
                     setEmail('owner@relaypos.com')
                     setPassword('password123')
                   }}
@@ -294,6 +304,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => {
+                    setError('')
                     setEmail('admin@relaypos.com')
                     setPassword('password123')
                   }}
@@ -307,6 +318,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => {
+                    setError('')
                     setEmail('kasir@relaypos.com')
                     setPassword('password123')
                   }}

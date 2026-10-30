@@ -13,9 +13,16 @@ export const api = {
   // 1. AUTENTIKASI (DUAL-MODE CLOUD & LOCAL)
   auth: {
     async login(emailOrUsername, password) {
-      const email = emailOrUsername.includes('@')
-        ? emailOrUsername.trim()
-        : `${emailOrUsername.trim().toLowerCase()}@jb.local`
+      const cleanUser = (emailOrUsername || '').trim()
+      let email = cleanUser
+      if (!cleanUser.includes('@')) {
+        const knownRelayAccounts = ['superadmin', 'owner', 'admin', 'kasir']
+        if (knownRelayAccounts.includes(cleanUser.toLowerCase())) {
+          email = `${cleanUser.toLowerCase()}@relaypos.com`
+        } else {
+          email = `${cleanUser.toLowerCase()}@jb.local`
+        }
+      }
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
       const profile = (await this.getProfile(data.user.id)) || {
@@ -29,6 +36,16 @@ export const api = {
 
     async logout() {
       return await supabase.auth.signOut()
+    },
+
+    async changePassword({ currentPassword, newPassword }) {
+      if (typeof supabase.auth.changePassword === 'function') {
+        return await supabase.auth.changePassword({ currentPassword, newPassword })
+      }
+      // Mode Supabase Cloud standard
+      const { data, error } = await supabase.auth.updateUser({ password: newPassword })
+      if (error) throw error
+      return { success: true, data }
     },
 
     async getMe() {
@@ -53,7 +70,7 @@ export const api = {
       return data || null
     },
 
-    async registerKasir(emailOrUsername, password, nama, role = 'Kasir') {
+    async registerKasir(emailOrUsername, password, nama, role = 'Kasir', tenantId = null) {
       const email = emailOrUsername.includes('@')
         ? emailOrUsername.trim()
         : `${emailOrUsername.trim().toLowerCase()}@jb.local`
@@ -61,7 +78,7 @@ export const api = {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { nama, role: safeRole } },
+        options: { data: { nama, role: safeRole, ...(tenantId ? { tenant_id: tenantId } : {}) } },
       })
       if (error) throw error
       return { success: true, user: data.user }

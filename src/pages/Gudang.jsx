@@ -211,13 +211,15 @@ export default function Gudang() {
       return s > 0 && s <= m
     }).length
 
-    const emptyStockCount = gudangItems.filter(i => (parseFloat(i.stok) || 0) <= 0).length
+    const emptyStockCount = gudangItems.filter(i => (parseFloat(i.stok) || 0) === 0).length
+    const negativeStockCount = gudangItems.filter(i => (parseFloat(i.stok) || 0) < 0).length
 
     return {
       totalItems,
       totalAssetValue,
       lowStockCount,
-      emptyStockCount
+      emptyStockCount,
+      negativeStockCount
     }
   }, [gudangItems])
 
@@ -423,21 +425,21 @@ export default function Gudang() {
         </div>
 
         {/* 3 PILIHAN GUDANG TABS */}
-        <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#121215] border border-[#26272d] shadow-xl overflow-x-auto">
+        <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#121215] border border-[#26272d] shadow-xl overflow-x-auto no-scrollbar shrink-0">
           {features.hasCafeWarehouse && (
             <button
               onClick={() => {
                 setActiveGudang('CAFE')
                 setSelectedKategori('ALL')
               }}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm transition-all whitespace-nowrap shrink-0 ${
                 activeGudang === 'CAFE'
                   ? 'bg-[#ffc71f] text-[#0f0f0f] font-bold shadow-sm'
                   : 'text-[#bbcbb2] hover:text-white hover:bg-[#18181c]'
               }`}
             >
               <Coffee size={16} />
-              <span>Gudang Cafe (F&B)</span>
+              <span className="whitespace-nowrap">Gudang Cafe (F&B)</span>
             </button>
           )}
 
@@ -447,14 +449,14 @@ export default function Gudang() {
                 setActiveGudang('CARWASH')
                 setSelectedKategori('ALL')
               }}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm transition-all whitespace-nowrap shrink-0 ${
                 activeGudang === 'CARWASH'
                   ? 'bg-[#f57733] text-white font-bold shadow-sm'
                   : 'text-[#bbcbb2] hover:text-white hover:bg-[#18181c]'
               }`}
             >
               <Car size={16} />
-              <span>Gudang Carwash</span>
+              <span className="whitespace-nowrap">Gudang Carwash</span>
             </button>
           )}
 
@@ -463,14 +465,14 @@ export default function Gudang() {
               setActiveGudang('MERCHANDISE')
               setSelectedKategori('ALL')
             }}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm transition-all whitespace-nowrap ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm transition-all whitespace-nowrap shrink-0 ${
               activeGudang === 'MERCHANDISE'
                 ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm'
                 : 'text-[#bbcbb2] hover:text-white hover:bg-[#18181c]'
             }`}
           >
             <ShoppingBag size={16} />
-            <span>Gudang Merchandise</span>
+            <span className="whitespace-nowrap">Gudang Merchandise</span>
           </button>
         </div>
       </div>
@@ -540,8 +542,15 @@ export default function Gudang() {
         {/* Stok Habis / Kritis */}
         <div className="bg-[#121215] p-4 rounded-2xl border border-[#26272d] flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-bold text-[#bbcbb2] uppercase tracking-wider">Stok Habis / Kritis</span>
-            <h3 className="text-xl md:text-2xl font-black text-[#ff5102] font-mono mt-1">{kpiStats.emptyStockCount} <span className="text-xs font-normal text-[#6b7367]">item</span></h3>
+            <span className="text-[11px] font-bold text-[#bbcbb2] uppercase tracking-wider">
+              {kpiStats.negativeStockCount > 0 ? 'Defisit & Kritis' : 'Stok Habis / Kritis'}
+            </span>
+            <h3 className="text-xl md:text-2xl font-black text-[#ff5102] font-mono mt-1">
+              {kpiStats.emptyStockCount + kpiStats.negativeStockCount} <span className="text-xs font-normal text-[#6b7367]">item</span>
+            </h3>
+            {kpiStats.negativeStockCount > 0 && (
+              <p className="text-[10px] text-rose-400 mt-0.5">({kpiStats.negativeStockCount} barang tercatat minus/defisit)</p>
+            )}
           </div>
           <div className="p-3 rounded-xl bg-[#ff5102]/15 text-[#ff5102]">
             <AlertTriangle size={22} />
@@ -682,11 +691,14 @@ export default function Gudang() {
               const min = parseFloat(item.min_stok || item.stok_minimum) || 5
               const isSafe = s > min
               const isLow = s > 0 && s <= min
+              const isNegative = s < 0
               return (
                 <div>
                   <span
                     className={`font-mono text-sm font-bold ${
-                      isSafe
+                      isNegative
+                        ? 'text-rose-400'
+                        : isSafe
                         ? 'text-primary'
                         : isLow
                         ? 'text-warning'
@@ -698,6 +710,11 @@ export default function Gudang() {
                   <span className="text-[11px] text-muted-dark font-medium">
                     {item.satuan || 'Pcs'}
                   </span>
+                  {isNegative && (
+                    <div className="text-[10px] text-rose-400 font-bold">
+                      Defisit {Math.abs(s)} {item.satuan}
+                    </div>
+                  )}
                 </div>
               )
             },
@@ -710,7 +727,13 @@ export default function Gudang() {
               const min = parseFloat(item.min_stok || item.stok_minimum) || 5
               const isSafe = s > min
               const isLow = s > 0 && s <= min
-              return isSafe ? (
+              const isNegative = s < 0
+              return isNegative ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                  Defisit Opname
+                </span>
+              ) : isSafe ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                   Aman

@@ -87,7 +87,7 @@ const ProtectedRoute = ({ children, allowedRoles = null, ownerOnly = false, requ
 
 // Komponen Smart Landing Dispatcher di Rute Root (/)
 const RootDispatcher = () => {
-  const { user, profile, loading } = useAuth()
+  const { user, profile, loading, userTenants } = useAuth()
 
   if (loading) {
     return (
@@ -108,7 +108,11 @@ const RootDispatcher = () => {
     return <Navigate to="/founder" replace />
   }
   if (role === ROLES.OWNER) {
-    return <Navigate to="/konsolidasi" replace />
+    // Jika Owner hanya mengelola 1 outlet, langsung masuk ke /dashboard operasional tokonya
+    if (userTenants && userTenants.length > 1) {
+      return <Navigate to="/konsolidasi" replace />
+    }
+    return <Navigate to="/dashboard" replace />
   }
   return <Navigate to="/pos" replace />
 }
@@ -118,10 +122,19 @@ const AppContent = () => {
   const location = useLocation()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
-      return window.innerWidth < 1280
+      const saved = window.localStorage.getItem('relaypos_sidebar_collapsed')
+      if (saved !== null) return saved === 'true'
+      return window.innerWidth < 1024
     }
     return false
   })
+
+  const handleSetSidebarCollapsed = (collapsed) => {
+    setIsSidebarCollapsed(collapsed)
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('relaypos_sidebar_collapsed', String(collapsed))
+    }
+  }
 
   // Cek apakah sedang berada di Halaman Mandiri tanpa Sidebar (Login, Konsolidasi, Founder Cockpit)
   const isStandalonePage = location.pathname === '/login' || location.pathname === '/konsolidasi' || location.pathname === '/founder'
@@ -139,7 +152,7 @@ const AppContent = () => {
   return (
     <div className="h-[100dvh] w-full max-w-full bg-[#000000] text-white flex flex-col md:flex-row overflow-x-hidden">
       {/* Render Sidebar jika sudah login dan bukan di halaman mandiri */}
-      {showSidebar && <Sidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />}
+      {showSidebar && <Sidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={handleSetSidebarCollapsed} />}
 
       {/* Konten Utama Aplikasi */}
       <main className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden bg-[#000000] relative">
@@ -281,11 +294,11 @@ const AppContent = () => {
                 element={<Navigate to="/gudang" replace />} 
               />
 
-              {/* Rute Database Master Stok & Resep (Owner & Admin) */}
+              {/* Rute Database Master Raw Spreadsheet (Developer / Super Admin Saja) */}
               <Route 
                 path="/database" 
                 element={
-                  <ProtectedRoute allowedRoles={['Owner', 'Admin']}>
+                  <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}>
                     <Database />
                   </ProtectedRoute>
                 } 

@@ -38,11 +38,11 @@ export default function ExecutiveLayout({ children }) {
                 RELAYPOS
               </span>
               <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#18181c] text-[#bbcbb2] font-semibold border border-[#26272d]">
-                Portal Holding
+                Multi-Cabang
               </span>
             </div>
             <p className="text-xs font-medium text-[#bbcbb2]">
-              {currentTheme?.brandName || 'Komersial Portofolio'}
+              {currentTheme?.brandName || 'Ringkasan Multi-Outlet'}
             </p>
           </div>
         </div>
@@ -56,7 +56,7 @@ export default function ExecutiveLayout({ children }) {
             title="Buka tampilan kasir & operasional toko"
           >
             <Store size={14} strokeWidth={1.75} className="text-[#00ffff] group-hover:scale-105 transition-transform" />
-            <span>Workspace Outlet ({activeTenant?.nama || 'Toko'})</span>
+            <span>Buka Kasir Toko ({activeTenant?.nama || 'Toko'})</span>
             <ArrowRight size={13} strokeWidth={1.75} className="text-[#bbcbb2] group-hover:translate-x-0.5 transition-transform" />
           </button>
 
