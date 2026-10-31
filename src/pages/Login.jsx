@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useAppTheme } from '../context/ThemeContext'
 import { KeyRound, Mail, AlertCircle, Building2, User, Sparkles, CheckCircle2 } from 'lucide-react'
 import { ROLES } from '../constants/roles'
+import { isCloudBackend } from '../supabaseClient'
 
 const Login = () => {
   const { login, registerTenantOwner, loginWithGoogle } = useAuth()
@@ -270,8 +271,8 @@ const Login = () => {
               <span>Lanjutkan dengan Google</span>
             </button>
 
-            {/* Akses Cepat 4 Akun Role (Demo) */}
-            <div className="mt-6 p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-2">
+            {/* Akses Cepat 4 Akun Role (Demo), hanya pada sandbox lokal */}
+            {!isCloudBackend && <div className="mt-6 p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-2">
               <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase text-center flex items-center justify-center gap-1.5">
                 <span>Akses Cepat Akun Role (Demo)</span>
               </p>
@@ -336,7 +337,7 @@ const Login = () => {
               <p className="text-[9px] text-slate-500 text-center italic">
                 Password akun demo: <span className="font-mono text-slate-400 font-semibold">password123</span>
               </p>
-            </div>
+            </div>}
           </>
         ) : (
           /* TAB 2: FORM REGISTRASI MANDIRI OWNER (SELF-SERVICE ONBOARDING) */

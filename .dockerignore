@@ -1,0 +1,20 @@
+.git
+.agents
+.claude
+.codex
+.aws
+node_modules
+dist
+coverage
+playwright-report
+test-results
+*.log
+.env
+.env.*
+*.env
+JB_dev.env*
+.npmrc
+Documentation/qa
+scratch_*
+pulled_supabase_data
+csv file

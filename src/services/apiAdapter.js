@@ -2,6 +2,7 @@
 // Compatible with both Supabase Cloud (with RLS) and local in-memory engine.
 
 import { supabase, isCloudBackend } from '../supabaseClient'
+import { requireCloudProfile } from '../config/cloudAuthorization.js'
 
 export const BACKEND_PROVIDER = isCloudBackend ? 'cloud' : 'local'
 export const isCloudflare = false
@@ -25,7 +26,8 @@ export const api = {
       }
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
-      const profile = (await this.getProfile(data.user.id)) || {
+      const storedProfile = await this.getProfile(data.user.id)
+      const profile = isCloudBackend ? requireCloudProfile(storedProfile, data.user.id) : storedProfile || {
         id: data.user.id,
         nama: data.user.user_metadata?.nama || data.user.email,
         role: data.user.role || data.user.user_metadata?.role || 'Kasir',
@@ -72,7 +74,8 @@ export const api = {
     async getMe() {
       const { data } = await supabase.auth.getUser()
       if (!data?.user) return null
-      const profile = (await this.getProfile(data.user.id)) || {
+      const storedProfile = await this.getProfile(data.user.id)
+      const profile = isCloudBackend ? requireCloudProfile(storedProfile, data.user.id) : storedProfile || {
         id: data.user.id,
         nama: data.user.user_metadata?.nama || data.user.email,
         role: data.user.role || data.user.user_metadata?.role || 'Kasir',
@@ -126,8 +129,8 @@ export const api = {
         if (!data?.session) {
           return { success: true, user: data?.user || null, profile: null, requiresEmailConfirmation: true }
         }
-        const profile = await this.getProfile(data.user?.id)
-        if (!profile?.tenant_id || !profile?.branch_id || profile.role !== 'Owner') {
+        const profile = requireCloudProfile(await this.getProfile(data.user?.id), data.user?.id)
+        if (!profile.branch_id || profile.role !== 'Owner') {
           throw new Error('Provisioning tenant belum lengkap. Hubungi administrator sebelum masuk ke toko.')
         }
         return { success: true, user: data.user, profile, requiresEmailConfirmation: false }

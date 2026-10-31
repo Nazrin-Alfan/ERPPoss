@@ -1,0 +1,7 @@
+{
+  "anonymousProtectedRoute": "redirects to login",
+  "demoControls": false,
+  "refreshDoesNotAutoAuthenticate": true,
+  "uncaughtErrors": [],
+  "scope": "synthetic cloud config; Supabase network blocked, no hosted Auth tested"
+}

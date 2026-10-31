@@ -1,40 +1,31 @@
-# ==============================================================================
-# RELAYPOS DOCKERFILE - MULTI-STAGE BUILD
-# Stage 1: Build Frontend (Node 20 Alpine)
-# Stage 2: Production Web Server (Nginx Alpine)
-# ==============================================================================
-
-# STAGE 1: Build
-FROM node:20-alpine AS builder
-
+# syntax=docker/dockerfile:1
+# Public browser configuration is baked into the Vite bundle at build time.
+# Never pass a service-role key or other secret through VITE_* build arguments.
+FROM node:24-bookworm-slim AS builder
 WORKDIR /app
 
-# Salin package manifest untuk caching layer Docker
-COPY package*.json ./
+COPY package.json package-lock.json ./
+# Vite/Tailwind require their platform-specific optional native dependencies.
+# Supply a managed cloud proxy CA as a BuildKit secret when required.
+RUN --mount=type=secret,id=proxy_ca \
+    if [ -f /run/secrets/proxy_ca ]; then \
+      NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca npm ci --strict-ssl=true; \
+    else \
+      npm ci --strict-ssl=true; \
+    fi
 
-# Install dependensi (mengabaikan optional binding platform-spesifik)
-RUN npm ci --omit=optional
-
-# Salin source code
 COPY . .
-
-# Build aplikasi Vite
+ARG VITE_BACKEND_PROVIDER=cloud
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+ARG VITE_ALLOW_LOCAL_SANDBOX=false
 RUN npm run build
 
-# STAGE 2: Nginx Web Server
-FROM nginx:alpine
-
-# Salin konfigurasi Nginx khusus SPA dengan caching dan Gzip
+FROM nginx:1.28-alpine AS runtime
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Salin hasil build dari Stage 1
 COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Port HTTP standar container
+RUN nginx -t
 EXPOSE 80
-
-# Healthcheck endpoint
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
-
+  CMD wget -Y off --quiet --tries=1 --spider http://127.0.0.1/ || exit 1
 CMD ["nginx", "-g", "daemon off;"]

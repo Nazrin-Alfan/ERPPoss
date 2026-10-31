@@ -1,0 +1,38 @@
+[
+  {
+    "case": "missing-cloud",
+    "expectedBuildSuccess": false,
+    "exitCode": 1,
+    "pass": true
+  },
+  {
+    "case": "unapproved-local",
+    "expectedBuildSuccess": false,
+    "exitCode": 1,
+    "pass": true
+  },
+  {
+    "case": "unknown-provider",
+    "expectedBuildSuccess": false,
+    "exitCode": 1,
+    "pass": true
+  },
+  {
+    "case": "sandbox",
+    "expectedBuildSuccess": true,
+    "exitCode": 0,
+    "pass": true
+  },
+  {
+    "case": "staging-cloud",
+    "expectedBuildSuccess": true,
+    "exitCode": 0,
+    "pass": true
+  },
+  {
+    "case": "server-key",
+    "expectedBuildSuccess": false,
+    "exitCode": 1,
+    "pass": true
+  }
+]

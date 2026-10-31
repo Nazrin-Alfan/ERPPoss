@@ -1,0 +1,19 @@
+{
+  "testFiles": 60,
+  "testsPassed": 381,
+  "testsFailed": 0,
+  "sandboxBuild": "PASS",
+  "lintWarnings": 418,
+  "lintErrors": 0,
+  "dependencyAdvisories": {
+    "info": 0,
+    "low": 0,
+    "moderate": 2,
+    "high": 2,
+    "critical": 0,
+    "total": 4
+  },
+  "hostedSupabaseTested": false,
+  "mockEngineChanged": false,
+  "published": false
+}

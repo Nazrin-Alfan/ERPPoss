@@ -4,10 +4,12 @@ import tailwindcss from '@tailwindcss/vite'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { resolveBackendConfig } from './src/config/backendConfig.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
+  const protectedDeployment = command === 'build' || ['staging', 'production'].includes(mode)
   // 1. Muat env standar Vite (.env, .env.local, .env.[mode])
   const env = loadEnv(mode, process.cwd(), '')
 
@@ -17,7 +19,8 @@ export default defineConfig(({ mode }) => {
   const prodEnvPath = path.resolve(__dirname, 'JB.env')
   const envPath = fs.existsSync(devEnvPath) ? devEnvPath : prodEnvPath
 
-  if (fs.existsSync(envPath)) {
+  // Legacy local files remain supported for development only.
+  if (!protectedDeployment && fs.existsSync(envPath)) {
     const envContent = fs.readFileSync(envPath, 'utf-8')
     envContent.split(/\r?\n/).forEach((line) => {
       if (line.trim().startsWith('#') || !line.includes('=')) return
@@ -37,9 +40,7 @@ export default defineConfig(({ mode }) => {
     })
   }
 
-  const supabaseUrl = env.VITE_SUPABASE_URL || fallbackEnv.VITE_SUPABASE_URL || ''
-  const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY || fallbackEnv.VITE_SUPABASE_ANON_KEY || ''
-  const backendProvider = env.VITE_BACKEND_PROVIDER || fallbackEnv.VITE_BACKEND_PROVIDER || 'local'
+  const backend = resolveBackendConfig({ ...fallbackEnv, ...env }, { production: protectedDeployment })
 
   return {
     server: {
@@ -52,9 +53,10 @@ export default defineConfig(({ mode }) => {
       chunkSizeWarningLimit: 1500,
     },
     define: {
-      'import.meta.env.VITE_BACKEND_PROVIDER': JSON.stringify(backendProvider),
-      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(supabaseUrl),
-      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseAnonKey),
+      'import.meta.env.VITE_BACKEND_PROVIDER': JSON.stringify(backend.provider),
+      'import.meta.env.VITE_ALLOW_LOCAL_SANDBOX': JSON.stringify(backend.allowLocalSandbox ? 'true' : 'false'),
+      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(backend.url),
+      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(backend.key),
     },
   }
 })

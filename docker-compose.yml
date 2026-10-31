@@ -3,14 +3,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: relaypos-app
-    restart: always
+      # Public browser values; changing them requires an image rebuild.
+      args:
+        VITE_BACKEND_PROVIDER: ${VITE_BACKEND_PROVIDER:-cloud}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-}
+        VITE_ALLOW_LOCAL_SANDBOX: ${VITE_ALLOW_LOCAL_SANDBOX:-false}
+    restart: unless-stopped
     ports:
-      - "80:80"
-    environment:
-      - NODE_ENV=production
+      - "127.0.0.1:${RELAYPOS_HTTP_PORT:-8080}:80"
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      test: ["CMD", "wget", "-Y", "off", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/"]
       interval: 30s
       timeout: 5s
       retries: 3

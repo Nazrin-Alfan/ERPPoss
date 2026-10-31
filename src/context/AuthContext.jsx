@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { supabase } from '../supabaseClient'
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import { supabase, isCloudBackend } from '../supabaseClient'
+import { authorizeCloudSession, requireCloudProfile, resolveCloudTenants } from '../config/cloudAuthorization.js'
 import { api } from '../services/apiAdapter'
 import { DEFAULT_TENANT_ID, DEFAULT_BRANCH_ID } from '../constants/erpConfig'
 import { ROLES } from '../constants/roles'
@@ -29,11 +30,56 @@ export const AuthProvider = ({ children }) => {
   const [activeTenant, setActiveTenant] = useState(null)
   const [userTenants, setUserTenants] = useState([])
 
+  const cloudAuthGeneration = useRef(0)
+  const invalidateCloudSession = useCallback(() => ++cloudAuthGeneration.current, [])
+  const clearCloudIdentity = useCallback(() => {
+    setUser(null)
+    setProfile(null)
+    setActiveTenant(null)
+    setUserTenants([])
+    localStorage.removeItem(ACTIVE_TENANT_STORAGE_KEY)
+    setActiveTenantId(null)
+  }, [])
+  const applyCloudSession = useCallback(async (session) => {
+    const generation = invalidateCloudSession()
+    return authorizeCloudSession(session, {
+      getProfile: id => api.auth.getProfile(id),
+      listTenants: async () => {
+        const { data, error } = await supabase.from('tenants').select('*')
+        if (error) throw error
+        return data
+      },
+      savedTenantId: localStorage.getItem(ACTIVE_TENANT_STORAGE_KEY),
+      isCurrent: () => generation === cloudAuthGeneration.current,
+      clear: clearCloudIdentity,
+      commit: identity => {
+        setUser(identity.user)
+        setProfile(identity.profile)
+        setUserTenants(identity.tenants)
+        setActiveTenant(identity.activeTenant)
+        localStorage.setItem(ACTIVE_TENANT_STORAGE_KEY, identity.activeTenant.id)
+        setActiveTenantId(identity.activeTenant.id)
+      },
+    })
+  }, [clearCloudIdentity, invalidateCloudSession])
+
   // Helper untuk memuat daftar tenant dan menentukan tenant aktif
   const loadTenantsForUser = useCallback(async (currentProfile) => {
     try {
       const { data: allTenants, error } = await supabase.from('tenants').select('*')
       if (error) throw error
+
+      if (isCloudBackend) {
+        const { tenants, activeTenant: resolvedTenant } = resolveCloudTenants(
+          requireCloudProfile(currentProfile, currentProfile?.id), allTenants,
+          localStorage.getItem(ACTIVE_TENANT_STORAGE_KEY)
+        )
+        setUserTenants(tenants)
+        setActiveTenant(resolvedTenant)
+        localStorage.setItem(ACTIVE_TENANT_STORAGE_KEY, resolvedTenant.id)
+        setActiveTenantId(resolvedTenant.id)
+        return
+      }
 
       const tenantList = Array.isArray(allTenants) ? allTenants : []
       let allowedTenants = []
@@ -98,6 +144,7 @@ export const AuthProvider = ({ children }) => {
         setActiveTenantId(resolvedTenant.id)
       }
     } catch (err) {
+      if (isCloudBackend) { clearCloudIdentity(); throw err }
       console.warn('Gagal memuat daftar tenant pengguna:', err)
       const fallbackTenant = {
         id: currentProfile?.tenant_id || DEFAULT_TENANT_ID,
@@ -111,7 +158,7 @@ export const AuthProvider = ({ children }) => {
       setActiveTenant(fallbackTenant)
       setActiveTenantId(fallbackTenant.id)
     }
-  }, [])
+  }, [clearCloudIdentity])
 
   // Fungsi mengubah tipe/model bisnis tenant aktif (Cafe / Carwash / Hybrid)
   const updateTenantBusinessType = useCallback(async (newBusinessType) => {
@@ -152,7 +199,7 @@ export const AuthProvider = ({ children }) => {
     let targetTenant = userTenants.find(t => t.id === tenantId)
 
     // Jika Super Admin berpindah ke tenant yang baru saja dibuat di halaman Founder
-    if (!targetTenant && (profile?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.SUPER_ADMIN)) {
+    if (!isCloudBackend && !targetTenant && (profile?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.SUPER_ADMIN)) {
       try {
         const storedTenants = JSON.parse(localStorage.getItem('relaypos_real_sandbox_v2') || '{}').tenants || []
         targetTenant = storedTenants.find(t => t.id === tenantId)
@@ -193,6 +240,10 @@ export const AuthProvider = ({ children }) => {
 
     const syncSession = async (session) => {
       try {
+        if (isCloudBackend) {
+          await applyCloudSession(session)
+          return
+        }
         if (session && session.user) {
           // Tetapkan user dan profil instan berbasis metadata sesi agar UI tidak menggantung
           const fastProfile = {
@@ -223,6 +274,7 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (err) {
         console.error('Error syncing auth session:', err)
+        if (isCloudBackend) return // authorizeCloudSession clears only the current generation.
         if (isMounted) {
           setUser(null)
           setProfile(null)
@@ -237,7 +289,9 @@ export const AuthProvider = ({ children }) => {
     }
 
     // 1. Eksekusi awal sinkronisasi sesi
+    const bootstrapGeneration = cloudAuthGeneration.current
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted || (isCloudBackend && bootstrapGeneration !== cloudAuthGeneration.current)) return
       syncSession(session)
     }).catch(() => {
       if (isMounted) setLoading(false)
@@ -245,23 +299,33 @@ export const AuthProvider = ({ children }) => {
 
     // 2. Listener perubahan sesi (hanya tangani perubahan berikutnya)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
-        syncSession(session)
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
+        // Do not await Supabase queries inside its auth callback/lock.
+        if (isCloudBackend) {
+          const eventGeneration = invalidateCloudSession()
+          if (event === 'SIGNED_OUT') clearCloudIdentity()
+          setTimeout(() => { if (isMounted && eventGeneration === cloudAuthGeneration.current) syncSession(session) }, 0)
+        } else syncSession(session)
       }
     })
 
     return () => {
       isMounted = false
+      if (isCloudBackend) invalidateCloudSession()
       if (subscription && subscription.unsubscribe) {
         subscription.unsubscribe()
       }
     }
-  }, [loadTenantsForUser])
+  }, [loadTenantsForUser, applyCloudSession, clearCloudIdentity, invalidateCloudSession])
 
   // Fungsi Login Universal (Username/Email & Password/PIN)
   const login = async (usernameOrEmail, password) => {
     try {
       const res = await api.auth.login(usernameOrEmail, password)
+      if (isCloudBackend) {
+        const identity = await applyCloudSession({ user: res.user })
+        return { success: true, user: identity.user, profile: identity.profile }
+      }
       let resolvedProfile = null
       if (res.user) {
         setUser(res.user)
@@ -284,6 +348,7 @@ export const AuthProvider = ({ children }) => {
         profile: resolvedProfile || res.profile 
       }
     } catch (err) {
+      if (isCloudBackend) { invalidateCloudSession(); clearCloudIdentity() }
       console.error('Login error:', err)
       return { success: false, error: err.message || 'Login gagal.' }
     }
@@ -294,9 +359,12 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await api.auth.signInWithGoogle(customPayload)
       if (res.user) {
-        setUser(res.user)
-        setProfile(res.profile)
-        await loadTenantsForUser(res.profile)
+        if (isCloudBackend) await applyCloudSession({ user: res.user })
+        else {
+          setUser(res.user)
+          setProfile(res.profile)
+          await loadTenantsForUser(res.profile)
+        }
       }
       return { success: true, user: res.user, profile: res.profile, tenant: res.tenant }
     } catch (err) {
@@ -316,9 +384,12 @@ export const AuthProvider = ({ children }) => {
         businessType
       })
       if (res.user && !res.requiresEmailConfirmation) {
-        setUser(res.user)
-        setProfile(res.profile)
-        await loadTenantsForUser(res.profile)
+        if (isCloudBackend) await applyCloudSession({ user: res.user })
+        else {
+          setUser(res.user)
+          setProfile(res.profile)
+          await loadTenantsForUser(res.profile)
+        }
       }
       return { success: true, user: res.user, profile: res.profile, tenant: res.tenant, requiresEmailConfirmation: Boolean(res.requiresEmailConfirmation) }
     } catch (err) {
@@ -329,6 +400,7 @@ export const AuthProvider = ({ children }) => {
 
   // Fungsi Logout Universal
   const logout = async () => {
+    if (isCloudBackend) { invalidateCloudSession(); clearCloudIdentity() }
     setLoading(true)
     try {
       await api.auth.logout()

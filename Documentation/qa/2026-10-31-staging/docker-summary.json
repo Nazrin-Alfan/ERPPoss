@@ -1,0 +1,32 @@
+{
+  "nodeImage": "node:24-bookworm-slim",
+  "runtimeImage": "nginx:1.28-alpine",
+  "composeSyntax": "PASS",
+  "sandboxImageBuild": "PASS",
+  "productionMissingCloudBuild": "EXPECTED_FAILURE: VITE_SUPABASE_URL wajib diisi untuk backend cloud.",
+  "nginxConfigTest": "PASS",
+  "spaDeepLinkHttp": 200,
+  "demoOwnerDashboard": "PASS",
+  "uncaughtBrowserErrors": 0,
+  "containerHealth": "healthy",
+  "tlsVerification": "enabled; npm proxy CA provided through BuildKit secret only",
+  "publicBrowserBuildArgs": [
+    "VITE_BACKEND_PROVIDER",
+    "VITE_SUPABASE_URL",
+    "VITE_SUPABASE_ANON_KEY",
+    "VITE_ALLOW_LOCAL_SANDBOX"
+  ],
+  "fixes": [
+    "restore required optional native dependencies",
+    "avoid implicit local build",
+    "exclude credential files from Docker context",
+    "replace invalid nginx gzip no-proto token with no-store",
+    "healthcheck localhost bypasses egress proxy only"
+  ],
+  "limits": [
+    "no real Supabase project or OAuth integration tested",
+    "build linter treats ANON_KEY name as sensitive; only public browser key is allowed",
+    "npm ci reported four dependency advisories; lockfile unchanged"
+  ],
+  "publication": "none"
+}

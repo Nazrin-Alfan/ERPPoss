@@ -36,7 +36,16 @@ describe('Cloud owner registration', () => {
   it('does not report success if authenticated signup has no provisioned tenant', async () => {
     mocks.signUp.mockResolvedValue({ data: { user: { id: 'owner' }, session: {} }, error: null })
     mocks.profile.mockResolvedValue({ data: null, error: null })
-    await expect(api.auth.registerOwner(input)).rejects.toThrow(/tenant/i)
+    await expect(api.auth.registerOwner(input)).rejects.toThrow(/profil|tenant/i)
+  })
+
+  it.each([
+    { id: 'other-owner', tenant_id: 'tenant', branch_id: 'branch', role: 'Owner' },
+    { id: 'owner', tenant_id: 'tenant', branch_id: 'branch', role: 'Owner', is_active: false },
+  ])('rejects a mismatched or inactive server profile', async profile => {
+    mocks.signUp.mockResolvedValue({ data: { user: { id: 'owner' }, session: {} }, error: null })
+    mocks.profile.mockResolvedValue({ data: profile, error: null })
+    await expect(api.auth.registerOwner(input)).rejects.toThrow(/profil/i)
   })
 
   it('propagates server-side provisioning failure', async () => {
