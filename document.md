@@ -3653,6 +3653,20 @@
   - Enterprise Security Headers: `x-frame-options: DENY`, `x-content-type-options: nosniff`, `referrer-policy: strict-origin-when-cross-origin` terverifikasi aktif pada header Cloudflare.
   - Vitest Regression Suite: **56 Test Files Passed, 344/344 Tests Passed (100% Green)**.
 
+---
+
+### **Log #100: Pembersihan Total Fitur Demo "Akses Cepat" & Redepoyment Cloudflare Pages**
+- **Waktu Eksekusi**: Minggu, 01 November 2026
+- **Objektif**: Menghapus artefak prototipe "Akses Cepat 4 Akun Role (Demo)" dari halaman login (`src/pages/Login.jsx`) agar form otentikasi bersih, profesional, dan siap produksi enterprise.
+- **Tindakan & Implementasi**:
+  1. Menghapus blok 4 tombol shortcut role demo (`superadmin@relaypos.com`, `owner@relaypos.com`, `admin@relaypos.com`, `kasir@relaypos.com`) dan teks kata sandi default `password123`.
+  2. Memverifikasi pengujian Vitest (56 test files, 344 tests passed, 100% Green).
+  3. Membangun ulang bundle Vite produksi (`dist/`) dengan sanitasi payload aset.
+  4. Menerbitkan deployment terbaru ke Cloudflare Pages (`erpposs`) via Wrangler.
+- **Hasil**:
+  - Halaman login live di `https://erpposs.pages.dev/` kini sepenuhnya bersih (hanya menampilkan form kredensial resmi dan tab registrasi mandiri Owner).
+
+
 
 
 
