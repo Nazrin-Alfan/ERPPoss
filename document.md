@@ -3536,6 +3536,26 @@
   - Vitest Unit Test Suites: **56 Test Files Passed, 344/344 Tests Passed (100% Green)**.
   - Bundler Vite (`npm run build`): **100% Sukses dalam 1.85 detik**.
 
+---
+
+### [2026-10-31] Log #95: Konfigurasi Deployment Produksi Cloudflare Pages & Standardisasi Security Headers
+- **Latar Belakang & Kebutuhan**:
+  - Pengguna memutuskan menggunakan Cloudflare Pages untuk deployment produksi karena pertimbangan bandwidth gratis tanpa batas (*unlimited requests & bandwidth*), latensi edge tercepat di Indonesia, dan proteksi jaringan Cloudflare kelas dunia.
+- **Pembaruan Konfigurasi**:
+  1. **Routing SPA Cloudflare (`public/_redirects`)**:
+     - Memastikan rule `/* /index.html 200` aktif untuk mencegah 404 saat pengguna me-refresh URL di browser klien.
+  2. **Security & Cache Headers Cloudflare (`public/_headers`)**:
+     - Menambahkan konfigurasi native Cloudflare Pages untuk menyematkan HTTP response headers keamanan enterprise:
+       - `X-Content-Type-Options: nosniff`
+       - `X-Frame-Options: DENY`
+       - `X-XSS-Protection: 1; mode=block`
+       - `Referrer-Policy: strict-origin-when-cross-origin`
+     - Mengonfigurasi immutable asset caching pada `/assets/*` (`Cache-Control: public, max-age=31536000, immutable`).
+- **Hasil Pengujian & Verifikasi**:
+  - Vitest Unit Test Suites: **56 Test Files Passed, 344/344 Tests Passed (100% Green)**.
+  - Bundler Vite (`npm run build`): **100% Sukses dalam 1.86 detik**, menghasilkan artefak `dist/_headers` dan `dist/_redirects`.
+
+
 
 
 
