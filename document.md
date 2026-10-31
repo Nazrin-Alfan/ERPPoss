@@ -3666,6 +3666,20 @@
 - **Hasil**:
   - Halaman login live di `https://erpposs.pages.dev/` kini sepenuhnya bersih (hanya menampilkan form kredensial resmi dan tab registrasi mandiri Owner).
 
+---
+
+### **Log #101: Graceful Disablement of Google OAuth & Activation of Supabase Auto-Confirm**
+- **Waktu Eksekusi**: Minggu, 01 November 2026
+- **Objektif**: Menonaktifkan Google OAuth secara anggun tanpa menghapus fungsionalitasnya, memperkuat alur registrasi email mandiri, dan mengaktifkan auto-confirm Supabase Auth.
+- **Tindakan & Implementasi**:
+  1. **Graceful Disablement Google OAuth**: Mengonfigurasi flag `GOOGLE_AUTH_ENABLED = false` di `src/pages/Login.jsx`, memperbarui tombol Google Sign-In menjadi disabled berstatus visual non-aktif dengan tooltip penjelasan dan pencegahan klik.
+  2. **Supabase Auto-Confirm Activation**: Mengaktifkan `mailer_autoconfirm: True` via Supabase Auth Management API agar registrasi pemilik toko dapat langsung aktif dan login instan tanpa kendala SMTP.
+  3. **Penguatan Trigger Tenant**: Memperbarui fungsi PostgreSQL `handle_new_user_profile()` di Supabase Cloud untuk membaca field `tenant_name` dan `nama_toko` secara komprehensif.
+  4. **Kualitas & Deployment**: 56 file test Vitest lolos 100% (344/344 passed), build Vite sukses, dan redeploy live ke Cloudflare Pages (`https://4685dd93.erpposs.pages.dev`).
+- **Hasil**:
+  - Google Sign-In non-aktif dengan aman.
+  - Registrasi mandiri email aktif dan langsung terkonfirmasi otomatis.
+
 
 
 
