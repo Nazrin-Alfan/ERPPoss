@@ -3555,6 +3555,27 @@
   - Vitest Unit Test Suites: **56 Test Files Passed, 344/344 Tests Passed (100% Green)**.
   - Bundler Vite (`npm run build`): **100% Sukses dalam 1.86 detik**, menghasilkan artefak `dist/_headers` dan `dist/_redirects`.
 
+---
+
+### [2026-11-01] Log #96: Integrasi Supabase MCP Server dengan Hermes Agent dan Vault Kredensial Terisolasi
+- **Latar Belakang & Kebutuhan**:
+  - Menghubungkan Hermes Agent secara langsung dengan database Supabase Cloud menggunakan standar Model Context Protocol (MCP) resmi `@supabase/mcp-server-supabase`.
+  - Mengamankan Personal Access Token Supabase ke dalam Security Vault terisolasi (`$LOCALAPPDATA/hermes/.env`) tanpa terekspos ke riwayat Git, transkrip obrolan, atau berkas konfigurasi publik.
+- **Hasil Implementasi & Audit**:
+  1. **Security Vault Kredensial**:
+     - Token Supabase berhasil dienkapsulasi ke dalam store credential Hermes (`.env`) di bawah variabel terisolasi `SUPABASE_ACCESS_TOKEN`.
+     - Konfigurasi `config.yaml` dipetakan menggunakan interpolasi dinamis `${SUPABASE_ACCESS_TOKEN}`.
+  2. **Identifikasi & Resolusi Project Cloud**:
+     - Token berhasil divalidasi langsung ke Supabase Management REST API (`api.supabase.com/v1/projects`).
+     - Project aktif teridentifikasi: `jutidxobdedygmjngmcq` (URL: `https://jutidxobdedygmjngmcq.supabase.co`).
+     - Konfigurasi MCP Hermes disinkronkan langsung ke target project reference `jutidxobdedygmjngmcq`.
+  3. **Verifikasi RPC MCP Protocol**:
+     - Pengujian `hermes mcp test supabase` berhasil 100% dengan status `✓ Connected (4341ms)` dan mendeteksi 22 tools database bawaan (`execute_sql`, `apply_migration`, `list_tables`, `get_publishable_keys`, dsb.).
+     - Uji baca schema database publik (`list_tables`) dan publishable API keys berhasil dieksekusi secara otonom.
+- **Hasil Pengujian**:
+  - Koneksi MCP: **100% Berhasil & Terverifikasi**.
+  - Vitest Unit Test Suites: **56 Test Files Passed, 344/344 Tests Passed (100% Green)**.
+
 
 
 
