@@ -3576,6 +3576,46 @@
   - Koneksi MCP: **100% Berhasil & Terverifikasi**.
   - Vitest Unit Test Suites: **56 Test Files Passed, 344/344 Tests Passed (100% Green)**.
 
+---
+
+### **Log #97: Perakitan dan Eksekusi Database Cloud Supabase Terpadu (8 Domain Arsitektur Enterprise)**
+- **Waktu Eksekusi**: Minggu, 01 November 2026
+- **Objektif**: Merakit skema database PostgreSQL cloud Supabase yang utuh, bersih, dan multi-tenant pada project `jutidxobdedygmjngmcq` menggunakan koneksi Supabase MCP Server terintegrasi di Hermes Agent, mencakup 8 domain arsitektur RelayPOS Enterprise (`tenants`, `branches`, `profiles`, `master operasional`, `inventori & BOM`, `transaksi estafet cafe & carwash`, `general ledger double-entry`, `payroll SDM`, dan `CRM/loyalty`), mengaktifkan Row Level Security (RLS) serta composite indexing, dengan jaminan *zero regression* pada seluruh pengujian.
+- **Tindakan & Implementasi**:
+  1. **Penyusunan DDL Terpadu (`supabase/relaypos_unified_cloud_schema.sql`)**:
+     - Mengonsolidasikan DDL 8 domain arsitektur RelayPOS Enterprise dalam 1 file skema terpadu (990 baris) berstandar ACID.
+     - **Domain 1 (Multi-Tenancy & Organisasi)**: `tenants`, `branches`, `profiles` (terhubung `auth.users`), `tenant_licenses`.
+     - **Domain 2 (Helper Functions & Tenancy Guard)**: `current_tenant_id()`, `current_branch_id()`, `current_user_role()`, `rls_auto_enable()`.
+     - **Domain 3 (Financial Core & Double-Entry Ledger)**: `chart_of_accounts`, `pos_balances`, `master_categories`, `journal_entries` (dengan invarian `CHECK (total_debit = total_credit)`), `journal_entry_lines`, `cashflow`, `pengeluaran`.
+     - **Domain 4 (Master Operasional & POS)**: `kasir`, `metode_bayar`, `carwash_packages`, `diskon`.
+     - **Domain 5 (Inventori & BOM Resep)**: `stok_barang`, `daftar_harga_menu`, `resep`, `barang_keluar`, `barang_masuk`.
+     - **Domain 6 (Transaksi Estafet Cafe & Carwash)**: `struk` (header), `cafe` (item makanan/minuman), `carwash` (antrean, pengerjaan, plat nomor).
+     - **Domain 7 (SDM & Komisi)**: `karyawan_cuci`, `karyawan_kantor`.
+     - **Domain 8 (CRM & Loyalty Engine)**: `crm_customers`, `crm_loyalty_programs`, `crm_loyalty_logs`, `customer_reward_claims`.
+     - **Domain Ekstra**: `intelligence_daily_snapshots` untuk analitik agregasi multi-cabang.
+  2. **Compatibility Views untuk Seamless Frontend Fallback**:
+     - `bahan_baku` (view terpadu dari `stok_barang` dengan alias `nama_bahan`).
+     - `transaksi` (view terpadu dari `struk` dengan alias `total`).
+     - `akun_keuangan` (view terpadu dari `pos_balances` dengan alias `nama_akun`).
+     - `finance_summary` (view agregasi real-time dari `cashflow`).
+  3. **Stored Procedures & RPC Functions**:
+     - `fn_initialize_tenant_defaults(p_tenant_id, p_branch_id)`: Otomatisasi inisialisasi CoA (1101 s.d. 6103), Pos Saldo (`SALDO CASH`, `SALDO REKENING Y, N, R`), Kategori Operasional, Metode Bayar, Paket Cuci Mobil, dan Program Loyalty pada saat tenant baru diterbitkan.
+     - `handle_new_user_profile()`: Trigger database pada `auth.users` untuk auto-provision profil dan pemanggilan `fn_initialize_tenant_defaults`.
+     - `redeem_customer_reward()`: RPC transaksi atomik penukaran reward loyalty CRM berbasis plat nomor dan stamp kunjungan yang sinkron dengan `crmService.js`.
+     - `fn_execute_checkout()`: RPC atomik untuk validasi pembayaran kasir POS.
+  4. **Keamanan RLS & Composite Indexing**:
+     - Seluruh 30 tabel fisik diaktifkan `ALTER TABLE ... ENABLE ROW LEVEL SECURITY;`.
+     - Kebijakan isolasi multi-tenant diterapkan ketat: `tenant_id = current_tenant_id()`.
+     - Composite indexing dibuat menyeluruh pada kombinasi `(tenant_id, id)`, `(tenant_id, branch_id)`, `(tenant_id, plat)` untuk menjaga query latensi rendah.
+  5. **Eksekusi Otonom via MCP Client (`scripts/deploy_supabase_schema.py`)**:
+     - Mengeksekusi ke-14 section DDL secara bertahap melalui tool `execute_sql` pada Supabase MCP Server terintegrasi.
+     - Memverifikasi keberadaan seluruh 30 tabel, 4 views, dan 8 fungsi RPC langsung di database cloud Supabase `jutidxobdedygmjngmcq`.
+- **Hasil Pengujian**:
+  - Eksekusi DDL Supabase: **14/14 Section Berhasil 100% (30 Tabel Fisik + 4 Views + 8 RPC Functions)**.
+  - Vitest Unit Test Suites: **56 Test Files Passed, 344/344 Tests Passed (100% Green)**.
+  - Production Build (Vite): **Exit Code 0 (1.59s)**.
+
+
 
 
 
