@@ -29,31 +29,8 @@ import { useAuth } from '../context/AuthContext'
 import { getTenantFeatures } from '../utils/businessCapabilities'
 import { formatRupiah } from '../utils/helpers'
 
-// Default seed data jika tabel stok_barang masih kosong
-const DEFAULT_GUDANG_DATA = [
-  // 1. GUDANG CAFE (F&B)
-  { id_barang: 'CF-01', id_bahan_baku: 'CF-01', nama_barang: 'Biji Kopi Arabica Gayo', nama_produk: 'Biji Kopi Arabica Gayo', gudang: 'CAFE', kategori: 'Biji Kopi', stok: 4500, satuan: 'Gram', harga_beli: 250, harga_jual: 0, min_stok: 1000 },
-  { id_barang: 'CF-02', id_bahan_baku: 'CF-02', nama_barang: 'Susu UHT Fresh Full Cream', nama_produk: 'Susu UHT Fresh Full Cream', gudang: 'CAFE', kategori: 'Dairy & Milk', stok: 24, satuan: 'Liter', harga_beli: 18500, harga_jual: 0, min_stok: 6 },
-  { id_barang: 'CF-03', id_bahan_baku: 'CF-03', nama_barang: 'Sirup Karamel Monin', nama_produk: 'Sirup Karamel Monin', gudang: 'CAFE', kategori: 'Sirup & Flavour', stok: 3, satuan: 'Botol', harga_beli: 145000, harga_jual: 0, min_stok: 2 },
-  { id_barang: 'CF-04', id_bahan_baku: 'CF-04', nama_barang: 'Paper Cup & Tutup 12oz', nama_produk: 'Paper Cup & Tutup 12oz', gudang: 'CAFE', kategori: 'Kemasan & Packaging', stok: 350, satuan: 'Pcs', harga_beli: 850, harga_jual: 0, min_stok: 100 },
-  { id_barang: 'CF-05', id_bahan_baku: 'CF-05', nama_barang: 'Gula Cair Fruktosa', nama_produk: 'Gula Cair Fruktosa', gudang: 'CAFE', kategori: 'Pemanis', stok: 8, satuan: 'Liter', harga_beli: 22000, harga_jual: 0, min_stok: 3 },
-  { id_barang: 'CF-06', id_bahan_baku: 'CF-06', nama_barang: 'Biji Kopi Robusta Lampung', nama_produk: 'Biji Kopi Robusta Lampung', gudang: 'CAFE', kategori: 'Biji Kopi', stok: 2800, satuan: 'Gram', harga_beli: 160, harga_jual: 0, min_stok: 1000 },
-
-  // 2. GUDANG CARWASH (Chemicals & Consumables)
-  { id_barang: 'CW-01', id_bahan_baku: 'CW-01', nama_barang: 'Shampo Snow Foam Carwash Super', nama_produk: 'Shampo Snow Foam Carwash Super', gudang: 'CARWASH', kategori: 'Chemical Cuci', stok: 120, satuan: 'Liter', harga_beli: 12000, harga_jual: 0, min_stok: 30 },
-  { id_barang: 'CW-02', id_bahan_baku: 'CW-02', nama_barang: 'Semir Ban Silikon Curah (Tire Gel)', nama_produk: 'Semir Ban Silikon Curah (Tire Gel)', gudang: 'CARWASH', kategori: 'Chemical Cuci', stok: 45, satuan: 'Liter', harga_beli: 28000, harga_jual: 0, min_stok: 15 },
-  { id_barang: 'CW-03', id_bahan_baku: 'CW-03', nama_barang: 'Degreaser Mesin & Velg', nama_produk: 'Degreaser Mesin & Velg', gudang: 'CARWASH', kategori: 'Chemical Khusus', stok: 18, satuan: 'Liter', harga_beli: 35000, harga_jual: 0, min_stok: 5 },
-  { id_barang: 'CW-04', id_bahan_baku: 'CW-04', nama_barang: 'Cairan Wax Pengkilap Bodi (Spray On)', nama_produk: 'Cairan Wax Pengkilap Bodi (Spray On)', gudang: 'CARWASH', kategori: 'Finishing & Wax', stok: 12, satuan: 'Liter', harga_beli: 55000, harga_jual: 0, min_stok: 4 },
-  { id_barang: 'CW-05', id_bahan_baku: 'CW-05', nama_barang: 'Kanebo Lap Serap Basah Kru Cuci', nama_produk: 'Kanebo Lap Serap Basah Kru Cuci', gudang: 'CARWASH', kategori: 'Peralatan Operasional', stok: 15, satuan: 'Pcs', harga_beli: 14000, harga_jual: 0, min_stok: 8 },
-
-  // 3. GUDANG MERCHANDISE (Retail Finished Goods)
-  { id_barang: 'MCH-01', id_bahan_baku: 'MCH-01', nama_barang: 'Parfum Mobil Aroma Kopi Bali', nama_produk: 'Parfum Mobil Aroma Kopi Bali', gudang: 'MERCHANDISE', kategori: 'Parfum Mobil', stok: 25, satuan: 'Botol', harga_beli: 18000, harga_jual: 35000, min_stok: 5 },
-  { id_barang: 'MCH-02', id_bahan_baku: 'MCH-02', nama_barang: 'Kain Microfiber Premium 40x40', nama_produk: 'Kain Microfiber Premium 40x40', gudang: 'MERCHANDISE', kategori: 'Lap & Perawatan', stok: 40, satuan: 'Pcs', harga_beli: 12000, harga_jual: 25000, min_stok: 10 },
-  { id_barang: 'MCH-03', id_bahan_baku: 'MCH-03', nama_barang: 'Lap Kanebo Chamois Super Serap', nama_produk: 'Lap Kanebo Chamois Super Serap', gudang: 'MERCHANDISE', kategori: 'Lap & Perawatan', stok: 30, satuan: 'Pcs', harga_beli: 15000, harga_jual: 30000, min_stok: 8 },
-  { id_barang: 'MCH-04', id_bahan_baku: 'MCH-04', nama_barang: 'Semir Ban Spray Glossy 250ml', nama_produk: 'Semir Ban Spray Glossy 250ml', gudang: 'MERCHANDISE', kategori: 'Aksesoris & Detailing', stok: 18, satuan: 'Botol', harga_beli: 22000, harga_jual: 45000, min_stok: 5 },
-  { id_barang: 'MCH-05', id_bahan_baku: 'MCH-05', nama_barang: 'Parfum Gantung Aroma Vanila', nama_produk: 'Parfum Gantung Aroma Vanila', gudang: 'MERCHANDISE', kategori: 'Parfum Mobil', stok: 50, satuan: 'Pcs', harga_beli: 9000, harga_jual: 20000, min_stok: 10 },
-  { id_barang: 'MCH-06', id_bahan_baku: 'MCH-06', nama_barang: 'Gantungan Kunci & Bantal Leher', nama_produk: 'Gantungan Kunci & Bantal Leher', gudang: 'MERCHANDISE', kategori: 'Aksesoris & Detailing', stok: 12, satuan: 'Set', harga_beli: 35000, harga_jual: 65000, min_stok: 3 }
-]
+// Default fallback steril jika tabel stok_barang masih kosong
+const DEFAULT_GUDANG_DATA = []
 
 export default function Gudang() {
   const { profile, activeTenant } = useAuth()

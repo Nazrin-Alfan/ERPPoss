@@ -20,6 +20,7 @@ JB_dev.env.bak
 *.env
 
 # Local backups & Scratch Files
+supabase/.temp/
 scratch_*.js
 backup_*/
 Backup */

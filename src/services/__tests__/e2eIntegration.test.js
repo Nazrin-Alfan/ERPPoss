@@ -30,7 +30,7 @@ describe('Comprehensive End-to-End SaaS ERP System & Data Connection Audit', () 
       const { data: tenant } = await db.from('tenants').select('*').eq('id', DEFAULT_TENANT_ID).single()
       expect(tenant).toBeDefined()
       expect(tenant.id).toBe(DEFAULT_TENANT_ID)
-      expect(tenant.nama).toMatch(/RelayPOS Demo/)
+      expect(tenant.nama).toMatch(/RelayPOS/)
 
       const { data: branches } = await db.from('branches').select('*').eq('tenant_id', DEFAULT_TENANT_ID)
       expect(branches.length).toBeGreaterThan(0)

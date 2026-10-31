@@ -86,12 +86,12 @@ export const INITIAL_SEED_DATA = {
   tenants: [
     {
       id: DEFAULT_TENANT_ID,
-      nama: 'RelayPOS Demo Holding (Carwash + Cafe)',
-      slug: 'relaypos-demo',
-      owner_name: 'Nazrin Alfan (Holding Owner)',
+      nama: 'RelayPOS Holding (Carwash + Cafe)',
+      slug: 'relaypos-holding',
+      owner_name: 'Owner RelayPOS',
       owner_email: 'owner@relaypos.com',
-      telepon: '0812-6688-9900',
-      alamat: 'Jl. Ringroad No. 88, Medan',
+      telepon: '0812-0000-0000',
+      alamat: 'Kantor Pusat RelayPOS',
       business_type: 'HYBRID', // 'HYBRID' | 'CARWASH' | 'CAFE'
       plan: 'ENTERPRISE',
       status: 'ACTIVE',
@@ -99,12 +99,12 @@ export const INITIAL_SEED_DATA = {
     },
     {
       id: 'tenant_demo_cafe',
-      nama: 'Kopi Senja & Bistro (Cafe Only)',
-      slug: 'kopi-senja',
-      owner_name: 'Hendra Gunawan',
-      owner_email: 'hendra.cafe@senja.com',
-      telepon: '0813-7722-1100',
-      alamat: 'Jl. Merak Jingga No. 12, Medan',
+      nama: 'Outlet Kopi & Bistro (Cafe Only)',
+      slug: 'kopi-bistro',
+      owner_name: 'Owner Cafe',
+      owner_email: 'cafe@relaypos.com',
+      telepon: '0813-0000-0000',
+      alamat: 'Cabang Cafe',
       business_type: 'CAFE',
       plan: 'ENTERPRISE',
       status: 'ACTIVE',
@@ -112,12 +112,12 @@ export const INITIAL_SEED_DATA = {
     },
     {
       id: 'tenant_demo_carwash',
-      nama: 'Kilat Auto Detailing (Carwash Only)',
-      slug: 'kilat-carwash',
-      owner_name: 'Bambang Pratama',
-      owner_email: 'bambang@kilatdetailing.com',
-      telepon: '0819-3344-5566',
-      alamat: 'Jl. Setiabudi No. 45, Medan',
+      nama: 'Outlet Auto Detailing (Carwash Only)',
+      slug: 'auto-detailing',
+      owner_name: 'Owner Carwash',
+      owner_email: 'carwash@relaypos.com',
+      telepon: '0819-0000-0000',
+      alamat: 'Cabang Carwash',
       business_type: 'CARWASH',
       plan: 'ENTERPRISE',
       status: 'ACTIVE',
@@ -233,26 +233,7 @@ export const INITIAL_SEED_DATA = {
   journal_entry_lines: [],
 
   // 3. PROCUREMENT & VENDORS
-  suppliers: [
-    {
-      id: 'sup_01',
-      tenant_id: DEFAULT_TENANT_ID,
-      nama: 'CV Berkah Roastery Kopi',
-      kontak: 'Budi Santoso (0811-9876-5432)',
-      kategori: 'Bahan Baku Cafe',
-      alamat: 'Medan',
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: 'sup_02',
-      tenant_id: DEFAULT_TENANT_ID,
-      nama: 'PT Autocare Mega Mandiri',
-      kontak: 'Hendra (0812-7788-9900)',
-      kategori: 'Chemical & Snow Shampoo',
-      alamat: 'Medan',
-      created_at: new Date().toISOString(),
-    },
-  ],
+  suppliers: [],
   purchase_orders: [],
   purchase_order_items: [],
   stock_movements: [],
@@ -310,42 +291,24 @@ export const INITIAL_SEED_DATA = {
     { id: 'kat_ret_chemical', tenant_id: DEFAULT_TENANT_ID, nama_kategori: 'Chemical Retail & Lap', jenis: 'Kategori Retail / Merchandise', tipe_arus: 'PEMASUKAN', account_id: 'acc_4003', boleh_kasir: true, is_active: true },
   ],
   karyawan_cuci: [
-    { id: 1, nama: 'ANGGA', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
-    { id: 2, nama: 'FERRY', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
-    { id: 3, nama: 'RAHMAN', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
-    { id: 4, nama: 'FAISAL', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
-    { id: 5, nama: 'BAGUS', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
-    { id: 6, nama: 'VICKY', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
-    { id: 7, nama: 'NOPAL', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
-    { id: 8, nama: 'EZA', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
+    { id: 1, nama: 'Operator Cuci 1', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
+    { id: 2, nama: 'Operator Cuci 2', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
   ],
   karyawan_kantor: [
-    { id: 'kk_owner', nama: 'Owner Demo', role: 'Owner', email: 'owner@relaypos.com', source: 'staff_registration', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
+    { id: 'kk_owner', nama: 'Owner Toko', role: 'Owner', email: 'owner@relaypos.com', source: 'staff_registration', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
     { id: 'kk_admin', nama: 'Admin Supervisor', role: 'Admin', email: 'admin@relaypos.com', source: 'staff_registration', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
-    { id: 'kk_kasir', nama: 'Kasir Demo', role: 'Kasir', email: 'kasir@relaypos.com', source: 'staff_registration', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
-    { id: 'kk_1', nama: 'INDAH', role: 'Staff Kantor', email: 'indah@relaypos.com', source: 'manual', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
+    { id: 'kk_kasir', nama: 'Kasir Toko', role: 'Kasir', email: 'kasir@relaypos.com', source: 'staff_registration', tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID, created_at: new Date().toISOString() },
   ],
   stok_barang: realSeedData.stok_barang && realSeedData.stok_barang.length > 0 ? realSeedData.stok_barang : [],
   daftar_harga_menu: realSeedData.daftar_harga_menu && realSeedData.daftar_harga_menu.length > 0 ? realSeedData.daftar_harga_menu : [],
   resep: realSeedData.resep && realSeedData.resep.length > 0 ? realSeedData.resep : [],
   diskon: realSeedData.diskon && realSeedData.diskon.length > 0 ? realSeedData.diskon : [],
-  pos_balances: (realSeedData.pos_balances && realSeedData.pos_balances.length > 0 ? realSeedData.pos_balances : [
-    { pos: 'SALDO CASH', balance: 0, label: 'Kas Laci Kasir', tipe: 'CASH', color: 'emerald', keterangan: 'Uang fisik di mesin kasir' },
-    { pos: 'SALDO REKENING Y', balance: 0, label: 'Rekening Operasional Y', tipe: 'BANK', color: 'blue', keterangan: 'Rekening penerimaan utama & QRIS' },
-    { pos: 'SALDO REKENING N', balance: 0, label: 'Rekening Operasional N', tipe: 'BANK', color: 'cyan', keterangan: 'Rekening biaya operasional' },
-    { pos: 'SALDO REKENING R', balance: 0, label: 'Rekening Cadangan R', tipe: 'BANK', color: 'purple', keterangan: 'Rekening cadangan / simpanan' }
-  ]).map(b => ({
-    id: b.id || `acc_${String(b.pos || '').toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
-    pos: b.pos,
-    label: b.label || (b.pos === 'SALDO CASH' ? 'Kas Laci Kasir' : b.pos === 'SALDO REKENING Y' ? 'Rekening Operasional Y' : b.pos === 'SALDO REKENING N' ? 'Rekening Operasional N' : b.pos === 'SALDO REKENING R' ? 'Rekening Cadangan R' : b.pos),
-    tipe: b.tipe || (b.pos === 'SALDO CASH' ? 'CASH' : 'BANK'),
-    balance: typeof b.balance === 'number' ? b.balance : parseFloat(b.balance || 0),
-    keterangan: b.keterangan || (b.pos === 'SALDO CASH' ? 'Uang fisik di kasir' : 'Rekening bank operasional'),
-    color: b.color || (b.pos === 'SALDO CASH' ? 'emerald' : b.pos === 'SALDO REKENING Y' ? 'blue' : b.pos === 'SALDO REKENING N' ? 'cyan' : 'purple'),
-    is_active: b.is_active !== false,
-    tenant_id: b.tenant_id || DEFAULT_TENANT_ID,
-    branch_id: b.branch_id || DEFAULT_BRANCH_ID
-  })),
+  pos_balances: [
+    { id: 'acc_saldo_cash', pos: 'SALDO CASH', label: 'Kas Laci Kasir', tipe: 'CASH', balance: 0, color: 'emerald', keterangan: 'Uang fisik di mesin kasir', is_active: true, tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID },
+    { id: 'acc_saldo_rekening_y', pos: 'SALDO REKENING Y', label: 'Rekening Operasional Y', tipe: 'BANK', balance: 0, color: 'blue', keterangan: 'Rekening penerimaan utama & QRIS', is_active: true, tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID },
+    { id: 'acc_saldo_rekening_n', pos: 'SALDO REKENING N', label: 'Rekening Operasional N', tipe: 'BANK', balance: 0, color: 'cyan', keterangan: 'Rekening biaya operasional', is_active: true, tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID },
+    { id: 'acc_saldo_rekening_r', pos: 'SALDO REKENING R', label: 'Rekening Cadangan R', tipe: 'BANK', balance: 0, color: 'purple', keterangan: 'Rekening cadangan / simpanan', is_active: true, tenant_id: DEFAULT_TENANT_ID, branch_id: DEFAULT_BRANCH_ID }
+  ],
   carwash_packages: DEFAULT_CARWASH_PACKAGES.map((pkg, idx) => ({
     ...pkg,
     sort_order: idx + 1,
@@ -354,41 +317,13 @@ export const INITIAL_SEED_DATA = {
   })),
 
   // 5. TRANSAKSI REAL DARI SUPABASE CLOUD (DEFAULT TENANT ISOLATED)
-  struk: (realSeedData.struk || []).map((s) => ({
-    ...s,
-    tenant_id: s.tenant_id || DEFAULT_TENANT_ID,
-    branch_id: s.branch_id || DEFAULT_BRANCH_ID
-  })),
-  cafe: (realSeedData.cafe || []).map((c) => ({
-    ...c,
-    tenant_id: c.tenant_id || DEFAULT_TENANT_ID,
-    branch_id: c.branch_id || DEFAULT_BRANCH_ID
-  })),
-  carwash: (realSeedData.carwash || []).map((cw) => ({
-    ...cw,
-    tenant_id: cw.tenant_id || DEFAULT_TENANT_ID,
-    branch_id: cw.branch_id || DEFAULT_BRANCH_ID
-  })),
-  pengeluaran: (realSeedData.pengeluaran || []).map((p) => ({
-    ...p,
-    tenant_id: p.tenant_id || DEFAULT_TENANT_ID,
-    branch_id: p.branch_id || DEFAULT_BRANCH_ID
-  })),
-  barang_masuk: (realSeedData.barang_masuk || []).map((bm) => ({
-    ...bm,
-    tenant_id: bm.tenant_id || DEFAULT_TENANT_ID,
-    branch_id: bm.branch_id || DEFAULT_BRANCH_ID
-  })),
-  barang_keluar: (realSeedData.barang_keluar || []).map((bk) => ({
-    ...bk,
-    tenant_id: bk.tenant_id || DEFAULT_TENANT_ID,
-    branch_id: bk.branch_id || DEFAULT_BRANCH_ID
-  })),
-  cashflow: (realSeedData.cashflow || []).map((cf) => ({
-    ...cf,
-    tenant_id: cf.tenant_id || DEFAULT_TENANT_ID,
-    branch_id: cf.branch_id || DEFAULT_BRANCH_ID
-  })),
+  struk: [],
+  cafe: [],
+  carwash: [],
+  pengeluaran: [],
+  barang_masuk: [],
+  barang_keluar: [],
+  cashflow: [],
 
   // 6. PROFILES & USERS (4 ROLE: SUPER_ADMIN, OWNER, ADMIN, KASIR)
   profiles: [
@@ -407,7 +342,7 @@ export const INITIAL_SEED_DATA = {
       id: 'demo-owner-id',
       tenant_id: DEFAULT_TENANT_ID,
       branch_id: DEFAULT_BRANCH_ID,
-      nama: 'Nazrin Alfan (Holding Owner)',
+      nama: 'Owner RelayPOS (Holding)',
       email: 'owner@relaypos.com',
       role: 'Owner',
       password_hash: DEFAULT_DEMO_PASSWORD_HASH,
@@ -462,7 +397,7 @@ export const INITIAL_SEED_DATA = {
       id: '96e0b43e-b470-4394-b46c-242bb6dfeece',
       tenant_id: DEFAULT_TENANT_ID,
       branch_id: DEFAULT_BRANCH_ID,
-      nama: 'nazrinalfansyurihrp',
+      nama: 'Owner RelayPOS (Main)',
       email: 'owner@relaypos.com',
       role: 'Owner',
       password_hash: DEFAULT_DEMO_PASSWORD_HASH,

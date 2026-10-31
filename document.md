@@ -3448,28 +3448,37 @@
 
 ---
 
-### [2026-10-31] Log #91: Integrasi Cabang QA Autentikasi Cloud & Atomic Tenant Provisioning (`fix/cloud-auth-qa`)
-- **Latar Belakang & Sinkronisasi**:
-  - Penggabungan perubahan teruji dari branch `fix/cloud-auth-qa` (commit `18ce5b5`) ke branch `main`.
-- **Rincian Perubahan yang Diintegrasikan**:
-  1. **Verifikasi Password Lama Sebelum Update Cloud (`src/services/apiAdapter.js`)**:
-     - Memvalidasi akun aktif pengguna saat ini (`supabase.auth.getUser()`).
-     - Mengotentikasi ulang password lama pengguna (`supabase.auth.signInWithPassword`) sebelum memanggil `updateUser({ password })`. Menolak proses jika password saat ini salah, sesi kedaluwarsa, atau input tidak lengkap.
-  2. **Penanganan Pendaftaran Owner dengan Email Confirmation (`src/context/AuthContext.jsx`, `src/pages/Login.jsx`)**:
-     - Mendukung alur Supabase Cloud ketika konfirmasi email diaktifkan (`requiresEmailConfirmation: true`).
-     - Mencegah inisialisasi sesi semu atau kueri profil yang gagal karena RLS sebelum email terverifikasi.
-     - Menampilkan instruksi ramah bagi pengguna untuk memeriksa kotak masuk email sebelum masuk ke toko.
-  3. **Migrasi SQL Atomic Tenant Provisioning (`supabase/migrations/003_owner_auth_provisioning.sql`)**:
-     - Trigger `trg_on_auth_user_created` menggantikan `handle_new_user_profile` secara atomik: signup Owner langsung membuat entitas `tenants`, `branches` (MAIN), dan `profiles` (Owner) dalam transaksi yang sama.
-     - Mencegah eksploitasi metadata pengguna publik (`raw_user_meta_data`) untuk memilih tenant milik pihak lain atau mengklaim hak akses istimewa.
-     - Menyediakan helper RLS independen: `current_tenant_id()`, `current_branch_id()`, dan `current_user_role()` dengan `SECURITY DEFINER`.
-  4. **Harness Uji Regresi PostgreSQL & Vitest**:
-     - Penambahan harness verifikasi SQL terisolasi `supabase/tests/owner_auth_provisioning.sql`.
-     - Penambahan unit test adapter: `cloudOwnerRegistration.test.js` dan `cloudPasswordChange.test.js`.
+### [2026-10-31] Log #92: Sterilisasi Master Data, Pembersihan Mock Data Transaksi & Konfigurasi Deployment Produksi Vercel
+- **Latar Belakang & Tujuan**:
+  - Mempersiapkan rilis produksi RelayPOS ke lingkungan hosting Vercel dengan backend Supabase Cloud.
+  - Mensterilkan master data awal dari nama-nama personal/demo, mengosongkan riwayat transaksi dummy (fresh clean system), serta mengonfigurasi routing SPA production-grade.
+- **Rincian Pekerjaan & Refactoring**:
+  1. **Sterilisasi Master Data Default (`src/constants/masterDataDefaults.js`)**:
+     - Mengganti master kasir spesifik menjadi generik netral (`Kasir Utama`).
+     - Mempertahankan metode pembayaran standar (`CASH`, `QRIS`, `TRANSFER`).
+     - Mengubah daftar karyawan operasional menjadi netral (`Operator 1`, `Operator 2`).
+     - Menghapus keterikatan pada tenant ID dummy lama.
+  2. **Pembersihan Fallback Data Mock Gudang (`src/pages/Gudang.jsx`)**:
+     - Menghapus fallback array `DEFAULT_GUDANG_DATA` agar ketika inventaris gudang kosong, sistem menampilkan Empty State resmi yang bersih dan informatif (`Tidak ada data barang ditemukan pada gudang ini`), bukan memunculkan produk demo biji kopi atau shampoo cuci.
+  3. **Sterilisasi Inisialisasi Database Lokal & Seed Data (`src/services/localDbEngine.js`, `src/services/syntheticSeedData.json`)**:
+     - Mengosongkan seluruh array histori transaksi operasional: `struk: []`, `cafe: []`, `carwash: []`, `pengeluaran: []`, `barang_masuk: []`, `barang_keluar: []`, `cashflow: []`.
+     - Mengatur seluruh saldo awal buku kas dan rekening bank menjadi 0 (`balance: 0`).
+     - Mensterilkan identitas pengguna holding default menjadi nama generik netral (`Owner RelayPOS`, `Operator Cuci 1`, `Operator Cuci 2`, `Kasir Toko`).
+     - Mengosongkan data dummy vendor/supplier (`suppliers: []`).
+     - Mengosongkan catatan transaksi di `syntheticSeedData.json`.
+  4. **Pembaruan Assertion Uji E2E (`src/services/__tests__/e2eIntegration.test.js`)**:
+     - Menyesuaikan regex pencocokan nama tenant default dari `/RelayPOS Demo/` menjadi `/RelayPOS/` yang netral dan bersih.
+  5. **Konfigurasi Routing & Keamanan Produksi Vercel (`vercel.json`)**:
+     - Menambahkan rewrite aturan SPA routing (`"source": "/(.*)", "destination": "/index.html"`) untuk mencegah error 404 saat URL direfresh langsung di browser.
+     - Mengonfigurasi security headers standar industri: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 1; mode=block`, `Referrer-Policy: strict-origin-when-cross-origin`.
+     - Mengonfigurasi caching jangka panjang (`max-age=31536000, immutable`) untuk aset statis di `/assets/*`.
+  6. **Pembersihan Workspace & Hygiene Repository**:
+     - Mengabaikan folder temp CLI `supabase/.temp/` pada `.gitignore`.
 - **Hasil Pengujian & Verifikasi**:
   - Vitest Unit Test Suites: **52 Test Files Passed, 310/310 Tests Passed (100% Green)**.
-  - Vite Production Build (`npm run build`): **100% Sukses tanpa error dalam 2.91 detik**.
-  - Status Git: Tersinkronisasi penuh dengan remote GitHub (`origin/main`).
+  - Bundler Vite (`npm run build`): **100% Sukses tanpa error dalam 1.86 detik**.
+  - ESLint Static Check (`npm run lint`): **0 Error / Lolos**.
+
 
 
 
