@@ -315,12 +315,12 @@ export const AuthProvider = ({ children }) => {
         tenantName,
         businessType
       })
-      if (res.user) {
+      if (res.user && !res.requiresEmailConfirmation) {
         setUser(res.user)
         setProfile(res.profile)
         await loadTenantsForUser(res.profile)
       }
-      return { success: true, user: res.user, profile: res.profile, tenant: res.tenant }
+      return { success: true, user: res.user, profile: res.profile, tenant: res.tenant, requiresEmailConfirmation: Boolean(res.requiresEmailConfirmation) }
     } catch (err) {
       console.error('Owner registration error:', err)
       return { success: false, error: err.message || 'Pendaftaran toko gagal.' }

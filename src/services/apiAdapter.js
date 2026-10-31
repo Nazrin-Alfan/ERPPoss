@@ -42,7 +42,28 @@ export const api = {
       if (typeof supabase.auth.changePassword === 'function') {
         return await supabase.auth.changePassword({ currentPassword, newPassword })
       }
-      // Mode Supabase Cloud standard
+      // Verify the old password against the authenticated account before changing it.
+      // Never accept a caller-supplied email or trust a cached local session here.
+      if (typeof currentPassword !== 'string' || !currentPassword) {
+        throw new Error('Kata sandi saat ini wajib diisi.')
+      }
+      if (typeof newPassword !== 'string' || newPassword.length < 6) {
+        throw new Error('Kata sandi baru minimal 6 karakter.')
+      }
+      const { data: currentData, error: currentError } = await supabase.auth.getUser()
+      if (currentError) throw currentError
+      const currentUser = currentData?.user
+      if (!currentUser?.id || !currentUser.email) {
+        throw new Error('Sesi tidak tersedia. Silakan masuk kembali.')
+      }
+      const { data: verifiedData, error: verificationError } = await supabase.auth.signInWithPassword({
+        email: currentUser.email,
+        password: currentPassword,
+      })
+      if (verificationError) throw verificationError
+      if (verifiedData?.user?.id !== currentUser.id) {
+        throw new Error('Verifikasi kata sandi saat ini gagal.')
+      }
       const { data, error } = await supabase.auth.updateUser({ password: newPassword })
       if (error) throw error
       return { success: true, data }
@@ -100,8 +121,16 @@ export const api = {
           },
         })
         if (error) throw error
+        // Supabase may return a user without a session until email is confirmed.
+        // RLS-protected profiles cannot be read before that confirmation.
+        if (!data?.session) {
+          return { success: true, user: data?.user || null, profile: null, requiresEmailConfirmation: true }
+        }
         const profile = await this.getProfile(data.user?.id)
-        return { success: true, user: data.user, profile }
+        if (!profile?.tenant_id || !profile?.branch_id || profile.role !== 'Owner') {
+          throw new Error('Provisioning tenant belum lengkap. Hubungi administrator sebelum masuk ke toko.')
+        }
+        return { success: true, user: data.user, profile, requiresEmailConfirmation: false }
       }
 
       // Alur registrasi Local Sandbox Engine

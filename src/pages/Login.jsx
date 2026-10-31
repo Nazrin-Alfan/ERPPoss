@@ -93,6 +93,9 @@ const Login = () => {
     if (!res.success) {
       setError(res.error || 'Pendaftaran toko gagal. Silakan coba lagi.')
       setLoading(false)
+    } else if (res.requiresEmailConfirmation) {
+      setSuccessMsg('Periksa email Anda untuk konfirmasi pendaftaran, lalu masuk ke toko.')
+      setLoading(false)
     } else {
       setSuccessMsg('Toko Anda berhasil dibuat! Mengalihkan ke dashboard toko...')
       setTimeout(() => {
@@ -173,7 +176,7 @@ const Login = () => {
 
         {/* Error Alert */}
         {error && (
-          <div className="mb-5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs sm:text-sm flex items-start gap-2.5">
+          <div role="alert" className="mb-5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs sm:text-sm flex items-start gap-2.5">
             <AlertCircle size={16} className="shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
@@ -181,7 +184,7 @@ const Login = () => {
 
         {/* Success Alert */}
         {successMsg && (
-          <div className="mb-5 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs sm:text-sm flex items-start gap-2.5">
+          <div role="status" className="mb-5 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs sm:text-sm flex items-start gap-2.5">
             <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
             <span>{successMsg}</span>
           </div>
