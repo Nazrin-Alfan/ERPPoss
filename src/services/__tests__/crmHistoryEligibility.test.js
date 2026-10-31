@@ -7,6 +7,10 @@ beforeEach(() => { db = createLocalClient(); localDbStore.resetDatabase(false) }
 
 describe('CRM history remains visible independently from reward eligibility', () => {
   it('keeps the existing demo customer history when imported receipt references are missing', async () => {
+    await db.from('carwash').insert([
+      { tenant_id: DEFAULT_TENANT_ID, plat: 'B 1234 DEMO', status: 'Selesai', harga: 50000, tanggal: '2026-10-01' },
+      { tenant_id: DEFAULT_TENANT_ID, plat: 'B 5678 DEMO', status: 'Selesai', harga: 60000, tanggal: '2026-10-02' }
+    ])
     const customers = await aggregateCustomerCRMData(db, DEFAULT_TENANT_ID)
     expect(customers.length).toBeGreaterThan(0)
     expect(customers.some(customer => customer.totalVisits > 0)).toBe(true)

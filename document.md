@@ -3507,6 +3507,36 @@
   - Vitest Unit Test Suites: **52 Test Files Passed, 310/310 Tests Passed (100% Green)**.
   - Bundler Vite (`npm run build`): **100% Sukses dalam 1.81 detik**.
 
+---
+
+### [2026-10-31] Log #94: Integrasi Penguatan Keamanan QA (Anti Formula Injection CSV, Guard Loyalty Reward, & Koreksi Tanggal Payroll)
+- **Latar Belakang & Sinkronisasi**:
+  - Menggabungkan commit penguatan QA (`b196f1c`) dari branch `fix/cloud-auth-qa` ke branch `main`.
+  - Mengamankan seluruh ekspor CSV dari kerentanan Formula Injection, menerapkan queue & guard ketat pada klaim reward loyalty, memperbaiki kalkulasi cut-off periode penggajian tanggal 16–15, serta peningkatan aksesibilitas dialog modal.
+- **Pembaruan Fitur & Logika Sistem**:
+  1. **Keamanan Ekspor CSV (`src/utils/financeHelpers.js`, `Database.jsx`, `CRM.jsx`)**:
+     - Fungsi `generateCSVString` kini secara otomatis mendeteksi dan menetralkan karakter pembuka formula spreadsheet (`=`, `+`, `-`, `@`, `\t`, `
+`, `\n`) dengan prefiks tanda petik `'`.
+     - Standardisasi fungsi `downloadCSV` pada modul Database audit dan CRM pelanggan.
+     - Penambahan unit test harness `src/utils/__tests__/csvSafety.test.js`.
+  2. **Perhitungan Tanggal Periode Gaji Staf Bebas Kalender Overflow (`src/utils/staffHelpers.js`, `Karyawan.jsx`)**:
+     - Memperbaiki bug JavaScript Date `setMonth()` pada tanggal 31 (misal 31 Oktober meluap menjadi 1 Desember) dengan fungsi deterministik `getPayrollPeriod(date)`.
+     - Penambahan unit test `src/utils/__tests__/payrollPeriod.test.js`.
+  3. **Guard Ketat Klaim Reward Loyalty CRM & Kasir POS (`src/services/crmService.js`, `CarwashPOSPage.jsx`, `HybridPOSPage.jsx`)**:
+     - Memastikan klaim reward diverifikasi terhadap transaksi nyata yang berstatus 'Selesai' dan belum pernah diklaim sebelumnya.
+     - Mencegah race condition klaim reward lokal dengan Web Locks / antrean serialisasi (`serializeLocalRedemption`).
+     - Mengharuskan pemanggilan atomic RPC database pada mode Cloud (`redeem_customer_reward`).
+     - Memberikan proteksi kasir POS agar tidak menerapkan diskon reward sebelum transaksi terintegrasi secara atomik.
+     - Penambahan suite test `src/services/__tests__/rewardRedemptionGuard.test.js` dan isolasi test `src/services/__tests__/crmHistoryEligibility.test.js`.
+  4. **Peningkatan Aksesibilitas & Manajemen Fokus Modal**:
+     - Penanganan fokus keyboard dan accessibility trap pada `ChangePasswordModal.jsx` dan `ExpenseDetailModal.jsx`.
+  5. **Dokumentasi Hasil QA Komprehensif (`Documentation/`)**:
+     - Penambahan inventaris rencana use case QA (`06_rencana_use_case_qa.md`), laporan pengujian (`07_hasil_qa_aplikasi.md`), perbaikan temuan (`08_perbaikan_temuan_qa.md`), dan kontrak klaim cloud (`09_kontrak_klaim_reward_cloud.md`).
+- **Hasil Pengujian & Verifikasi Akhir**:
+  - Vitest Unit Test Suites: **56 Test Files Passed, 344/344 Tests Passed (100% Green)**.
+  - Bundler Vite (`npm run build`): **100% Sukses dalam 1.85 detik**.
+
+
 
 
 
