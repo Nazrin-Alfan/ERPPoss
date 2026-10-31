@@ -26,7 +26,7 @@ import {
   Sparkles
 } from 'lucide-react'
 import { formatRupiah } from '../utils/helpers'
-import { syncStaffToKaryawanKantor, getRoleBadgeConfig, calculateCarwashWorkerWage } from '../utils/staffHelpers'
+import { syncStaffToKaryawanKantor, getRoleBadgeConfig, calculateCarwashWorkerWage, getPayrollPeriod } from '../utils/staffHelpers'
 import { getTenantFeatures } from '../utils/businessCapabilities'
 import { ROLES } from '../constants/roles'
 import InteractiveCalendar from '../components/InteractiveCalendar'
@@ -77,26 +77,9 @@ const Karyawan = () => {
   const [newKaryawanKantor, setNewKaryawanKantor] = useState('')
   
   // Wages report states
-  const [wagesStartDate, setWagesStartDate] = useState(() => {
-    const d = new Date()
-    if (d.getDate() >= 16) {
-      d.setDate(16)
-    } else {
-      d.setMonth(d.getMonth() - 1)
-      d.setDate(16)
-    }
-    return d.toLocaleDateString('en-CA')
-  })
-  const [wagesEndDate, setWagesEndDate] = useState(() => {
-    const d = new Date()
-    if (d.getDate() >= 16) {
-      d.setMonth(d.getMonth() + 1)
-      d.setDate(15)
-    } else {
-      d.setDate(15)
-    }
-    return d.toLocaleDateString('en-CA')
-  })
+  const [initialWagesPeriod] = useState(() => getPayrollPeriod())
+  const [wagesStartDate, setWagesStartDate] = useState(initialWagesPeriod.start)
+  const [wagesEndDate, setWagesEndDate] = useState(initialWagesPeriod.end)
   const [showWagesCalendar, setShowWagesCalendar] = useState(false)
   const [selectedWageWorker, setSelectedWageWorker] = useState(null)
   const [selectedJobForCrosscheck, setSelectedJobForCrosscheck] = useState(null)

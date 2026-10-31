@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { KeyRound, Eye, EyeOff, Lock, CheckCircle2, AlertCircle, X, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
@@ -15,6 +15,73 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
   const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
+  const dialogRef = useRef(null)
+  const focusHistoryRef = useRef([])
+  const onCloseRef = useRef(onClose)
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
+  useEffect(() => {
+    if (!isOpen) {
+      // The menu item opening this dialog is removed when its menu closes.
+      // Retain recent focus targets so its connected trigger can receive focus.
+      const rememberFocus = (event) => {
+        const target = event.target
+        if (target instanceof HTMLElement && target !== document.body) {
+          focusHistoryRef.current = [target, ...focusHistoryRef.current.filter(item => item !== target)].slice(0, 10)
+        }
+      }
+      rememberFocus({ target: document.activeElement })
+      document.addEventListener('focusin', rememberFocus)
+      return () => document.removeEventListener('focusin', rememberFocus)
+    }
+
+    const dialog = dialogRef.current
+    if (!dialog) return undefined
+    const returnTargets = [document.activeElement, ...focusHistoryRef.current]
+    const focusableElements = () => [...dialog.querySelectorAll(
+      'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])'
+    )].filter(element => element.getClientRects().length > 0 && element.tabIndex >= 0)
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        event.stopPropagation()
+        onCloseRef.current()
+      } else if (event.key === 'Tab') {
+        const elements = focusableElements()
+        const first = elements[0]
+        const last = elements[elements.length - 1]
+        if (!first) {
+          event.preventDefault()
+          dialog.focus()
+        } else if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+          event.preventDefault()
+          last.focus()
+        } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+          event.preventDefault()
+          first.focus()
+        }
+      }
+    }
+
+    const keepFocusInside = (event) => {
+      if (!dialog.contains(event.target)) (focusableElements()[0] || dialog).focus()
+    }
+
+    const initialTarget = dialog.querySelector('input') || focusableElements()[0] || dialog
+    initialTarget.focus()
+    document.addEventListener('keydown', handleKeyDown, true)
+    document.addEventListener('focusin', keepFocusInside)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true)
+      document.removeEventListener('focusin', keepFocusInside)
+      const returnTarget = returnTargets.find(element => element instanceof HTMLElement && element !== document.body && element.isConnected && !dialog.contains(element))
+      returnTarget?.focus()
+    }
+  }, [isOpen])
 
   if (!isOpen) return null
 
@@ -84,6 +151,8 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
       <div 
+        ref={dialogRef}
+        tabIndex={-1}
         className="relative w-full max-w-md bg-[#121215] border border-[#26272d] rounded-2xl shadow-2xl overflow-hidden animate-pop-in"
         role="dialog"
         aria-modal="true"

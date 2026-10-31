@@ -6,6 +6,23 @@
 import { DEFAULT_TENANT_ID, DEFAULT_BRANCH_ID } from '../constants/erpConfig.js'
 import { ROLES } from '../constants/roles.js'
 
+// Construct calendar boundaries directly: setMonth on the 31st can overflow
+// into the month after the intended cut-off (for example Oct 31 -> Dec 1).
+export function getPayrollPeriod(date = new Date()) {
+  const year = date.getFullYear()
+  const month = date.getMonth()
+  const startsThisMonth = date.getDate() >= 16
+  const formatLocalDate = value => [
+    value.getFullYear(),
+    String(value.getMonth() + 1).padStart(2, '0'),
+    String(value.getDate()).padStart(2, '0'),
+  ].join('-')
+  return {
+    start: formatLocalDate(new Date(year, month - (startsThisMonth ? 0 : 1), 16)),
+    end: formatLocalDate(new Date(year, month + (startsThisMonth ? 1 : 0), 15)),
+  }
+}
+
 export const DEFAULT_COMMISSION_CONFIG = {
   washShareDivisor: 3, // Bagi 3 untuk pencucian dasar
   packageShareDivisor: 2, // Bagi 2 untuk paket tambahan

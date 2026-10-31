@@ -1,0 +1,11 @@
+{
+  "testFiles": 56,
+  "testsPassed": 344,
+  "testsFailed": 0,
+  "build": "PASS",
+  "lintWarnings": 418,
+  "lintErrors": 0,
+  "mockAndSeedChanged": false,
+  "cloudRewardRPC": "NOT IMPLEMENTED; fail closed",
+  "posRewardCheckout": "DISABLED pending atomic transaction"
+}

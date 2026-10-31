@@ -1,0 +1,54 @@
+{
+  "time": "2026-10-31T09:29:08.119Z",
+  "results": [
+    {
+      "ids": [
+        "BILL-01",
+        "BILL-03"
+      ],
+      "name": "Create pending cafe bill, reload then cancel with matching item status",
+      "status": "PASS",
+      "evidence": {
+        "id": "c75caadf-f1df-4888-97a6-5dcb2068544f",
+        "afterReloadFound": true,
+        "cancelled": true
+      },
+      "scope": "tested variation only"
+    },
+    {
+      "ids": [
+        "INV-03"
+      ],
+      "name": "Stock opname sets exact physical inventory quantity",
+      "status": "PASS",
+      "evidence": {
+        "before": {
+          "id_bahan_baku": "BMK-01",
+          "nama_produk": "Ayam",
+          "satuan": "Pcs",
+          "stok": 0,
+          "updated_at": "2026-09-18T08:32:11.393+00:00",
+          "harga_satuan": 0,
+          "moving_average_cost": 0,
+          "minimum_stok": 5,
+          "kategori": "Bahan Baku"
+        },
+        "after": {
+          "id_bahan_baku": "BMK-01",
+          "nama_produk": "Ayam",
+          "satuan": "Pcs",
+          "stok": 7,
+          "updated_at": "2026-10-31T09:29:07.613Z",
+          "harga_satuan": 0,
+          "moving_average_cost": 0,
+          "minimum_stok": 5,
+          "kategori": "Bahan Baku",
+          "stok_akhir": 7
+        },
+        "notePersistenceNotAsserted": true
+      },
+      "scope": "tested variation only"
+    }
+  ],
+  "pageErrors": []
+}

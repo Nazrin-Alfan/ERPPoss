@@ -16,6 +16,7 @@ import {
   Filter
 } from 'lucide-react'
 import { formatRupiah } from '../../utils/helpers'
+import { generateCSVString, downloadCSV } from '../../utils/financeHelpers'
 
 export default function ExpenseDetailModal({
   isOpen,
@@ -149,20 +150,14 @@ export default function ExpenseDetailModal({
     const rows = filteredList.map(item => [
       item.tanggal || '',
       item.divisi || division,
-      `"${(item.kategori || '').replace(/"/g, '""')}"`,
-      `"${(item.keterangan || '').replace(/"/g, '""')}"`,
-      `"${(item.akun || '').replace(/"/g, '""')}"`,
+      item.kategori || '',
+      item.keterangan || '',
+      item.akun || '',
       item.nominal || 0
     ])
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement('a')
-    link.setAttribute('href', encodedUri)
-    link.setAttribute('download', `pengeluaran_${division.toLowerCase()}_${new Date().toISOString().slice(0, 10)}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    const columns = headers.map((label, index) => ({ label, accessor: row => row[index] }))
+    downloadCSV(generateCSVString(columns, rows), `pengeluaran_${division.toLowerCase()}_${new Date().toISOString().slice(0, 10)}.csv`)
   }
 
   return (

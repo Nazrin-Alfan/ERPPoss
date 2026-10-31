@@ -36,7 +36,8 @@ export const CustomerLoyaltyBanner = ({
   onApplyProfile,
   onClaimReward,
   isRewardClaimed = false,
-  claimedRewardTitle = ''
+  claimedRewardTitle = '',
+  rewardCheckoutEnabled = false
 }) => {
   const [customerData, setCustomerData] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -137,7 +138,7 @@ export const CustomerLoyaltyBanner = ({
   }
 
   const handleToggleReward = () => {
-    if (!onClaimReward) return
+    if (!onClaimReward || !rewardCheckoutEnabled) return
     if (isRewardClaimed) {
       onClaimReward({ isClaimed: false, title: '', type: '' })
     } else {
@@ -223,6 +224,8 @@ export const CustomerLoyaltyBanner = ({
           <button
             type="button"
             onClick={handleToggleReward}
+            disabled={!rewardCheckoutEnabled}
+            aria-describedby={!rewardCheckoutEnabled ? "pos-reward-unavailable" : undefined}
             className={`px-3 py-1.5 rounded-lg font-black text-xs transition-all flex items-center gap-1.5 active:scale-[0.98] ${
               isRewardClaimed
                 ? 'bg-[#00ffff] hover:bg-[#00ffff]/90 text-[#0f0f0f] font-bold shadow-sm active:scale-[0.98]'
@@ -242,6 +245,12 @@ export const CustomerLoyaltyBanner = ({
             )}
           </button>
         </div>
+      )}
+
+      {loyalty?.isRewardReady && !rewardCheckoutEnabled && (
+        <p id="pos-reward-unavailable" className="text-xs text-amber-200">
+          Hadiah loyalty belum dapat digunakan pada transaksi kasir. Hubungi pengelola toko.
+        </p>
       )}
 
       {/* Action Strip: 1-Click Auto Fill */}

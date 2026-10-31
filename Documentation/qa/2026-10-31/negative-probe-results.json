@@ -1,0 +1,19 @@
+{
+  "csvFormula": {
+    "catalog": "RES-04",
+    "status": "FAIL",
+    "observed": "Untrusted cell =1+1 is exported as \"=1+1\" without spreadsheet formula neutralization.",
+    "source": "src/utils/financeHelpers.js:296",
+    "scope": "Direct helper output; spreadsheet execution not performed.",
+    "severity": "P2"
+  },
+  "repeatedReward": {
+    "catalog": "CRM-04",
+    "status": "FAIL",
+    "observed": "Two consecutive calls for a new plate with zero qualifying visits both create redemption rows.",
+    "rows": 2,
+    "source": "src/services/crmService.js:510",
+    "scope": "Direct service API on fresh isolated local DB; does not establish hosted DB policy behavior. UI eligibility was not bypass-tested here.",
+    "severity": "P1"
+  }
+}

@@ -19,6 +19,7 @@ import {
   FileText
 } from 'lucide-react'
 import { formatRupiah } from '../utils/helpers'
+import { generateCSVString, downloadCSV } from '../utils/financeHelpers'
 
 export const TABLES_METADATA = {
   carwash: {
@@ -352,11 +353,6 @@ const DatabaseManager = () => {
     fetchTableData()
   }, [selectedTable, selectedMonth, currentPage, sortColumn, sortAscending])
 
-  const colToCsvLabel = (label) => {
-    let str = String(label).replace(/"/g, '""')
-    return `"${str}"`
-  }
-
   // Export Table Data to CSV bypassing pagination
   const handleExportCSV = async () => {
     setLoading(true)
@@ -406,37 +402,10 @@ const DatabaseManager = () => {
         return
       }
 
-      // Convert rows to CSV
-      const headers = meta.columns.map(c => c.name)
-      const headerLabels = meta.columns.map(c => colToCsvLabel(c.label))
-      
-      const csvRows = [headerLabels.join(',')]
-      
-      allRows.forEach(row => {
-        const values = headers.map(header => {
-          let val = row[header]
-          if (val === null || val === undefined) {
-            return '""'
-          }
-          let str = String(val).replace(/"/g, '""')
-          return `"${str}"`
-        })
-        csvRows.push(values.join(','))
-      })
-      
-      const csvContent = '\uFEFF' + csvRows.join('\n') // BOM for Excel UTF-8
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.setAttribute('href', url)
-      
+      const columns = meta.columns.map(column => ({ label: column.label, key: column.name }))
       const fileName = `${selectedTable}_${selectedMonth !== 'Semua' ? selectedMonth : 'all'}.csv`
-      link.setAttribute('download', fileName)
-      link.style.visibility = 'hidden'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      
+      downloadCSV(generateCSVString(columns, allRows), fileName)
+
       setSuccess(`Berhasil mengekspor ${allRows.length} baris data ke file ${fileName}!`)
     } catch (err) {
       console.error('Error exporting CSV:', err)

@@ -1,0 +1,458 @@
+[
+  {
+    "id": "AUTH-02",
+    "name": "Wrong password rejected with accessible error",
+    "status": "PASS",
+    "detail": "Kata sandi salah."
+  },
+  {
+    "id": "AUTH-02",
+    "name": "Unknown account rejected",
+    "status": "PASS",
+    "detail": "Pengguna tidak ditemukan."
+  },
+  {
+    "id": "AUTH-03",
+    "name": "Anonymous protected route redirects",
+    "status": "KNOWN_MOCK",
+    "detail": "Fresh local browser automatically obtains Owner demo session from localDbEngine.loadAuth(); protected route therefore renders demo data. Preserved mock behavior; not proof of cloud anonymous access."
+  },
+  {
+    "id": "AUTH-01",
+    "name": "Login owner",
+    "status": "PASS",
+    "detail": "http://127.0.0.1:5173/dashboard"
+  },
+  {
+    "id": "ACL-01",
+    "name": "owner direct route /dashboard",
+    "status": "PASS",
+    "detail": "/dashboard \u2192 /dashboard"
+  },
+  {
+    "id": "ACL-01",
+    "name": "owner direct route /konsolidasi",
+    "status": "PASS",
+    "detail": "/konsolidasi \u2192 /konsolidasi"
+  },
+  {
+    "id": "ACL-01",
+    "name": "owner direct route /pos",
+    "status": "PASS",
+    "detail": "/pos \u2192 /pos"
+  },
+  {
+    "id": "ACL-01",
+    "name": "owner direct route /queue",
+    "status": "PASS",
+    "detail": "/queue \u2192 /queue"
+  },
+  {
+    "id": "ACL-01",
+    "name": "owner direct route /finance",
+    "status": "PASS",
+    "detail": "/finance \u2192 /finance"
+  },
+  {
+    "id": "ACL-01",
+    "name": "owner direct route /reports",
+    "status": "PASS",
+    "detail": "/reports \u2192 /reports"
+  },
+  {
+    "id": "ACL-01",
+    "name": "owner direct route /crm",
+    "status": "PASS",
+    "detail": "/crm \u2192 /crm"
+  },
+  {
+    "id": "ACL-01",
+    "name": "owner direct route /karyawan",
+    "status": "PASS",
+    "detail": "/karyawan \u2192 /karyawan"
+  },
+  {
+    "id": "ACL-01",
+    "name": "owner direct route /admin",
+    "status": "PASS",
+    "detail": "/admin \u2192 /admin"
+  },
+  {
+    "id": "ACL-01",
+    "name": "owner direct route /founder",
+    "status": "PASS",
+    "detail": "/founder \u2192 /konsolidasi"
+  },
+  {
+    "id": "ACL-01",
+    "name": "owner direct route /gudang",
+    "status": "PASS",
+    "detail": "/gudang \u2192 /gudang"
+  },
+  {
+    "id": "ACL-01",
+    "name": "owner direct route /database",
+    "status": "PASS",
+    "detail": "/database \u2192 /konsolidasi"
+  },
+  {
+    "id": "AUTH-04",
+    "name": "owner session survives reload",
+    "status": "PASS",
+    "detail": "http://127.0.0.1:5173/konsolidasi"
+  },
+  {
+    "id": "AUTH-01",
+    "name": "Login admin",
+    "status": "PASS",
+    "detail": "http://127.0.0.1:5173/pos"
+  },
+  {
+    "id": "ACL-01",
+    "name": "admin direct route /dashboard",
+    "status": "PASS",
+    "detail": "/dashboard \u2192 /pos"
+  },
+  {
+    "id": "ACL-01",
+    "name": "admin direct route /konsolidasi",
+    "status": "PASS",
+    "detail": "/konsolidasi \u2192 /pos"
+  },
+  {
+    "id": "ACL-01",
+    "name": "admin direct route /pos",
+    "status": "PASS",
+    "detail": "/pos \u2192 /pos"
+  },
+  {
+    "id": "ACL-01",
+    "name": "admin direct route /queue",
+    "status": "PASS",
+    "detail": "/queue \u2192 /queue"
+  },
+  {
+    "id": "ACL-01",
+    "name": "admin direct route /finance",
+    "status": "PASS",
+    "detail": "/finance \u2192 /finance"
+  },
+  {
+    "id": "ACL-01",
+    "name": "admin direct route /reports",
+    "status": "PASS",
+    "detail": "/reports \u2192 /pos"
+  },
+  {
+    "id": "ACL-01",
+    "name": "admin direct route /crm",
+    "status": "PASS",
+    "detail": "/crm \u2192 /crm"
+  },
+  {
+    "id": "ACL-01",
+    "name": "admin direct route /karyawan",
+    "status": "PASS",
+    "detail": "/karyawan \u2192 /karyawan"
+  },
+  {
+    "id": "ACL-01",
+    "name": "admin direct route /admin",
+    "status": "PASS",
+    "detail": "/admin \u2192 /pos"
+  },
+  {
+    "id": "ACL-01",
+    "name": "admin direct route /founder",
+    "status": "PASS",
+    "detail": "/founder \u2192 /pos"
+  },
+  {
+    "id": "ACL-01",
+    "name": "admin direct route /gudang",
+    "status": "PASS",
+    "detail": "/gudang \u2192 /gudang"
+  },
+  {
+    "id": "ACL-01",
+    "name": "admin direct route /database",
+    "status": "PASS",
+    "detail": "/database \u2192 /pos"
+  },
+  {
+    "id": "AUTH-04",
+    "name": "admin session survives reload",
+    "status": "PASS",
+    "detail": "http://127.0.0.1:5173/pos"
+  },
+  {
+    "id": "AUTH-01",
+    "name": "Login kasir",
+    "status": "PASS",
+    "detail": "http://127.0.0.1:5173/pos"
+  },
+  {
+    "id": "ACL-01",
+    "name": "kasir direct route /dashboard",
+    "status": "PASS",
+    "detail": "/dashboard \u2192 /pos"
+  },
+  {
+    "id": "ACL-01",
+    "name": "kasir direct route /konsolidasi",
+    "status": "PASS",
+    "detail": "/konsolidasi \u2192 /pos"
+  },
+  {
+    "id": "ACL-01",
+    "name": "kasir direct route /pos",
+    "status": "PASS",
+    "detail": "/pos \u2192 /pos"
+  },
+  {
+    "id": "ACL-01",
+    "name": "kasir direct route /queue",
+    "status": "PASS",
+    "detail": "/queue \u2192 /queue"
+  },
+  {
+    "id": "ACL-01",
+    "name": "kasir direct route /finance",
+    "status": "PASS",
+    "detail": "/finance \u2192 /pos"
+  },
+  {
+    "id": "ACL-01",
+    "name": "kasir direct route /reports",
+    "status": "PASS",
+    "detail": "/reports \u2192 /pos"
+  },
+  {
+    "id": "ACL-01",
+    "name": "kasir direct route /crm",
+    "status": "PASS",
+    "detail": "/crm \u2192 /pos"
+  },
+  {
+    "id": "ACL-01",
+    "name": "kasir direct route /karyawan",
+    "status": "PASS",
+    "detail": "/karyawan \u2192 /pos"
+  },
+  {
+    "id": "ACL-01",
+    "name": "kasir direct route /admin",
+    "status": "PASS",
+    "detail": "/admin \u2192 /pos"
+  },
+  {
+    "id": "ACL-01",
+    "name": "kasir direct route /founder",
+    "status": "PASS",
+    "detail": "/founder \u2192 /pos"
+  },
+  {
+    "id": "ACL-01",
+    "name": "kasir direct route /gudang",
+    "status": "PASS",
+    "detail": "/gudang \u2192 /gudang"
+  },
+  {
+    "id": "ACL-01",
+    "name": "kasir direct route /database",
+    "status": "PASS",
+    "detail": "/database \u2192 /pos"
+  },
+  {
+    "id": "AUTH-04",
+    "name": "kasir session survives reload",
+    "status": "PASS",
+    "detail": "http://127.0.0.1:5173/pos"
+  },
+  {
+    "id": "AUTH-01",
+    "name": "Login superadmin",
+    "status": "PASS",
+    "detail": "http://127.0.0.1:5173/founder"
+  },
+  {
+    "id": "ACL-01",
+    "name": "superadmin direct route /dashboard",
+    "status": "PASS",
+    "detail": "/dashboard \u2192 /dashboard"
+  },
+  {
+    "id": "ACL-01",
+    "name": "superadmin direct route /konsolidasi",
+    "status": "PASS",
+    "detail": "/konsolidasi \u2192 /konsolidasi"
+  },
+  {
+    "id": "ACL-01",
+    "name": "superadmin direct route /pos",
+    "status": "PASS",
+    "detail": "/pos \u2192 /founder"
+  },
+  {
+    "id": "ACL-01",
+    "name": "superadmin direct route /queue",
+    "status": "PASS",
+    "detail": "/queue \u2192 /founder"
+  },
+  {
+    "id": "ACL-01",
+    "name": "superadmin direct route /finance",
+    "status": "PASS",
+    "detail": "/finance \u2192 /founder"
+  },
+  {
+    "id": "ACL-01",
+    "name": "superadmin direct route /reports",
+    "status": "PASS",
+    "detail": "/reports \u2192 /founder"
+  },
+  {
+    "id": "ACL-01",
+    "name": "superadmin direct route /crm",
+    "status": "PASS",
+    "detail": "/crm \u2192 /founder"
+  },
+  {
+    "id": "ACL-01",
+    "name": "superadmin direct route /karyawan",
+    "status": "PASS",
+    "detail": "/karyawan \u2192 /founder"
+  },
+  {
+    "id": "ACL-01",
+    "name": "superadmin direct route /admin",
+    "status": "PASS",
+    "detail": "/admin \u2192 /admin"
+  },
+  {
+    "id": "ACL-01",
+    "name": "superadmin direct route /founder",
+    "status": "PASS",
+    "detail": "/founder \u2192 /founder"
+  },
+  {
+    "id": "ACL-01",
+    "name": "superadmin direct route /gudang",
+    "status": "PASS",
+    "detail": "/gudang \u2192 /founder"
+  },
+  {
+    "id": "ACL-01",
+    "name": "superadmin direct route /database",
+    "status": "PASS",
+    "detail": "/database \u2192 /database"
+  },
+  {
+    "id": "AUTH-04",
+    "name": "superadmin session survives reload",
+    "status": "PASS",
+    "detail": "http://127.0.0.1:5173/database"
+  },
+  {
+    "id": "ONB-01",
+    "name": "Local owner registration CAFE",
+    "status": "PASS",
+    "detail": "http://127.0.0.1:5173/dashboard"
+  },
+  {
+    "id": "ACL-06",
+    "name": "CAFE feature gate /queue",
+    "status": "PASS",
+    "detail": "/queue \u2192 /pos"
+  },
+  {
+    "id": "ACL-06",
+    "name": "CAFE feature gate /crm",
+    "status": "PASS",
+    "detail": "/crm \u2192 /pos"
+  },
+  {
+    "id": "RPT-01",
+    "name": "CAFE dashboard renders without uncaught errors",
+    "status": "PASS",
+    "detail": "R\nRELAYPOS\n\nQA STORE CAFE\n\nPortal Holding HQ\n\nKONSOLIDASI MULTI-OUTLET\n\nQA CAFE\nOWNER\nOUTLET AKTIF\n\nQA Store CAFE\n\nUTAMA\nDashboard\nOPERASIONAL KASIR\nKasir POS\nKEUANGAN & AKUNTANSI\nBuku Kas Keuangan\nLaporan Akuntansi\nLOGISTIK & SDM\nMulti-Gudang & Stok"
+  },
+  {
+    "id": "ONB-01",
+    "name": "Local owner registration CARWASH",
+    "status": "PASS",
+    "detail": "http://127.0.0.1:5173/dashboard"
+  },
+  {
+    "id": "ACL-06",
+    "name": "CARWASH feature gate /queue",
+    "status": "PASS",
+    "detail": "/queue \u2192 /queue"
+  },
+  {
+    "id": "ACL-06",
+    "name": "CARWASH feature gate /crm",
+    "status": "PASS",
+    "detail": "/crm \u2192 /crm"
+  },
+  {
+    "id": "RPT-01",
+    "name": "CARWASH dashboard renders without uncaught errors",
+    "status": "PASS",
+    "detail": "R\nRELAYPOS\n\nQA STORE CARWASH\n\nPortal Holding HQ\n\nKONSOLIDASI MULTI-OUTLET\n\nQA CARWASH\nOWNER\nOUTLET AKTIF\n\nQA Store CARWASH\n\nUTAMA\nDashboard\nOPERASIONAL KASIR\nKasir POS\nAntrean Carwash\nPelanggan & CRM\nKEUANGAN & AKUNTANSI\nBuku Kas Keuangan\nLaporan Aku"
+  },
+  {
+    "id": "ONB-01",
+    "name": "Local owner registration HYBRID",
+    "status": "PASS",
+    "detail": "http://127.0.0.1:5173/dashboard"
+  },
+  {
+    "id": "ACL-06",
+    "name": "HYBRID feature gate /queue",
+    "status": "PASS",
+    "detail": "/queue \u2192 /queue"
+  },
+  {
+    "id": "ACL-06",
+    "name": "HYBRID feature gate /crm",
+    "status": "PASS",
+    "detail": "/crm \u2192 /crm"
+  },
+  {
+    "id": "RPT-01",
+    "name": "HYBRID dashboard renders without uncaught errors",
+    "status": "PASS",
+    "detail": "R\nRELAYPOS\n\nQA STORE HYBRID\n\nPortal Holding HQ\n\nKONSOLIDASI MULTI-OUTLET\n\nQA HYBRID\nOWNER\nOUTLET AKTIF\n\nQA Store HYBRID\n\nUTAMA\nDashboard\nOPERASIONAL KASIR\nKasir POS\nAntrean Carwash\nPelanggan & CRM\nKEUANGAN & AKUNTANSI\nBuku Kas Keuangan\nLaporan Akunta"
+  },
+  {
+    "id": "UX-01",
+    "name": "Owner dashboard viewport 390",
+    "status": "PASS",
+    "detail": {
+      "viewport": 390,
+      "bodyWidth": 390,
+      "horizontalOverflow": false
+    }
+  },
+  {
+    "id": "UX-01",
+    "name": "Owner dashboard viewport 768",
+    "status": "PASS",
+    "detail": {
+      "viewport": 768,
+      "bodyWidth": 768,
+      "horizontalOverflow": false
+    }
+  },
+  {
+    "id": "UX-01",
+    "name": "Owner dashboard viewport 1440",
+    "status": "PASS",
+    "detail": {
+      "viewport": 1440,
+      "bodyWidth": 1440,
+      "horizontalOverflow": false
+    }
+  }
+]
