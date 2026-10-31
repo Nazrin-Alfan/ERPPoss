@@ -127,38 +127,61 @@ const SuperAdmin = () => {
 
     try {
       setLoading(true)
-      const payload = createCleanTenantPayload(tenantForm)
+      let res = null
+      let usedRpc = false
 
-      // 1. Simpan Tenant
-      const { error: tErr } = await supabase.from('tenants').insert(payload.tenant)
-      if (tErr) throw tErr
+      if (typeof supabase.rpc === 'function') {
+        const rpcResult = await supabase.rpc('fn_founder_create_tenant', {
+          p_store_name: tenantForm.storeName.trim(),
+          p_owner_name: tenantForm.ownerName?.trim() || `Owner ${tenantForm.storeName.trim()}`,
+          p_owner_email: tenantForm.ownerEmail.trim(),
+          p_owner_password: 'password123',
+          p_telepon: tenantForm.telepon?.trim() || '-',
+          p_alamat: tenantForm.alamat?.trim() || '-',
+          p_business_type: 'HYBRID',
+          p_plan: tenantForm.tier === 'PRO_ANNUAL' ? 'pro' : tenantForm.tier === 'ENTERPRISE' ? 'enterprise' : 'basic',
+          p_license_months: Number(tenantForm.durationMonths) || 12
+        })
 
-      // 2. Simpan Cabang Utama
-      await supabase.from('branches').insert(payload.branch)
-
-      // 3. Simpan Profil Owner
-      await supabase.from('profiles').insert(payload.ownerProfile)
-
-      // 4. Simpan Lisensi Awal
-      await supabase.from('tenant_licenses').insert(payload.license)
-
-      // 5. Simpan Akun Likuiditas Awal
-      for (const bal of payload.initialBalances) {
-        await supabase.from('pos_balances').insert(bal)
+        if (!rpcResult.error && rpcResult.data?.success) {
+          res = rpcResult.data
+          usedRpc = true
+        } else if (rpcResult.error) {
+          console.warn('RPC fn_founder_create_tenant error in SuperAdmin:', rpcResult.error)
+        }
       }
 
-      // 6. Simpan Paket Cuci Master Awal
-      for (const pkg of payload.initialPackages) {
-        await supabase.from('carwash_packages').insert(pkg)
+      if (!usedRpc) {
+        const payload = createCleanTenantPayload(tenantForm)
+        const { error: tErr } = await supabase.from('tenants').insert(payload.tenant)
+        if (tErr) throw tErr
+        await supabase.from('branches').insert(payload.branch)
+        await supabase.from('profiles').insert(payload.ownerProfile)
+        await supabase.from('tenant_licenses').insert(payload.license)
+        for (const bal of payload.initialBalances) {
+          await supabase.from('pos_balances').insert(bal)
+        }
+        for (const pkg of payload.initialPackages) {
+          await supabase.from('carwash_packages').insert(pkg)
+        }
+
+        res = {
+          tenant_id: payload.tenant.id,
+          nama: payload.tenant.nama,
+          owner_email: payload.ownerProfile.email,
+          license_key: payload.license.license_key,
+          valid_until: payload.license.expires_at,
+          telepon: tenantForm.telepon
+        }
       }
 
       setGeneratedKeyResult({
-        storeName: payload.tenant.nama,
-        tenantId: payload.tenant.id,
-        ownerEmail: payload.ownerProfile.email,
-        licenseKey: payload.license.license_key,
-        expiresAt: payload.license.expires_at,
-        telepon: tenantForm.telepon
+        storeName: res.nama,
+        tenantId: res.tenant_id,
+        ownerEmail: res.owner_email,
+        licenseKey: res.license_key,
+        expiresAt: res.valid_until,
+        telepon: res.telepon
       })
 
       setShowAddModal(false)
@@ -172,7 +195,7 @@ const SuperAdmin = () => {
         durationMonths: 12
       })
 
-      setSuccess(`Tenant "${payload.tenant.nama}" berhasil dibuat dengan status bersih!`)
+      setSuccess(`Tenant "${res.nama}" berhasil dibuat dengan status bersih dan tersimpan di database cloud!`)
       await loadData()
     } catch (err) {
       console.error('Error creating clean tenant:', err)

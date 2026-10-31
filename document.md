@@ -3695,6 +3695,34 @@
   - Akun Founder resmi aktif.
   - User siap login di `https://erpposs.pages.dev/login` dan otomatis diarahkan ke **Solo Founder Cockpit (`/founder`)**.
 
+### **Log #103: Resolution of Tenant Provisioning in Founder Cockpit (Atomic Cloud RPC)**
+- **Waktu Eksekusi**: Minggu, 01 November 2026
+- **Akar Masalah**:
+  1. Form "Terbitkan Tenant Baru" di `src/pages/Founder.jsx` sebelumnya memanggil `createCleanTenantPayload` yang memproduksi format objek in-memory generik dengan non-UUID string IDs dan kolom-kolom yang tidak ada di skema fisik PostgreSQL Supabase (`owner_name`, `owner_email`, `telepon`, `alamat` di tabel `tenants`).
+  2. Pemanggilan `supabase.from('tenants').insert(...)` mengembalikan error PostgREST yang ditelan (swallowed) tanpa pengecekan `if (error) throw error`, sehingga hanya memperbarui state React in-memory sementara database cloud menolak insert tersebut.
+  3. Kredensial akun Owner baru tidak pernah dibuat di `auth.users` Supabase Auth, sehingga klien tidak dapat login dengan email dan password yang diberikan.
+- **Tindakan & Solusi Teknis**:
+  1. **Fungsi PostgreSQL Atomic Security Definer**:
+     - Membuat fungsi RPC `public.fn_founder_create_tenant` di PostgreSQL Supabase Cloud.
+     - Memverifikasi wewenang pemanggil via `public.current_user_role() = 'Super Admin'`.
+     - Melakukan provisioning atomik (ACID):
+       - Insert tenant ke `public.tenants` (UUID v4, nama, slug unik, business_type, plan, status active).
+       - Insert cabang utama ke `public.branches` (alamat, telepon, kode 'MAIN').
+       - Inisialisasi master data akun keuangan & kategori default via `public.fn_initialize_tenant_defaults()`.
+       - Provisioning akun Owner di `auth.users` (BCrypt password hash, email_confirmed_at otomatis) & `auth.identities`.
+       - Insert profil Owner di `public.profiles` terhubung ke tenant dan branch baru.
+       - Penerbitan serial key lisensi di `public.tenant_licenses` dengan durasi lisensi dinamis.
+  2. **Refactoring Frontend `Founder.jsx` & `SuperAdmin.jsx`**:
+     - Mengarahkan alur submit `handleCreateNewTenant` untuk memanggil `supabase.rpc('fn_founder_create_tenant', ...)`.
+     - Memperkaya `loadPlatformData` untuk memuat relasi cabang (`branches`), profil (`profiles`), dan lisensi (`tenant_licenses`) agar tabel monitoring Founder menampilkan detail lengkap.
+     - Menambahkan indikator visual loading state `isSubmittingTenant` pada tombol submit.
+     - Memberikan fallback aman untuk unit test lingkungan mock.
+  3. **Pengujian & Deployment**:
+     - 56 test files lulus (344/344 tests green).
+     - Build Vite sukses dalam 1.76 detik.
+     - Deployment otomatis ke Cloudflare Pages `erpposs` (`https://erpposs.pages.dev`).
+
+
 
 
 

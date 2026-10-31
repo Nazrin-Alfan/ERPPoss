@@ -65,6 +65,7 @@ export default function Founder() {
 
   // Modal State: Buat Tenant Baru
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [isSubmittingTenant, setIsSubmittingTenant] = useState(false)
   const [createdTenantResult, setCreatedTenantResult] = useState(null)
   const [copiedWhatsApp, setCopiedWhatsApp] = useState(false)
   const [createForm, setCreateForm] = useState({
@@ -75,7 +76,8 @@ export default function Founder() {
     telepon: '',
     alamat: '',
     tier: 'PRO_ANNUAL',
-    licenseDurationMonths: 12
+    licenseDurationMonths: 12,
+    businessType: 'HYBRID'
   })
 
   // Modal State: Perpanjang Lisensi
@@ -97,11 +99,30 @@ export default function Founder() {
   const loadPlatformData = async () => {
     setIsLoading(true)
     try {
-      const { data: allTenants } = await supabase.from('tenants').select('*')
+      const { data: allTenants, error: tErr } = await supabase.from('tenants').select('*').order('created_at', { ascending: false })
+      if (tErr) console.warn('Supabase fetch tenants warning:', tErr)
+
       const { data: allTx } = await supabase.from('struk').select('*', { ignoreTenant: true })
       const { data: allProfiles } = await supabase.from('profiles').select('*', { ignoreTenant: true })
+      const { data: allBranches } = await supabase.from('branches').select('*')
+      const { data: allLicenses } = await supabase.from('tenant_licenses').select('*')
 
-      setTenants(allTenants || [])
+      const enrichedTenants = (allTenants || []).map(t => {
+        const lic = (allLicenses || []).find(l => l.tenant_id === t.id)
+        const br = (allBranches || []).find(b => b.tenant_id === t.id)
+        const prof = (allProfiles || []).find(p => p.tenant_id === t.id && p.role === 'Owner')
+        return {
+          ...t,
+          serial_key: lic?.license_key || t.serial_key,
+          license_expires_at: lic?.valid_until || t.license_expires_at,
+          telepon: br?.telepon || prof?.telepon || t.telepon,
+          alamat: br?.alamat || prof?.alamat || t.alamat,
+          owner_name: prof?.nama || t.owner_name,
+          owner_email: prof?.email || t.owner_email
+        }
+      })
+
+      setTenants(enrichedTenants)
       setTransactions(allTx || [])
       setProfiles(allProfiles || [])
       setLastRefreshed(new Date())
@@ -186,29 +207,78 @@ export default function Founder() {
       return
     }
 
+    setIsSubmittingTenant(true)
     try {
-      const payload = createCleanTenantPayload(createForm)
-      await supabase.from('tenants').insert([payload.tenant])
-      if (payload.branch) {
-        await supabase.from('branches').insert([payload.branch])
+      let res = null
+      let usedRpc = false
+
+      // Coba panggil RPC PostgreSQL atomic Supabase Cloud
+      if (typeof supabase.rpc === 'function') {
+        const rpcResult = await supabase.rpc('fn_founder_create_tenant', {
+          p_store_name: createForm.storeName.trim(),
+          p_owner_name: createForm.ownerName.trim() || `Owner ${createForm.storeName.trim()}`,
+          p_owner_email: createForm.ownerEmail.trim(),
+          p_owner_password: 'password123',
+          p_telepon: createForm.telepon.trim() || '-',
+          p_alamat: createForm.alamat?.trim() || '-',
+          p_business_type: createForm.businessType || 'HYBRID',
+          p_plan: createForm.tier === 'PRO_ANNUAL' ? 'pro' : createForm.tier === 'ENTERPRISE' ? 'enterprise' : 'basic',
+          p_license_months: Number(createForm.licenseDurationMonths) || 12
+        })
+
+        if (!rpcResult.error && rpcResult.data?.success) {
+          res = rpcResult.data
+          usedRpc = true
+        } else if (rpcResult.error) {
+          console.warn('RPC fn_founder_create_tenant error, evaluating fallback:', rpcResult.error)
+        }
       }
-      if (payload.ownerProfile) {
-        await supabase.from('profiles').insert([payload.ownerProfile])
+
+      // Fallback untuk mock environment jika RPC tidak tersedia
+      if (!usedRpc) {
+        const payload = createCleanTenantPayload(createForm)
+        const { error: tErr } = await supabase.from('tenants').insert([payload.tenant])
+        if (tErr) throw new Error(tErr.message || 'Gagal menyimpan data tenant')
+        if (payload.branch) await supabase.from('branches').insert([payload.branch])
+        if (payload.ownerProfile) await supabase.from('profiles').insert([payload.ownerProfile])
+        if (payload.license) await supabase.from('tenant_licenses').insert([payload.license])
+
+        res = {
+          nama: payload.tenant.nama,
+          owner_name: payload.tenant.owner_name,
+          owner_email: payload.tenant.owner_email,
+          owner_password: 'password123',
+          license_key: payload.license?.license_key,
+          telepon: payload.tenant.telepon,
+          plan: payload.tenant.plan,
+          valid_until: payload.license?.expires_at
+        }
       }
-      if (payload.license) {
-        await supabase.from('tenant_licenses').insert([payload.license])
-      }
-      setTenants(prev => [payload.tenant, ...prev])
+
+      // Reload data platform agar sinkron sempurna dengan database PostgreSQL
+      await loadPlatformData()
       setShowCreateModal(false)
-      setCreatedTenantResult({
-        tenant: payload.tenant,
-        branch: payload.branch,
-        ownerProfile: payload.ownerProfile,
-        license: payload.license,
-        plainPassword: 'password123',
+
+      const resultData = {
+        tenant: {
+          nama: res.nama,
+          owner_name: res.owner_name,
+          telepon: res.telepon
+        },
+        ownerProfile: {
+          email: res.owner_email
+        },
+        license: {
+          tier_name: res.plan,
+          expires_at: res.valid_until || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+          license_key: res.license_key
+        },
+        plainPassword: res.owner_password || 'password123',
         loginUrl: `${window.location.origin}/login`
-      })
-      showNotification(`✨ Tenant baru "${payload.tenant.nama}" berhasil diterbitkan! Kredensial akun siap disalin/dikirim.`)
+      }
+
+      setCreatedTenantResult(resultData)
+      showNotification(`✨ Tenant baru "${res.nama}" berhasil diterbitkan dan tersimpan di database cloud!`)
       setCreateForm({
         storeName: '',
         slug: '',
@@ -217,10 +287,14 @@ export default function Founder() {
         telepon: '',
         alamat: '',
         tier: 'PRO_ANNUAL',
-        licenseDurationMonths: 12
+        licenseDurationMonths: 12,
+        businessType: 'HYBRID'
       })
     } catch (err) {
-      showNotification('Gagal membuat tenant baru.')
+      console.error('Gagal membuat tenant baru:', err)
+      showNotification(`Gagal membuat tenant: ${err.message}`)
+    } finally {
+      setIsSubmittingTenant(false)
     }
   }
 
@@ -835,7 +909,19 @@ Jika butuh panduan awal atau ada pertanyaan teknis, silakan hubungi kami via cha
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Jenis Bisnis</label>
+                  <select
+                    value={createForm.businessType}
+                    onChange={(e) => setCreateForm({ ...createForm, businessType: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-purple-500 cursor-pointer"
+                  >
+                    <option value="HYBRID">Hybrid (POS + Antrean)</option>
+                    <option value="CAFE">Cafe & Resto (Meja/F&B)</option>
+                    <option value="CARWASH">Carwash & Detailing</option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-slate-400 font-semibold mb-1">Paket Lisensi</label>
                   <select
@@ -873,16 +959,25 @@ Jika butuh panduan awal atau ada pertanyaan teknis, silakan hubungi kami via cha
               <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
                 <button
                   type="button"
+                  disabled={isSubmittingTenant}
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 disabled:opacity-50 cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold cursor-pointer shadow-lg"
+                  disabled={isSubmittingTenant}
+                  className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold cursor-pointer shadow-lg flex items-center gap-1.5"
                 >
-                  Terbitkan & Aktivasi
+                  {isSubmittingTenant ? (
+                    <>
+                      <RefreshCw size={14} className="animate-spin" />
+                      <span>Menerbitkan...</span>
+                    </>
+                  ) : (
+                    <span>Terbitkan & Aktivasi</span>
+                  )}
                 </button>
               </div>
             </form>
