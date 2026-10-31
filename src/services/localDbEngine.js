@@ -86,39 +86,13 @@ export const INITIAL_SEED_DATA = {
   tenants: [
     {
       id: DEFAULT_TENANT_ID,
-      nama: 'RelayPOS Holding (Carwash + Cafe)',
-      slug: 'relaypos-holding',
+      nama: 'RelayPOS Enterprise',
+      slug: 'relaypos-enterprise',
       owner_name: 'Owner RelayPOS',
       owner_email: 'owner@relaypos.com',
       telepon: '0812-0000-0000',
       alamat: 'Kantor Pusat RelayPOS',
       business_type: 'HYBRID', // 'HYBRID' | 'CARWASH' | 'CAFE'
-      plan: 'ENTERPRISE',
-      status: 'ACTIVE',
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: 'tenant_demo_cafe',
-      nama: 'Outlet Kopi & Bistro (Cafe Only)',
-      slug: 'kopi-bistro',
-      owner_name: 'Owner Cafe',
-      owner_email: 'cafe@relaypos.com',
-      telepon: '0813-0000-0000',
-      alamat: 'Cabang Cafe',
-      business_type: 'CAFE',
-      plan: 'ENTERPRISE',
-      status: 'ACTIVE',
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: 'tenant_demo_carwash',
-      nama: 'Outlet Auto Detailing (Carwash Only)',
-      slug: 'auto-detailing',
-      owner_name: 'Owner Carwash',
-      owner_email: 'carwash@relaypos.com',
-      telepon: '0819-0000-0000',
-      alamat: 'Cabang Carwash',
-      business_type: 'CARWASH',
       plan: 'ENTERPRISE',
       status: 'ACTIVE',
       created_at: new Date().toISOString(),
@@ -133,38 +107,10 @@ export const INITIAL_SEED_DATA = {
       tier_name: 'RelayPOS Pro Enterprise (Lisensi Tahunan)',
       status: 'ACTIVE',
       started_at: '2026-01-01T00:00:00.000Z',
-      expires_at: new Date(Date.now() + 65 * 24 * 60 * 60 * 1000).toISOString(), // 65 hari ke depan
+      expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
       max_branches: 3,
       max_devices: 10,
       notes: 'Lisensi Resmi B2B RelayPOS - Paket Tahunan',
-      created_at: new Date().toISOString()
-    },
-    {
-      id: 'lic_demo_cafe',
-      tenant_id: 'tenant_demo_cafe',
-      license_key: 'RLPOS-CAFE-2026-CF10-992A',
-      tier: 'PRO_ANNUAL',
-      tier_name: 'RelayPOS Cafe Pro (Lisensi Tahunan)',
-      status: 'ACTIVE',
-      started_at: '2026-01-01T00:00:00.000Z',
-      expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-      max_branches: 1,
-      max_devices: 5,
-      notes: 'Lisensi Demo Cafe Murni',
-      created_at: new Date().toISOString()
-    },
-    {
-      id: 'lic_demo_cw',
-      tenant_id: 'tenant_demo_carwash',
-      license_key: 'RLPOS-WASH-2026-CW20-881C',
-      tier: 'PRO_ANNUAL',
-      tier_name: 'RelayPOS Carwash Pro (Lisensi Tahunan)',
-      status: 'ACTIVE',
-      started_at: '2026-01-01T00:00:00.000Z',
-      expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-      max_branches: 1,
-      max_devices: 5,
-      notes: 'Lisensi Demo Carwash Murni',
       created_at: new Date().toISOString()
     }
   ],
@@ -172,33 +118,13 @@ export const INITIAL_SEED_DATA = {
     {
       id: DEFAULT_BRANCH_ID,
       tenant_id: DEFAULT_TENANT_ID,
-      nama: 'Cabang Utama (Carwash & Cafe)',
+      nama: 'Cabang Utama (Pusat)',
       kode: 'HO-01',
-      alamat: 'Jl. Merdeka No. 88, Medan',
-      telepon: '0812-3456-7890',
+      alamat: 'Kantor Pusat RelayPOS',
+      telepon: '0812-0000-0000',
       is_active: true,
       created_at: new Date().toISOString(),
-    },
-    {
-      id: 'branch_cafe_main',
-      tenant_id: 'tenant_demo_cafe',
-      nama: 'Outlet Kopi Senja Thamrin',
-      kode: 'CF-01',
-      alamat: 'Jl. M.H. Thamrin No. 12, Jakarta Pusat',
-      telepon: '0811-9876-5432',
-      is_active: true,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: 'branch_carwash_main',
-      tenant_id: 'tenant_demo_carwash',
-      nama: 'Kilat Detailing Bay Sudirman',
-      kode: 'CW-01',
-      alamat: 'Jl. Jend. Sudirman Kav. 45, Bandung',
-      telepon: '0813-2233-4455',
-      is_active: true,
-      created_at: new Date().toISOString(),
-    },
+    }
   ],
 
   // 2. FINANCIAL CORE - CHART OF ACCOUNTS (CoA)
@@ -342,30 +268,8 @@ export const INITIAL_SEED_DATA = {
       id: 'demo-owner-id',
       tenant_id: DEFAULT_TENANT_ID,
       branch_id: DEFAULT_BRANCH_ID,
-      nama: 'Owner RelayPOS (Holding)',
+      nama: 'Owner RelayPOS',
       email: 'owner@relaypos.com',
-      role: 'Owner',
-      password_hash: DEFAULT_DEMO_PASSWORD_HASH,
-      salt: DEFAULT_SALT,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: 'usr_cafe_owner',
-      tenant_id: 'tenant_demo_cafe',
-      branch_id: 'branch_tenant_demo_cafe_main',
-      nama: 'Hendra Gunawan (Owner Cafe)',
-      email: 'hendra.cafe@senja.com',
-      role: 'Owner',
-      password_hash: DEFAULT_DEMO_PASSWORD_HASH,
-      salt: DEFAULT_SALT,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: 'usr_cw_owner',
-      tenant_id: 'tenant_demo_carwash',
-      branch_id: 'branch_tenant_demo_carwash_main',
-      nama: 'Bambang Pratama (Owner Carwash)',
-      email: 'bambang@kilatdetailing.com',
       role: 'Owner',
       password_hash: DEFAULT_DEMO_PASSWORD_HASH,
       salt: DEFAULT_SALT,
@@ -386,20 +290,9 @@ export const INITIAL_SEED_DATA = {
       id: 'demo-kasir-id',
       tenant_id: DEFAULT_TENANT_ID,
       branch_id: DEFAULT_BRANCH_ID,
-      nama: 'Kasir Demo',
+      nama: 'Kasir Utama',
       email: 'kasir@relaypos.com',
       role: 'Kasir',
-      password_hash: DEFAULT_DEMO_PASSWORD_HASH,
-      salt: DEFAULT_SALT,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: '96e0b43e-b470-4394-b46c-242bb6dfeece',
-      tenant_id: DEFAULT_TENANT_ID,
-      branch_id: DEFAULT_BRANCH_ID,
-      nama: 'Owner RelayPOS (Main)',
-      email: 'owner@relaypos.com',
-      role: 'Owner',
       password_hash: DEFAULT_DEMO_PASSWORD_HASH,
       salt: DEFAULT_SALT,
       created_at: new Date().toISOString(),
@@ -438,6 +331,20 @@ export class LocalDatabaseStore {
     if (!this.data.journal_entry_lines) this.data.journal_entry_lines = []
     if (!this.data.master_categories || this.data.master_categories.length === 0) {
       this.data.master_categories = JSON.parse(JSON.stringify(INITIAL_SEED_DATA.master_categories || []))
+    }
+
+    // Bersihkan tenant mock jika tersimpan di local storage
+    if (this.data.tenants) {
+      this.data.tenants = this.data.tenants.filter((t) => t.id !== 'tenant_demo_cafe' && t.id !== 'tenant_demo_carwash')
+    }
+    if (this.data.branches) {
+      this.data.branches = this.data.branches.filter((b) => b.tenant_id !== 'tenant_demo_cafe' && b.tenant_id !== 'tenant_demo_carwash')
+    }
+    if (this.data.tenant_licenses) {
+      this.data.tenant_licenses = this.data.tenant_licenses.filter((l) => l.tenant_id !== 'tenant_demo_cafe' && l.tenant_id !== 'tenant_demo_carwash')
+    }
+    if (this.data.profiles) {
+      this.data.profiles = this.data.profiles.filter((p) => p.tenant_id !== 'tenant_demo_cafe' && p.tenant_id !== 'tenant_demo_carwash' && p.id !== '96e0b43e-b470-4394-b46c-242bb6dfeece')
     }
 
     // Auto-migrate & sinkronisasi model bisnis tenant (Cafe / Carwash / Hybrid)
@@ -590,10 +497,10 @@ export class LocalDatabaseStore {
       }
     }
     const defaultUser = {
-      id: '96e0b43e-b470-4394-b46c-242bb6dfeece',
-      email: 'owner@jayabersama.com',
+      id: 'demo-owner-id',
+      email: 'owner@relaypos.com',
       role: 'Owner',
-      user_metadata: { nama: 'nazrinalfansyurihrp', role: 'Owner' },
+      user_metadata: { nama: 'Owner RelayPOS', role: 'Owner' },
     }
     return { user: defaultUser, token: 'mock-local-token' }
   }

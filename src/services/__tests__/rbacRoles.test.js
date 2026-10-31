@@ -24,7 +24,7 @@ describe('3-Tier RBAC Architecture (Owner, Admin, Kasir)', () => {
     expect(admin.nama).toBe('Admin Supervisor')
 
     expect(kasir).toBeDefined()
-    expect(kasir.nama).toBe('Kasir Demo')
+    expect(kasir.nama).toBe('Kasir Utama')
   })
 
   it('2. should authenticate and resolve role correctly via signInWithPassword', async () => {

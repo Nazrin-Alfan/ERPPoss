@@ -175,7 +175,7 @@ export const deleteTenantCompletely = (dbInstance, targetTenantId) => {
   if (targetTenantId === 'tenant_jb_enterprise') {
     return {
       success: false,
-      message: 'Tenant Bawaan Sistem (Demo Utama) dikunci dan tidak dapat dihapus.'
+      message: 'Tenant Utama Sistem (Root Tenant) dikunci dan tidak dapat dihapus.'
     }
   }
 

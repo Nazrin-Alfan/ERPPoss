@@ -276,7 +276,7 @@ const SuperAdmin = () => {
   // Handler Hapus Tenant Permanen (Buka Modal)
   const handleOpenDeleteModal = (tenant) => {
     if (tenant.id === 'tenant_jb_enterprise') {
-      alert('Tenant Demo Utama Sistem (tenant_jb_enterprise) dilindungi dan tidak dapat dihapus.')
+      alert('Tenant Utama Sistem (tenant_jb_enterprise) dilindungi dan tidak dapat dihapus.')
       return
     }
     setTenantToDelete(tenant)
@@ -574,7 +574,7 @@ const SuperAdmin = () => {
                           <button
                             onClick={() => handleOpenPurgeModal(t)}
                             className="p-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 transition-colors"
-                            title="Kosongkan Transaksi Demo (Mulai Operasional Bersih Struk #0001)"
+                            title="Kosongkan Transaksi Toko (Mulai Operasional Bersih Struk #0001)"
                           >
                             <RotateCcw size={13} />
                           </button>
@@ -846,7 +846,7 @@ const SuperAdmin = () => {
                 <RotateCcw size={20} />
               </div>
               <div>
-                <h3 className="text-base font-black text-white uppercase">Kosongkan Transaksi Demo</h3>
+                <h3 className="text-base font-black text-white uppercase">Kosongkan Riwayat Transaksi</h3>
                 <p className="text-[11px] text-cyan-400 font-medium">Mulai operasional toko dari Struk #0001</p>
               </div>
             </div>

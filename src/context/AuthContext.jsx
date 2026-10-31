@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }) => {
       if (role === ROLES.SUPER_ADMIN) {
         // Super admin memiliki akses penuh ke semua tenant
         allowedTenants = tenantList.length > 0 ? tenantList : [
-          { id: DEFAULT_TENANT_ID, nama: 'RelayPOS Demo Outlet', slug: 'relaypos-demo', plan: 'ENTERPRISE', status: 'ACTIVE' }
+          { id: DEFAULT_TENANT_ID, nama: 'RelayPOS Enterprise', slug: 'relaypos-enterprise', plan: 'ENTERPRISE', status: 'ACTIVE' }
         ]
       } else if (role === ROLES.OWNER) {
         // Owner HANYA memiliki akses ke tenant miliknya (berdasarkan tenant_id profil atau owner_email)

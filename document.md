@@ -3479,6 +3479,35 @@
   - Bundler Vite (`npm run build`): **100% Sukses tanpa error dalam 1.86 detik**.
   - ESLint Static Check (`npm run lint`): **0 Error / Lolos**.
 
+---
+
+### [2026-10-31] Log #93: Pembersihan Total Mock Tenants, Demo Seed Data, dan Sanitasi Identitas Sistem
+- **Latar Belakang & Kebutuhan**:
+  Memastikan sistem database lokal, template konfigurasi, dan antarmuka bersih total dari tenant tiruan/mock (`tenant_demo_cafe`, `tenant_demo_carwash`), lisensi demo, cabang tiruan, dan profil pengguna uji coba sebelum memasuki proses deployment produksi.
+- **Pembaruan Arsitektur & Sanitasi Database**:
+  1. **Engine Database Lokal (`src/services/localDbEngine.js`)**:
+     - Menghapus entri `tenant_demo_cafe` ("Outlet Kopi & Bistro (Cafe Only)") dan `tenant_demo_carwash` ("Outlet Auto Detailing (Carwash Only)") dari `INITIAL_SEED_DATA.tenants`.
+     - Menghapus lisensi tiruan `lic_demo_cafe` dan `lic_demo_cw` dari `tenant_licenses`.
+     - Menghapus cabang tiruan `branch_cafe_main` dan `branch_carwash_main` dari `branches`.
+     - Menghapus profil pengguna tiruan `usr_cafe_owner` ("Hendra Gunawan") dan `usr_cw_owner` ("Bambang Pratama"), serta duplikat UUID pengujian lama dari `profiles`.
+     - Mensterilkan profil default kasir dari `Kasir Demo` menjadi `Kasir Utama`.
+     - Menambahkan mekanisme auto-purge di `ensureInitialized()` untuk membersihkan entri mock tenant warisan yang mungkin tersimpan di cache `localStorage` peramban.
+     - Memperbarui fallback `loadAuth()` agar menggunakan profil `Owner RelayPOS` netral dengan email resmi `owner@relaypos.com`.
+  2. **Data Seed Statis (`src/services/syntheticSeedData.json`)**:
+     - Mengosongkan total array `profiles` (`"profiles": []`) agar tidak menyimpan nama profil uji coba/mock.
+  3. **Konfigurasi Tenant Inti (`src/constants/erpConfig.js`)**:
+     - Mengubah `DEFAULT_TENANT_NAME` dari `Jaya Bersama Enterprise` menjadi `RelayPOS Enterprise`.
+  4. **Antarmuka & Pengalaman Pengguna (UI/UX)**:
+     - `src/context/AuthContext.jsx`: Menghapus fallback label "RelayPOS Demo Outlet" menjadi "RelayPOS Enterprise".
+     - `src/pages/Founder.jsx`: Mensterilkan label proteksi arsip dari "Demo Utama" menjadi "Tenant Utama Sistem".
+     - `src/pages/SuperAdmin.jsx`: Mensterilkan proteksi hapus dan modal reset dari "Transaksi Demo" menjadi "Riwayat Transaksi".
+     - `src/pages/Login.jsx`: Mensterilkan label info password bawaan sistem dan placeholder nama toko.
+     - `src/utils/superAdminHelpers.js`: Menyesuaikan pesan proteksi penghapusan tenant root.
+- **Hasil Pengujian & Verifikasi**:
+  - Vitest Unit Test Suites: **52 Test Files Passed, 310/310 Tests Passed (100% Green)**.
+  - Bundler Vite (`npm run build`): **100% Sukses dalam 1.81 detik**.
+
+
 
 
 

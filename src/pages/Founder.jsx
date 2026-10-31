@@ -278,7 +278,7 @@ Jika butuh panduan awal atau ada pertanyaan teknis, silakan hubungi kami via cha
     if (!tenantToArchive) return
 
     if (tenantToArchive.id === 'tenant_jb_enterprise') {
-      showNotification('Tenant Bawaan Sistem (Demo Utama) dikunci dan tidak dapat diarsipkan.')
+      showNotification('Tenant Utama Sistem dikunci dan tidak dapat diarsipkan.')
       setTenantToArchive(null)
       return
     }

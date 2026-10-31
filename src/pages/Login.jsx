@@ -334,7 +334,7 @@ const Login = () => {
                 </button>
               </div>
               <p className="text-[9px] text-slate-500 text-center italic">
-                Password akun demo: <span className="font-mono text-slate-400 font-semibold">password123</span>
+                Password bawaan sistem: <span className="font-mono text-slate-400 font-semibold">password123</span>
               </p>
             </div>
           </>
@@ -368,7 +368,7 @@ const Login = () => {
                 <input
                   id="reg-tenant-name"
                   type="text"
-                  placeholder="AutoClean Carwash & Resto"
+                  placeholder="Contoh: Berkah Auto & Cafe"
                   value={regTenantName}
                   onChange={(e) => setRegTenantName(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm"
