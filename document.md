@@ -3446,6 +3446,32 @@
   - Vitest Unit Test Suites: **50 Test Files Passed, 297/297 Tests Passed (100% Green)**.
   - Vite Production Build (`npm run build`): **100% Sukses tanpa error dalam 1.84 detik**.
 
+---
+
+### [2026-10-31] Log #91: Integrasi Cabang QA Autentikasi Cloud & Atomic Tenant Provisioning (`fix/cloud-auth-qa`)
+- **Latar Belakang & Sinkronisasi**:
+  - Penggabungan perubahan teruji dari branch `fix/cloud-auth-qa` (commit `18ce5b5`) ke branch `main`.
+- **Rincian Perubahan yang Diintegrasikan**:
+  1. **Verifikasi Password Lama Sebelum Update Cloud (`src/services/apiAdapter.js`)**:
+     - Memvalidasi akun aktif pengguna saat ini (`supabase.auth.getUser()`).
+     - Mengotentikasi ulang password lama pengguna (`supabase.auth.signInWithPassword`) sebelum memanggil `updateUser({ password })`. Menolak proses jika password saat ini salah, sesi kedaluwarsa, atau input tidak lengkap.
+  2. **Penanganan Pendaftaran Owner dengan Email Confirmation (`src/context/AuthContext.jsx`, `src/pages/Login.jsx`)**:
+     - Mendukung alur Supabase Cloud ketika konfirmasi email diaktifkan (`requiresEmailConfirmation: true`).
+     - Mencegah inisialisasi sesi semu atau kueri profil yang gagal karena RLS sebelum email terverifikasi.
+     - Menampilkan instruksi ramah bagi pengguna untuk memeriksa kotak masuk email sebelum masuk ke toko.
+  3. **Migrasi SQL Atomic Tenant Provisioning (`supabase/migrations/003_owner_auth_provisioning.sql`)**:
+     - Trigger `trg_on_auth_user_created` menggantikan `handle_new_user_profile` secara atomik: signup Owner langsung membuat entitas `tenants`, `branches` (MAIN), dan `profiles` (Owner) dalam transaksi yang sama.
+     - Mencegah eksploitasi metadata pengguna publik (`raw_user_meta_data`) untuk memilih tenant milik pihak lain atau mengklaim hak akses istimewa.
+     - Menyediakan helper RLS independen: `current_tenant_id()`, `current_branch_id()`, dan `current_user_role()` dengan `SECURITY DEFINER`.
+  4. **Harness Uji Regresi PostgreSQL & Vitest**:
+     - Penambahan harness verifikasi SQL terisolasi `supabase/tests/owner_auth_provisioning.sql`.
+     - Penambahan unit test adapter: `cloudOwnerRegistration.test.js` dan `cloudPasswordChange.test.js`.
+- **Hasil Pengujian & Verifikasi**:
+  - Vitest Unit Test Suites: **52 Test Files Passed, 310/310 Tests Passed (100% Green)**.
+  - Vite Production Build (`npm run build`): **100% Sukses tanpa error dalam 2.91 detik**.
+  - Status Git: Tersinkronisasi penuh dengan remote GitHub (`origin/main`).
+
+
 
 
 
