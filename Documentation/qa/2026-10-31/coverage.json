@@ -1,0 +1,1221 @@
+[
+  {
+    "id": "AUTH-01",
+    "priority": "P0",
+    "use_case": "Login setiap peran dengan kredensial benar",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/rbacRoles.test.js:30",
+    "notes": "signInWithPassword checks role Owner/Admin/Kasir; founderLoginAuth covers founder",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Login owner: PASS",
+      "Login admin: PASS",
+      "Login kasir: PASS",
+      "Login superadmin: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "AUTH-02",
+    "priority": "P0",
+    "use_case": "Login password salah, akun tidak dikenal, dan input kosong",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/rbacRoles.test.js:126",
+    "notes": "invalid password and unknown account rejected; empty UI form not proven",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Wrong password rejected with accessible error: PASS",
+      "Unknown account rejected: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "AUTH-03",
+    "priority": "P0",
+    "use_case": "Logout, refresh, back/forward, dan akses URL terlindungi",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Anonymous protected route redirects: KNOWN_MOCK",
+      "Logout control clears session and blocks route until refresh: PASS",
+      "Refresh after logout local mock behavior: KNOWN_MOCK"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "AUTH-04",
+    "priority": "P1",
+    "use_case": "Pemulihan sesi setelah refresh dan sesi cloud kedaluwarsa",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "owner session survives reload: PASS",
+      "admin session survives reload: PASS",
+      "kasir session survives reload: PASS",
+      "superadmin session survives reload: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "AUTH-05",
+    "priority": "P0",
+    "use_case": "Ganti password: benar, salah, kosong, pendek, dan identitas tidak cocok",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/cloudPasswordChange.test.js:22",
+    "notes": "reauth before update, wrong password, missing/different user, short/empty fields and errors",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "AUTH-06",
+    "priority": "P1",
+    "use_case": "Login kembali setelah perubahan password",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/changePasswordAndUxPolish.test.js:16",
+    "notes": "new password succeeds and old password fails after local change",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "AUTH-07",
+    "priority": "P1",
+    "use_case": "Google mock lokal dan Google cloud",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Google local mock creates simulated owner workspace: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "ONB-01",
+    "priority": "P0",
+    "use_case": "Registrasi Owner baru pada Cafe, Carwash, dan Hybrid",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/rbacRoles.test.js:146",
+    "notes": "new owner isolated workspace; tenantBusinessProfiles checks CAFE no carwash packages",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Local owner registration CAFE: PASS",
+      "Local owner registration CARWASH: PASS",
+      "Local owner registration HYBRID: PASS"
+    ],
+    "sql_evidence": true
+  },
+  {
+    "id": "ONB-02",
+    "priority": "P0",
+    "use_case": "Konfirmasi email cloud diperlukan versus sesi langsung tersedia",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/cloudOwnerRegistration.test.js:17",
+    "notes": "no session skips profile read; session requires tenant/branch/Owner",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "ONB-03",
+    "priority": "P1",
+    "use_case": "Form registrasi: email duplikat, nama kosong, tipe tidak valid, dan password pendek",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Empty registration is rejected by form validity: PASS",
+      "Malformed email rejected by browser validity: PASS",
+      "Short password is rejected visibly: PASS",
+      "Duplicate Owner email rejected without creating tenant: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "ONB-04",
+    "priority": "P0",
+    "use_case": "Kegagalan di tengah provisioning tenant/cabang/profil",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/cloudOwnerRegistration.test.js:43",
+    "notes": "server error propagates; SQL rollback separately tested by parent",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": true
+  },
+  {
+    "id": "ONB-05",
+    "priority": "P0",
+    "use_case": "Metadata registrasi mencoba memilih tenant lain atau Super Admin",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": true
+  },
+  {
+    "id": "ONB-06",
+    "priority": "P1",
+    "use_case": "Wizard onboarding selesai, dibatalkan, dibuka ulang, dan disubmit ganda",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "NOT RUN",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "ONB-07",
+    "priority": "P1",
+    "use_case": "Undangan staf cloud dari backend tepercaya",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": true
+  },
+  {
+    "id": "ACL-01",
+    "priority": "P0",
+    "use_case": "Akses seluruh route per peran melalui menu dan URL langsung",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/rbacRoles.test.js:78",
+    "notes": "helper route-role matrix only, browser/real backend requires separate proof",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "owner direct route /dashboard: PASS",
+      "owner direct route /konsolidasi: PASS",
+      "owner direct route /pos: PASS",
+      "owner direct route /queue: PASS",
+      "owner direct route /finance: PASS",
+      "owner direct route /reports: PASS",
+      "owner direct route /crm: PASS",
+      "owner direct route /karyawan: PASS",
+      "owner direct route /admin: PASS",
+      "owner direct route /founder: PASS",
+      "owner direct route /gudang: PASS",
+      "owner direct route /database: PASS",
+      "admin direct route /dashboard: PASS",
+      "admin direct route /konsolidasi: PASS",
+      "admin direct route /pos: PASS",
+      "admin direct route /queue: PASS",
+      "admin direct route /finance: PASS",
+      "admin direct route /reports: PASS",
+      "admin direct route /crm: PASS",
+      "admin direct route /karyawan: PASS",
+      "admin direct route /admin: PASS",
+      "admin direct route /founder: PASS",
+      "admin direct route /gudang: PASS",
+      "admin direct route /database: PASS",
+      "kasir direct route /dashboard: PASS",
+      "kasir direct route /konsolidasi: PASS",
+      "kasir direct route /pos: PASS",
+      "kasir direct route /queue: PASS",
+      "kasir direct route /finance: PASS",
+      "kasir direct route /reports: PASS",
+      "kasir direct route /crm: PASS",
+      "kasir direct route /karyawan: PASS",
+      "kasir direct route /admin: PASS",
+      "kasir direct route /founder: PASS",
+      "kasir direct route /gudang: PASS",
+      "kasir direct route /database: PASS",
+      "superadmin direct route /dashboard: PASS",
+      "superadmin direct route /konsolidasi: PASS",
+      "superadmin direct route /pos: PASS",
+      "superadmin direct route /queue: PASS",
+      "superadmin direct route /finance: PASS",
+      "superadmin direct route /reports: PASS",
+      "superadmin direct route /crm: PASS",
+      "superadmin direct route /karyawan: PASS",
+      "superadmin direct route /admin: PASS",
+      "superadmin direct route /founder: PASS",
+      "superadmin direct route /gudang: PASS",
+      "superadmin direct route /database: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "ACL-02",
+    "priority": "P0",
+    "use_case": "Baca, ubah, hapus, dan ekspor data tenant lain menggunakan ID yang ditebak",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/multiTenantIsolation.test.js:25",
+    "notes": "cross-tenant transaction reads and mutations isolated local engine",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": true
+  },
+  {
+    "id": "ACL-03",
+    "priority": "P0",
+    "use_case": "Kasir memanipulasi tenant aktif di localStorage atau parameter",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/cashierMultiTenantRouting.test.js:61",
+    "notes": "cashier tenant Alpha/Beta resolution and transaction tenant binding",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Cashier persisted tenant spoof resets to own tenant after reload: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "ACL-04",
+    "priority": "P0",
+    "use_case": "Owner berpindah tenant dan membuka tab berbeda",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Owner switches own outlets across two tabs: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "ACL-05",
+    "priority": "P0",
+    "use_case": "Perubahan role dan profil otorisasi setelah sesi berjalan",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": true
+  },
+  {
+    "id": "ACL-06",
+    "priority": "P1",
+    "use_case": "Pembatasan fitur Cafe/Carwash/Hybrid melalui URL langsung",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/tenantBusinessProfiles.test.js:12",
+    "notes": "business capabilities differ by CAFE/CARWASH/HYBRID; CAFE carwash insert denied",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "CAFE feature gate /queue: PASS",
+      "CAFE feature gate /crm: PASS",
+      "CARWASH feature gate /queue: PASS",
+      "CARWASH feature gate /crm: PASS",
+      "HYBRID feature gate /queue: PASS",
+      "HYBRID feature gate /crm: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "ACL-07",
+    "priority": "P1",
+    "use_case": "Tenant nonaktif, diarsipkan, atau lisensi kedaluwarsa",
+    "unit_coverage": "PARTIAL",
+    "source": "src/utils/__tests__/licenseHelpers.test.js:24",
+    "notes": "grace/expired status calculation only; blocked account routes not proven",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "POS-01",
+    "priority": "P0",
+    "use_case": "Buka kasir dan simpan modal awal",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Opening shift creates one starting-capital record: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "POS-02",
+    "priority": "P1",
+    "use_case": "Pilih menu/paket/merchandise, cari kategori, ubah jumlah dan catatan",
+    "unit_coverage": "PARTIAL",
+    "source": "src/utils/__tests__/cartHelpers.test.js:16",
+    "notes": "add/increment/decrement/remove and item notes",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "POS-03",
+    "priority": "P0",
+    "use_case": "Checkout tunai, non-tunai, uang pas, lebih, dan kurang",
+    "unit_coverage": "PARTIAL",
+    "source": "src/utils/__tests__/helpers.test.js:116",
+    "notes": "cash/QRIS/split allocation; paid-short UI and change calculation not all proven",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Cafe checkout creates receipt once with correct line and total: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "POS-04",
+    "priority": "P0",
+    "use_case": "Checkout gabungan Cafe dan Carwash",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/businessModelEodRecap.test.js:263",
+    "notes": "hybrid receipt splits revenue into cafe and carwash",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "POS-05",
+    "priority": "P0",
+    "use_case": "Diskon nominal/persen, promo, dan kombinasi item",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "NOT RUN",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "POS-06",
+    "priority": "P0",
+    "use_case": "Double-click checkout, retry setelah timeout, dan request gagal",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "NOT RUN",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "POS-07",
+    "priority": "P0",
+    "use_case": "Edit transaksi lunas, void dengan alasan, dan reaktivasi",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/sprint1Features.test.js:62",
+    "notes": "void restores cafe and merchandise stock; edit/reversal browser paths separate",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Void and reactivate newly paid receipt through history: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "POS-08",
+    "priority": "P1",
+    "use_case": "Struk tampil, cetak ulang, kustomisasi, dan printer tidak tersedia",
+    "unit_coverage": "PARTIAL",
+    "source": "src/utils/__tests__/receiptHelpers.test.js:49",
+    "notes": "order/payment receipt fields and ESC/POS byte buffer unit tests; physical printer not covered",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "BILL-01",
+    "priority": "P0",
+    "use_case": "Simpan pending bill dan buka ulang setelah refresh",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Create pending cafe bill, reload then cancel with matching item status: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "BILL-02",
+    "priority": "P0",
+    "use_case": "Lunasi pending bill dengan metode berbeda",
+    "unit_coverage": "PARTIAL",
+    "source": "src/utils/__tests__/cashierDrawer.test.js:57",
+    "notes": "yesterday bill settled today belongs to today cash totals; UI settlement not proven",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "BILL-03",
+    "priority": "P0",
+    "use_case": "Batalkan pending bill dan batalkan pelunasan yang diizinkan",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Create pending cafe bill, reload then cancel with matching item status: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "BILL-04",
+    "priority": "P0",
+    "use_case": "Pengeluaran langsung dari POS",
+    "unit_coverage": "PARTIAL",
+    "source": "src/utils/__tests__/cashierDrawer.test.js:136",
+    "notes": "cash expense deducted from drawer; finance expense payload validates fields",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "BILL-05",
+    "priority": "P0",
+    "use_case": "Tukar uang kasir dan transfer kas/bank",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/tukarUangCash.test.js:34",
+    "notes": "cash exchange creates transfer-classified cashflow, not ordinary income/expense",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "BILL-06",
+    "priority": "P0",
+    "use_case": "Tutup kasir dengan kas sesuai, selisih, dan pending bill",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/businessModelEodRecap.test.js:387",
+    "notes": "void excluded from closing recap; helpers cash/split/expense totals",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "BILL-07",
+    "priority": "P1",
+    "use_case": "Buka shift berikutnya, pergantian kasir, dan transaksi lintas tengah malam",
+    "unit_coverage": "PARTIAL",
+    "source": "src/utils/__tests__/helpers.test.js:55",
+    "notes": "shift name/time mapping; midnight concurrent shift lifecycle not proven",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "CW-01",
+    "priority": "P1",
+    "use_case": "Input plat baru, plat lama, normalisasi plat, dan autofill pelanggan",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/crmService.test.js:410",
+    "notes": "plate lookup accepts plat_nomor from POS",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "CW-02",
+    "priority": "P0",
+    "use_case": "Checkout layanan menjadi antrean yang benar",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/e2eIntegration.test.js:78",
+    "notes": "multi-item POS connects receipt/cafe/carwash relational tables",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "CW-03",
+    "priority": "P0",
+    "use_case": "Pindah antrean ke proses cuci lalu QC/selesai",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/fullFeaturesSimulation.test.js:136",
+    "notes": "queue waiting/washing/finishing/completed lifecycle local engine",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "CW-04",
+    "priority": "P0",
+    "use_case": "Pilih kru, kru kosong, dan pembagian pekerjaan",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/fullFeaturesSimulation.test.js:204",
+    "notes": "solo/duet commission and cash advance; package FLAT/PERCENT in carwashHelpers tests",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "CW-05",
+    "priority": "P1",
+    "use_case": "Edit/void transaksi yang sudah masuk antrean",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "NOT RUN",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "CW-06",
+    "priority": "P1",
+    "use_case": "Filter hari, pencarian plat, antrean kosong, dan pembaruan paralel",
+    "unit_coverage": "PARTIAL",
+    "source": "src/pages/__tests__/CarwashQueueKanban.test.jsx:225",
+    "notes": "static filtering logic only, parallel operator updates not proven",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "CW-07",
+    "priority": "P1",
+    "use_case": "Notifikasi WhatsApp selesai cuci",
+    "unit_coverage": "PARTIAL",
+    "source": "src/pages/__tests__/CarwashQueueKanban.test.jsx:204",
+    "notes": "WhatsApp text composition only, no live send",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "FIN-01",
+    "priority": "P0",
+    "use_case": "Tambah pemasukan dan pengeluaran per akun/divisi",
+    "unit_coverage": "PARTIAL",
+    "source": "src/utils/__tests__/financeHelpers.test.js:19",
+    "notes": "positive amount/required fields and payload validation; local DB journal auto-posting",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Manual cash income persists once with positive amount: PASS",
+      "Manual cash expense persists with correct amount: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "FIN-02",
+    "priority": "P0",
+    "use_case": "Edit/hapus pemasukan atau pengeluaran yang sudah tersimpan",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/generalLedger.test.js:308",
+    "notes": "manual transaction create/update/delete two-way GL sync",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "FIN-03",
+    "priority": "P0",
+    "use_case": "Transfer antar akun dengan akun sama, saldo kurang, atau kegagalan parsial",
+    "unit_coverage": "PARTIAL",
+    "source": "src/pages/__tests__/FinanceModals.test.jsx:130",
+    "notes": "same account/insufficient funds rejected at validator; actual atomic transfer not proven",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "FIN-04",
+    "priority": "P0",
+    "use_case": "Prive Owner dan pembatasan peran",
+    "unit_coverage": "PARTIAL",
+    "source": "src/pages/__tests__/FinanceModals.test.jsx:72",
+    "notes": "prive modal guidance/render only; payment mutation not proven",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "FIN-05",
+    "priority": "P0",
+    "use_case": "Rekonsiliasi omzet, HPP, biaya, laba, dan saldo kas",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/intelligenceEngine.test.js:147",
+    "notes": "financial metrics exclude void/non-OPEX; finance vs non-sales separation in integration",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "FIN-06",
+    "priority": "P0",
+    "use_case": "Jurnal debit/kredit, reversal, dan pembulatan uang",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/generalLedger.test.js:140",
+    "notes": "trial balance and balance sheet equality, MAC precision and journal backfill",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "FIN-07",
+    "priority": "P1",
+    "use_case": "Filter tanggal/divisi/akun, sorting, pencarian, dan ekspor CSV",
+    "unit_coverage": "PARTIAL",
+    "source": "src/utils/__tests__/financeHelpers.test.js:265",
+    "notes": "CSV quotes/BOM; existing static Finance render has filters but full filter export flow untested",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "FIN-08",
+    "priority": "P1",
+    "use_case": "Tanggal akhir bulan/tahun, transaksi mundur, dan rentang kosong",
+    "unit_coverage": "PARTIAL",
+    "source": "src/utils/__tests__/cashierDrawer.test.js:6",
+    "notes": "date normalization basic cases; month-end/retroactive full accounting not proven",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "INV-01",
+    "priority": "P1",
+    "use_case": "Tambah/edit/hapus barang dan pencarian kategori/gudang",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/localDbEngine.test.js:46",
+    "notes": "inventory CRUD local query builder; reference-delete safety not proven",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Add inventory item through UI and retain after refresh: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "INV-02",
+    "priority": "P0",
+    "use_case": "Restock serta biaya pembelian bahan/barang",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/generalLedger.test.js:60",
+    "notes": "goods receipt cash/credit inventory and journal; sprint1 expense-restock linkage",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Restock new item adds exact stock quantity: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "INV-03",
+    "priority": "P0",
+    "use_case": "Stock opname naik/turun dan pembatasan angka tidak valid",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Stock opname sets exact physical inventory quantity: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "INV-04",
+    "priority": "P0",
+    "use_case": "Penjualan menu dengan resep dan pengurangan bahan",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/localDbEngine.test.js:79",
+    "notes": "2 Americano deduct exactly36g and log goods-out36g",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "INV-05",
+    "priority": "P0",
+    "use_case": "Penjualan saat stok habis/kurang dan penjualan paralel",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "NOT RUN",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "INV-06",
+    "priority": "P0",
+    "use_case": "Void/edit nota mengembalikan atau menyesuaikan stok",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/sprint1Features.test.js:62",
+    "notes": "cafe void restore; merchandise checkout/void restore",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "INV-07",
+    "priority": "P1",
+    "use_case": "Resep belum lengkap dan fallback HPP",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "NOT RUN",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "HR-01",
+    "priority": "P1",
+    "use_case": "Tambah/hapus kru cuci serta karyawan kantor",
+    "unit_coverage": "PARTIAL",
+    "source": "src/utils/__tests__/staffHelpers.test.js:5",
+    "notes": "profile to employee sync/dedup only; full employee UI CRUD not covered",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "HR-02",
+    "priority": "P0",
+    "use_case": "Komisi kru berdasarkan layanan dan pembagian kru",
+    "unit_coverage": "PARTIAL",
+    "source": "src/utils/__tests__/carwashHelpers.test.js:9",
+    "notes": "tiered, FLAT, PERCENT and custom commission amounts",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "HR-03",
+    "priority": "P0",
+    "use_case": "Cut-off gaji tanggal 16–15 termasuk bulan pendek dan pergantian tahun",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "FAIL",
+    "browser_assertions": [
+      "Payroll displayed period spans 16th to next 15th only: FAIL"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "HR-04",
+    "priority": "P0",
+    "use_case": "Pembayaran gaji/komisi sebagian atau penuh dan retry",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "NOT RUN",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "HR-05",
+    "priority": "P0",
+    "use_case": "Void transaksi setelah komisi dihitung atau dibayar",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "NOT RUN",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "HR-06",
+    "priority": "P1",
+    "use_case": "Daftar akun staf, role Admin/Kasir, dan pembatasan pengelola",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/rbacRoles.test.js:67",
+    "notes": "profiles populate employee list; trusted cloud invite separately requires DB/Auth",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "CRM-01",
+    "priority": "P1",
+    "use_case": "Cari pelanggan berdasarkan plat/nama/nomor dan buka riwayat",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/crmService.test.js:264",
+    "notes": "customer aggregation, tenant isolation, plate lookup",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Customer plate search narrows visible rows: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "CRM-02",
+    "priority": "P1",
+    "use_case": "Simpan catatan pelanggan dan batalkan perubahan",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/crmService.test.js:328",
+    "notes": "save/update special preference note",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "CRM-03",
+    "priority": "P0",
+    "use_case": "Akumulasi kunjungan/poin setelah lunas dan setelah void",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/crmService.test.js:162",
+    "notes": "loyalty stamp cycle math only; void/reversal behavior not fully covered",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "CRM-04",
+    "priority": "P0",
+    "use_case": "Klaim reward, klaim berulang, dan saldo poin tidak cukup",
+    "unit_coverage": "FAIL",
+    "source": "negative-probes.mjs",
+    "notes": "FAIL: two reward redemptions for new plate without any qualifying visit both accepted",
+    "campaign_status": "FAIL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "CRM-05",
+    "priority": "P1",
+    "use_case": "Ubah pengaturan loyalitas dan kembalikan default",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/crmService.test.js:193",
+    "notes": "tenant settings save/retrieve and custom VIP thresholds; reset/historical policy not proven",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "CRM-06",
+    "priority": "P1",
+    "use_case": "Template retensi, copy pesan, WhatsApp, dan ekspor",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/crmService.test.js:237",
+    "notes": "template variables/spintax and WhatsApp number normalization; live send/export not proven",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "RPT-01",
+    "priority": "P0",
+    "use_case": "Dashboard divisi Cafe/Carwash/Hybrid dan modal detail biaya",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/businessModelEodRecap.test.js:19",
+    "notes": "division revenue/expense recap; ExpenseDetailModal renders safely",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "CAFE dashboard renders without uncaught errors: PASS",
+      "CARWASH dashboard renders without uncaught errors: PASS",
+      "HYBRID dashboard renders without uncaught errors: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "RPT-02",
+    "priority": "P0",
+    "use_case": "Konsolidasi multi-outlet milik Owner",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/tenantOnboardingAndIsolation.test.js:62",
+    "notes": "consolidation filters userTenants; combined metrics simulation has known inputs",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "RPT-03",
+    "priority": "P1",
+    "use_case": "Pindah dari portal holding ke workspace outlet",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Holding outlet card opens correct workspace: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "RPT-04",
+    "priority": "P0",
+    "use_case": "Laporan laba rugi, buku besar, arus kas, dan laporan resmi yang tersedia",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/generalLedger.test.js:171",
+    "notes": "income statement/balance sheet and manual two-way journal sync",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "RPT-05",
+    "priority": "P1",
+    "use_case": "Filter hari/bulan/kustom/semua dan ekspor/cetak",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "NOT RUN",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "RPT-06",
+    "priority": "P1",
+    "use_case": "Asisten analitik/prompt, data kosong, dan data sangat besar",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/intelligenceEngine.test.js:289",
+    "notes": "prompt no PII, JSON output, sector-context specialization",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "ADM-01",
+    "priority": "P1",
+    "use_case": "Kelola menu, kategori, paket cuci, merchandise, dan status aktif",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/carwashMasterIntegration.test.js:32",
+    "notes": "custom FLAT/PERCENT packages created and isolated; full menu CRUD broader",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "ADM-02",
+    "priority": "P1",
+    "use_case": "Kelola metode bayar, akun kas/bank, diskon, dan resep",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/localDbEngine.test.js:141",
+    "notes": "custom liquidity account CRUD and query only; related referential safety not proven",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "ADM-03",
+    "priority": "P0",
+    "use_case": "Kalibrasi saldo, EOD manual, dan pengulangan proses",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "NOT RUN",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "ADM-04",
+    "priority": "P0",
+    "use_case": "Aktivasi lisensi valid/salah/kedaluwarsa dan lisensi tenant lain",
+    "unit_coverage": "PARTIAL",
+    "source": "src/services/__tests__/licenseIntegration.test.js:13",
+    "notes": "license read/update/isolation and active/grace/expired helper outcomes",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "ADM-05",
+    "priority": "P0",
+    "use_case": "Founder membuat tenant dan provisioning kredensial/lisensi",
+    "unit_coverage": "PARTIAL",
+    "source": "src/utils/__tests__/superAdminHelpers.test.js:16",
+    "notes": "clean tenant payload with credentials/license zero transactions; local owner signup",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Founder creates synthetic tenant, branch, owner and license: PASS",
+      "Provisioned Owner can authenticate and sees only own outlet: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "ADM-06",
+    "priority": "P0",
+    "use_case": "Founder arsip dan restore tenant, termasuk pembatalan konfirmasi",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Archive cancellation leaves tenant active: PASS",
+      "Archive and restore retains synthetic owner branch and license: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "ADM-07",
+    "priority": "P0",
+    "use_case": "Founder impersonation dan kembali ke konteks platform",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Founder impersonates newly created tenant: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "ADM-08",
+    "priority": "P1",
+    "use_case": "Perpanjang langganan, lihat Owner, audit aktivitas, dan ekspor snapshot",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "NOT RUN",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "UX-01",
+    "priority": "P1",
+    "use_case": "Seluruh halaman pada ponsel, tablet, dan desktop",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Owner dashboard viewport 390: PASS",
+      "Owner dashboard viewport 768: PASS",
+      "Owner dashboard viewport 1440: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "UX-02",
+    "priority": "P1",
+    "use_case": "Navigasi keyboard, fokus modal, Escape, dan pembaca layar",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "FAIL",
+    "browser_assertions": [
+      "Password dialog focus and Escape behavior: FAIL"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "UX-03",
+    "priority": "P1",
+    "use_case": "State loading, kosong, berhasil, gagal, dan retry",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Founder workflow uncaught page errors: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "UX-04",
+    "priority": "P1",
+    "use_case": "Validasi formulir, submit ganda, dan batal ketika data berubah",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "NOT RUN",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "UX-05",
+    "priority": "P1",
+    "use_case": "Format rupiah, tanggal, zona waktu, angka negatif, dan teks panjang",
+    "unit_coverage": "PARTIAL",
+    "source": "src/utils/__tests__/helpers.test.js:13",
+    "notes": "rupiah/date basics and currency formatting/parsing; timezone and layout coverage separate",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "UX-06",
+    "priority": "P2",
+    "use_case": "Kontras, zoom, reduced motion, dan target sentuh",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Dashboard at 200% zoom equivalent and reduced motion preference: PARTIAL"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "RES-01",
+    "priority": "P0",
+    "use_case": "Cloud offline, timeout, error otorisasi, dan pemulihan jaringan",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "NOT RUN",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "RES-02",
+    "priority": "P0",
+    "use_case": "Dua kasir mengubah nota/stok/kas yang sama",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "NOT RUN",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "RES-03",
+    "priority": "P1",
+    "use_case": "LocalStorage kosong, data lama, penuh, dan rusak",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Corrupt persisted database falls back without blank screen: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "RES-04",
+    "priority": "P0",
+    "use_case": "Input HTML/script pada pelanggan, catatan, nama toko, dan ekspor CSV",
+    "unit_coverage": "FAIL",
+    "source": "negative-probes.mjs",
+    "notes": "FAIL: finance CSV cell =1+1 remains formula-capable text rather than neutralized",
+    "campaign_status": "FAIL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "RES-05",
+    "priority": "P0",
+    "use_case": "Secret dalam bundle, log, snapshot, dan pesan error",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "limited static scan of built bundle only; not proof no secrets anywhere: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "RES-06",
+    "priority": "P1",
+    "use_case": "Refresh deep link, route tak dikenal, browser berbeda, dan restart server",
+    "unit_coverage": "NO_UNIT_EVIDENCE",
+    "source": "",
+    "notes": "No concrete existing unit assertion mapped in this review; browser/SQL report may provide evidence.",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [
+      "Deep-link dashboard reload and unknown route dispatch: PASS"
+    ],
+    "sql_evidence": false
+  },
+  {
+    "id": "RES-07",
+    "priority": "P1",
+    "use_case": "Cetak Bluetooth, WhatsApp, Google OAuth, dan email staging",
+    "unit_coverage": "PARTIAL",
+    "source": "src/utils/__tests__/bluetoothPrinter.test.js:14",
+    "notes": "ESC/POS formatting/buffer only; physical devices and live services blocked",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  },
+  {
+    "id": "RES-08",
+    "priority": "P2",
+    "use_case": "Volume data besar, respons pencarian, dan ukuran bundle",
+    "unit_coverage": "PARTIAL",
+    "source": "assert-simulations.mjs",
+    "notes": "10000 in-memory tx /20000 journal lines balanced; no agreed latency target or browser load budget",
+    "campaign_status": "PARTIAL",
+    "browser_assertions": [],
+    "sql_evidence": false
+  }
+]

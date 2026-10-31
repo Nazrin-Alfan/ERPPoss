@@ -1,0 +1,46 @@
+[
+  {
+    "id": "ADM-05",
+    "name": "Founder creates synthetic tenant, branch, owner and license",
+    "status": "PASS",
+    "detail": {
+      "tenantId": "tenant_qa_campaign_founder_store_ehiu",
+      "owner": "qa-founder-owner@example.test",
+      "branch": "branch_qa_campaign_founder_store_main",
+      "licensePresent": true
+    }
+  },
+  {
+    "id": "ADM-06",
+    "name": "Archive cancellation leaves tenant active",
+    "status": "PASS",
+    "detail": "Q\n\nQA Campaign Founder Store\nHYBRID\n\ntenant_qa_campaign_founder_store_ehiu • qa-founder-owner@example.test\n\n\tENTERPRISE\tAktif Selamanya\tRLPOS-LEGACY-DEFAULT\tAktif\t\nPerpanjang"
+  },
+  {
+    "id": "ADM-06",
+    "name": "Archive and restore retains synthetic owner branch and license",
+    "status": "PASS",
+    "detail": "ARCHIVED → ACTIVE, profile/branch/license retained"
+  },
+  {
+    "id": "ADM-07",
+    "name": "Founder impersonates newly created tenant",
+    "status": "PASS",
+    "detail": {
+      "active": "tenant_qa_campaign_founder_store_ehiu",
+      "url": "http://127.0.0.1:5173/konsolidasi"
+    }
+  },
+  {
+    "id": "ADM-05",
+    "name": "Provisioned Owner can authenticate and sees only own outlet",
+    "status": "PASS",
+    "detail": "R\nRELAYPOS\n\nQA CAMPAIGN FOUNDER STORE\n\nPortal Holding HQ\n\nKONSOLIDASI MULTI-OUTLET\n\nQA Founder Owner\nOWNER\nOUTLET AKTIF\n\nQA Campaign Founder Store\n\nUTAMA\nDashboard\nOPERASIONAL KASIR\nKasir POS\nAntrean Carwash\nPelanggan & CRM\nKEUANGAN & AKUNTANSI\nBuku Kas Keuangan\nLaporan Akuntansi\nLOGISTIK & SDM\nMult"
+  },
+  {
+    "id": "UX-03",
+    "name": "Founder workflow uncaught page errors",
+    "status": "PASS",
+    "detail": []
+  }
+]

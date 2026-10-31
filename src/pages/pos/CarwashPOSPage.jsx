@@ -223,6 +223,12 @@ export const CarwashPOSPage = () => {
 
   // Submit Intake & Bayar
   const handleCheckout = async (isBayarBelakangan = false) => {
+    // Reward consumption must be part of the same transaction as checkout.
+    // Until that backend exists, stale/forced reward state must not create a discounted sale.
+    if (claimedLoyaltyReward.isClaimed) {
+      setError('Hadiah loyalty belum dapat digunakan pada transaksi kasir. Hubungi pengelola toko.')
+      return
+    }
     if (!carwashForm.platNomor.trim()) {
       setError('Nomor Plat Kendaraan wajib diisi!')
       return

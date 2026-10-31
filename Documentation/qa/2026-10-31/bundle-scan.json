@@ -1,0 +1,12 @@
+[
+  {
+    "id": "RES-05",
+    "status": "PASS",
+    "scope": "limited static scan of built bundle only; not proof no secrets anywhere",
+    "checks": {
+      "private_key_marker": 0,
+      "supabase_service_key_marker": 0,
+      "jwt_service_role": 0
+    }
+  }
+]

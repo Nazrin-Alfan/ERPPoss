@@ -1,0 +1,199 @@
+{
+  "time": "2026-10-31T09:26:29.550Z",
+  "results": [
+    {
+      "ids": [
+        "FIN-01"
+      ],
+      "name": "Manual cash income persists once with positive amount",
+      "status": "PASS",
+      "scope": "tested variation only",
+      "evidence": [
+        {
+          "tenant_id": "tenant_jb_enterprise",
+          "branch_id": "branch_medan_main",
+          "created_at": "2026-10-31T09:26:16.902Z",
+          "id_cashflow": "e508ec91-c3af-43a1-a598-44dbd1fbc401",
+          "id_sumber": null,
+          "tanggal": "2026-10-31",
+          "keterangan_transaksi": "QA-OPS-INCOME",
+          "jenis": "Pemasukan",
+          "kategori": "Pemasukan Lain-lain",
+          "pemasukan": 12345,
+          "pengeluaran": 0,
+          "pos": "SALDO CASH"
+        }
+      ]
+    },
+    {
+      "ids": [
+        "FIN-01"
+      ],
+      "name": "Manual cash expense persists with correct amount",
+      "status": "PASS",
+      "scope": "tested variation only",
+      "evidence": [
+        {
+          "tenant_id": "tenant_jb_enterprise",
+          "branch_id": "branch_medan_main",
+          "created_at": "2026-10-31T09:26:18.652Z",
+          "id_cashflow": "c2c9c5b6-a3dc-441e-b5c9-47c9fcc36ece",
+          "id_sumber": null,
+          "tanggal": "2026-10-31",
+          "keterangan_transaksi": "QA-OPS-EXPENSE",
+          "jenis": "Pengeluaran Bersama",
+          "kategori": "Listrik, Air & Utilitas",
+          "pemasukan": 0,
+          "pengeluaran": 2345,
+          "pos": "SALDO CASH",
+          "apakah_stok": "Tidak",
+          "qty": 0
+        }
+      ]
+    },
+    {
+      "ids": [
+        "INV-01"
+      ],
+      "name": "Add inventory item through UI and retain after refresh",
+      "status": "PASS",
+      "scope": "tested variation only",
+      "evidence": {
+        "tenant_id": "tenant_jb_enterprise",
+        "branch_id": "branch_medan_main",
+        "created_at": "2026-10-31T09:26:20.482Z",
+        "id_barang": "QA-OPS-001",
+        "id_bahan_baku": "QA-OPS-001",
+        "nama_produk": "QA Ops Coffee Beans",
+        "nama_barang": "QA Ops Coffee Beans",
+        "kategori": "KOPI",
+        "satuan": "Gram",
+        "harga_beli": 1000,
+        "harga_satuan": 1000,
+        "harga_jual": 0,
+        "min_stok": 5,
+        "gudang": "CAFE",
+        "stok": 0
+      }
+    },
+    {
+      "ids": [
+        "INV-02"
+      ],
+      "name": "Restock new item adds exact stock quantity",
+      "status": "PASS",
+      "scope": "tested variation only",
+      "evidence": {
+        "tenant_id": "tenant_jb_enterprise",
+        "branch_id": "branch_medan_main",
+        "created_at": "2026-10-31T09:26:20.482Z",
+        "id_barang": "QA-OPS-001",
+        "id_bahan_baku": "QA-OPS-001",
+        "nama_produk": "QA Ops Coffee Beans",
+        "nama_barang": "QA Ops Coffee Beans",
+        "kategori": "KOPI",
+        "satuan": "Gram",
+        "harga_beli": 1000,
+        "harga_satuan": 1000,
+        "harga_jual": 0,
+        "min_stok": 5,
+        "gudang": "CAFE",
+        "stok": 10,
+        "updated_at": "2026-10-31T09:26:21.634Z"
+      }
+    },
+    {
+      "ids": [
+        "POS-01"
+      ],
+      "name": "Opening shift creates one starting-capital record",
+      "status": "PASS",
+      "scope": "tested variation only",
+      "evidence": {
+        "capital": {
+          "starting_capital_2026-10-31": "100000"
+        },
+        "cashflowUnaffected": true
+      }
+    },
+    {
+      "ids": [
+        "POS-03"
+      ],
+      "name": "Cafe checkout creates receipt once with correct line and total",
+      "status": "PASS",
+      "scope": "tested variation only",
+      "evidence": {
+        "receipt": {
+          "tenant_id": "tenant_jb_enterprise",
+          "branch_id": "branch_medan_main",
+          "created_at": "2026-10-31T09:26:24.673Z",
+          "id_struk": "b18b64d5-08d4-4dbf-a175-bc15b409b753",
+          "tanggal": "2026-10-31",
+          "jam": "09:26:24",
+          "metode_bayar": "CASH",
+          "nominal_cash": 15000,
+          "nominal_qris": 0,
+          "status_bayar": "Selesai",
+          "kasir": "KASIR 1",
+          "diskon_carwash": 0,
+          "diskon_cafe": 0,
+          "total_tagihan": 15000,
+          "tipe_pesanan": "DINE IN",
+          "no_meja": "",
+          "nama_pelanggan": "Pelanggan",
+          "waktu_dibuat": "2026-10-31T09:26:24.605Z",
+          "waktu_dibayar": "2026-10-31T09:26:24.605Z"
+        },
+        "lines": [
+          {
+            "tenant_id": "tenant_jb_enterprise",
+            "branch_id": "branch_medan_main",
+            "created_at": "2026-10-31T09:26:24.673Z",
+            "id_detail": "929b7195-a0cd-49e7-ac91-77054032c62c",
+            "id_struk": "b18b64d5-08d4-4dbf-a175-bc15b409b753",
+            "tanggal": "2026-10-31",
+            "jam": "09:26:24",
+            "nama_menu": "Sanger Panas",
+            "qty": 1,
+            "harga_satuan": 15000,
+            "subtotal": 15000,
+            "catatan": "",
+            "status": "Selesai"
+          }
+        ]
+      }
+    },
+    {
+      "ids": [
+        "POS-07"
+      ],
+      "name": "Void and reactivate newly paid receipt through history",
+      "status": "PASS",
+      "scope": "tested variation only",
+      "evidence": {
+        "id": "b18b64d5-08d4-4dbf-a175-bc15b409b753",
+        "voidStatus": "Batal",
+        "restoreStatus": "Selesai"
+      }
+    },
+    {
+      "ids": [
+        "CRM-01"
+      ],
+      "name": "Customer plate search narrows visible rows",
+      "status": "PASS",
+      "scope": "tested variation only",
+      "evidence": "ashboard\nOPERASIONAL KASIR\nKasir POS\nAntrean Carwash\nPelanggan & CRM\nKEUANGAN & AKUNTANSI\nBuku Kas Keuangan\nLaporan Akuntansi\nLOGISTIK & SDM\nMulti-Gudang & Stok\nKaryawan & Komisi\nSISTEM\nPengaturan Toko\nManajemen Pelanggan & CRM Terpadu\nCARWASH & CAFE LOYALTY\n\nSegmentasi RFM otomatis, kartu stamp digital, retensi WhatsApp cerdas & konsolidasi belanja\n\nAtur Program Loyalty\nEkspor CSV\nTOTAL PELANGGAN\n10\n\nKendaraan & kontak terdaftar unik\n\nPELANGGAN SETIA (VIP)\n0\n\nKunjungan cuci ≥ 5 kali & aktif\n\nPERLU FOLLOW-UP\n1\n\nSudah 14-30 hari belum mampir cuci\n\nBERISIKO CHURN\n9\n\n> 30 hari tidak berkunjung (Target Winback)\n\nDaftar Kendaraan & Histori Loyalitas\n\nTotal 0 pelanggan ditemukan\n\nSemua\nVIP (≥5x)\nReguler (3-4x)\nPerlu Follow-Up\nBerisiko Churn\nBaru (1x)\nPLAT / NAMA PELANGGAN\n\t\nMODEL & LAYANAN FAVORIT\n\tNO. WHATSAPP\tSTATUS RFM\t\nLOYALTY STAMP\n\t\nAKUMULASI BELANJA\n\tAKSI CEPAT\n\n\nTidak ada pelanggan atau riwayat kendaraan ditemukan untuk filter ini.\n\nData transaksi atau pencatatan akan muncul di sini."
+    },
+    {
+      "ids": [
+        "HR-03"
+      ],
+      "name": "Payroll displayed period spans 16th to next 15th only",
+      "status": "FAIL",
+      "error": "Expected one payroll month, found 60 days: Periode Gaji: 2026-10-16 s/d 2026-12-15"
+    }
+  ],
+  "pageErrors": []
+}

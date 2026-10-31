@@ -1651,6 +1651,12 @@ const CafePOS = () => {
 
   // Checkout Handler
   const handleCheckout = async () => {
+    // Reward consumption must be part of the same transaction as checkout.
+    // Until that backend exists, stale/forced reward state must not create a discounted sale.
+    if (claimedLoyaltyReward.isClaimed) {
+      setError('Hadiah loyalty belum dapat digunakan pada transaksi kasir. Hubungi pengelola toko.')
+      return
+    }
     if (!selectedCashier) return setError('Pilih kasir terlebih dahulu.')
     if (paymentStatus === 'Selesai' && !selectedPayment) return setError('Pilih metode pembayaran.')
     if (cart.length === 0 && !effectiveHasCarwash) return setError('Keranjang belanja kosong.')

@@ -1,0 +1,171 @@
+[
+  {
+    "runner": "full_system_simulation.js",
+    "status": "PASS",
+    "result": {
+      "modules_simulated": 13,
+      "tests_passed": 13,
+      "errors": [],
+      "audit_log": [
+        {
+          "module": "RBAC & Multi-Tenant",
+          "description": "Tenant terisolasi terverifikasi",
+          "status": "PASS",
+          "details": {
+            "tenant_name": "RelayPOS Demo Holding (Carwash + Cafe)",
+            "tenant_id": "tenant_jb_enterprise"
+          }
+        },
+        {
+          "module": "RBAC Master Kategori",
+          "description": "Pemisahan otorisasi Kasir (18 kat) vs Owner-Only (12 kat)",
+          "status": "PASS",
+          "details": null
+        },
+        {
+          "module": "Multi-Gudang & MAC",
+          "description": "Pengadaan stok berhasil dicatat & MAC diperbarui",
+          "status": "PASS",
+          "details": {
+            "incoming_qty": "1000 unit",
+            "unit_cost": "Rp 13.000",
+            "calculated_mac": "Rp 12.000",
+            "total_receipt_value": "Rp 13.000.000",
+            "journal_entry_id": "je_1793438592155_k5qrq"
+          }
+        },
+        {
+          "module": "Carwash Estafet",
+          "description": "Siklus hidup kendaraan Antre -> Cuci -> Kering -> Selesai sukses",
+          "status": "PASS",
+          "details": {
+            "plat": "BK 8888 JB",
+            "paket": "PAKET GLOW UP (CUCI + WAX BODY)",
+            "tarif": "Rp 120.000",
+            "komisi_kru": "Rp 50.000"
+          }
+        },
+        {
+          "module": "POS Cafe & Merchandise",
+          "description": "Checkout selesai, BOM terpotong, jurnal double-entry seimbang",
+          "status": "PASS",
+          "details": {
+            "id_struk": "STRUK-POS-1793438592168",
+            "subtotal": "Rp 75.000",
+            "diskon": "Rp 5.000",
+            "total_dibayar": "Rp 70.000",
+            "debit_credit_balance": "Debit Rp 70.000 == Credit Rp 70.000",
+            "bom_deduction_logged": "36 gram"
+          }
+        },
+        {
+          "module": "Void & Reversal Audit",
+          "description": "Transaksi berhasil di-void dengan reversal jurnal akuntansi",
+          "status": "PASS",
+          "details": {
+            "id_struk": "STRUK-VOID-TEST",
+            "status": "Dibatalkan",
+            "alasan_void": "Pelanggan membatalkan pesanan karena buru-buru berangkat kerja",
+            "reversal_journal_id": "je_1793438592169_625js"
+          }
+        },
+        {
+          "module": "Finance - Pengeluaran Kasir",
+          "description": "Pengeluaran operasional kasir berhasil divalidasi & dibukukan",
+          "status": "PASS",
+          "details": {
+            "kategori": "Operasional",
+            "nominal": "Rp 35.000"
+          }
+        },
+        {
+          "module": "Finance - Non-Sales Segregation",
+          "description": "Pemisahan Modal, Sewa Tenant, dan Prive terverifikasi masuk akun yang tepat",
+          "status": "PASS",
+          "details": {
+            "modal_disetor": "Rp 15.000.000 -> Akun 3001",
+            "sewa_tenant": "Rp 1.500.000 -> Akun 4003",
+            "prive_pemilik": "Rp 2.000.000 -> Akun 3002"
+          }
+        },
+        {
+          "module": "Shift Closing Rekonsiliasi",
+          "description": "Tutup shift kasir selesai dengan 100% kas fisik klop",
+          "status": "PASS",
+          "details": {
+            "kas_seharusnya": "Rp 450.000",
+            "kas_fisik": "Rp 450.000",
+            "selisih": "Rp 0 (MATCH)"
+          }
+        },
+        {
+          "module": "Akuntansi SAK EMKM Core",
+          "description": "Persamaan Dasar Akuntansi Aset = Kewajiban + Ekuitas SEIMBANG PERSIS (Zero Discrepancy)",
+          "status": "PASS",
+          "details": {
+            "trial_balance_debit": "Rp 31.655.000",
+            "trial_balance_credit": "Rp 31.655.000",
+            "selisih_neraca_saldo": "Rp 0",
+            "neraca_total_aset": "Rp 14.535.000",
+            "neraca_liabilitas_ekuitas": "Rp 14.535.000",
+            "laba_bersih_berjalan": "Rp 1.535.000",
+            "selisih_neraca": "Rp 0 (100% INVARIANT MATCH)"
+          }
+        },
+        {
+          "module": "CRM & Loyalty",
+          "description": "Akumulasi poin loyalitas & kunjungan pelanggan tercatat",
+          "status": "PASS",
+          "details": {
+            "pelanggan": "Doni Pratama",
+            "poin_sebelumnya": 100,
+            "poin_didapat": 7,
+            "total_poin_sekarang": 107,
+            "segmentasi_rfm": "VIP High Value"
+          }
+        },
+        {
+          "module": "Konsolidasi Multi-Outlet",
+          "description": "Konsolidasi portofolio multi-cabang & proteksi RBAC eksekutif terverifikasi",
+          "status": "PASS",
+          "details": {
+            "total_cabang": 2,
+            "total_omzet_grup": "Rp 210.000.000",
+            "total_beban_grup": "Rp 132.000.000",
+            "total_laba_bersih_grup": "Rp 78.000.000",
+            "net_margin_persen": "37.1%",
+            "kasir_unauthorized_blocked": true
+          }
+        },
+        {
+          "module": "SaaS Licensing & Founder",
+          "description": "Provisioning tenant baru & aktivasi lisensi PRO Enterprise sukses",
+          "status": "PASS",
+          "details": {
+            "serial_license_key": "RLPOS-PRO-2026-LHUA-BZ7Z",
+            "tenant_id": "tenant_autodetailing_nusantara_7hns",
+            "tenant_name": "AutoDetailing Studio Nusantara",
+            "plan": "RelayPOS Pro Enterprise (Lisensi Tahunan)",
+            "license_status": "Lisensi Aktif (365 hari tersisa)",
+            "days_remaining": 365
+          }
+        }
+      ]
+    }
+  },
+  {
+    "runner": "stress_test_audit.js",
+    "status": "PASS",
+    "result": {
+      "numTransactions": 10000,
+      "insertThroughput": 209098,
+      "insertDurationSec": 0.04782447200000001,
+      "queryDurationMs": "8.12",
+      "glDurationMs": "22.75",
+      "concThroughput": 2222,
+      "concDurationMs": "450.07",
+      "memoryDelta": 25.567108154296875,
+      "isBalanced": true
+    }
+  }
+]

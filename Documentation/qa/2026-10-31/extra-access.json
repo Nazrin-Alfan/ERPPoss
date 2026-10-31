@@ -1,0 +1,120 @@
+[
+  {
+    "id": "AUTH-03",
+    "name": "Logout control clears session and blocks route until refresh",
+    "status": "PASS",
+    "detail": {
+      "route": "http://127.0.0.1:5173/login",
+      "storedSession": null
+    }
+  },
+  {
+    "id": "AUTH-03",
+    "name": "Refresh after logout local mock behavior",
+    "status": "KNOWN_MOCK",
+    "detail": {
+      "route": "http://127.0.0.1:5173/finance",
+      "note": "Known mock loadAuth() reintroduces Owner demo when stored session is absent; cloud not tested"
+    }
+  },
+  {
+    "id": "AUTH-07",
+    "name": "Google local mock creates simulated owner workspace",
+    "status": "PASS",
+    "detail": {
+      "email": "owner.google@gmail.com",
+      "role": "Owner",
+      "url": "http://127.0.0.1:5173/konsolidasi",
+      "mock": true
+    }
+  },
+  {
+    "id": "ONB-03",
+    "name": "Empty registration is rejected by form validity",
+    "status": "PASS",
+    "detail": {
+      "invalidFields": 4,
+      "url": "http://127.0.0.1:5173/login"
+    }
+  },
+  {
+    "id": "ONB-03",
+    "name": "Malformed email rejected by browser validity",
+    "status": "PASS",
+    "detail": true
+  },
+  {
+    "id": "ONB-03",
+    "name": "Short password is rejected visibly",
+    "status": "PASS",
+    "detail": "Kata sandi minimal 6 karakter."
+  },
+  {
+    "id": "ONB-03",
+    "name": "Duplicate Owner email rejected without creating tenant",
+    "status": "PASS",
+    "detail": {
+      "message": "Email ini sudah terdaftar.",
+      "before": 3,
+      "after": 3
+    }
+  },
+  {
+    "id": "RES-06",
+    "name": "Deep-link dashboard reload and unknown route dispatch",
+    "status": "PASS",
+    "detail": "http://127.0.0.1:5173/dashboard"
+  },
+  {
+    "id": "RES-03",
+    "name": "Corrupt persisted database falls back without blank screen",
+    "status": "PASS",
+    "detail": "Recovered demo dashboard; malformed storage fallback does not establish recovery of user data"
+  },
+  {
+    "id": "UX-02",
+    "name": "Password dialog focus and Escape behavior",
+    "status": "FAIL",
+    "detail": {
+      "initialFocusInside": false,
+      "escapeCloses": false
+    },
+    "severity": "P2",
+    "note": "Confirmed after modal render+350ms: focus remains outside aria-modal dialog and Escape does not dismiss; component has no focus management or Escape handling."
+  },
+  {
+    "id": "UX-06",
+    "name": "Dashboard at 200% zoom equivalent and reduced motion preference",
+    "status": "PARTIAL",
+    "detail": {
+      "reducedMotion": true,
+      "bodyWidth": 720,
+      "viewport": 720,
+      "note": "Narrow viewport is partial zoom proxy, not complete browser zoom audit"
+    },
+    "note": "Preference emulation and narrow-viewport visibility only; animation compliance and browser zoom not proved."
+  },
+  {
+    "id": "ACL-04",
+    "name": "Owner switches own outlets across two tabs",
+    "status": "PASS",
+    "detail": {
+      "persisted": "tenant_qa_second_owned",
+      "tab1ShowsSecond": true,
+      "tab2ShowsSecond": false,
+      "tab2Body": "R\nRELAYPOS\n\nRELAYPOS DEMO HOLDING (CARWASH + CAFE)\n\nPortal Holding HQ\n\nKONSOLIDASI MULTI-OUTLET\n\nNazrin Alfan (Holding Owner)\nOWNER\nOUTLET AKTIF\n\nRelayPOS Demo Holding (Carwash + Cafe)\n\nUTAMA\nDashboar",
+      "tab2EngineTenant": "tenant_jb_enterprise"
+    },
+    "note": "Independent-tab contexts: tab2 header and effective in-memory tenant both remain original. Shared persisted ID differs but not a proven context/write mismatch."
+  },
+  {
+    "id": "RPT-03",
+    "name": "Holding outlet card opens correct workspace",
+    "status": "PASS",
+    "detail": {
+      "cards": 2,
+      "active": "tenant_qa_second_owned",
+      "text": "R\nRELAYPOS\n\nQA SECOND OWNED OUTLET\n\nPortal Holding HQ\n\nKONSOLIDASI MULTI-OUTLET\n\nNazrin Alfan (Holding Owner)\nOWNER\nOUTLET AKTIF\n\nQA Second Owned Outlet\n\nUTAMA\nDashboard\nOPERASIONA"
+    }
+  }
+]

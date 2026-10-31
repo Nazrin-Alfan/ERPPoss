@@ -160,7 +160,7 @@ describe('Enterprise Integrated CRM & Loyalty Engine', () => {
 
   describe('2. Digital Stamp Loyalty Calculations & Redemption', () => {
     it('should calculate current stamps and reward readiness for 5-stamp cycle', () => {
-      const result = calculateLoyaltyStamps(7, STAMP_TARGET_DEFAULT) // 7 visits, target 5
+      const result = calculateLoyaltyStamps(7, STAMP_TARGET_DEFAULT, undefined, 1) // 7 visits, first reward already consumed
       expect(result.stamps).toBe(2) // 7 % 5 = 2 stamps
       expect(result.rewardsEarned).toBe(1) // 1 reward earned
       expect(result.isRewardReady).toBe(false)
@@ -212,6 +212,7 @@ describe('Enterprise Integrated CRM & Loyalty Engine', () => {
 
     it('should record reward redemption in loyalty logs with custom reward title', async () => {
       const customerPlat = 'B 8888 RLP'
+      await db.from('carwash').insert(Array.from({ length: 5 }, () => ({ tenant_id: DEFAULT_TENANT_ID, plat: customerPlat, tanggal: '2026-10-01', harga: 50000 })))
       const res = await redeemCustomerReward(db, {
         tenant_id: DEFAULT_TENANT_ID,
         plat: customerPlat,
@@ -444,6 +445,7 @@ describe('Enterprise Integrated CRM & Loyalty Engine', () => {
     })
 
     it('should record loyalty reward redemption from POS cashier', async () => {
+      await db.from('carwash').insert(Array.from({ length: 5 }, () => ({ tenant_id: DEFAULT_TENANT_ID, plat: 'BK 1968 LNA', tanggal: '2026-10-01', harga: 50000 })))
       const res = await recordLoyaltyClaim(db, {
         tenant_id: DEFAULT_TENANT_ID,
         plat: 'BK 1968 LNA',

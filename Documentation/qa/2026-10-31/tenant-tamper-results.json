@@ -1,0 +1,12 @@
+[
+  {
+    "id": "ACL-03",
+    "name": "Cashier persisted tenant spoof resets to own tenant after reload",
+    "status": "PASS",
+    "detail": {
+      "before": "tenant_jb_enterprise",
+      "spoofed": "tenant_demo_cafe",
+      "after": "tenant_jb_enterprise"
+    }
+  }
+]

@@ -296,7 +296,13 @@ export const validateEditCashflowForm = (form) => {
 export const generateCSVString = (headers, rows) => {
   const escapeCell = (cell) => {
     if (cell === null || cell === undefined) return '""'
-    const str = String(cell).replace(/"/g, '""')
+    const text = String(cell)
+    // CSV quotes escape structure, but spreadsheets still evaluate formulas.
+    // Prefix untrusted text only; real numeric amounts retain their value.
+    const inertText = typeof cell === 'string' && /^[\s\uFEFF]*[=+\-@\t\r\n]/.test(text)
+      ? `'${text}`
+      : text
+    const str = inertText.replace(/"/g, '""')
     return `"${str}"`
   }
 

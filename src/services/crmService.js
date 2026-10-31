@@ -8,6 +8,42 @@ import { DEFAULT_TENANT_ID } from '../constants/erpConfig.js'
 
 export const STAMP_TARGET_DEFAULT = 5
 
+const normalizePlate = (plate = '') => String(plate).trim().toUpperCase().replace(/\s+/g, '')
+const redemptionQueues = new Map()
+
+// All local client wrappers share the same in-memory database. Serialize the
+// read/check/write across those wrappers, not merely across one UI component.
+async function serializeLocalRedemption(key, work) {
+  const previous = redemptionQueues.get(key) || Promise.resolve()
+  const current = previous.catch(() => {}).then(work)
+  redemptionQueues.set(key, current)
+  try {
+    return await current
+  } finally {
+    if (redemptionQueues.get(key) === current) redemptionQueues.delete(key)
+  }
+}
+
+function qualifyingVisit(visit, receipts) {
+  if (['batal', 'void', 'cancelled', 'pending'].includes(String(visit.status || '').toLowerCase())) return false
+  if (visit.status_bayar && visit.status_bayar !== 'Selesai') return false
+  if (!visit.id_struk) return true // Historical imports without receipt links.
+  const receipt = receipts.find(row => row.id_struk === visit.id_struk)
+  return Boolean(receipt && receipt.status_bayar === 'Selesai')
+}
+
+function redemptionCount(logs, plate) {
+  return logs.filter(log => normalizePlate(log.plat) === normalizePlate(plate)
+    && (log.tipe === 'REDEEM' || (!log.tipe && (log.claimed_at || log.reward_title)))).length
+}
+
+async function readTenantRows(db, table, tenantId) {
+  const { data, error } = await db.from(table).select('*').eq('tenant_id', tenantId)
+  if (error) throw error
+  if (!Array.isArray(data)) throw new Error('Data kelayakan reward tidak tersedia.')
+  return data
+}
+
 export const DEFAULT_CRM_SETTINGS = {
   // 1. Loyalty Program Settings
   target_stamps: 5,
@@ -190,12 +226,14 @@ export function calculateRFMSegment({
 export function calculateLoyaltyStamps(
   totalVisits = 0,
   stampTarget = STAMP_TARGET_DEFAULT,
-  rewardTitle = DEFAULT_LOYALTY_PROGRAM.reward_title
+  rewardTitle = DEFAULT_LOYALTY_PROGRAM.reward_title,
+  redeemedRewards = 0
 ) {
   const target = Math.max(1, parseInt(stampTarget, 10) || STAMP_TARGET_DEFAULT)
   const currentStampsInCycle = totalVisits % target
   const rewardsEarned = Math.floor(totalVisits / target)
-  const isRewardReady = totalVisits > 0 && currentStampsInCycle === 0
+  const rewardsAvailable = Math.max(0, rewardsEarned - Math.max(0, Number(redeemedRewards) || 0))
+  const isRewardReady = rewardsAvailable > 0
   const effectiveStamps = isRewardReady ? target : currentStampsInCycle
   const stampsRemaining = isRewardReady ? 0 : target - currentStampsInCycle
 
@@ -203,6 +241,7 @@ export function calculateLoyaltyStamps(
     stamps: effectiveStamps,
     stampTarget: target,
     rewardsEarned,
+    rewardsAvailable,
     isRewardReady,
     stampsRemaining,
     rewardTitle: rewardTitle || DEFAULT_LOYALTY_PROGRAM.reward_title
@@ -382,6 +421,7 @@ export async function aggregateCustomerCRMData(db, tenantId = DEFAULT_TENANT_ID,
 
   // Process Carwash visits
   ;(carwashRecords || []).forEach(cw => {
+    // Historical CRM visibility must not depend on verified reward eligibility.
     const rawPlat = cw.plat_nomor || cw.plat || ''
     if (!rawPlat || !rawPlat.trim()) return
     const plat = rawPlat.trim().toUpperCase().replace(/\s+/g, ' ')
@@ -393,6 +433,7 @@ export async function aggregateCustomerCRMData(db, tenantId = DEFAULT_TENANT_ID,
         model: cw.model || 'Mobil',
         noTelepon: cw.no_telepon || '-',
         totalVisits: 0,
+        rewardEligibleVisits: 0,
         carwashSpent: 0,
         cafeSpent: 0,
         totalSpent: 0,
@@ -406,6 +447,7 @@ export async function aggregateCustomerCRMData(db, tenantId = DEFAULT_TENANT_ID,
 
     const c = customerMap[plat]
     c.totalVisits += 1
+    if (qualifyingVisit(cw, strukRecords || [])) c.rewardEligibleVisits += 1
     const price = parseFloat(cw.harga || 0)
     c.carwashSpent += price
     c.totalSpent += price
@@ -487,9 +529,10 @@ export async function aggregateCustomerCRMData(db, tenantId = DEFAULT_TENANT_ID,
 
     // Digital stamp calculation with custom settings
     const loyalty = calculateLoyaltyStamps(
-      cust.totalVisits,
+      cust.rewardEligibleVisits,
       loyaltyProgram.target_stamps,
-      loyaltyProgram.reward_title
+      loyaltyProgram.reward_title,
+      redemptionCount(loyaltyLogs || [], cust.plat)
     )
 
     return {
@@ -505,31 +548,66 @@ export async function aggregateCustomerCRMData(db, tenantId = DEFAULT_TENANT_ID,
 }
 
 /**
- * Records reward redemption in loyalty logs.
+ * Consume one earned reward. Cloud claims require a database RPC which performs
+ * authorization and an atomic eligibility check; never fall back to raw INSERT.
  */
 export async function redeemCustomerReward(db, {
   tenant_id = DEFAULT_TENANT_ID,
   plat = '',
   reward_title = '',
-  notes = 'Free Cuci Diklaim'
+  notes = 'Free Cuci Diklaim',
+  nama_pelanggan = '',
+  reward_type = 'FREE_SERVICE',
+  id_struk = null
 }) {
-  if (!db || !plat) throw new Error('Database client and customer plate required.')
+  const normalizedPlate = normalizePlate(plat)
+  if (!db || !normalizedPlate || !tenant_id) throw new Error('Database client, tenant and customer plate required.')
 
-  const redemptionId = `red_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
-  const record = {
-    id: redemptionId,
-    tenant_id,
-    plat: plat.trim().toUpperCase(),
-    tipe: 'REDEEM',
-    reward_title: reward_title || DEFAULT_LOYALTY_PROGRAM.reward_title,
-    keterangan: notes,
-    created_at: new Date().toISOString()
+  if (!db.isLocal) {
+    if (typeof db.rpc !== 'function') throw new Error('Endpoint klaim reward atomik belum tersedia di server.')
+    const { data, error } = await db.rpc('redeem_customer_reward', {
+      p_tenant_id: tenant_id, p_plat: normalizedPlate,
+      p_reward_title: reward_title, p_notes: notes,
+      p_nama_pelanggan: nama_pelanggan, p_reward_type: reward_type, p_id_struk: id_struk
+    })
+    if (error) throw new Error(`Klaim reward server gagal: ${error.message || 'RPC belum tersedia'}`)
+    const committed = Array.isArray(data) ? data[0] : data
+    if (!committed?.redemption_id) throw new Error('Server tidak mengonfirmasi klaim reward.')
+    return { success: true, redemptionId: committed.redemption_id, data: committed }
   }
 
-  const { error } = await db.from('crm_loyalty_logs').insert(record)
-  if (error) throw error
+  const key = `relaypos:reward:${tenant_id}:${normalizedPlate}`
+  const work = () => serializeLocalRedemption(key, async () => {
+    const [visits, receipts, programs, logs] = await Promise.all([
+      readTenantRows(db, 'carwash', tenant_id), readTenantRows(db, 'struk', tenant_id),
+      readTenantRows(db, 'crm_loyalty_programs', tenant_id), readTenantRows(db, 'crm_loyalty_logs', tenant_id)
+    ])
+    const program = programs[0] || DEFAULT_LOYALTY_PROGRAM
+    const target = Number(program.target_stamps ?? STAMP_TARGET_DEFAULT)
+    if (!Number.isInteger(target) || target <= 0) throw new Error('Target stamp program reward tidak valid.')
+    if (program.is_active === false) throw new Error('Program reward tidak aktif.')
+    const visitCount = visits.filter(visit => normalizePlate(visit.plat_nomor || visit.plat) === normalizedPlate
+      && qualifyingVisit(visit, receipts)).length
+    const available = Math.floor(visitCount / target) - redemptionCount(logs, normalizedPlate)
+    if (available <= 0) throw new Error('Stamp kunjungan belum cukup atau reward sudah diklaim.')
 
-  return { success: true, redemptionId }
+    const redemptionId = `red_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+    const record = {
+      id: redemptionId, tenant_id, plat: String(plat).trim().toUpperCase().replace(/\s+/g, ' '), tipe: 'REDEEM',
+      reward_title: reward_title || program.reward_title || DEFAULT_LOYALTY_PROGRAM.reward_title,
+      keterangan: notes, notes, nama_pelanggan, reward_type, id_struk,
+      claimed_at: new Date().toISOString(), created_at: new Date().toISOString()
+    }
+    const { error } = await db.from('crm_loyalty_logs').insert(record)
+    if (error) throw error
+    return { success: true, redemptionId, data: record }
+  })
+  // Web Locks also serialize participating browser tabs. The local mock's
+  // independent cached stores are not a transactional cloud persistence layer.
+  if (typeof navigator !== 'undefined' && navigator.locks?.request) {
+    return navigator.locks.request(key, work)
+  }
+  return work()
 }
 
 /**
@@ -604,7 +682,7 @@ export async function lookupCustomerByPlate(db, tenantId = DEFAULT_TENANT_ID, pl
     .select('*')
     .eq('tenant_id', tenantId)
 
-  const matchingCw = (cwData || []).filter(cw => {
+  const matchingCwCandidates = (cwData || []).filter(cw => {
     const rawPlat = (cw.plat_nomor || cw.plat || '').trim().toUpperCase()
     return rawPlat === cleanQuery || rawPlat.replace(/\s+/g, '') === rawClean
   })
@@ -619,6 +697,9 @@ export async function lookupCustomerByPlate(db, tenantId = DEFAULT_TENANT_ID, pl
     const cust = (s.nama_pelanggan || '').trim().toUpperCase()
     return cust === cleanQuery || cust.replace(/\s+/g, '') === rawClean
   })
+
+  const matchingCw = matchingCwCandidates
+  const rewardEligibleVisits = matchingCwCandidates.filter(cw => qualifyingVisit(cw, strukData || [])).length
 
   // 4. Fetch CRM customer profile
   const { data: crmData = [] } = await db
@@ -675,9 +756,10 @@ export async function lookupCustomerByPlate(db, tenantId = DEFAULT_TENANT_ID, pl
   })
 
   const loyalty = calculateLoyaltyStamps(
-    totalVisits,
+    rewardEligibleVisits,
     settings.target_stamps,
-    settings.reward_title
+    settings.reward_title,
+    redemptionCount((await db.from('crm_loyalty_logs').select('*').eq('tenant_id', tenantId)).data || [], cleanQuery)
   )
 
   return {
@@ -711,19 +793,11 @@ export async function recordLoyaltyClaim(db, {
 }) {
   if (!db || !plat) return { error: new Error('Database client and plate required.') }
   try {
-    const payload = {
-      tenant_id,
-      plat: plat.trim().toUpperCase(),
-      nama_pelanggan: nama_pelanggan || plat.trim().toUpperCase(),
-      reward_title,
-      reward_type,
-      id_struk,
-      notes: notes || `Klaim reward ${reward_title} di POS Kasir`,
-      claimed_at: new Date().toISOString()
-    }
-    const { data, error } = await db.from('crm_loyalty_logs').insert([payload])
-    if (error) throw error
-    return { data, error: null }
+    const result = await redeemCustomerReward(db, {
+      tenant_id, plat, nama_pelanggan, reward_title, reward_type, id_struk,
+      notes: notes || `Klaim reward ${reward_title} di POS Kasir`
+    })
+    return { data: result.data, error: null }
   } catch (err) {
     console.warn('Error recording loyalty claim:', err)
     return { data: null, error: err }

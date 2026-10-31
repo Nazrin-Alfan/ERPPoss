@@ -12,6 +12,7 @@ import {
   useTableSort
 } from '../components/ui/Table'
 import { supabase } from '../supabaseClient'
+import { generateCSVString, downloadCSV } from '../utils/financeHelpers'
 import { useAuth } from '../context/AuthContext'
 import { getActiveTenantId, DEFAULT_TENANT_ID } from '../services/localDbEngine'
 import {
@@ -404,11 +405,11 @@ const CRM = () => {
       'Catatan Khusus'
     ]
     const rows = customerList.map(c => [
-      `"${c.plat}"`,
-      `"${c.nama || '-'}"`,
-      `"${c.model}"`,
-      `"${c.noTelepon}"`,
-      `"${c.rfm?.label || c.segment}"`,
+      c.plat,
+      c.nama || '-',
+      c.model,
+      c.noTelepon,
+      c.rfm?.label || c.segment,
       c.daysSinceLastVisit || 0,
       c.totalVisits,
       `${c.loyalty?.stamps || 0}/${STAMP_TARGET_DEFAULT}`,
@@ -416,17 +417,11 @@ const CRM = () => {
       c.carwashSpent || 0,
       c.cafeSpent || 0,
       c.totalSpent,
-      `"${c.favPkg}"`,
-      `"${(c.catatanKhusus || '').replace(/"/g, '""')}"`
+      c.favPkg,
+      c.catatanKhusus || ''
     ])
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement('a')
-    link.setAttribute('href', encodedUri)
-    link.setAttribute('download', `crm_loyalty_relaypos_${new Date().toISOString().substring(0, 10)}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    const columns = headers.map((label, index) => ({ label, accessor: row => row[index] }))
+    downloadCSV(generateCSVString(columns, rows), `crm_loyalty_relaypos_${new Date().toISOString().substring(0, 10)}.csv`)
   }
 
   return (

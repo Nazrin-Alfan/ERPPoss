@@ -1,0 +1,27 @@
+{
+  "results": [
+    {
+      "name": "Actual downloaded CRM CSV neutralizes malicious name and note",
+      "status": "PASS"
+    },
+    {
+      "name": "Forced stale reward checkout rejected before any receipt/items mutation",
+      "status": "PASS",
+      "before": {
+        "struk": 26,
+        "carwash": 25,
+        "cafe": 25
+      },
+      "after": {
+        "struk": 26,
+        "carwash": 25,
+        "cafe": 25
+      }
+    },
+    {
+      "name": "No uncaught browser errors",
+      "status": "PASS"
+    }
+  ],
+  "errors": []
+}
