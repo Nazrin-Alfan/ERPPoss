@@ -3783,6 +3783,40 @@
   - Test Suite Vitest: **58 test files lulus, 352/352 tests PASS (100% GREEN)**.
   - Bundling Vite: Sukses dalam 2.91 detik (`index-DmtkhD0m.js`, gzip: 308.63 kB).
 
+---
+
+### Log Rekayasa #106: Penyelesaian Kendala Loading Sesi Menggantung (Auth Context Session Loop, Stabilisasi Callback Ref, dan Fail-safe Timeout Guard) (2026-11-02)
+- **Gejala Masalah**:
+  - Pengguna di peramban Chrome Android / Tablet melaporkan layar aplikasi tertahan tanpa henti (*stuck forever*) pada tampilan latar hitam dengan pemutar melingkar neon cyan dan teks `MEMUAT SESI...` di domain `https://erpposs.pages.dev`.
+- **Akar Masalah (Root Cause Analysis)**:
+  1. *Lethal Dependency Cascading Loop di `AuthContext.jsx`*:
+     - `loadTenantLicense` memiliki dependency `[profile, user]`.
+     - `loadTenantsForUser` memiliki dependency `[loadTenantLicense]`.
+     - `useEffect` sinkronisasi sesi memiliki dependency `[loadTenantsForUser]`.
+     - Ketika pengguna yang telah memiliki sesi login membuka aplikasi, `supabase.auth.getSession()` memanggil `syncSession(session)`.
+     - Di dalam `syncSession`, pemanggilan `setUser(session.user)` dan `setProfile(...)` memicu re-render pada `AuthProvider`.
+     - Perubahan state `user` dan `profile` menciptakan referensi baru untuk `loadTenantLicense` dan `loadTenantsForUser`, yang memicu eksekusi cleanup function `isMounted = false` pada `useEffect` yang sedang berjalan.
+     - Akibatnya, ketika pemanggilan asinkron `getProfile` atau `loadTenantsForUser` selesai, kondisi `if (isMounted) setLoading(false)` pada blok `finally` dievaluasi menjadi `false`, sehingga pemanggilan `setLoading(false)` terabaikan.
+     - Siklus unmount/re-run ini berulang tanpa batas, menyebabkan `loading` tetap bernilai `true` secara permanen.
+  2. *Ketiadaan Fail-safe Safety Timeout*:
+     - Jika query PostgREST (`profiles`, `tenants`, atau `tenant_licenses`) mengalami latensi tinggi di jaringan seluler/VPN Tailscale, aplikasi tidak memiliki batas waktu pemutus (circuit breaker), membiarkan spinner berputar tanpa henti.
+- **Tindakan Rekayasa & Solusi**:
+  1. *Stabilisasi Referensi State via `useRef`*:
+     - Menambahkan `profileRef`, `userRef`, dan `activeTenantRef` untuk melacak nilai state terkini tanpa menyebabkan pembuatan ulang fungsi callback.
+     - Mengubah `loadTenantLicense` agar membaca `currentProfile || profileRef.current` dan menggunakan dependency array kosong `[]` (100% referensi stabil).
+     - Mengubah `loadTenantsForUser` dengan dependency `[loadTenantLicense]`, menjamin callback stabil dan tidak pernah memicu teardown `useEffect`.
+  2. *Proteksi Batas Waktu Asinkron (Circuit Breaker Timeout)*:
+     - Membungkus setiap request jaringan (`getProfile`, `tenants`, dan `tenant_licenses`) dengan `Promise.race` berbatas waktu 3000ms.
+     - Menambahkan timer keselamatan global `safetyTimer` (3500ms) di dalam `useEffect` sinkronisasi sesi yang secara deterministik memaksa `setLoading(false)` terbuka jika terjadi kendala jaringan eksternal.
+  3. *Umpan Balik Taktil Antarmuka Lambat (`src/App.jsx`)*:
+     - Menambahkan state `slowLoading` (aktif otomatis setelah 2.5 detik jika loading masih berlangsung).
+     - Menyediakan teks penjelasan dan dua tombol aksi taktil: **"Muat Ulang"** dan **"Ke Halaman Login"** (lengkap dengan pembersihan tenant yang invalid) sehingga pengguna tidak pernah terjebak di layar hitam.
+  4. *Suite Pengujian TDD*:
+     - Menulis file pengujian `src/context/__tests__/AuthContextSession.test.jsx` untuk memverifikasi isolasi render `AuthProvider` dan keberadaan elemen fallback taktil.
+- **Verifikasi Kualitas**:
+  - Vitest Suite: **59 test files lulus, 354/354 tests PASS (100% GREEN)**.
+  - Bundling Vite: Sukses dalam 1.74 detik (`index-CV4mljQF.js`, gzip: 309.16 kB).
+
 
 
 

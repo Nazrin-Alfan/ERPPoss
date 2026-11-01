@@ -140,6 +140,19 @@ const AppContent = () => {
     }
     return false
   })
+  const [slowLoading, setSlowLoading] = useState(false)
+
+  useEffect(() => {
+    let timer
+    if (loading) {
+      timer = setTimeout(() => {
+        setSlowLoading(true)
+      }, 2500)
+    } else {
+      setSlowLoading(false)
+    }
+    return () => clearTimeout(timer)
+  }, [loading])
 
   const handleSetSidebarCollapsed = (collapsed) => {
     setIsSidebarCollapsed(collapsed)
@@ -154,9 +167,35 @@ const AppContent = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#000000] text-white">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#000000] text-white px-4">
         <div className="w-12 h-12 border-4 border-[#00ffff] border-t-transparent rounded-full animate-spin"></div>
         <p className="mt-4 text-xs font-semibold text-[#bbcbb2] uppercase tracking-widest">Memuat Sesi...</p>
+        {slowLoading && (
+          <div className="mt-5 flex flex-col items-center gap-2 text-center animate-fade-in">
+            <p className="text-[11px] text-zinc-400">Sinkronisasi memakan waktu lebih lama dari biasanya...</p>
+            <div className="flex gap-2 mt-1">
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 border border-zinc-700 transition-all active:scale-[0.98]"
+              >
+                Muat Ulang
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    localStorage.removeItem('relaypos_active_tenant_id')
+                  } catch (_) {}
+                  window.location.href = '/login'
+                }}
+                className="px-3 py-1.5 rounded-lg bg-[#00ffff]/20 hover:bg-[#00ffff]/30 text-[#00ffff] text-xs font-medium border border-[#00ffff]/40 transition-all active:scale-[0.98]"
+              >
+                Ke Halaman Login
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     )
   }

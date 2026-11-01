@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../supabaseClient'
 import { api } from '../services/apiAdapter'
 import { DEFAULT_TENANT_ID, DEFAULT_BRANCH_ID } from '../constants/erpConfig'
@@ -39,16 +39,25 @@ export const AuthProvider = ({ children }) => {
   const [licenseStatus, setLicenseStatus] = useState(null)
   const [isLicenseLoading, setIsLicenseLoading] = useState(false)
 
-  // Helper untuk memuat lisensi tenant aktif
-  const loadTenantLicense = useCallback(async (tenantId, currentProfile) => {
+  // Ref stabil untuk mencegah re-trigger siklus render cascading
+  const profileRef = useRef(profile)
+  profileRef.current = profile
+  const userRef = useRef(user)
+  userRef.current = user
+  const activeTenantRef = useRef(activeTenant)
+  activeTenantRef.current = activeTenant
+
+  // Helper untuk memuat lisensi tenant aktif (Stabil dengan timeout proteksi)
+  const loadTenantLicense = useCallback(async (tenantId, currentProfile = null) => {
     if (!tenantId) {
       setTenantLicense(null)
       setLicenseStatus(null)
       return null
     }
 
-    const effectiveRole = currentProfile?.role || profile?.role || user?.role
-    const isSuperAdmin = effectiveRole === ROLES.SUPER_ADMIN || currentProfile?.is_super_admin || profile?.is_super_admin
+    const effectiveProfile = currentProfile || profileRef.current
+    const effectiveRole = effectiveProfile?.role || userRef.current?.role
+    const isSuperAdmin = effectiveRole === ROLES.SUPER_ADMIN || effectiveProfile?.is_super_admin || userRef.current?.is_super_admin
 
     // Founder / Super Admin selalu bebas dari pembatasan lisensi
     if (isSuperAdmin) {
@@ -74,12 +83,18 @@ export const AuthProvider = ({ children }) => {
 
     try {
       setIsLicenseLoading(true)
-      const { data, error } = await supabase
+      const fetchPromise = supabase
         .from('tenant_licenses')
         .select('*')
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false })
         .limit(1)
+
+      // Timeout 3 detik agar tidak memblokir UI jika koneksi lambat
+      const { data, error } = await Promise.race([
+        fetchPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('License fetch timeout')), 3000))
+      ])
 
       const lic = Array.isArray(data) && data.length > 0 ? data[0] : null
       setTenantLicense(lic)
@@ -87,7 +102,7 @@ export const AuthProvider = ({ children }) => {
       setLicenseStatus(evaluated)
       return evaluated
     } catch (err) {
-      console.warn('Gagal memuat lisensi tenant:', err)
+      console.warn('Gagal memuat lisensi tenant:', err?.message || err)
       const fallback = evaluateLicenseStatus(null)
       setTenantLicense(null)
       setLicenseStatus(fallback)
@@ -95,19 +110,24 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setIsLicenseLoading(false)
     }
-  }, [profile, user])
+  }, [])
 
   // Helper untuk memuat daftar tenant dan menentukan tenant aktif
-  const loadTenantsForUser = useCallback(async (currentProfile) => {
+  const loadTenantsForUser = useCallback(async (currentProfile = null) => {
+    const prof = currentProfile || profileRef.current
     try {
-      const { data: allTenants, error } = await supabase.from('tenants').select('*')
+      const fetchTenants = supabase.from('tenants').select('*')
+      const { data: allTenants, error } = await Promise.race([
+        fetchTenants,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Tenants fetch timeout')), 3000))
+      ])
       if (error) throw error
 
       const tenantList = Array.isArray(allTenants) ? allTenants : []
       let allowedTenants = []
 
-      const role = currentProfile?.role || ROLES.KASIR
-      const userTenantId = currentProfile?.tenant_id || DEFAULT_TENANT_ID
+      const role = prof?.role || ROLES.KASIR
+      const userTenantId = prof?.tenant_id || DEFAULT_TENANT_ID
 
       if (role === ROLES.SUPER_ADMIN) {
         // Super admin memiliki akses penuh ke semua tenant
@@ -116,7 +136,7 @@ export const AuthProvider = ({ children }) => {
         ]
       } else if (role === ROLES.OWNER) {
         // Owner HANYA memiliki akses ke tenant miliknya (berdasarkan tenant_id profil atau owner_email)
-        const profileEmail = (currentProfile?.email || '').toLowerCase().trim()
+        const profileEmail = (prof?.email || '').toLowerCase().trim()
         const myTenants = tenantList.filter(t => {
           const matchTenantId = t.id === userTenantId
           const matchEmail = Boolean(profileEmail && t.owner_email && t.owner_email.toLowerCase().trim() === profileEmail)
@@ -124,7 +144,7 @@ export const AuthProvider = ({ children }) => {
         })
 
         allowedTenants = myTenants.length > 0 ? myTenants : [
-          { id: userTenantId, nama: currentProfile?.nama ? `Outlet ${currentProfile.nama}` : 'Outlet Utama Owner', slug: 'outlet-owner', plan: 'ENTERPRISE', status: 'ACTIVE' }
+          { id: userTenantId, nama: prof?.nama ? `Outlet ${prof.nama}` : 'Outlet Utama Owner', slug: 'outlet-owner', plan: 'ENTERPRISE', status: 'ACTIVE' }
         ]
       } else {
         // Kasir dan Staf 100% terkunci pada tenant_id profil mereka
@@ -164,13 +184,13 @@ export const AuthProvider = ({ children }) => {
         setActiveTenant(resolvedTenant)
         localStorage.setItem(ACTIVE_TENANT_STORAGE_KEY, resolvedTenant.id)
         setActiveTenantId(resolvedTenant.id)
-        await loadTenantLicense(resolvedTenant.id, currentProfile)
+        await loadTenantLicense(resolvedTenant.id, prof)
       }
     } catch (err) {
-      console.warn('Gagal memuat daftar tenant pengguna:', err)
+      console.warn('Gagal memuat daftar tenant pengguna:', err?.message || err)
       const fallbackTenant = {
-        id: currentProfile?.tenant_id || DEFAULT_TENANT_ID,
-        nama: 'RelayPOS Demo Holding',
+        id: prof?.tenant_id || DEFAULT_TENANT_ID,
+        nama: prof?.nama ? `Outlet ${prof.nama}` : 'RelayPOS Demo Holding',
         slug: 'relaypos-demo',
         business_type: 'HYBRID',
         plan: 'ENTERPRISE',
@@ -179,7 +199,7 @@ export const AuthProvider = ({ children }) => {
       setUserTenants([fallbackTenant])
       setActiveTenant(fallbackTenant)
       setActiveTenantId(fallbackTenant.id)
-      await loadTenantLicense(fallbackTenant.id, currentProfile)
+      await loadTenantLicense(fallbackTenant.id, prof)
     }
   }, [loadTenantLicense])
 
@@ -254,13 +274,23 @@ export const AuthProvider = ({ children }) => {
   }, [userTenants, profile, user, loadTenantLicense])
 
   const refreshTenants = useCallback(async () => {
-    if (profile) {
-      await loadTenantsForUser(profile)
+    const prof = profileRef.current
+    if (prof) {
+      await loadTenantsForUser(prof)
     }
-  }, [profile, loadTenantsForUser])
+  }, [loadTenantsForUser])
 
   useEffect(() => {
     let isMounted = true
+    let isInitialized = false
+
+    // Safety guard timeout: JANGAN PERNAH biarkan pengguna stuck di "Memuat Sesi..." lebih dari 3.5 detik
+    const safetyTimer = setTimeout(() => {
+      if (isMounted) {
+        console.warn('⚠️ Sesi auth loading safety timeout dipicu (3.5s). Membuka gate UI...')
+        setLoading(false)
+      }
+    }, 3500)
 
     const syncSession = async (session) => {
       try {
@@ -268,6 +298,7 @@ export const AuthProvider = ({ children }) => {
           // Tetapkan user dan profil instan berbasis metadata sesi agar UI tidak menggantung
           const fastProfile = {
             id: session.user.id,
+            email: session.user.email,
             nama: session.user.user_metadata?.nama || session.user.email || 'Pengguna RelayPOS',
             role: session.user.role || session.user.user_metadata?.role || 'Owner',
             tenant_id: session.user.tenant_id || DEFAULT_TENANT_ID
@@ -277,8 +308,13 @@ export const AuthProvider = ({ children }) => {
             setProfile(prev => prev || fastProfile)
           }
 
-          // Sinkronisasi data profil lengkap dan tenant
-          const p = await api.auth.getProfile(session.user.id).catch(() => null)
+          // Sinkronisasi data profil lengkap dan tenant dengan batas waktu maksimum 3 detik
+          const profilePromise = api.auth.getProfile(session.user.id).catch(() => null)
+          const p = await Promise.race([
+            profilePromise,
+            new Promise((resolve) => setTimeout(() => resolve(null), 3000))
+          ])
+
           if (isMounted) {
             const finalProfile = p || fastProfile
             setProfile(finalProfile)
@@ -306,6 +342,8 @@ export const AuthProvider = ({ children }) => {
         }
       } finally {
         if (isMounted) {
+          isInitialized = true
+          clearTimeout(safetyTimer)
           setLoading(false)
         }
       }
@@ -313,20 +351,31 @@ export const AuthProvider = ({ children }) => {
 
     // 1. Eksekusi awal sinkronisasi sesi
     supabase.auth.getSession().then(({ data: { session } }) => {
-      syncSession(session)
-    }).catch(() => {
-      if (isMounted) setLoading(false)
+      if (isMounted) {
+        syncSession(session)
+      }
+    }).catch((err) => {
+      console.warn('Gagal getSession awal:', err)
+      if (isMounted) {
+        clearTimeout(safetyTimer)
+        setLoading(false)
+      }
     })
 
     // 2. Listener perubahan sesi (hanya tangani perubahan berikutnya)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+      if (event === 'INITIAL_SESSION') {
+        if (session && !isInitialized) {
+          syncSession(session)
+        }
+      } else if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
         syncSession(session)
       }
     })
 
     return () => {
       isMounted = false
+      clearTimeout(safetyTimer)
       if (subscription && subscription.unsubscribe) {
         subscription.unsubscribe()
       }
