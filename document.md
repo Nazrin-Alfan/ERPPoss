@@ -3914,6 +3914,25 @@
     - **Cloudflare Pages Deployment**: Sukses terdeploy live di `https://erpposs.pages.dev` (Edge Deployment `bb5634b9.erpposs.pages.dev`).
     - **Verifikasi Headless Browser**: Halaman login terbuka sempurna tanpa console error (`Window errors: []`, `Login button: Found`).
 
+110. **Instalasi dan Integrasi Skill Resmi Supabase & Postgres Best Practices (2026-11-02)**:
+  - **Latar Belakang & Ruang Lingkup**:
+    - Pengguna meminta instalasi skill `supabase/agent-skills` ke dalam repository proyek RelayPOS menggunakan ekosistem `npx skills add supabase/agent-skills`.
+    - Pemasangan ini bertujuan melengkapi agen teknik dengan panduan resmi Supabase (API, Auth, Storage, Security Checklist, CLI/MCP) dan panduan pengindeksan, locking, serta performa PostgreSQL (`supabase-postgres-best-practices`).
+  - **Langkah Rekayasa & Konfigurasi**:
+    1. Menjalankan `npx skills add supabase/agent-skills`:
+       - Mengunduh paket skill resmi Supabase v0.1.2 dan panduan best practices Postgres v1.1.1 ke dalam `.agents/skills/`.
+       - Menyiapkan konfigurasi integrasi lokal `.hermes/skills/` dan `skills-lock.json` untuk agen Hermes dan model lainnya.
+       - Menyinkronkan salinan skill ke direktori global Hermes Agent (`C:\Users\msi\AppData\Local\hermes\skills\engineering\`) agar dapat dimuat dan diakses di seluruh sesi kerja.
+    2. Pembaruan Dokumen Spesifikasi Agen (`AGENTS.md`):
+       - Menautkan skill `supabase` dan `supabase-postgres-best-practices` ke spesifikasi:
+         - `@ERP_Architect`: Desain DDL, composite indexing, tipe data finansial presisi, dan foreign keys.
+         - `@Backend_ERP_Dev`: Batch mutation, isolasi transaksi ACID, keamanan RLS, dan pencegahan query N+1.
+         - `@QA_ERP_Auditor`: Security checklist Supabase, audit IDOR multi-tenant, dan proteksi views via `security_invoker`.
+  - **Verifikasi Kualitas**:
+    - `skill_view(name='supabase')` dan `skill_view(name='supabase-postgres-best-practices')` terverifikasi aktif dan terbaca dengan metadata lengkap.
+    - Vitest Suite: 59 test files lulus (356/356 tests PASS).
+    - Status Repository: Tercatat di Git tracking dengan branch `main`.
+
 
 
 
