@@ -257,11 +257,11 @@ export default function Gudang() {
 
       if (editingItem) {
         // Update
-        const { error: updErr } = await supabase
-          .from('stok_barang')
-          .update(payload)
-          .eq('id_bahan_baku', editingItem.id_barang)
+        const updQuery = editingItem.id
+          ? supabase.from('stok_barang').update(payload).eq('id', editingItem.id)
+          : supabase.from('stok_barang').update(payload).eq('id_bahan_baku', editingItem.id_barang)
 
+        const { error: updErr } = await updQuery
         if (updErr) throw updErr
         setSuccess(`Barang "${payload.nama_barang}" berhasil diperbarui!`)
       } else {
@@ -287,10 +287,11 @@ export default function Gudang() {
   const handleDeleteItem = async (item) => {
     if (!window.confirm(`Yakin ingin menghapus barang "${item.nama_barang}" dari gudang?`)) return
     try {
-      const { error: delErr } = await supabase
-        .from('stok_barang')
-        .delete()
-        .eq('id_bahan_baku', item.id_barang)
+      const delQuery = item.id
+        ? supabase.from('stok_barang').delete().eq('id', item.id)
+        : supabase.from('stok_barang').delete().eq('id_bahan_baku', item.id_barang)
+
+      const { error: delErr } = await delQuery
 
       if (delErr) throw delErr
       setSuccess(`Barang "${item.nama_barang}" berhasil dihapus.`)
@@ -361,14 +362,19 @@ export default function Gudang() {
 
     try {
       const selisih = realQtyNum - (parseFloat(opnameTarget.stok) || 0)
-      const { error: updErr } = await supabase
-        .from('stok_barang')
-        .update({
-          stok: realQtyNum,
-          stok_akhir: realQtyNum,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id_bahan_baku', opnameTarget.id_barang)
+      const opnameQuery = opnameTarget.id
+        ? supabase.from('stok_barang').update({
+            stok: realQtyNum,
+            stok_akhir: realQtyNum,
+            updated_at: new Date().toISOString()
+          }).eq('id', opnameTarget.id)
+        : supabase.from('stok_barang').update({
+            stok: realQtyNum,
+            stok_akhir: realQtyNum,
+            updated_at: new Date().toISOString()
+          }).eq('id_bahan_baku', opnameTarget.id_barang)
+
+      const { error: updErr } = await opnameQuery
 
       if (updErr) throw updErr
 

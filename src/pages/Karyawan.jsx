@@ -197,25 +197,7 @@ const Karyawan = () => {
       // 1. Fetch Carwash transactions
       const { data: cwData, error: cwErr } = await supabase
         .from('carwash')
-        .select(`
-          id_transaksi,
-          kehadiran,
-          variant,
-          ukuran,
-          paket,
-          anggota_1,
-          anggota_2,
-          plat,
-          harga,
-          harga_cuci,
-          harga_paket,
-          harga_custom,
-          gaji_pencuci,
-          status,
-          jam,
-          created_at,
-          tanggal
-        `)
+        .select('*')
         .neq('status', 'Batal')
         .gte('tanggal', wagesStartDate)
         .lte('tanggal', wagesEndDate)
@@ -320,7 +302,7 @@ const Karyawan = () => {
         summary[w1].totalCars += 1
         summary[w1].totalWage += share
         summary[w1].details.push({
-          id: item.id_transaksi,
+          id: item.id_transaksi || item.id,
           tanggal: item.tanggal,
           jam: item.jam,
           created_at: item.created_at,
@@ -342,7 +324,7 @@ const Karyawan = () => {
         summary[w2].totalCars += 1
         summary[w2].totalWage += share
         summary[w2].details.push({
-          id: item.id_transaksi,
+          id: item.id_transaksi || item.id,
           tanggal: item.tanggal,
           jam: item.jam,
           created_at: item.created_at,

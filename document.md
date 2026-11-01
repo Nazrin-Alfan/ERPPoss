@@ -3848,6 +3848,42 @@
   - Bundling Vite: Sukses dalam 1.69 detik (`dist/assets/index-Cyt-Cuss.js`, gzip: 309.19 kB).
   - Cloudflare Pages: Terdeploy live di `https://erpposs.pages.dev` (Edge Bundle: `index-Cyt-Cuss.js`).
 
+108. **Audit Komprehensif Infrastruktur Database Supabase & Solusi Multi-Tenant Jangka Panjang (2026-11-02)**:
+  - **Latar Belakang & Masalah**:
+    - Terdeteksi ketidakselarasan relasi PostgREST antara tabel `cafe` dan `struk` (`Could not find a relationship between 'cafe' and 'struk' in the schema cache`), menyebabkan kegagalan query transaksi gabungan.
+    - Terjadi mismatch kolom pada query kalkulasi upah `carwash` (`id_transaksi`, `kehadiran`, `harga_cuci`, dll).
+    - Terjadi runtime crash `categoryModalError is not defined` saat membuka modal tambah kategori transaksi di `src/pages/Admin.jsx`.
+    - Terjadi ketidaksesuaian kolom inventaris gudang pada tabel `stok_barang` (`gudang`, `kategori`, `harga_beli`, `harga_jual`, `id_bahan_baku`, dll) dan tabel mutasi `barang_masuk`/`barang_keluar`.
+    - Isolasi penambahan data tenant membutuhkan kepastian jangka panjang agar tidak mengandalkan pengiriman `tenant_id` dari browser klien secara manual.
+  - **Tindakan Perbaikan Arsitektur & Database**:
+    1. **Relasi Foreign Key Fisik PostgREST**:
+       - Menambahkan composite foreign key `cafe(tenant_id, id_struk) REFERENCES struk(tenant_id, id_struk) ON DELETE CASCADE` dan `carwash(tenant_id, id_struk) REFERENCES struk(tenant_id, id_struk) ON DELETE CASCADE`.
+       - Mereload schema cache PostgREST via `NOTIFY pgrst, 'reload schema'`.
+    2. **Solusi Multi-Tenant Otomatis Tingkat Database (Long-Term)**:
+       - Merancang fungsi trigger `fn_auto_set_tenant_and_branch()` untuk 20 tabel operasional berkolom `branch_id` (`stok_barang`, `carwash`, `cafe`, `struk`, `cashflow`, `pengeluaran`, dll).
+       - Merancang fungsi trigger `fn_auto_set_tenant_only()` untuk tabel tingkat tenant tanpa `branch_id` (`master_categories`, `chart_of_accounts`, `crm_customers`, `resep`, `tenant_licenses`, `journal_entry_lines`).
+       - Memastikan seluruh operasi INSERT oleh tenant otomatis mengisi `tenant_id` dari JWT auth (`current_tenant_id()`) dan `branch_id` utama jika dikirim null oleh klien.
+    3. **Penyelarasan Kolom & Trigger Sinkronisasi Dua Arah**:
+       - `stok_barang`: Menambahkan kolom `id_bahan_baku`, `id_barang`, `stok_akhir`, `sub_kategori`, `keterangan`, `is_active`, `icon`, `emoji`, `foto_url`, serta trigger `trg_stok_barang_sync` untuk menjaga konsistensi antara `id_barang` ⇄ `id_bahan_baku` dan `harga_beli` ⇄ `harga_satuan`.
+       - `barang_masuk` & `barang_keluar`: Menambahkan kolom `id_barang`, `nama_barang`, `harga_satuan`, `total_harga` dengan trigger sinkronisasi otomatis ke `id_bahan_baku`, `nama_bahan_baku`, `harga_beli`, dan `total_biaya`.
+       - `cafe`: Menambahkan kolom `diskon`, `id_detail`, `jumlah`, `kategori`, `nama_item`, `total_harga` dengan trigger sinkronisasi otomatis ke `nama_menu`, `qty`, `subtotal`.
+       - `carwash`: Menambahkan kolom `barang_berharga`, `catatan_kendaraan`, `diskon`, `id_transaksi`, `kondisi_bodi`, `layanan`, `metode`, `metode_bayar`, `plat_nomor`, `status_pengerjaan` dengan trigger sinkronisasi ke `plat`, `paket`, `harga`.
+       - `diskon`: Menambahkan kolom `nama`, `tipe`, `nominal`, `kategori` dengan sinkronisasi ke `nama_diskon`, `tipe_diskon`, `nilai_diskon`.
+       - `master_categories`: Mengubah tipe kolom `account_id` menjadi `VARCHAR(100)` agar kompatibel menerima kode akun COA (`acc_6004`, dll) dan UUID.
+    4. **Refactoring & Penyederhanaan Kode Frontend (Prinsip Kode Pendek)**:
+       - `src/pages/Admin.jsx`: Mendeklarasikan state `categoryModalError` dan `categoryModalLoading`, menghapus penetapan id manual `newCatId` agar PostgreSQL menggunakan `gen_random_uuid()`.
+       - `src/pages/Karyawan.jsx`: Menyederhanakan query `carwash` dari belasan baris spesifikasi kolom menjadi `.select('*')` yang ringkas, serta menambahkan fallback `item.id_transaksi || item.id`.
+       - `src/pages/Finance.jsx`: Mengganti `.single()` pada `finance_summary` menjadi `.maybeSingle()`, serta menambahkan fallback tanggal `item.struk?.tanggal || item.tanggal` pada agregasi transaksi cafe.
+       - `src/pages/Gudang.jsx`: Memperbarui operasi update, delete, dan stock opname agar memprioritaskan kolom `id` (primary key UUID) sebelum fallback ke `id_bahan_baku`.
+  - **Verifikasi Kualitas & Hasil**:
+    - Database Assertion Test (`scripts/test_tenant_insert_and_sync.py`): Eksekusi transaksi multi-tabel (`struk`, `cafe`, `carwash`, `stok_barang`, `master_categories`) lolos 100% dengan trigger sinkronisasi aktif.
+    - Discrepancy Checker: 0 kolom mutasi hilang di seluruh codebase (`MUTATION DISCREPANCIES COUNT: 0`).
+    - Test Suite Vitest: **59 test files lulus, 356/356 tests PASS (100% GREEN)**.
+    - Bundling Vite: Kompilasi sukses dalam 1.76 detik (`dist/assets/index-DefL7fpv.js`, gzip: 309.12 kB).
+    - Cloudflare Pages: Sukses terdeploy live di `https://erpposs.pages.dev` (Edge Deployment `06767ba9.erpposs.pages.dev`).
+    - Verifikasi Headless Browser: Live peramban membuka `https://erpposs.pages.dev/login` dengan tampilan utuh dan 0 console error.
+
+
 
 
 

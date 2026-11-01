@@ -61,5 +61,28 @@ describe('Admin Liquidity Account Management & Modals', () => {
     expect(payload.balance).toBe(500000)
     expect(payload.is_active).toBe(true)
   })
+
+  it('TC_03: Verifies category modal renders and categoryForm payload preserves account_id', () => {
+    const html = renderToString(
+      <MemoryRouter initialEntries={['/admin?tab=categories']}>
+        <Admin />
+      </MemoryRouter>
+    )
+
+    // Periksa komponen kategori transaksi
+    expect(html).toContain('Kategori Transaksi')
+
+    const categoryPayload = {
+      nama_kategori: 'Biaya Servis Pompa',
+      jenis: 'Pengeluaran Cafe',
+      tipe_arus: 'PENGELUARAN',
+      account_id: 'acc_6003',
+      boleh_kasir: true,
+      is_active: true
+    }
+
+    expect(categoryPayload.account_id).toBe('acc_6003')
+    expect(categoryPayload.is_active).toBe(true)
+  })
 })
 

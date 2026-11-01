@@ -175,6 +175,8 @@ const Admin = () => {
   const [masterCategories, setMasterCategories] = useState([])
   const [categoryFilterJenis, setCategoryFilterJenis] = useState('all')
   const [showCategoryModal, setShowCategoryModal] = useState(false)
+  const [categoryModalError, setCategoryModalError] = useState('')
+  const [categoryModalLoading, setCategoryModalLoading] = useState(false)
   const [editingCategory, setEditingCategory] = useState(null)
   const [isCustomCategoryJenis, setIsCustomCategoryJenis] = useState(false)
   const [categoryForm, setCategoryForm] = useState({
@@ -959,9 +961,7 @@ const Admin = () => {
         if (err) throw err
         setSuccess(`Kategori "${categoryForm.nama_kategori}" berhasil diperbarui!`)
       } else {
-        const newCatId = `kat_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 5)}`
         const catPayload = {
-          id: newCatId,
           nama_kategori: categoryForm.nama_kategori.trim(),
           jenis: categoryForm.jenis,
           tipe_arus: categoryForm.tipe_arus,

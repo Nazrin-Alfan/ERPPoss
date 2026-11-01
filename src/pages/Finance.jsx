@@ -717,12 +717,12 @@ const Finance = () => {
     setError('')
     try {
       // 1. Fetch Summary View
-      const { data: sumData } = await supabase.from('finance_summary').select('*').single()
+      const { data: sumData } = await supabase.from('finance_summary').select('*').maybeSingle()
       if (sumData) {
         setSummary({
-          totalIncome: parseFloat(sumData.total_income) || 0,
-          totalExpense: parseFloat(sumData.total_expense) || 0,
-          totalBalance: parseFloat(sumData.total_balance) || 0
+          totalIncome: parseFloat(sumData.total_pemasukan || sumData.total_income) || 0,
+          totalExpense: parseFloat(sumData.total_pengeluaran || sumData.total_expense) || 0,
+          totalBalance: parseFloat(sumData.laba_bersih || sumData.total_balance) || 0
         })
       }
 
@@ -760,7 +760,7 @@ const Finance = () => {
       ] = await Promise.all([
         fetchAllData('cashflow', '*', 'tanggal'),
         fetchAllData('carwash', '*', 'tanggal'),
-        fetchAllData('cafe', '*, struk(tanggal, jam, kasir, metode_bayar, status_bayar)'),
+        fetchAllData('cafe', '*, struk(tanggal, jam, kasir, metode_bayar, status_bayar)').catch(() => fetchAllData('cafe', '*', 'tanggal')),
         fetchAllData('pengeluaran', '*', 'tanggal'),
         supabase.from('master_categories').select('*'),
         supabase.from('stok_barang').select('*'),
@@ -1079,7 +1079,7 @@ const Finance = () => {
   // ==========================================
   const filteredCafe = useMemo(() => {
     const list = cafeList.filter(item => {
-      const itemDate = item.struk?.tanggal || ''
+      const itemDate = item.struk?.tanggal || item.tanggal || ''
       if (!isDateInRange(itemDate)) return false
 
       const itemKat = item.kategori || 'Menu'
@@ -1087,10 +1087,10 @@ const Finance = () => {
 
       if (searchQuery) {
         const q = searchQuery.toLowerCase()
-        const matchItem = String(item.nama_menu || item.nama_item || '').toLowerCase().includes(q)
+        const matchItem = String(item.nama_menu || item.nama_item || item.daftar_menu || '').toLowerCase().includes(q)
         const matchKat = String(itemKat).toLowerCase().includes(q)
         const matchStruk = String(item.id_struk || '').toLowerCase().includes(q)
-        const matchKasir = String(item.struk?.kasir || '').toLowerCase().includes(q)
+        const matchKasir = String(item.struk?.kasir || item.kasir || '').toLowerCase().includes(q)
         if (!matchItem && !matchKat && !matchStruk && !matchKasir) return false
       }
 
@@ -1103,8 +1103,8 @@ const Finance = () => {
         const totB = parseFloat(itemTotalHarga(b)) || 0
         return sortOrder === 'asc' ? totA - totB : totB - totA
       }
-      const dtA = `${a.struk?.tanggal || ''} ${a.struk?.jam || ''}`
-      const dtB = `${b.struk?.tanggal || ''} ${b.struk?.jam || ''}`
+      const dtA = `${a.struk?.tanggal || a.tanggal || ''} ${a.struk?.jam || a.jam || ''}`
+      const dtB = `${b.struk?.tanggal || b.tanggal || ''} ${b.struk?.jam || b.jam || ''}`
       return sortOrder === 'asc' ? dtA.localeCompare(dtB) : dtB.localeCompare(dtA)
     })
   }, [cafeList, filterPeriodMode, selectedMonth, quickPreset, customStartDate, customEndDate, filterCafeCategory, searchQuery, sortKey, sortOrder])
