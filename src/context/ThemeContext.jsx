@@ -63,13 +63,17 @@ const ThemeContext = createContext({
 
 export const ThemeProvider = ({ children }) => {
   const [activeThemeId, setActiveThemeId] = useState(() => {
-    const saved = localStorage.getItem('jb_active_theme')
-    return saved ? parseInt(saved, 10) : 1
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const saved = window.localStorage.getItem('jb_active_theme')
+      return saved ? parseInt(saved, 10) : 1
+    }
+    return 1
   })
 
   const currentTheme = themes[activeThemeId] || themes[1]
 
   useEffect(() => {
+    if (typeof document === 'undefined') return
     // Apply colors as CSS variables to root element
     const root = document.documentElement
     root.style.setProperty('--brand-primary', currentTheme.colors.primary)
@@ -78,7 +82,9 @@ export const ThemeProvider = ({ children }) => {
     root.style.setProperty('--brand-bg-light', currentTheme.colors.bgLight)
     root.style.setProperty('--brand-text-accent', currentTheme.colors.textAccent)
 
-    localStorage.setItem('jb_active_theme', activeThemeId.toString())
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem('jb_active_theme', activeThemeId.toString())
+    }
   }, [activeThemeId, currentTheme])
 
   const changeTheme = (id) => {

@@ -3817,6 +3817,37 @@
   - Vitest Suite: **59 test files lulus, 354/354 tests PASS (100% GREEN)**.
   - Bundling Vite: Sukses dalam 1.74 detik (`index-CV4mljQF.js`, gzip: 309.16 kB).
 
+---
+
+### Log Rekayasa #107: Eliminasi Runtime Crash ReferenceError `useEffect` pada Root Router & Verifikasi Real Headless Browser (2026-11-02)
+- **Gejala Masalah**:
+  - Pengguna melaporkan bahwa setelah patch Log #106 dideploy, aplikasi tetap tidak memuat sama sekali (tampilan blank/kosong pada elemen root).
+- **Akar Masalah (Root Cause Analysis via Browser Use / Chrome DevTools Protocol)**:
+  - Eksekusi inspeksi live di peramban riil pada `https://erpposs.pages.dev` menggunakan Chrome DevTools Protocol (`Page.addScriptToEvaluateOnNewDocument`) menangkap runtime exception fatal:
+    `Uncaught ReferenceError: useEffect is not defined at AppContent (assets/index-CV4mljQF.js:110:234267)`.
+  - Pada penambahan fitur taktil timer lambat di `src/App.jsx`, hook `useEffect` dipanggil di dalam fungsi `AppContent`, namun daftar impor pada baris 1 `src/App.jsx` hanya memuat `{ useState, lazy, Suspense }` tanpa `useEffect`.
+  - Karena tidak ada import `useEffect`, mesin JavaScript browser melempar `ReferenceError` saat pertama kali `AppContent` dievaluasi, menggugurkan seluruh pohon komponen React sebelum sempat merender apa pun ke dalam `<div id="root">`.
+- **Tindakan Rekayasa & Solusi**:
+  1. *Perbaikan Impor Deklaratif (`src/App.jsx`)*:
+     - Menambahkan `useEffect` ke dalam import React: `import React, { useState, useEffect, lazy, Suspense } from 'react'`.
+     - Mengekspor `AppContent` agar dapat diaudit dan diuji secara independen.
+  2. *Proteksi Lingkungan SSR/Browser (`src/context/ThemeContext.jsx`)*:
+     - Memperkuat akses `localStorage` dan `document` dengan penjaga `typeof window !== 'undefined' && window.localStorage` dan `typeof document !== 'undefined'`.
+  3. *Uji Render Integritas Komprehensif (`src/pages/__tests__/pageIntegrity.test.jsx`)*:
+     - Menambahkan pengujian render penuh `AppContent` yang dibungkus oleh `MemoryRouter`, `ThemeProvider`, dan `AuthProvider`.
+     - Setiap `ReferenceError` atau missing import pada level router utama kini secara otomatis tertangkap dan menggagalkan test suite (`npm test`).
+  4. *Verifikasi Nyata pada Peramban (Headless Browser Verification)*:
+     - Membuka `https://erpposs.pages.dev` menggunakan instans peramban Chromium riil pasca-deployment bundel baru `index-Cyt-Cuss.js`.
+     - Hasil evaluasi DOM:
+       - Root element terisi sempurna (`rootChildren: 1`).
+       - Judul halaman: `🐴 RelayPOS — Sistem Kasir & ERP Estafet Terpadu`.
+       - Rute aktif: Otomatis dialihkan ke `https://erpposs.pages.dev/login`.
+       - Teks Login Form ("Masuk ke Toko", "USERNAME ATAU EMAIL", "PIN / KATA SANDI") muncul 100% lengkap tanpa error console.
+- **Verifikasi Kualitas**:
+  - Test Suite Vitest: **59 test files lulus, 355/355 tests PASS (100% GREEN)**.
+  - Bundling Vite: Sukses dalam 1.69 detik (`dist/assets/index-Cyt-Cuss.js`, gzip: 309.19 kB).
+  - Cloudflare Pages: Terdeploy live di `https://erpposs.pages.dev` (Edge Bundle: `index-Cyt-Cuss.js`).
+
 
 
 

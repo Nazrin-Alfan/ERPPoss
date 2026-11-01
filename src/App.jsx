@@ -1,4 +1,4 @@
-import React, { useState, lazy, Suspense } from 'react'
+import React, { useState, useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
@@ -127,7 +127,7 @@ const RootDispatcher = () => {
   return <Navigate to="/pos" replace />
 }
 
-const AppContent = () => {
+export const AppContent = () => {
   const { user, loading, profile, licenseStatus } = useAuth()
   const location = useLocation()
   const [showActivateModal, setShowActivateModal] = useState(false)
