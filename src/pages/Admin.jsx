@@ -64,7 +64,7 @@ const Admin = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const tabParam = searchParams.get('tab')
-  const { registerKasir, activeTenant } = useAuth()
+  const { registerKasir, activeTenant, profile } = useAuth()
   const features = getTenantFeatures(activeTenant?.business_type)
   const defaultTab = tabParam || (features.isCarwashOnly ? 'carwash-packages' : 'menu')
   const [activeTab, setActiveTab] = useState(defaultTab)
@@ -150,6 +150,8 @@ const Admin = () => {
   const [posAccountList, setPosAccountList] = useState([])
   const [showAccountModal, setShowAccountModal] = useState(false)
   const [editingAccount, setEditingAccount] = useState(null)
+  const [accountModalError, setAccountModalError] = useState('')
+  const [accountModalLoading, setAccountModalLoading] = useState(false)
   const [accountForm, setAccountForm] = useState({
     pos: '',
     label: '',
@@ -286,6 +288,10 @@ const Admin = () => {
     setLoading(true)
     try {
       // Fetch seluruh master data secara paralel (Promise.all)
+      const targetTenantId = activeTenant?.id || profile?.tenant_id
+      let posQuery = supabase.from('pos_balances').select('*')
+      if (targetTenantId) posQuery = posQuery.eq('tenant_id', targetTenantId)
+
       const [
         resKc,
         resPm,
@@ -305,7 +311,7 @@ const Admin = () => {
         supabase.from('resep').select('*'),
         supabase.from('diskon').select('*').order('created_at', { ascending: false }),
         supabase.from('master_categories').select('*'),
-        supabase.from('pos_balances').select('*'),
+        posQuery,
         supabase.from('carwash_packages').select('*').order('sort_order', { ascending: true }),
         supabase.from('tenant_licenses').select('*').limit(1)
       ])
@@ -400,7 +406,7 @@ const Admin = () => {
 
   useEffect(() => {
     loadAdminData()
-  }, [])
+  }, [activeTenant?.id, profile?.tenant_id])
 
 
 
@@ -409,7 +415,10 @@ const Admin = () => {
     e.preventDefault()
     if (!newCashier) return
     try {
-      const { error } = await supabase.from('kasir').insert({ nama: newCashier.toUpperCase() })
+      const targetTenantId = activeTenant?.id || profile?.tenant_id
+      const payload = { nama: newCashier.toUpperCase() }
+      if (targetTenantId) payload.tenant_id = targetTenantId
+      const { error } = await supabase.from('kasir').insert(payload)
       if (error) throw error
       setNewCashier('')
       setSuccess('Kasir berhasil ditambahkan!')
@@ -421,7 +430,10 @@ const Admin = () => {
 
   const toggleCashierActive = async (nama, currentVal) => {
     try {
-      const { error } = await supabase.from('kasir').update({ is_active: !currentVal }).eq('nama', nama)
+      const targetTenantId = activeTenant?.id || profile?.tenant_id
+      let query = supabase.from('kasir').update({ is_active: !currentVal }).eq('nama', nama)
+      if (targetTenantId) query = query.eq('tenant_id', targetTenantId)
+      const { error } = await query
       if (error) throw error
       await loadAdminData()
     } catch (err) {
@@ -433,7 +445,10 @@ const Admin = () => {
     e.preventDefault()
     if (!newPayment) return
     try {
-      const { error } = await supabase.from('metode_bayar').insert({ nama: newPayment.toUpperCase() })
+      const targetTenantId = activeTenant?.id || profile?.tenant_id
+      const payload = { nama: newPayment.toUpperCase() }
+      if (targetTenantId) payload.tenant_id = targetTenantId
+      const { error } = await supabase.from('metode_bayar').insert(payload)
       if (error) throw error
       setNewPayment('')
       setSuccess('Metode Pembayaran berhasil ditambahkan!')
@@ -915,15 +930,19 @@ const Admin = () => {
     e.preventDefault()
     setError('')
     setSuccess('')
+    setCategoryModalError('')
 
     if (!categoryForm.nama_kategori.trim()) {
-      return setError('Nama kategori wajib diisi.')
+      setCategoryModalError('Nama kategori wajib diisi.')
+      return
     }
 
+    setCategoryModalLoading(true)
     setLoading(true)
     try {
+      const targetTenantId = activeTenant?.id || profile?.tenant_id
       if (editingCategory) {
-        const { error: err } = await supabase
+        let q = supabase
           .from('master_categories')
           .update({
             nama_kategori: categoryForm.nama_kategori.trim(),
@@ -934,22 +953,27 @@ const Admin = () => {
             is_active: categoryForm.is_active,
           })
           .eq('id', editingCategory.id)
+        if (targetTenantId) q = q.eq('tenant_id', targetTenantId)
 
+        const { error: err } = await q
         if (err) throw err
         setSuccess(`Kategori "${categoryForm.nama_kategori}" berhasil diperbarui!`)
       } else {
         const newCatId = `kat_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 5)}`
+        const catPayload = {
+          id: newCatId,
+          nama_kategori: categoryForm.nama_kategori.trim(),
+          jenis: categoryForm.jenis,
+          tipe_arus: categoryForm.tipe_arus,
+          account_id: categoryForm.account_id,
+          boleh_kasir: categoryForm.boleh_kasir,
+          is_active: true,
+        }
+        if (targetTenantId) catPayload.tenant_id = targetTenantId
+
         const { error: err } = await supabase
           .from('master_categories')
-          .insert({
-            id: newCatId,
-            nama_kategori: categoryForm.nama_kategori.trim(),
-            jenis: categoryForm.jenis,
-            tipe_arus: categoryForm.tipe_arus,
-            account_id: categoryForm.account_id,
-            boleh_kasir: categoryForm.boleh_kasir,
-            is_active: true,
-          })
+          .insert(catPayload)
 
         if (err) throw err
         setSuccess(`Kategori baru "${categoryForm.nama_kategori}" berhasil disimpan!`)
@@ -968,8 +992,11 @@ const Admin = () => {
       await loadAdminData()
     } catch (err) {
       console.error(err)
-      setError('Gagal menyimpan kategori: ' + err.message)
+      const msg = 'Gagal menyimpan kategori: ' + (err.message || '')
+      setCategoryModalError(msg)
+      setError(msg)
     } finally {
+      setCategoryModalLoading(false)
       setLoading(false)
     }
   }
@@ -979,10 +1006,13 @@ const Admin = () => {
     if (!confirmed) return
     setLoading(true)
     try {
-      const { error: err } = await supabase
+      const targetTenantId = activeTenant?.id || profile?.tenant_id
+      let q = supabase
         .from('master_categories')
         .delete()
         .eq('id', cat.id)
+      if (targetTenantId) q = q.eq('tenant_id', targetTenantId)
+      const { error: err } = await q
 
       if (err) throw err
       await showAlert(`Kategori "${cat.nama_kategori}" berhasil dihapus.`, 'Sukses')
@@ -1120,6 +1150,8 @@ const Admin = () => {
       color: 'blue',
       is_active: true
     })
+    setAccountModalError('')
+    setAccountModalLoading(false)
     setShowAccountModal(true)
   }
 
@@ -1134,19 +1166,46 @@ const Admin = () => {
       color: acc.color || 'blue',
       is_active: acc.is_active !== false
     })
+    setAccountModalError('')
+    setAccountModalLoading(false)
     setShowAccountModal(true)
   }
 
   const handleSaveAccount = async (e) => {
     e.preventDefault()
+    setAccountModalError('')
     setError('')
     setSuccess('')
+    setAccountModalLoading(true)
+
     try {
       const posCode = accountForm.pos.trim().toUpperCase()
-      if (!posCode) return setError('Kode / Nama Pos akun wajib diisi.')
+      if (!posCode) {
+        setAccountModalError('Kode / Nama Pos akun wajib diisi.')
+        setAccountModalLoading(false)
+        return
+      }
       const normalizedPos = posCode.startsWith('SALDO ') ? posCode : `SALDO ${posCode}`
 
+      let targetTenantId = activeTenant?.id || profile?.tenant_id
+      let targetBranchId = profile?.branch_id || null
+
+      if (!targetTenantId) {
+        const { data: authData } = await supabase.auth.getUser()
+        if (authData?.user) {
+          const { data: prof } = await supabase.from('profiles').select('tenant_id, branch_id').eq('id', authData.user.id).maybeSingle()
+          if (prof?.tenant_id) targetTenantId = prof.tenant_id
+          if (prof?.branch_id) targetBranchId = prof.branch_id
+        }
+      }
+
+      if (!targetTenantId) {
+        throw new Error('Tenant aktif tidak terdeteksi. Silakan muat ulang halaman atau pilih outlet.')
+      }
+
       const payload = {
+        tenant_id: targetTenantId,
+        branch_id: targetBranchId,
         pos: normalizedPos,
         label: accountForm.label.trim() || normalizedPos,
         tipe: accountForm.tipe || 'BANK',
@@ -1157,13 +1216,17 @@ const Admin = () => {
       }
 
       if (editingAccount) {
-        const { error: updErr } = await supabase.from('pos_balances').update(payload).eq('pos', editingAccount.pos)
+        let query = supabase.from('pos_balances').update(payload).eq('pos', editingAccount.pos)
+        if (targetTenantId) query = query.eq('tenant_id', targetTenantId)
+        const { error: updErr } = await query
         if (updErr) throw updErr
         setSuccess(`Akun likuiditas "${payload.label}" berhasil diperbarui!`)
       } else {
-        const exists = posAccountList.some(a => a.pos === normalizedPos)
+        const exists = posAccountList.some(a => a.pos === normalizedPos && (a.tenant_id ? a.tenant_id === targetTenantId : true))
         if (exists) {
-          return setError(`Akun dengan nama pos "${normalizedPos}" sudah ada.`)
+          setAccountModalError(`Akun dengan nama pos "${normalizedPos}" sudah ada.`)
+          setAccountModalLoading(false)
+          return
         }
         const { error: insErr } = await supabase.from('pos_balances').insert(payload)
         if (insErr) throw insErr
@@ -1175,7 +1238,11 @@ const Admin = () => {
       await loadAdminData()
     } catch (err) {
       console.error('Error saving account:', err)
-      setError(err.message || 'Gagal menyimpan akun likuiditas.')
+      const errorMsg = err.message || 'Gagal menyimpan akun likuiditas.'
+      setAccountModalError(errorMsg)
+      setError(errorMsg)
+    } finally {
+      setAccountModalLoading(false)
     }
   }
 
@@ -1185,7 +1252,10 @@ const Admin = () => {
     }
     if (!window.confirm(`Yakin ingin menghapus akun likuiditas "${account.label || account.pos}"?`)) return
     try {
-      const { error: delErr } = await supabase.from('pos_balances').delete().eq('pos', account.pos)
+      const targetTenantId = activeTenant?.id || profile?.tenant_id
+      let query = supabase.from('pos_balances').delete().eq('pos', account.pos)
+      if (targetTenantId) query = query.eq('tenant_id', targetTenantId)
+      const { error: delErr } = await query
       if (delErr) throw delErr
       setSuccess(`Akun "${account.label || account.pos}" berhasil dihapus.`)
       await loadAdminData()
@@ -1201,6 +1271,8 @@ const Admin = () => {
     setLoading(true)
 
     try {
+      const targetTenantId = activeTenant?.id || profile?.tenant_id
+      const targetBranchId = profile?.branch_id || null
       const inserts = []
       const todayDate = new Date().toLocaleDateString('en-CA')
       const currentTime = new Date().toTimeString().split(' ')[0]
@@ -1232,7 +1304,7 @@ const Admin = () => {
             const currentBal = parseFloat(acc.balance || 0)
             const diff = target - currentBal
             if (diff !== 0) {
-              inserts.push({
+              const insertItem = {
                 id_cashflow: self.crypto.randomUUID(),
                 tanggal: currentTimestamp,
                 jenis: diff > 0 ? 'Pemasukan' : 'Pengeluaran',
@@ -1240,10 +1312,15 @@ const Admin = () => {
                 pemasukan: diff > 0 ? Math.abs(diff) : 0,
                 pengeluaran: diff < 0 ? Math.abs(diff) : 0,
                 keterangan_transaksi: `Kalibrasi Saldo ${acc.label || acc.pos} (Penyesuaian Manual Admin)`
-              })
+              }
+              if (targetTenantId) insertItem.tenant_id = targetTenantId
+              if (targetBranchId) insertItem.branch_id = targetBranchId
+              inserts.push(insertItem)
 
               // Sinkronkan saldo langsung di tabel pos_balances
-              await supabase.from('pos_balances').update({ balance: target }).eq('pos', acc.pos)
+              let updateQuery = supabase.from('pos_balances').update({ balance: target }).eq('pos', acc.pos)
+              if (targetTenantId) updateQuery = updateQuery.eq('tenant_id', targetTenantId)
+              await updateQuery
             }
           }
         }
@@ -2636,12 +2713,20 @@ const Admin = () => {
                 <span>{editingCategory ? 'Edit Kategori Terkunci' : 'Tambah Kategori Terkunci Baru'}</span>
               </h3>
               <button
+                type="button"
                 onClick={() => setShowCategoryModal(false)}
                 className="text-[#bbcbb2] hover:text-white"
               >
                 ✕
               </button>
             </div>
+
+            {categoryModalError && (
+              <div className="p-3 mb-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+                <AlertCircle size={16} className="shrink-0" />
+                <span>{categoryModalError}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSaveCategory} className="space-y-4">
               <div>
@@ -2774,10 +2859,17 @@ const Admin = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="px-5 py-2 rounded-xl bg-[#00ffff] hover:bg-[#00ffff]/90 active:scale-[0.98] text-[#0f0f0f] font-black text-xs shadow-lg shadow-brand-emerald/20 transition-all disabled:opacity-50"
+                  disabled={categoryModalLoading || loading}
+                  className="px-5 py-2 rounded-xl bg-[#00ffff] hover:bg-[#00ffff]/90 active:scale-[0.98] text-[#0f0f0f] font-black text-xs shadow-lg shadow-brand-emerald/20 transition-all disabled:opacity-50 flex items-center gap-2"
                 >
-                  {loading ? 'Menyimpan...' : 'Simpan Kategori'}
+                  {categoryModalLoading ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-[#0f0f0f] border-t-transparent rounded-full animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    'Simpan Kategori'
+                  )}
                 </button>
               </div>
             </form>
@@ -2795,12 +2887,20 @@ const Admin = () => {
                 <span>{editingAccount ? 'Edit Akun Likuiditas' : 'Tambah Akun Kas / Bank Baru'}</span>
               </h3>
               <button
+                type="button"
                 onClick={() => setShowAccountModal(false)}
                 className="text-[#bbcbb2] hover:text-white"
               >
                 ✕
               </button>
             </div>
+
+            {accountModalError && (
+              <div className="p-3 mb-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+                <AlertCircle size={16} className="shrink-0" />
+                <span>{accountModalError}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSaveAccount} className="space-y-4">
               <div>
@@ -2913,10 +3013,17 @@ const Admin = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="px-5 py-2 rounded-xl text-xs font-bold bg-[#00ffff] hover:bg-cyan-500 text-[#0f0f0f] shadow-lg shadow-brand-blue/20 transition-all"
+                  disabled={accountModalLoading || loading}
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-[#00ffff] hover:bg-cyan-500 active:scale-[0.98] text-[#0f0f0f] shadow-lg shadow-brand-blue/20 transition-all flex items-center gap-2 disabled:opacity-50"
                 >
-                  {editingAccount ? 'Simpan Akun' : 'Tambah Akun'}
+                  {accountModalLoading ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-[#0f0f0f] border-t-transparent rounded-full animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    editingAccount ? 'Simpan Akun' : 'Tambah Akun'
+                  )}
                 </button>
               </div>
             </form>

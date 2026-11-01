@@ -3753,6 +3753,37 @@
   - Bundling Vite: Sukses dalam 2.03 detik (`index-B8dLgS34.js`, gzip: 307.96 kB).
   - Deployment Cloudflare Pages: Berhasil dideploy ke `https://erpposs.pages.dev` (Deployment ID: `14716526`).
 
+### Log #105: Perbaikan Kendala Tambah Akun Kas / Bank (pos_balances), Sinkronisasi Multi-Tenant, dan Umpan Balik UI Modal (2026-11-01)
+- **Latar Belakang & Gejala Error**:
+  - Pengguna melaporkan bahwa saat menekan tombol "Tambah Akun" pada modal penambahan rekening kas/bank baru di Halaman Admin (`/admin?tab=accounts`), antarmuka tidak memberikan respon (seolah membeku tanpa reaksi), khususnya pada perangkat seluler.
+- **Investigasi Mendalam & Akar Masalah**:
+  1. *Ketidaksesuaian Skema Database*:
+     - Pada implementasi sebelumnya, handler `handleSaveAccount` menyertakan atribut `outlet_id: newAccount.outlet_id || activeTenant?.id`.
+     - Padahal pada skema PostgreSQL Supabase Cloud (`public.pos_balances`), kolom foreign key outlet/cabang adalah `branch_id`, bukan `outlet_id`. PostgreSQL cloud langsung menolak mutasi dengan kode error `column "outlet_id" of relation "pos_balances" does not exist`.
+  2. *Silent Failure & Feedback Visual Tersembunyi*:
+     - Blok `catch (err)` hanya menyetel `setError(err.message)` pada state induk halaman Admin. Karena state error ini berada di belakang backdrop modal yang menutupi layar, pengguna pada perangkat mobile sama sekali tidak melihat indikator error tersebut.
+     - Tombol submit tidak memiliki animasi loading spinner atau proteksi double-submit, sehingga tombol tampak diam ketika proses asinkron sedang berjalan.
+  3. *Inkonsistensi Filter Multi-Tenant*:
+     - Query `loadAdminData` pada `pos_balances` sebelumnya belum memfilter `eq('tenant_id', targetTenantId)`, berpotensi memicu kebocoran data antar-tenant jika RLS di bypass di mode lokal.
+- **Solusi Rekayasa & Implementasi**:
+  1. *Penyelarasan Schema Payload `pos_balances`*:
+     - Mengubah field mutasi di `src/pages/Admin.jsx` dari `outlet_id` menjadi `branch_id: profile?.branch_id || null` dan menyertakan `tenant_id: activeTenant?.id || profile?.tenant_id`.
+     - Melakukan pengecekan duplikasi nama pos yang terisolasi per tenant.
+  2. *Safety Net Trigger Otomatisasi Tenant Database Cloud*:
+     - Menulis dan mengeksekusi skrip `scripts/deploy_auto_tenant_trigger.py` untuk mengaktifkan fungsi trigger `fn_auto_set_tenant_id()` dan trigger `trg_pos_balances_auto_tenant` `BEFORE INSERT` pada tabel `public.pos_balances` di Supabase Cloud.
+     - Menjamin kolom `tenant_id` terisi otomatis dari `current_tenant_id()` bahkan jika klien lupa mengirimkan id tenant.
+  3. *Penyempurnaan Antarmuka Modal & Umpan Balik Instan (Anti-AI Slop & Tactile)*:
+     - Menambahkan state modal khusus `accountModalError` dan `accountModalLoading`.
+     - Menyematkan alert banner merah kontras (`bg-rose-500/10 border-rose-500/30 text-rose-400 text-xs`) tepat di dalam modal di atas form input.
+     - Memperbarui tombol submit dengan feedback visual taktil (`active:scale-[0.98]`), animasi spinner `animate-spin` saat proses simpan (`Menyimpan...`), serta atribut `disabled` saat loading.
+     - Menerapkan pola yang sama pada modal Master Kategori (`showCategoryModal`) agar terbebas dari silent error.
+  4. *Suite Pengujian TDD*:
+     - Membuat file test baru `src/pages/__tests__/AdminLiquidityAccount.test.jsx` untuk memverifikasi komponen Admin, navigasi tab rekening kas, dan integritas payload isolasi tenant.
+- **Verifikasi Kualitas**:
+  - Test Suite Vitest: **58 test files lulus, 352/352 tests PASS (100% GREEN)**.
+  - Bundling Vite: Sukses dalam 2.91 detik (`index-DmtkhD0m.js`, gzip: 308.63 kB).
+
+
 
 
 
