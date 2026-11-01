@@ -41,12 +41,15 @@ import { formatRupiah, parseDateSafe, calculateDailyCashierRecap } from '../util
 import { isPindahSaldo } from '../utils/financeHelpers'
 
 // Helper function to fetch all rows beyond Supabase's default 1000 row REST limit
-const fetchAllRows = async (table, select = '*', dateColumn = null, start = null, end = null) => {
+const fetchAllRows = async (table, select = '*', dateColumn = null, start = null, end = null, tenantId = null) => {
   let allData = []
   let from = 0
   const step = 1000
   while (true) {
     let query = supabase.from(table).select(select)
+    if (tenantId) {
+      query = query.eq('tenant_id', tenantId)
+    }
     if (dateColumn && start) {
       query = query.gte(dateColumn, start)
     }
@@ -63,12 +66,15 @@ const fetchAllRows = async (table, select = '*', dateColumn = null, start = null
   return allData
 }
 
-const fetchCafeRows = async (start = null, end = null) => {
+const fetchCafeRows = async (start = null, end = null, tenantId = null) => {
   let allData = []
   let from = 0
   const step = 1000
   while (true) {
     let query = supabase.from('cafe').select('*, struk!inner(tanggal)')
+    if (tenantId) {
+      query = query.eq('tenant_id', tenantId)
+    }
     if (start) {
       query = query.gte('struk.tanggal', start)
     }
@@ -86,7 +92,8 @@ const fetchCafeRows = async (start = null, end = null) => {
 
 const Dashboard = () => {
   const navigate = useNavigate()
-  const { activeTenant } = useAuth()
+  const { activeTenant, profile } = useAuth()
+  const targetTenantId = activeTenant?.id || profile?.tenant_id
   const tenantBusinessType = activeTenant?.business_type || 'HYBRID' // 'HYBRID' | 'CAFE' | 'CARWASH'
   const [activeSection, setActiveSection] = useState(
     tenantBusinessType === 'CAFE' ? 'CAFE' : tenantBusinessType === 'CARWASH' ? 'CARWASH' : 'ALL'
@@ -148,17 +155,17 @@ const Dashboard = () => {
 
       // Fetch master analytics data (memuat seluruh data agar perbandingan historis & prompt studio akurat)
       const [dbStruk, dbCw, dbCafe, dbCf, dbStok, dbExp] = await Promise.all([
-        fetchAllRows('struk'),
-        fetchAllRows('carwash'),
-        fetchCafeRows(),
-        fetchAllRows('cashflow'),
-        fetchAllRows('stok_barang'),
-        fetchAllRows('pengeluaran')
+        fetchAllRows('struk', '*', null, null, null, targetTenantId),
+        fetchAllRows('carwash', '*', null, null, null, targetTenantId),
+        fetchCafeRows(null, null, targetTenantId),
+        fetchAllRows('cashflow', '*', null, null, null, targetTenantId),
+        fetchAllRows('stok_barang', '*', null, null, null, targetTenantId),
+        fetchAllRows('pengeluaran', '*', null, null, null, targetTenantId)
       ])
 
-      const { data: dbBal, error: balErr } = await supabase
-        .from('pos_balances')
-        .select('*')
+      let balQuery = supabase.from('pos_balances').select('*')
+      if (targetTenantId) balQuery = balQuery.eq('tenant_id', targetTenantId)
+      const { data: dbBal, error: balErr } = await balQuery
 
       if (balErr) throw balErr
 

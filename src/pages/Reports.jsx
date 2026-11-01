@@ -68,7 +68,8 @@ const fetchCafeRows = async (start = null, end = null) => {
 }
 
 const Reports = () => {
-  const { activeTenant } = useAuth()
+  const { activeTenant, profile } = useAuth()
+  const targetTenantId = activeTenant?.id || profile?.tenant_id
   const features = getTenantFeatures(activeTenant?.business_type)
   const [reportViewMode, setReportViewMode] = useState('operational') // 'operational' | 'general_ledger'
   const [loading, setLoading] = useState(true)
@@ -111,16 +112,16 @@ const Reports = () => {
       }
 
       const [dbStruk, dbCw, dbCafe, dbCf, dbExp] = await Promise.all([
-        fetchAllRows('struk', '*', 'tanggal', filterStart, filterEnd),
-        fetchAllRows('carwash', '*', 'tanggal', filterStart, filterEnd),
-        fetchCafeRows(filterStart, filterEnd),
-        fetchAllRows('cashflow', '*', 'tanggal', filterStart, filterEnd),
-        fetchAllRows('pengeluaran', '*', 'tanggal', filterStart, filterEnd)
+        fetchAllRows('struk', '*', 'tanggal', filterStart, filterEnd, targetTenantId),
+        fetchAllRows('carwash', '*', 'tanggal', filterStart, filterEnd, targetTenantId),
+        fetchCafeRows(filterStart, filterEnd, targetTenantId),
+        fetchAllRows('cashflow', '*', 'tanggal', filterStart, filterEnd, targetTenantId),
+        fetchAllRows('pengeluaran', '*', 'tanggal', filterStart, filterEnd, targetTenantId)
       ])
 
-      const { data: dbBal, error: balErr } = await supabase
-        .from('pos_balances')
-        .select('*')
+      let balQuery = supabase.from('pos_balances').select('*')
+      if (targetTenantId) balQuery = balQuery.eq('tenant_id', targetTenantId)
+      const { data: dbBal, error: balErr } = await balQuery
 
       if (balErr) throw balErr
 

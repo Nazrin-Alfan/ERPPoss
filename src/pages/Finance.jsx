@@ -204,7 +204,6 @@ const Finance = () => {
   }, [features.isCafeOnly, features.isCarwashOnly])
 
   const defaultIncomeKategoriOptions = ['Omzet Penjualan', 'Modal Awal', 'Pemasukan Lain-lain']
-  const posOptions = ['SALDO CASH', 'SALDO REKENING Y', 'SALDO REKENING N', 'SALDO REKENING R']
 
   // Custom Options State (from localStorage)
   const [customJenisList, setCustomJenisList] = useState(() => {
@@ -716,8 +715,12 @@ const Finance = () => {
     setLoading(true)
     setError('')
     try {
+      const targetTenantId = activeTenant?.id || profile?.tenant_id
+
       // 1. Fetch Summary View
-      const { data: sumData } = await supabase.from('finance_summary').select('*').maybeSingle()
+      let sumQuery = supabase.from('finance_summary').select('*')
+      if (targetTenantId) sumQuery = sumQuery.eq('tenant_id', targetTenantId)
+      const { data: sumData } = await sumQuery.maybeSingle()
       if (sumData) {
         setSummary({
           totalIncome: parseFloat(sumData.total_pemasukan || sumData.total_income) || 0,
@@ -733,6 +736,9 @@ const Finance = () => {
         const step = 1000
         while (true) {
           let query = supabase.from(table).select(select)
+          if (targetTenantId) {
+            query = query.eq('tenant_id', targetTenantId)
+          }
           if (orderCol) {
             query = query.order(orderCol, { ascending: false })
           }
@@ -745,6 +751,21 @@ const Finance = () => {
         }
         return allData
       }
+
+      let mcQuery = supabase.from('master_categories').select('*')
+      if (targetTenantId) mcQuery = mcQuery.eq('tenant_id', targetTenantId)
+
+      let sbQuery = supabase.from('stok_barang').select('*')
+      if (targetTenantId) sbQuery = sbQuery.eq('tenant_id', targetTenantId)
+
+      let kcQuery = supabase.from('karyawan_cuci').select('*')
+      if (targetTenantId) kcQuery = kcQuery.eq('tenant_id', targetTenantId)
+
+      let kkQuery = supabase.from('karyawan_kantor').select('*')
+      if (targetTenantId) kkQuery = kkQuery.eq('tenant_id', targetTenantId)
+
+      let pbQuery = supabase.from('pos_balances').select('*')
+      if (targetTenantId) pbQuery = pbQuery.eq('tenant_id', targetTenantId)
 
       // 2-6. Fetch Cashflow, Carwash, Cafe, Expenses, Master Categories, Stok Barang, & POS Balances secara paralel
       const [
@@ -762,17 +783,17 @@ const Finance = () => {
         fetchAllData('carwash', '*', 'tanggal'),
         fetchAllData('cafe', '*, struk(tanggal, jam, kasir, metode_bayar, status_bayar)').catch(() => fetchAllData('cafe', '*', 'tanggal')),
         fetchAllData('pengeluaran', '*', 'tanggal'),
-        supabase.from('master_categories').select('*'),
-        supabase.from('stok_barang').select('*'),
-        supabase.from('karyawan_cuci').select('*'),
-        supabase.from('karyawan_kantor').select('*'),
-        supabase.from('pos_balances').select('*')
+        mcQuery,
+        sbQuery,
+        kcQuery,
+        kkQuery,
+        pbQuery
       ])
 
       const mcData = resMc?.data
       const sbData = resSb?.data
 
-      if (resPb?.data && Array.isArray(resPb.data) && resPb.data.length > 0) {
+      if (resPb?.data && Array.isArray(resPb.data)) {
         setPosAccountList(resPb.data)
       }
 
@@ -809,7 +830,7 @@ const Finance = () => {
 
   useEffect(() => {
     fetchFinanceData()
-  }, [])
+  }, [activeTenant?.id, profile?.tenant_id])
 
   // Universal Date Filter Matcher
   const isDateInRange = (itemDateStr) => {
@@ -962,20 +983,26 @@ const Finance = () => {
     if (posAccountList && posAccountList.length > 0) {
       return posAccountList.map(acc => {
         const net = posAllTimeBalances.byPos?.[acc.pos] ?? 0
+        const initialBal = parseFloat(acc.balance || 0)
         return {
           ...acc,
+          type: acc.tipe || acc.type || 'BANK',
           label: acc.label || acc.nama_pos || acc.nama_bank || acc.pos,
-          currentBalance: net
+          currentBalance: initialBal + net
         }
       })
     }
     return [
-      { pos: 'SALDO CASH', label: 'Laci Kasir (Cash Fisik)', type: 'CASH', currentBalance: posAllTimeBalances.cash },
-      { pos: 'SALDO REKENING Y', label: 'Mandiri Utama (Rek Y)', type: 'BANK', currentBalance: posAllTimeBalances.rekY },
-      { pos: 'SALDO REKENING N', label: 'Mandiri Ops (Rek N)', type: 'BANK', currentBalance: posAllTimeBalances.rekN },
-      { pos: 'SALDO REKENING R', label: 'Saldo Rekening R (Cadangan)', type: 'BANK', currentBalance: posAllTimeBalances.rekR }
+      { pos: 'SALDO CASH', label: 'Kas Laci Kasir', type: 'CASH', tipe: 'CASH', currentBalance: posAllTimeBalances.cash }
     ]
   }, [posAccountList, posAllTimeBalances])
+
+  const posOptions = useMemo(() => {
+    if (dynamicPosAccounts && dynamicPosAccounts.length > 0) {
+      return dynamicPosAccounts.map(a => a.pos)
+    }
+    return ['SALDO CASH']
+  }, [dynamicPosAccounts])
 
   const cashflowKpis = useMemo(() => {
     let inc = 0
@@ -1830,21 +1857,22 @@ const Finance = () => {
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           {dynamicPosAccounts.map((acc, idx) => {
-            const isCash = acc.type === 'CASH' || (acc.pos && acc.pos.includes('CASH'))
-            const bal = acc.currentBalance ?? 0
-            const shortBadge = isCash ? 'CASH' : (acc.type || (acc.pos?.includes('REKENING Y') ? 'Y' : acc.pos?.includes('REKENING N') ? 'N' : acc.pos?.includes('REKENING R') ? 'R' : 'BANK'))
+            const isCash = acc.type === 'CASH' || acc.tipe === 'CASH' || (acc.pos && (acc.pos.toUpperCase().includes('CASH') || acc.pos.toUpperCase().includes('KAS')))
+            const isQris = acc.type === 'QRIS' || acc.tipe === 'QRIS' || (acc.pos && acc.pos.toUpperCase().includes('QRIS'))
+            const bal = acc.currentBalance ?? (parseFloat(acc.balance) || 0)
+            const shortBadge = isCash ? 'CASH' : isQris ? 'QRIS' : (acc.type || acc.tipe || 'BANK')
             return (
-              <div key={acc.pos || idx} className="bg-[#121215] border border-[#26272d] p-3.5 rounded-xl border border-[#26272d] flex items-center justify-between hover:border-slate-700 transition-colors">
+              <div key={acc.pos || acc.id || idx} className="bg-[#121215] border border-[#26272d] p-3.5 rounded-xl flex items-center justify-between hover:border-slate-700 transition-colors">
                 <div className="min-w-0 pr-2">
                   <span className="text-[#6b7367] text-[10px] font-bold uppercase tracking-wider block truncate" title={acc.label || acc.pos}>
                     {acc.label || acc.pos}
                   </span>
-                  <h4 className={`text-base md:text-lg font-black mt-0.5 truncate ${bal >= 0 ? (isCash ? 'text-white' : acc.pos?.includes('REKENING Y') ? 'text-primary' : acc.pos?.includes('REKENING N') ? 'text-[#00ffff]' : acc.pos?.includes('REKENING R') ? 'text-purple-400' : 'text-[#00ffff]') : 'text-rose-400'}`}>
+                  <h4 className={`text-base md:text-lg font-black mt-0.5 truncate ${bal >= 0 ? (isCash ? 'text-white' : isQris ? 'text-amber-400' : 'text-[#00ffff]') : 'text-rose-400'}`}>
                     {formatRupiah(bal)}
                   </h4>
                 </div>
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
-                  isCash ? 'bg-slate-800/80 text-white' : acc.pos?.includes('REKENING Y') ? 'bg-emerald-500/10 text-emerald-400' : acc.pos?.includes('REKENING N') ? 'bg-brand-blue/10 text-[#00ffff]' : 'bg-purple-500/10 text-purple-400'
+                <div className={`px-2 py-1 h-7 rounded-lg flex items-center justify-center font-bold text-[10px] tracking-wider shrink-0 ${
+                  isCash ? 'bg-slate-800/80 text-white' : isQris ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
                 }`}>
                   {shortBadge}
                 </div>

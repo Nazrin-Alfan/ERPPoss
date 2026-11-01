@@ -3952,6 +3952,25 @@
     - Vitest Suite: 59 test files lulus (356/356 tests PASS - 100% Green).
     - Production Bundling Vite: Sukses exit code 0.
 
+112. **Eliminasi Hardcode Template Dompet & Penegakan Isolasi Multi-Tenant Halaman Finance (2026-11-02)**:
+  - **Akar Masalah**:
+    - Pada halaman Keuangan (`src/pages/Finance.jsx`), kueri tabel `pos_balances` tidak menyertakan filter `.eq('tenant_id', targetTenantId)`. Karena akun pengguna berstatus `Super Admin` (Founder), kebijakan RLS Supabase mengizinkan pembacaan lintas tenant, sehingga seluruh 17 akun kasir/bank dari 4 tenant berbeda tertarik sekaligus ke tampilan.
+    - Ditemukan residu kode template/hardcode lama:
+      1. `basePos` dan `posOptions` meng-hardcode 4 akun (`SALDO CASH`, `SALDO REKENING Y`, `SALDO REKENING N`, `SALDO REKENING R`).
+      2. Badge kartu dompet meng-hardcode inisial `'Y'`, `'N'`, `'R'` berdasarkan string matching, dan mengabaikan akun dinamis buatan pengguna.
+      3. Deteksi kas hanya memeriksa kata `'CASH'`, sehingga akun `'KAS FISIK'` yang dibuat pengguna salah terlabeli sebagai `'BANK'`.
+      4. Saldo awal (`acc.balance`) diabaikan pada hook `dynamicPosAccounts`.
+  - **Tindakan Refactoring**:
+    - Menambahkan filter `targetTenantId = activeTenant?.id || profile?.tenant_id` pada seluruh kueri data keuangan di `Finance.jsx` (`finance_summary`, `cashflow`, `carwash`, `cafe`, `pengeluaran`, `master_categories`, `stok_barang`, `karyawan_cuci`, `karyawan_kantor`, dan `pos_balances`).
+    - Menerapkan isolasi `targetTenantId` serupa pada `Dashboard.jsx` dan `Reports.jsx` untuk mencegah kebocoran data saat login sebagai Super Admin.
+    - Menghapus array statis `posOptions` dan menjadikannya `useMemo` dinamis yang bersumber dari `dynamicPosAccounts`.
+    - Memperbarui kalkulasi `dynamicPosAccounts` agar memperhitungkan `initialBal = parseFloat(acc.balance || 0)` ditambah akumulasi arus kas net.
+    - Memperbarui kartu "STATUS REKENING & DOMPET KAS" dengan deteksi tipe cerdas (`CASH` / `QRIS` / `BANK`), badge warna semantik, dan perbaikan label `'Kas Laci Kasir'`.
+  - **Verifikasi Kualitas**:
+    - Vitest Suite: 59 test files lulus (356/356 tests PASS - 100% Green).
+    - Production Bundling Vite: Sukses exit code 0 (`dist/assets/index-BIjip5hJ.js`).
+    - Cloudflare Pages Deployment: Berhasil dideploy ke `https://erpposs.pages.dev` (Deployment URL: `https://252f4311.erpposs.pages.dev`).
+
 
 
 

@@ -58,6 +58,6 @@ describe('Finance Page Component Tests', () => {
     expect(html).toContain('Semua Jenis')
     expect(html).toContain('Semua Kategori')
     expect(html).toContain('Total Kas Bersih (All-time)')
-    expect(html).toContain('Laci Kasir (Cash Fisik)')
+    expect(html).toContain('Kas Laci Kasir')
   })
 })
