@@ -78,8 +78,12 @@ export const syncStaffToKaryawanKantor = ({
     if (!pName) return
 
     if (!existingMap.has(pName)) {
+      const generatedId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : '00000000-0000-4000-8000-' + Math.random().toString(16).substring(2, 14).padEnd(12, '0')
       const newRecord = {
-        id: `kk_auto_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        id: generatedId,
+        id_karyawan: `kk_auto_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         nama: pName,
         role: profile.role || 'Kasir',
         email: profile.email || '',

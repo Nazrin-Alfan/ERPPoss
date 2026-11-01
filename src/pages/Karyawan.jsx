@@ -604,7 +604,7 @@ const Karyawan = () => {
 
         if (!existingKk) {
           await supabase.from('karyawan_kantor').insert({
-            id: `kk_auto_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            id_karyawan: `kk_auto_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
             nama: cleanNama,
             role: staffForm.role,
             email: staffForm.email.trim(),

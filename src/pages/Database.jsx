@@ -469,8 +469,9 @@ const DatabaseManager = () => {
   // CRUD: Delete Row
   const handleDeleteRow = async (row) => {
     const meta = TABLES_METADATA[selectedTable]
-    const idVal = row[meta.keyField]
-    const confirmed = await showConfirm(`Apakah Anda yakin ingin menghapus baris dengan ${meta.keyField} = "${idVal}" secara permanen dari ${meta.name}?`, 'Konfirmasi Hapus')
+    const keyToMatch = row.id ? 'id' : meta.keyField
+    const idVal = row.id || row[meta.keyField]
+    const confirmed = await showConfirm(`Apakah Anda yakin ingin menghapus baris dengan ${keyToMatch} = "${idVal}" secara permanen dari ${meta.name}?`, 'Konfirmasi Hapus')
     if (!confirmed) return
     
     setSubmitting(true)
@@ -480,7 +481,7 @@ const DatabaseManager = () => {
       const { error: err } = await supabase
         .from(selectedTable)
         .delete()
-        .eq(meta.keyField, idVal)
+        .eq(keyToMatch, idVal)
       
       if (err) throw err
       
@@ -524,10 +525,13 @@ const DatabaseManager = () => {
     
     try {
       if (isEditing) {
-        const { error: err } = await supabase
-          .from(selectedTable)
-          .update(submitData)
-          .eq(meta.keyField, formData[meta.keyField])
+        let updateQuery = supabase.from(selectedTable).update(submitData)
+        if (formData.id) {
+          updateQuery = updateQuery.eq('id', formData.id)
+        } else {
+          updateQuery = updateQuery.eq(meta.keyField, formData[meta.keyField])
+        }
+        const { error: err } = await updateQuery
         if (err) throw err
         setSuccess('Data berhasil diperbarui!')
       } else {

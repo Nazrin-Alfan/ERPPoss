@@ -491,11 +491,9 @@ const Admin = () => {
         if (error) throw error
         setSuccess(`Paket "${pkgPayload.nama_paket}" berhasil diperbarui!`)
       } else {
-        const newId = 'pkg_' + Date.now().toString(36)
         const { error } = await supabase
           .from('carwash_packages')
           .insert({
-            id: newId,
             ...payload,
             sort_order: carwashPackages.length + 1
           })
@@ -515,7 +513,7 @@ const Admin = () => {
             await supabase.from('resep').insert({
               id_resep: `rsp_cw_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
               nama_menu: pkgPayload.nama_paket,
-              id_bahan_baku: b.id_bahan_baku || '',
+              id_bahan_baku: b.id_bahan_baku || null,
               nama_bahan: b.nama_bahan,
               jumlah: parseFloat(b.jumlah),
               jumlah_dibutuhkan: parseFloat(b.jumlah),
@@ -711,7 +709,6 @@ const Admin = () => {
       const { error } = await supabase
         .from('tenant_licenses')
         .insert({
-          id: 'lic_' + Date.now(),
           ...updatedLicense
         })
       if (error) throw error

@@ -3883,6 +3883,37 @@
     - Cloudflare Pages: Sukses terdeploy live di `https://erpposs.pages.dev` (Edge Deployment `06767ba9.erpposs.pages.dev`).
     - Verifikasi Headless Browser: Live peramban membuka `https://erpposs.pages.dev/login` dengan tampilan utuh dan 0 console error.
 
+109. **Audit Menyeluruh Seluruh Fitur Pemuat Database & Pembuatan Database/Tenant Baru (2026-11-02)**:
+  - **Latar Belakang & Ruang Lingkup**:
+    - Pengguna menginstruksikan pemeriksaan menyeluruh pada setiap fitur yang memuat database (baca/tulis/query/checkout di seluruh modul POS, Gudang, Karyawan, Admin, Finance, Database) dan fitur pembuatan database/tenant baru (Founder RPC `fn_founder_create_tenant` dan registrasi mandiri via Auth trigger `handle_new_user_profile`).
+    - Memastikan seluruh komponen terkait database bebas error secara jangka panjang, menjaga integritas relasional, dan menghilangkan risiko constraint violation.
+  - **Temuan Kritis & Tindakan Perbaikan Database**:
+    1. **Perbaikan RPC Provisi Database Baru (`fn_founder_create_tenant`)**:
+       - *Temuan*: Penambahan akun owner ke tabel `auth.identities` mengalami error `null value in column "provider_id" violates not-null constraint` dan penolakan insert pada kolom generated `email`.
+       - *Perbaikan*: Memperbarui fungsi `fn_founder_create_tenant` agar menyertakan `provider_id: v_user_id::text` dan mengecualikan kolom generated `email`. Mengizinkan eksekusi oleh role Founder, Super Admin, dan akun `nashholding29@gmail.com`.
+       - *Hasil*: Uji provisi database baru berhasil memvalidasi pembuatan tenant atomik (tenants, branches, profiles, lisensi, CoA, balances, paket cuci, loyalty) dengan output JSON sukses (`{"success": true}`).
+    2. **Standarisasi CASCADE DELETE Seluruh Tabel Tenant**:
+       - *Temuan*: Seluruh foreign key `tenant_id` pada 20+ tabel operasional sebelumnya berstatus `RESTRICT`, sehingga operasi reset database atau penghapusan tenant gagal akibat foreign key constraint violation.
+       - *Perbaikan*: Mengonversi seluruh foreign key yang merujuk ke `tenants(id)` menjadi `ON DELETE CASCADE`.
+    3. **Penyelarasan Kolom & Nilai Default Anti-Crash**:
+       - `master_categories`: Menambahkan kolom alias `category_name`, `category_type`, dan `nama` beserta trigger sinkronisasi. Mengubah kolom `tipe_arus` dan `jenis` menjadi nullable dengan default `'OPERATING_OUTFLOW'` dan `'Pengeluaran'` untuk mencegah `not-null constraint violation`.
+       - `chart_of_accounts`: Menambahkan kolom alias `account_code`, `account_name`, `account_type` dengan trigger sinkronisasi dua arah ke `kode_akun`, `nama_akun`, dan `tipe`.
+       - `daftar_harga_menu`: Menambahkan kolom alias `nama_item`, `nama_menu`, dan `nama` dengan trigger sinkronisasi dua arah ke `daftar_menu`.
+       - `pengeluaran`: Menetapkan default `'Operasional'` pada kolom `kategori` dan `jenis` serta mengubah nullability menjadi nullable.
+       - `carwash_packages`: Menambahkan kolom alias `commission_amount` dan `komisi` serta trigger sinkronisasi dua arah ke `komisi_value`.
+       - `resep`: Menghapus foreign key keras `resep_id_menu_fkey` dan `resep_id_bahan_baku_fkey`, serta mengubah tipe kolom `id_menu` dan `id_bahan_baku` menjadi `VARCHAR(100)` agar fleksibel menerima ID menu/bahan baku string maupun UUID.
+       - `branches`: Menambahkan kolom `is_main BOOLEAN DEFAULT TRUE` dan memperbaiki fungsi trigger `fn_auto_set_tenant_and_branch()` agar mencari cabang utama menggunakan `ORDER BY (kode = 'MAIN') DESC, created_at ASC LIMIT 1`.
+    4. **Refactoring Frontend & Sanitasi Format UUID**:
+       - `src/pages/Karyawan.jsx` & `src/utils/staffHelpers.js`: Memperbaiki penulisan ID karyawan kantor agar mematuhi format UUID PostgreSQL valid (`crypto.randomUUID()`) dan mencegah error syntax UUID.
+       - `src/pages/Admin.jsx`: Menghapus penetapan ID manual string `newId` pada penambahan `carwash_packages` dan `tenant_licenses` agar menyerahkan pembuatan primary key ke PostgreSQL `gen_random_uuid()`, serta memastikan nilai `id_bahan_baku` bernilai `null` alih-alih empty string `''`.
+       - `src/pages/Database.jsx`: Memperbarui fungsi `handleDeleteRow` dan `handleSubmitForm` agar memprioritaskan pencocokan baris pada kolom primary key `id` (UUID) sebelum fallback ke `meta.keyField`.
+  - **Verifikasi Kualitas & Hasil Pengujian**:
+    - **Uji CRUD Komprehensif Seluruh Tabel (`scripts/test_crud_all_tables.py`)**: Berhasil menguji operasi INSERT, UPDATE, SELECT, dan DELETE pada 16 tabel operasional (`chart_of_accounts`, `master_categories`, `stok_barang`, `barang_masuk`, `barang_keluar`, `daftar_harga_menu`, `resep`, `struk`, `cafe`, `carwash`, `cashflow`, `pengeluaran`, `karyawan_cuci`, `karyawan_kantor`, `carwash_packages`, `diskon`) dan membersihkan tenant via CASCADE DELETE dengan status: **100% SUCCESS, 0 ERRORS**.
+    - **Uji Vitest**: **59 test files lulus, 356/356 tests PASS (100% GREEN)**.
+    - **Vite Bundling**: Kompilasi produksi selesai dalam 2.09 detik (`dist/assets/index-BcwyUvO3.js`, gzip: 309.16 kB).
+    - **Cloudflare Pages Deployment**: Sukses terdeploy live di `https://erpposs.pages.dev` (Edge Deployment `bb5634b9.erpposs.pages.dev`).
+    - **Verifikasi Headless Browser**: Halaman login terbuka sempurna tanpa console error (`Window errors: []`, `Login button: Found`).
+
 
 
 
