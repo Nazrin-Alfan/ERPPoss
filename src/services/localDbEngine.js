@@ -1888,6 +1888,26 @@ export const createLocalClient = () => {
         }
         localDbStore.getTable('profiles').push(ownerProfile)
 
+        // 4b. Buat lisensi uji coba 14 hari (Trial Otomatis)
+        const trialExpiry = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+        localDbStore.getTable('tenant_licenses').push({
+          id: `lic_${Date.now()}`,
+          tenant_id: newTenantId,
+          license_key: `RLPOS-TRL-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+          tier: 'TRIAL_14D',
+          plan: 'trial',
+          tier_name: 'RelayPOS Trial (14 Hari)',
+          status: 'ACTIVE',
+          started_at: new Date().toISOString(),
+          expires_at: trialExpiry,
+          valid_until: trialExpiry,
+          max_branches: 1,
+          max_devices: 3,
+          features: { trial: true, duration_days: 14 },
+          notes: 'Trial Otomatis 14 Hari Pendaftaran Mandiri',
+          created_at: new Date().toISOString()
+        })
+
         // 5. Simpan & buat session
         localDbStore.saveToStorage()
 

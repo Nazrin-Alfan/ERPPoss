@@ -6,6 +6,9 @@ import Sidebar from './components/Sidebar'
 import ErrorBoundary from './components/ErrorBoundary'
 import ExecutiveLayout from './components/layout/ExecutiveLayout'
 import FounderLayout from './components/layout/FounderLayout'
+import LicenseExpiredLockout from './components/auth/LicenseExpiredLockout'
+import ActivateLicenseModal from './components/auth/ActivateLicenseModal'
+import { ShieldAlert } from 'lucide-react'
 import { BUSINESS_TYPES, getTenantFeatures } from './utils/businessCapabilities'
 import { ROLES } from './constants/roles'
 
@@ -33,9 +36,9 @@ const PageLoader = () => (
   </div>
 )
 
-// Komponen Proteksi Rute berdasarkan Login & Peran (Role RBAC: Owner, Admin, Kasir) serta Kapabilitas Tenant
+// Komponen Proteksi Rute berdasarkan Login, Peran, Lisensi Tenant & Kapabilitas Fitur
 const ProtectedRoute = ({ children, allowedRoles = null, ownerOnly = false, requiredFeature = null, allowedBusinessTypes = null }) => {
-  const { user, profile, activeTenant, loading } = useAuth()
+  const { user, profile, activeTenant, loading, licenseStatus } = useAuth()
 
   if (loading) {
     return (
@@ -53,6 +56,13 @@ const ProtectedRoute = ({ children, allowedRoles = null, ownerOnly = false, requ
 
   // Selesaikan role pengguna dari profile atau user metadata dengan fallback aman
   const role = profile?.role || user?.role || user?.user_metadata?.role || ROLES.KASIR
+  const isSuperAdmin = role === ROLES.SUPER_ADMIN || profile?.is_super_admin
+
+  // GLOBAL LICENSE GUARD / PAYWALL LOCKOUT
+  // Jika lisensi telah habis/expired dan bukan Super Admin, kunci akses operasional!
+  if (!isSuperAdmin && licenseStatus?.isExpired) {
+    return <LicenseExpiredLockout />
+  }
 
   // Jika rute menetapkan allowedRoles, verifikasi apakah user memiliki salah satu peran tersebut
   if (allowedRoles && Array.isArray(allowedRoles) && !allowedRoles.includes(role)) {
@@ -118,8 +128,10 @@ const RootDispatcher = () => {
 }
 
 const AppContent = () => {
-  const { user, loading, profile } = useAuth()
+  const { user, loading, profile, licenseStatus } = useAuth()
   const location = useLocation()
+  const [showActivateModal, setShowActivateModal] = useState(false)
+  const isSuperAdmin = profile?.role === ROLES.SUPER_ADMIN || profile?.is_super_admin
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = window.localStorage.getItem('relaypos_sidebar_collapsed')
@@ -155,8 +167,48 @@ const AppContent = () => {
       {showSidebar && <Sidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={handleSetSidebarCollapsed} />}
 
       {/* Konten Utama Aplikasi */}
-      <main className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden bg-[#000000] relative">
-        <div className="relative z-10 min-h-full">
+      <main className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden bg-[#000000] relative flex flex-col">
+        {/* Trial Countdown & Expiry Banner */}
+        {user && !isStandalonePage && !isSuperAdmin && !licenseStatus?.isExpired && (
+          <>
+            {licenseStatus?.isTrial && licenseStatus?.isActive && (
+              <div className="bg-[#121215] border-b border-[#26272d] px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0 z-20">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
+                  <span className="font-semibold text-white">Mode Trial 14 Hari:</span>
+                  <span className="text-[#bbcbb2]">
+                    Tersisa <strong className="text-amber-400 font-mono font-bold">{licenseStatus.daysRemaining} hari</strong> masa uji coba gratis.
+                  </span>
+                </div>
+                <button
+                  onClick={() => setShowActivateModal(true)}
+                  className="px-2.5 py-1 rounded bg-[#00ffff] hover:bg-[#00e5e5] text-black font-bold text-[11px] transition-all active:scale-[0.98] cursor-pointer"
+                >
+                  Aktivasi Lisensi Resmi
+                </button>
+              </div>
+            )}
+
+            {licenseStatus?.isGracePeriod && (
+              <div className="bg-rose-950/40 border-b border-rose-500/30 px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs text-rose-300 shrink-0 z-20">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert size={14} className="text-rose-400 shrink-0" />
+                  <span>
+                    <strong>Masa Aktif Habis!</strong> Tersisa tenggang <strong className="text-rose-400 font-mono">{licenseStatus.graceDaysRemaining} hari</strong> sebelum sistem terkunci.
+                  </span>
+                </div>
+                <button
+                  onClick={() => setShowActivateModal(true)}
+                  className="px-2.5 py-1 rounded bg-rose-500 hover:bg-rose-600 text-white font-bold text-[11px] transition-all active:scale-[0.98] cursor-pointer"
+                >
+                  Perpanjang Sekarang
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        <div className="relative z-10 flex-1 min-h-0">
           <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <Routes>
@@ -313,6 +365,12 @@ const AppContent = () => {
           </Suspense>
         </ErrorBoundary>
       </div>
+
+      {/* Modal Aktivasi Lisensi */}
+      <ActivateLicenseModal
+        isOpen={showActivateModal}
+        onClose={() => setShowActivateModal(false)}
+      />
       </main>
     </div>
   )

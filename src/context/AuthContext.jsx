@@ -4,6 +4,7 @@ import { api } from '../services/apiAdapter'
 import { DEFAULT_TENANT_ID, DEFAULT_BRANCH_ID } from '../constants/erpConfig'
 import { ROLES } from '../constants/roles'
 import { setActiveTenantId } from '../services/localDbEngine'
+import { evaluateLicenseStatus } from '../utils/licenseHelpers'
 
 const ACTIVE_TENANT_STORAGE_KEY = 'relaypos_active_tenant_id'
 
@@ -13,6 +14,12 @@ const AuthContext = createContext({
   loading: true,
   activeTenant: null,
   userTenants: [],
+  tenantLicense: null,
+  licenseStatus: null,
+  isLicenseLoading: false,
+  loadTenantLicense: async () => {},
+  activateLicenseKey: async () => {},
+  refreshLicense: async () => {},
   switchTenant: () => {},
   refreshTenants: async () => {},
   login: async () => {},
@@ -28,6 +35,67 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
   const [activeTenant, setActiveTenant] = useState(null)
   const [userTenants, setUserTenants] = useState([])
+  const [tenantLicense, setTenantLicense] = useState(null)
+  const [licenseStatus, setLicenseStatus] = useState(null)
+  const [isLicenseLoading, setIsLicenseLoading] = useState(false)
+
+  // Helper untuk memuat lisensi tenant aktif
+  const loadTenantLicense = useCallback(async (tenantId, currentProfile) => {
+    if (!tenantId) {
+      setTenantLicense(null)
+      setLicenseStatus(null)
+      return null
+    }
+
+    const effectiveRole = currentProfile?.role || profile?.role || user?.role
+    const isSuperAdmin = effectiveRole === ROLES.SUPER_ADMIN || currentProfile?.is_super_admin || profile?.is_super_admin
+
+    // Founder / Super Admin selalu bebas dari pembatasan lisensi
+    if (isSuperAdmin) {
+      const founderStatus = {
+        status: 'ACTIVE',
+        isActive: true,
+        isGracePeriod: false,
+        isExpired: false,
+        isTrial: false,
+        isFounder: true,
+        daysRemaining: 9999,
+        message: 'Founder Enterprise Master License',
+        color: 'emerald'
+      }
+      setTenantLicense({
+        tier: 'ENTERPRISE_FOUNDER',
+        plan: 'enterprise',
+        status: 'ACTIVE'
+      })
+      setLicenseStatus(founderStatus)
+      return founderStatus
+    }
+
+    try {
+      setIsLicenseLoading(true)
+      const { data, error } = await supabase
+        .from('tenant_licenses')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      const lic = Array.isArray(data) && data.length > 0 ? data[0] : null
+      setTenantLicense(lic)
+      const evaluated = evaluateLicenseStatus(lic)
+      setLicenseStatus(evaluated)
+      return evaluated
+    } catch (err) {
+      console.warn('Gagal memuat lisensi tenant:', err)
+      const fallback = evaluateLicenseStatus(null)
+      setTenantLicense(null)
+      setLicenseStatus(fallback)
+      return fallback
+    } finally {
+      setIsLicenseLoading(false)
+    }
+  }, [profile, user])
 
   // Helper untuk memuat daftar tenant dan menentukan tenant aktif
   const loadTenantsForUser = useCallback(async (currentProfile) => {
@@ -96,6 +164,7 @@ export const AuthProvider = ({ children }) => {
         setActiveTenant(resolvedTenant)
         localStorage.setItem(ACTIVE_TENANT_STORAGE_KEY, resolvedTenant.id)
         setActiveTenantId(resolvedTenant.id)
+        await loadTenantLicense(resolvedTenant.id, currentProfile)
       }
     } catch (err) {
       console.warn('Gagal memuat daftar tenant pengguna:', err)
@@ -110,8 +179,9 @@ export const AuthProvider = ({ children }) => {
       setUserTenants([fallbackTenant])
       setActiveTenant(fallbackTenant)
       setActiveTenantId(fallbackTenant.id)
+      await loadTenantLicense(fallbackTenant.id, currentProfile)
     }
-  }, [])
+  }, [loadTenantLicense])
 
   // Fungsi mengubah tipe/model bisnis tenant aktif (Cafe / Carwash / Hybrid)
   const updateTenantBusinessType = useCallback(async (newBusinessType) => {
@@ -172,6 +242,7 @@ export const AuthProvider = ({ children }) => {
     setActiveTenant(targetTenant)
     localStorage.setItem(ACTIVE_TENANT_STORAGE_KEY, targetTenant.id)
     setActiveTenantId(targetTenant.id)
+    loadTenantLicense(targetTenant.id, profile)
 
     // Trigger event ke seluruh aplikasi
     if (typeof window !== 'undefined') {
@@ -180,7 +251,7 @@ export const AuthProvider = ({ children }) => {
       }))
     }
     return true
-  }, [userTenants, profile, user])
+  }, [userTenants, profile, user, loadTenantLicense])
 
   const refreshTenants = useCallback(async () => {
     if (profile) {
@@ -219,6 +290,8 @@ export const AuthProvider = ({ children }) => {
             setProfile(null)
             setActiveTenant(null)
             setUserTenants([])
+            setTenantLicense(null)
+            setLicenseStatus(null)
           }
         }
       } catch (err) {
@@ -228,6 +301,8 @@ export const AuthProvider = ({ children }) => {
           setProfile(null)
           setActiveTenant(null)
           setUserTenants([])
+          setTenantLicense(null)
+          setLicenseStatus(null)
         }
       } finally {
         if (isMounted) {
@@ -376,6 +451,59 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  // Fungsi Aktivasi Serial Key Lisensi Tenant
+  const activateLicenseKey = async (serialKey) => {
+    if (!activeTenant) throw new Error('Tidak ada tenant aktif terpilih.')
+    const cleanKey = (serialKey || '').trim().toUpperCase()
+    if (!cleanKey || cleanKey.length < 8) {
+      throw new Error('Format kunci lisensi tidak valid.')
+    }
+
+    const newExpiry = new Date()
+    newExpiry.setFullYear(newExpiry.getFullYear() + 1)
+    const expiryIso = newExpiry.toISOString()
+
+    const { data: existingLic } = await supabase
+      .from('tenant_licenses')
+      .select('id')
+      .eq('tenant_id', activeTenant.id)
+      .limit(1)
+
+    if (existingLic && existingLic.length > 0) {
+      const { error } = await supabase
+        .from('tenant_licenses')
+        .update({
+          license_key: cleanKey,
+          status: 'ACTIVE',
+          expires_at: expiryIso,
+          valid_until: expiryIso,
+          tier: 'PRO_ANNUAL',
+          plan: 'pro',
+          updated_at: new Date().toISOString()
+        })
+        .eq('tenant_id', activeTenant.id)
+      if (error) throw error
+    } else {
+      const { error } = await supabase
+        .from('tenant_licenses')
+        .insert({
+          id: 'lic_' + Date.now(),
+          tenant_id: activeTenant.id,
+          license_key: cleanKey,
+          status: 'ACTIVE',
+          expires_at: expiryIso,
+          valid_until: expiryIso,
+          tier: 'PRO_ANNUAL',
+          plan: 'pro',
+          created_at: new Date().toISOString()
+        })
+      if (error) throw error
+    }
+
+    await loadTenantLicense(activeTenant.id, profile)
+    return { success: true, message: 'Lisensi Pro 1 Tahun berhasil diaktifkan!' }
+  }
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -383,6 +511,12 @@ export const AuthProvider = ({ children }) => {
       loading, 
       activeTenant, 
       userTenants, 
+      tenantLicense,
+      licenseStatus,
+      isLicenseLoading,
+      loadTenantLicense,
+      activateLicenseKey,
+      refreshLicense: () => loadTenantLicense(activeTenant?.id, profile),
       switchTenant, 
       refreshTenants, 
       updateTenantBusinessType,

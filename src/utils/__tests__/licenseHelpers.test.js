@@ -68,4 +68,36 @@ describe('licenseHelpers', () => {
     expect(link).toContain(encodeURIComponent('Barokah Carwash & Coffee'))
     expect(link).toContain(encodeURIComponent('RelayPOS Pro Enterprise'))
   })
+
+  it('TC_06: should evaluate 14-day trial correctly using valid_until', () => {
+    const futureDate = new Date()
+    futureDate.setDate(futureDate.getDate() + 14)
+
+    const result = evaluateLicenseStatus({
+      valid_until: futureDate.toISOString(),
+      plan: 'trial'
+    })
+
+    expect(result.status).toBe('ACTIVE')
+    expect(result.isActive).toBe(true)
+    expect(result.isTrial).toBe(true)
+    expect(result.daysRemaining).toBe(14)
+    expect(result.message).toContain('Masa Uji Coba Trial')
+  })
+
+  it('TC_07: should mark expired trial as EXPIRED and lock access', () => {
+    const pastDate = new Date()
+    pastDate.setDate(pastDate.getDate() - 15) // Past 14-day trial and 7-day grace
+
+    const result = evaluateLicenseStatus({
+      valid_until: pastDate.toISOString(),
+      plan: 'trial'
+    })
+
+    expect(result.status).toBe('EXPIRED')
+    expect(result.isActive).toBe(false)
+    expect(result.isExpired).toBe(true)
+    expect(result.isTrial).toBe(true)
+    expect(result.message).toContain('Masa uji coba 14 hari telah berakhir')
+  })
 })

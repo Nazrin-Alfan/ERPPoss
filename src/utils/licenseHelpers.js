@@ -38,12 +38,23 @@ export const GRACE_PERIOD_DAYS = 7
  * Validasi status lisensi saat ini
  */
 export const evaluateLicenseStatus = (licenseData) => {
-  if (!licenseData || !licenseData.expires_at) {
+  const expiryRaw = licenseData?.expires_at || licenseData?.valid_until
+  const isTrial = Boolean(
+    !licenseData ||
+    !expiryRaw ||
+    licenseData?.plan === 'trial' ||
+    licenseData?.tier === 'TRIAL_14D' ||
+    licenseData?.is_trial === true ||
+    licenseData?.features?.trial === true
+  )
+
+  if (!licenseData || !expiryRaw) {
     return {
       status: 'DEMO_TRIAL',
       isActive: true,
       isGracePeriod: false,
       isExpired: false,
+      isTrial: true,
       daysRemaining: 14,
       message: 'Mode Uji Coba Demo Sandbox (14 Hari Tersisa)',
       color: 'amber'
@@ -51,7 +62,7 @@ export const evaluateLicenseStatus = (licenseData) => {
   }
 
   const now = new Date()
-  const expiryDate = new Date(licenseData.expires_at)
+  const expiryDate = new Date(expiryRaw)
   const diffTime = expiryDate.getTime() - now.getTime()
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
@@ -61,9 +72,12 @@ export const evaluateLicenseStatus = (licenseData) => {
       isActive: true,
       isGracePeriod: false,
       isExpired: false,
+      isTrial,
       daysRemaining: diffDays,
-      message: `Lisensi Aktif (${diffDays} hari tersisa)`,
-      color: diffDays <= 14 ? 'amber' : 'emerald'
+      message: isTrial
+        ? `Masa Uji Coba Trial (${diffDays} hari tersisa)`
+        : `Lisensi Aktif (${diffDays} hari tersisa)`,
+      color: isTrial || diffDays <= 14 ? 'amber' : 'emerald'
     }
   }
 
@@ -75,6 +89,7 @@ export const evaluateLicenseStatus = (licenseData) => {
       isActive: true, // Masih diizinkan buka kasir tapi ada warning
       isGracePeriod: true,
       isExpired: false,
+      isTrial,
       daysRemaining: 0,
       graceDaysRemaining: graceRemaining,
       message: `Masa Tenggang Grace Period (${graceRemaining} hari tersisa sebelum sistem terkunci)`,
@@ -87,9 +102,12 @@ export const evaluateLicenseStatus = (licenseData) => {
     isActive: false,
     isGracePeriod: false,
     isExpired: true,
+    isTrial,
     daysRemaining: 0,
     graceDaysRemaining: 0,
-    message: 'Lisensi Telah Kadaluarsa. Hubungi pengembang untuk perpanjangan.',
+    message: isTrial
+      ? 'Masa uji coba 14 hari telah berakhir. Silakan aktivasi lisensi resmi untuk melanjutkan.'
+      : 'Lisensi Telah Kadaluarsa. Hubungi pengembang untuk perpanjangan.',
     color: 'rose'
   }
 }

@@ -31,7 +31,7 @@ import ChangePasswordModal from './auth/ChangePasswordModal'
 
 const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const location = useLocation()
-  const { profile, activeTenant, logout } = useAuth()
+  const { profile, activeTenant, logout, licenseStatus } = useAuth()
   const [showMobileNav, setShowMobileNav] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
@@ -445,6 +445,14 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
           {/* Tenant / Outlet Switcher */}
           <TenantSwitcher isCollapsed={isCollapsed} />
+
+          {/* Trial / Grace Status Pill */}
+          {licenseStatus?.isTrial && !isCollapsed && (
+            <div className="mx-1 mb-2 px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[10px] flex items-center justify-between">
+              <span className="text-amber-400 font-medium">Trial {licenseStatus.daysRemaining} Hari</span>
+              <span className="text-[9px] px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 font-bold uppercase">Uji Coba</span>
+            </div>
+          )}
 
           {/* Menu Navigasi Grouped */}
           <nav className="space-y-4 pt-1">

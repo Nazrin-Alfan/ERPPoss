@@ -678,7 +678,9 @@ const Admin = () => {
       license_key: serialKey,
       status: 'ACTIVE',
       tier: 'PRO_ANNUAL',
+      plan: 'pro',
       expires_at: newExpiry.toISOString(),
+      valid_until: newExpiry.toISOString(),
       notes: `Diaktivasi pada ${new Date().toLocaleDateString('id-ID')} via Serial Key`
     }
 

@@ -3722,6 +3722,37 @@
      - Build Vite sukses dalam 1.76 detik.
      - Deployment otomatis ke Cloudflare Pages `erpposs` (`https://erpposs.pages.dev`).
 
+### Log #104: Penguatan Arsitektur Lisensi SaaS: Pembatasan Trial Otomatis 14 Hari, Global Route Lockout, dan Aktivasi Serial Key (Opsi B) (2026-11-01)
+- **Latar Belakang & Celah yang Ditemukan**:
+  - Pada pendaftaran mandiri pengguna baru via `/login` (`signUpOwner`), trigger PostgreSQL Supabase (`handle_new_user_profile`) sebelumnya membuat record tenant langsung berstatus `plan = 'pro'` dan `status = 'active'` tanpa batas waktu kedaluwarsa.
+  - Komponen rute `ProtectedRoute` di frontend tidak memeriksa status masa aktif lisensi, sehingga tenant baru langsung dapat menggunakan seluruh aplikasi secara cuma-cuma tanpa batas.
+- **Solusi Arsitektur SaaS (Opsi B - Trial 14 Hari + Lockout)**:
+  1. **Pembaruan Trigger Database Cloud (`handle_new_user_profile`)**:
+     - Menetapkan default `plan = 'trial'` dan `status = 'active'` saat pendaftaran tenant mandiri.
+     - Otomatis menerbitkan record `tenant_licenses` dengan durasi trial 14 hari (`expires_at = NOW() + INTERVAL '14 days'`) dan grace period 3 hari.
+     - Mengaktifkan fitur-fitur dasar operasional (`pos`, `inventory`, `accounting`, `reports`) dengan flag trial.
+  2. **Penyelarasan Local DB Engine (`src/services/localDbEngine.js`)**:
+     - Memperbarui fungsi `signUpOwner` di engine lokal agar menyisipkan record `tenant_licenses` trial 14 hari yang identik untuk menjamin konsistensi saat pengujian offline atau mock.
+  3. **Ekspansi Utilitas Evaluasi Lisensi (`src/utils/licenseHelpers.js`)**:
+     - Mendukung evaluasi masa aktif dari atribut `expires_at` maupun `valid_until`.
+     - Menyematkan flag `isTrial` dinamis dan pesan kontekstual masa uji coba vs lisensi resmi.
+  4. **Penyediaan State Lisensi Global (`src/context/AuthContext.jsx`)**:
+     - Menginisialisasi `tenantLicense` dan `licenseStatus` saat tenant aktif dimuat (`loadTenantLicense`).
+     - Akun `Super Admin` / Founder dikecualikan (*exempt*) dari penguncian lisensi.
+     - Menyediakan fungsi `activateLicenseKey(serialKey)` untuk perpanjangan lisensi 1 tahun langsung dari frontend.
+  5. **Global Route Paywall Lockout (`src/App.jsx` - `ProtectedRoute`)**:
+     - Jika status lisensi tenant berstatus `EXPIRED` (`licenseStatus.isExpired === true`) dan bukan `Super Admin`, seluruh rute operasional langsung dialihkan ke layar penguncian `LicenseExpiredLockout`.
+  6. **Komponen Penguncian & Modal Aktivasi**:
+     - `src/components/auth/LicenseExpiredLockout.jsx`: Layar lockout dengan UI gelap titanium modern anti-AI slop. Untuk Owner, menampilkan ringkasan masa uji coba, form aktivasi kunci resmi, dan tautan prefilled WhatsApp ke Founder. Untuk Kasir, menampilkan pesan peringatan agar menghubungi Owner toko.
+     - `src/components/auth/ActivateLicenseModal.jsx`: Modal aktivasi instan yang dapat dibuka kapan saja melalui Trial Countdown Banner di bagian atas aplikasi.
+  7. **Trial Countdown Banner & Sidebar Indicator**:
+     - Memasang banner countdown sisa hari trial di header aplikasi (`src/App.jsx`).
+     - Menyematkan badge pill status uji coba di bawah Tenant Switcher pada `src/components/Sidebar.jsx`.
+- **Verifikasi Kualitas & Hasil Rilis**:
+  - Test Suite Vitest: 57 test files, **350/350 tests lulus (100% GREEN)**.
+  - Bundling Vite: Sukses dalam 2.03 detik (`index-B8dLgS34.js`, gzip: 307.96 kB).
+  - Deployment Cloudflare Pages: Berhasil dideploy ke `https://erpposs.pages.dev` (Deployment ID: `14716526`).
+
 
 
 
