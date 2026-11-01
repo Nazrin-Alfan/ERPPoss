@@ -6,6 +6,7 @@ node_modules/
 # Testing & Logs
 coverage/
 *.log
+**/*.log
 
 # Production Build
 dist/
@@ -13,11 +14,11 @@ build/
 
 # Environment variables & secrets
 .env
-.env.local
-.env.*.local
+.env.*
+*.env
+*.env.*
 JB.env
 JB_dev.env.bak
-*.env
 
 # Local backups & Scratch Files
 supabase/.temp/
@@ -30,6 +31,18 @@ pulled_supabase_data/
 src/services/realSeedData*.json
 *.full_backup.json
 data_archive/
+
+# Agent sessions, memories, and artifacts
+.hermes/sessions/
+.hermes/memories/
+.hermes/logs/
+.hermes/cache/
+*.session
+*.memory
+*.vault
+
+# QA & Output artifacts
+scripts/audit_output.json
 
 # OS / Editor
 .DS_Store

@@ -1941,7 +1941,7 @@ export const createLocalClient = () => {
           return { data: { user: null, session: null }, error: new Error(`OAuth provider ${provider} belum didukung.`) }
         }
 
-        const email = options?.data?.email || options?.queryParams?.email || 'owner.google@gmail.com'
+        const email = options?.data?.email || options?.queryParams?.email || 'owner.google@example.com'
         const nama = options?.data?.nama || options?.queryParams?.nama || 'Owner Google'
         const cleanEmail = email.trim().toLowerCase()
 

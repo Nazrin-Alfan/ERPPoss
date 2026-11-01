@@ -3684,9 +3684,9 @@
 
 ### **Log #102: Provisioning & Elevation of RelayPOS Founder Account**
 - **Waktu Eksekusi**: Minggu, 01 November 2026
-- **Objektif**: Mengonfirmasi dan mengangkat akun resmi Founder (`nashholding29@gmail.com` / Nazrin) ke hak akses tertinggi `Super Admin` di database Supabase Cloud.
+- **Objektif**: Mengonfirmasi dan mengangkat akun resmi Founder (`[REDACTED_FOUNDER_EMAIL]` / Nazrin) ke hak akses tertinggi `Super Admin` di database Supabase Cloud.
 - **Tindakan & Implementasi**:
-  1. Akun mandiri `nashholding29@gmail.com` diverifikasi terdaftar di `auth.users` dengan status `email_confirmed_at` valid.
+  1. Akun mandiri `[REDACTED_FOUNDER_EMAIL]` diverifikasi terdaftar di `auth.users` dengan status `email_confirmed_at` valid.
   2. Mengeksekusi mutasi role di `public.profiles` menjadi `'Super Admin'` secara atomik.
   3. Menyinkronkan metadata auth di `auth.users.raw_user_meta_data` dengan role `'Super Admin'`.
   4. Mengatur lisensi tenant `RelayposHead` menjadi `'enterprise'`.
@@ -3890,7 +3890,7 @@
   - **Temuan Kritis & Tindakan Perbaikan Database**:
     1. **Perbaikan RPC Provisi Database Baru (`fn_founder_create_tenant`)**:
        - *Temuan*: Penambahan akun owner ke tabel `auth.identities` mengalami error `null value in column "provider_id" violates not-null constraint` dan penolakan insert pada kolom generated `email`.
-       - *Perbaikan*: Memperbarui fungsi `fn_founder_create_tenant` agar menyertakan `provider_id: v_user_id::text` dan mengecualikan kolom generated `email`. Mengizinkan eksekusi oleh role Founder, Super Admin, dan akun `nashholding29@gmail.com`.
+       - *Perbaikan*: Memperbarui fungsi `fn_founder_create_tenant` agar menyertakan `provider_id: v_user_id::text` dan mengecualikan kolom generated `email`. Mengizinkan eksekusi oleh role Founder, Super Admin, dan akun Founder terverifikasi (`[REDACTED_FOUNDER_EMAIL]`).
        - *Hasil*: Uji provisi database baru berhasil memvalidasi pembuatan tenant atomik (tenants, branches, profiles, lisensi, CoA, balances, paket cuci, loyalty) dengan output JSON sukses (`{"success": true}`).
     2. **Standarisasi CASCADE DELETE Seluruh Tabel Tenant**:
        - *Temuan*: Seluruh foreign key `tenant_id` pada 20+ tabel operasional sebelumnya berstatus `RESTRICT`, sehingga operasi reset database atau penghapusan tenant gagal akibat foreign key constraint violation.
@@ -3932,6 +3932,25 @@
     - `skill_view(name='supabase')` dan `skill_view(name='supabase-postgres-best-practices')` terverifikasi aktif dan terbaca dengan metadata lengkap.
     - Vitest Suite: 59 test files lulus (356/356 tests PASS).
     - Status Repository: Tercatat di Git tracking dengan branch `main`.
+  
+111. **Pembersihan Keamanan Repositori & Sanitasi Kredensial/Privasi (2026-11-02)**:
+  - **Latar Belakang & Ruang Lingkup**:
+    - Audit menyeluruh terhadap seluruh file terlacak di Git (tracked files) dan riwayat komit untuk mencegah kebocoran kredensial, token akses, log sesi mesin, dan identitas pengguna.
+  - **Temuan & Tindakan Pembersihan**:
+    1. **Penghapusan File Lingkungan dari Pelacakan Git (`.env.production`)**:
+       - Menghapus `.env.production` dari cache pelacakan Git (`git rm --cached .env.production`). File tetap dipertahankan secara lokal dan diamankan via `.gitignore`.
+    2. **Sanitasi File Log dan Artefak Pengujian**:
+       - Menghapus file log database `Documentation/qa/2026-10-31/postgres.log` dan artefak audit `scripts/audit_output.json` dari Git tracking.
+    3. **Penyempurnaan Proteksi `.gitignore`**:
+       - Menambahkan aturan komprehensif pengabaian seluruh varian file env (`.env.*`, `*.env.*`).
+       - Memblokir seluruh pola file log rekursif (`**/*.log`).
+       - Menambahkan aturan pencegahan kebocoran direktori agen, sesi, memori, dan vault (`.hermes/sessions/`, `.hermes/memories/`, `.hermes/logs/`, `*.session`, `*.memory`, `*.vault`).
+    4. **Redaksi Email Founder & Mock Sanitization**:
+       - Menyensor email resmi Founder di `document.md` menjadi `[REDACTED_FOUNDER_EMAIL]`.
+       - Mengubah mock email pengujian di `localDbEngine.js` dan `extra-access.json` menjadi domain aman `example.com`.
+  - **Verifikasi Kualitas**:
+    - Vitest Suite: 59 test files lulus (356/356 tests PASS - 100% Green).
+    - Production Bundling Vite: Sukses exit code 0.
 
 
 

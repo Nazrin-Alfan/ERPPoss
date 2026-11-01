@@ -22,7 +22,7 @@
     "name": "Google local mock creates simulated owner workspace",
     "status": "PASS",
     "detail": {
-      "email": "owner.google@gmail.com",
+      "email": "owner.google@example.com",
       "role": "Owner",
       "url": "http://127.0.0.1:5173/konsolidasi",
       "mock": true
