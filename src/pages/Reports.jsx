@@ -529,7 +529,7 @@ const Reports = () => {
       </div>
 
       {reportViewMode === 'general_ledger' ? (
-        <GeneralLedgerView tenantId={DEFAULT_TENANT_ID} />
+        <GeneralLedgerView tenantId={targetTenantId} />
       ) : (
         /* Printable Sheet Area */
         <div id="print-area" className="bg-[#121215] border border-[#26272d] p-8 rounded-2xl border border-[#26272d] bg-[#18181c]/40 text-white print:bg-white print:text-black print:p-0 print:border-none print:shadow-none space-y-8">

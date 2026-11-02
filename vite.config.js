@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { execSync } from 'child_process'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -19,7 +20,7 @@ export default defineConfig(({ mode }) => {
 
   if (fs.existsSync(envPath)) {
     const envContent = fs.readFileSync(envPath, 'utf-8')
-    envContent.split(/\r?\n/).forEach((line) => {
+    envContent.split('\n').forEach((line) => {
       if (line.trim().startsWith('#') || !line.includes('=')) return
       const [key, ...valueParts] = line.split('=')
       const val = valueParts.join('=').trim()
@@ -41,6 +42,15 @@ export default defineConfig(({ mode }) => {
   const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY || fallbackEnv.VITE_SUPABASE_ANON_KEY || ''
   const backendProvider = env.VITE_BACKEND_PROVIDER || fallbackEnv.VITE_BACKEND_PROVIDER || 'local'
 
+  // Metadata build dinamis dari git commit & timestamp ISO
+  let gitCommit = 'dev'
+  try {
+    gitCommit = execSync('git rev-parse --short HEAD').toString().trim()
+  } catch (e) {
+    gitCommit = process.env.CF_PAGES_COMMIT_SHA?.slice(0, 7) || 'latest'
+  }
+  const buildTime = new Date().toISOString()
+
   return {
     server: {
       host: '0.0.0.0',
@@ -55,6 +65,8 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.VITE_BACKEND_PROVIDER': JSON.stringify(backendProvider),
       'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(supabaseUrl),
       'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseAnonKey),
+      'import.meta.env.VITE_BUILD_COMMIT': JSON.stringify(gitCommit),
+      'import.meta.env.VITE_BUILD_TIME': JSON.stringify(buildTime),
     },
   }
 })

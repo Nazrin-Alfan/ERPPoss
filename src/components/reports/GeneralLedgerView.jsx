@@ -26,6 +26,7 @@ import { formatRupiah } from '../../utils/helpers'
 export default function GeneralLedgerView({ tenantId }) {
   const [activeGlTab, setActiveGlTab] = useState('trial_balance') // 'trial_balance' | 'balance_sheet' | 'income_statement' | 'ledger_drilldown'
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [selectedAccountId, setSelectedAccountId] = useState('acc_1001')
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -55,7 +56,16 @@ export default function GeneralLedgerView({ tenantId }) {
 
   const [glService, setGlService] = useState(null)
 
+  const isValidUUID = (id) => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+
   const loadGlData = async () => {
+    if (!tenantId || !isValidUUID(tenantId)) {
+      setLoading(false)
+      setError('Identifier tenant aktif tidak valid (bukan UUID). Pastikan Anda telah memilih atau mendaftarkan tenant yang valid.')
+      return
+    }
+
+    setError(null)
     setLoading(true)
     try {
       let gl = supabase.localDb?.gl || supabase.erp?.gl
@@ -71,25 +81,35 @@ export default function GeneralLedgerView({ tenantId }) {
           supabase.from('cashflow').select('*').eq('tenant_id', tenantId)
         ])
 
-        const mapCategory = (tipe) => {
-          if (!tipe) return 'ASSET'
-          const upper = tipe.toUpperCase()
-          if (upper === 'PENDAPATAN' || upper === 'REVENUE') return 'REVENUE'
-          if (upper === 'BEBAN' || upper === 'BIAYA' || upper === 'EXPENSE') return 'EXPENSE'
-          if (upper === 'ASET' || upper === 'AKTIVA' || upper === 'ASSET') return 'ASSET'
-          if (upper === 'KEWAJIBAN' || upper === 'LIABILITAS' || upper === 'LIABILITY' || upper === 'HUTANG') return 'LIABILITY'
-          if (upper === 'EKUITAS' || upper === 'MODAL' || upper === 'EQUITY') return 'EQUITY'
-          return upper
+        const mapCategory = (tipe, code) => {
+          if (tipe) {
+            const upper = String(tipe).toUpperCase()
+            if (upper.includes('PENDAPATAN') || upper.includes('REVENUE')) return 'REVENUE'
+            if (upper.includes('BEBAN') || upper.includes('BIAYA') || upper.includes('EXPENSE')) return 'EXPENSE'
+            if (upper.includes('ASET') || upper.includes('AKTIVA') || upper.includes('ASSET')) return 'ASSET'
+            if (upper.includes('KEWAJIBAN') || upper.includes('LIABILITAS') || upper.includes('LIABILITY') || upper.includes('HUTANG')) return 'LIABILITY'
+            if (upper.includes('EKUITAS') || upper.includes('MODAL') || upper.includes('EQUITY')) return 'EQUITY'
+          }
+          if (code) {
+            const firstDigit = String(code).trim()[0]
+            if (firstDigit === '1') return 'ASSET'
+            if (firstDigit === '2') return 'LIABILITY'
+            if (firstDigit === '3') return 'EQUITY'
+            if (firstDigit === '4') return 'REVENUE'
+            if (firstDigit === '5' || firstDigit === '6') return 'EXPENSE'
+          }
+          return 'ASSET'
         }
 
         const normalizedCoa = (coaRes.data || []).map((a) => {
-          const cat = mapCategory(a.tipe_akun || a.category)
+          const rawCode = a.kode_akun || a.account_code || a.code || ''
+          const cat = mapCategory(a.tipe || a.tipe_akun || a.account_type || a.category || a.kategori, rawCode)
           const normBal = (a.saldo_normal || a.normal_balance || (cat === 'REVENUE' || cat === 'LIABILITY' || cat === 'EQUITY' ? 'CREDIT' : 'DEBIT')).toUpperCase()
           return {
             id: a.id,
             tenant_id: a.tenant_id,
-            code: a.kode_akun || a.code || '',
-            name: a.nama_akun || a.name || '',
+            code: rawCode,
+            name: a.nama_akun || a.account_name || a.name || '',
             category: cat,
             normal_balance: normBal,
             is_active: a.is_active !== undefined ? a.is_active : true
@@ -140,6 +160,7 @@ export default function GeneralLedgerView({ tenantId }) {
       })
     } catch (err) {
       console.error('Error generating GL reports:', err)
+      setError(err?.message || 'Gagal memuat data buku besar')
     } finally {
       setLoading(false)
     }
@@ -224,6 +245,37 @@ export default function GeneralLedgerView({ tenantId }) {
       (a) => a.code.toLowerCase().includes(term) || a.name.toLowerCase().includes(term) || a.category.toLowerCase().includes(term)
     )
   }, [trialBalance, searchTerm])
+
+  if (!tenantId || !isValidUUID(tenantId)) {
+    return (
+      <div className="p-8 text-center bg-[#18181c]/60 border border-[#26272d] rounded-2xl space-y-3">
+        <AlertTriangle className="w-10 h-10 text-amber-400 mx-auto" />
+        <h3 className="text-base font-bold text-white uppercase tracking-wider">Tenant Aktif Belum Dipilih / Tidak Valid</h3>
+        <p className="text-xs text-[#bbcbb2] max-w-md mx-auto">
+          Buku besar ERP membutuhkan identifier tenant aktif (UUID) yang valid untuk memuat bagan akun dan jurnal akuntansi. Silakan pilih tenant atau muat ulang sesi Anda.
+        </p>
+      </div>
+    )
+  }
+
+  if (error && !trialBalance) {
+    return (
+      <div className="p-8 text-center bg-rose-950/20 border border-rose-800/40 rounded-2xl space-y-4">
+        <AlertTriangle className="w-10 h-10 text-rose-500 mx-auto" />
+        <h3 className="text-base font-bold text-white uppercase tracking-wider">Gagal Menghitung Buku Besar</h3>
+        <p className="text-xs text-rose-300 font-mono max-w-lg mx-auto bg-black/40 p-3 rounded-lg border border-rose-900/50">
+          {error}
+        </p>
+        <button
+          onClick={loadGlData}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-rose-900/30 cursor-pointer"
+        >
+          <RefreshCw size={14} />
+          Coba Muat Ulang
+        </button>
+      </div>
+    )
+  }
 
   if (loading && !trialBalance) {
     return (

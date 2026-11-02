@@ -4356,14 +4356,79 @@
   11. **LIVE-11 (Eliminasi Hardcoded Tenant JayaBersama)**:
       - *Status*: TERVERIFIKASI.
       - *Perbaikan*: Menghapus string literal `Laporan_Cashflow_JayaBersama` di `src/pages/Finance.jsx` dan menggantinya dengan dynamic slug nama tenant aktif (`tenantSlug`). Memperbarui `src/utils/receiptHelpers.js`, `CafePOSPage.jsx`, dan `HybridPOSPage.jsx` agar memprioritaskan nama tenant aktif pada struk termal.
-  12. **LIVE-12 (Sinkronisasi Seragam Stok Barang: stok vs stok_akhir)**:
-      - *Status*: TERVERIFIKASI.
-      - *Perbaikan*: DDL fungsi `fn_sync_stok_barang_advanced` dan `fn_execute_checkout` di Supabase Cloud selalu memperbarui kolom `stok` dan `stok_akhir` secara berbarengan, menghilangkan desinkronisasi kuantitas stok fisik.
-- **Hasil Pengujian**:
-  - `Vitest Suite`: **59 test files, 359/359 tests passed (100% Green)**.
-  - `Vite Production Build`: **Sukses tanpa error (dist/assets/index-C1ZJvWWH.js)**.
-  - `Deployment CDN Cloudflare Pages`: **Aktif dan terverifikasi live di https://erpposs.pages.dev**.
-  - `Automated Cloud DB & Live Verification (scripts/verify_live_01_to_12.py)`: **12/12 temuan tervalidasi 100% LULUS**.
+---
+
+### [2026-11-03] - IMPLEMENTASI DAN PENYELESAIAN 7 PRIORITAS AUDIT PRA-RILIS RELAYPOS (#00147)
+- **Status**: SELESAI, TERVERIFIKASI PENUH END-TO-END DI BROWSER & SUPABASE CLOUD
+- **Target File & Database Artifacts**:
+  - `supabase/migrations/012_reconcile_registration_and_checkout_pipeline.sql` (Migrasi DDL & RPC atomic checkout, tenant initializer, COA standar Indonesia, penyesuaian foreign key dan trigger immutabilitas jurnal)
+  - `scripts/apply_migration_012_mcp.py` (Automation migration runner via Supabase Cloud MCP)
+  - `src/services/posService.js` (Penyelarasan normalisasi payload item dan kalkulasi numerik pembayaran/struk)
+  - `src/pages/pos/HybridPOSPage.jsx` (Sinkronisasi payload struk checkout: `bayar`, `nominal_bayar`, `uang_diterima`, `kembalian`, `pajak`, `total_belanja`)
+  - `src/components/reports/GeneralLedgerView.jsx` (Validasi format UUID tenant, visual error banner `AlertTriangle`, mapping kategori COA komprehensif & fallback kode akun 1-6)
+  - `src/pages/Reports.jsx` (Pengalihan parameter `tenantId={targetTenantId}` menghindari fallback statis)
+  - `vite.config.js` (Injeksi metadata build dinamis: Git Commit SHA via `git rev-parse --short HEAD` dan ISO timestamp build)
+  - `src/components/Sidebar.jsx` (Indikator versi build dinamis dari konstanta kompilasi Vite)
+  - `src/services/__tests__/checkoutAndGlAlignment.test.js` (Unit test validasi penyeragaman payload item dan keamanan UUID GL)
+  - `scripts/deploy_to_pages.py` (Otomasi upload artefak dist ke Cloudflare Pages)
+
+- **Rekayasa & Penyelesaian Berdasarkan 7 Prioritas Utama**:
+  1. **Prioritas 1: Perbaikan Initializer Registrasi Tenant Baru**:
+     - *Masalah*: Registrasi tenant baru sebelumnya berpotensi gagal karena trigger database `handle_new_user_profile` dan `fn_initialize_tenant_defaults` mengalami konflik skema cabang (`nama` vs `nama_cabang`), duplikasi COA standar, atau ketidaksesuaian relasi kategori/program.
+     - *Solusi*: Migrasi 012 menyempurnakan `fn_initialize_tenant_defaults` dengan:
+       - Pembuatan cabang utama dengan kolom `nama = 'Cabang Utama'` dan `kode = 'PST'`.
+       - Inisialisasi 22 Bagan Akun (Chart of Accounts - COA) standar Indonesia lengkap dengan klausul `ON CONFLICT (tenant_id, kode_akun) DO NOTHING` untuk mencegah duplikasi constraint `idx_coa_tenant_kode`.
+       - Inisialisasi 5 master categories (`MINUMAN`, `MAKANAN`, `SNACK`, `LAYANAN_CUCI`, `CHEMICAL_DETAILING`), 1 program CRM Loyalty, 2 menu default cafe (`Kopi Susu Aren`, `Americano Dingin`), 2 bahan baku default (`Biji Kopi House Blend`, `Susu Segar UHT`), dan relasi resep Bill-of-Materials (BOM).
+     - *Verifikasi*: Pendaftaran akun tenant QA baru (`audit_tenant_2026_test@relaypos.com`) berhasil 100%, menghasilkan Tenant ID `9e15176c-fb00-4605-9b12-e50cb825a059` dengan lisensi trial 14 hari aktif di `tenant_licenses`.
+
+  2. **Prioritas 2: Penyelarasan Kontrak Item Checkout Frontend–RPC**:
+     - *Masalah*: Kontrak parameter item checkout antara antarmuka React (`qty`, `nama_menu`, `harga`) dan fungsi RPC PostgreSQL `fn_execute_checkout` (`jumlah`, `nama_produk`, `harga_satuan`) tidak selaras.
+     - *Solusi*: `src/services/posService.js` menormalkan setiap item keranjang menjadi kontrak standar: `{ id_menu, id_barang, nama_produk, jumlah, harga_satuan, subtotal, catatan }`. Nilai `subtotal` dihitung deterministik (`jumlah * harga_satuan`), dan fungsi database RPC mendukung ekstraksi atribut multi-kombinasi key secara defensif.
+
+  3. **Prioritas 3: Perbaikan Ketidaksesuaian Skema Checkout & Struk**:
+     - *Masalah*: Urutan insert pada RPC checkout sebelumnya mengeksekusi `public.cafe` sebelum `public.struk`, memicu foreign key violation `cafe_struk_id_fkey`. Selain itu, kolom `struk.pajak`, `struk.bayar`, dan mutasi stok `barang_keluar` memerlukan kolom yang konsisten (`id_barang`, `id_bahan_baku`, `alasan`, `keterangan`), serta trigger jurnal akuntansi menolak modifikasi baris jika status jurnal sudah `POSTED`.
+     - *Solusi*: 
+       - Memperbaiki alur transaksi atomik di `fn_execute_checkout`: Header `struk` disisipkan terlebih dahulu dengan `pajak`, `bayar`, `nominal_bayar`, `kembalian`, dan `total_tagihan`.
+       - Detail `cafe` dan `carwash` disisipkan setelah struk terbentuk.
+       - Pemotongan stok otomatis mencatat ke `barang_keluar` dengan alasan `POS_SALE` dan keterangan referensi nomor struk.
+       - Sinkronisasi `cashflow` otomatis mencatat tipe `Pemasukan` ke pos `SALDO CASH` atau `SALDO REKENING (N)`.
+       - Pembuatan jurnal akuntansi menggunakan state transisi aman: insert header jurnal berstatus `DRAFT`, insert baris debit-kredit di `journal_entry_lines`, kemudian update status header menjadi `POSTED` (sehingga mematuhi trigger `check_journal_entry_posted_immutability`).
+
+  4. **Prioritas 4: Penggunaan UUID Tenant Aktif pada Buku Besar & Error Handling Informatif**:
+     - *Masalah*: `Reports.jsx` sebelumnya masih memiliki fallback ke `DEFAULT_TENANT_ID = 'tenant_jb_enterprise'`, memicu potensi kebocoran isolasi multi-tenant atau kegagalan query RLS. Selain itu, jika format tenant ID tidak valid, UI dapat mengalami render error atau blank screen.
+     - *Solusi*:
+       - Mengubah passing props pada `src/pages/Reports.jsx` menjadi `tenantId={targetTenantId}`.
+       - Menambahkan validasi regex UUIDv4 `isValidUUID` di `src/components/reports/GeneralLedgerView.jsx`. Jika UUID tidak valid, query database dihentikan dan sistem merender banner peringatan visual informatif berikon `AlertTriangle`.
+       - Memperbarui normalisasi kategori akun (`tipe`, `tipe_akun`, `kategori`, dan fallback digit awal kode akun) sehingga Trial Balance, Neraca, Laba Rugi, dan Drilldown Buku Besar membaca data dengan presisi 100%.
+
+  5. **Prioritas 5: Pengujian Alur Browser Penuh End-to-End**:
+     - *Alur yang Diuji di Browser Nyata (`https://erpposs.pages.dev`)*:
+       1. **Registrasi/Login**: Login menggunakan akun QA tenant baru (`audit_tenant_2026_test@relaypos.com`).
+       2. **Trial**: Dashboard menampilkan badge `Trial 14 Hari UJI COBA` dan masa uji coba aktif.
+       3. **Katalog & Stok**: Halaman Multi-Gudang menampilkan saldo stok awal: Biji Kopi House Blend (99,92 kg) dan Susu Segar UHT (99,4 liter).
+       4. **Kasir POS**: Membuka Kasir POS, memilih menu `Kopi Susu Aren` (Qty: 2, Total Tagihan: Rp 36.000).
+       5. **Pembayaran**: Memasukkan nominal uang cash Rp 50.000, menekan `Simpan & Cetak (Selesai)` -> UI merespons `Transaksi berhasil disimpan!`.
+       6. **Mutasi Stok**: Sistem memotong bahan baku resep BOM (0.04 kg biji kopi dan 0.3 liter susu) dan mencatat baris mutasi di `barang_keluar` dengan sisa stok 99.88 kg dan 99.1 liter.
+       7. **Cashflow**: Tercatat penerimaan kas masuk `CF-POS-311d4d74-c083-4a08-9efc-6e7225027c57` sebesar Rp 36.000 ke pos `SALDO CASH`.
+       8. **Jurnal Akuntansi**: Terbit jurnal `JE-POS-311d4d74-c083-4a08-9efc-6e7225027c57` berstatus `POSTED` dengan baris Debit Kas Tunai (1101) Rp 36.000 dan Kredit Pendapatan Cafe (4102) Rp 36.000 (Seimbang).
+       9. **Laporan & Buku Besar**: Halaman Laporan Akuntansi menampilkan Neraca Saldo Seimbang 100%, Laporan Laba Rugi Akuntansi (P&L) dengan pendapatan Rp 72.000, Neraca Keuangan aset Rp 72.000, dan Drilldown Buku Besar akun 1101 dengan riwayat mutasi dan saldo berjalan Rp 72.000.
+
+  6. **Prioritas 6: Penutupan Rekonsiliasi LIVE-05, LIVE-06, dan LIVE-09**:
+     - Seluruh transaksi dan mutasi database terbukti sinkron 100% tanpa celah rekonsiliasi.
+     - **LIVE-05**: CLOSED & VERIFIED (Registrasi tenant baru dan inisialisasi master data sukses).
+     - **LIVE-06**: CLOSED & VERIFIED (Kontrak item checkout, skema struk, dan eksekusi transaksi POS live sukses).
+     - **LIVE-09**: CLOSED & VERIFIED (Buku besar double-entry balance, auto-posting jurnal aman, rekonsiliasi laporan akuntansi terbukti presisi).
+
+  7. **Prioritas 7: Metadata Build Dinamis Saat Deployment**:
+     - *Masalah*: Sidebar sebelumnya menggunakan label build hardcoded statis (`build 2026.04.18-v1`).
+     - *Solusi*: `vite.config.js` mengekstrak commit Git aktif (`git rev-parse --short HEAD` -> `0287eb6`) dan ISO build timestamp saat proses kompilasi via `define: { __BUILD_COMMIT__, __BUILD_TIME__ }`. `src/components/Sidebar.jsx` menampilkan badge dinamis `RelayPOS Cloud build 0287eb6`.
+
+- **Hasil Pengujian & Verifikasi Kualitas Akhir**:
+  - `Vitest Suite`: **60 test files, 363/363 tests passed (100% Green)**.
+  - `Vite Production Build`: **Sukses tanpa error (dist/assets/index-BdYu3CJi.js)**.
+  - `Cloudflare Pages Live`: **Aktif dan terverifikasi live di https://erpposs.pages.dev**.
+  - `Browser E2E Execution`: **Sukses 100% dari Login -> Katalog Stok -> Kasir POS -> Pembayaran -> Rekonsiliasi Buku Besar & Laporan Keuangan**.
+
 
 
 

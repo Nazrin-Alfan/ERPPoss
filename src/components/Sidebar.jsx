@@ -456,12 +456,17 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
           {/* Build Version Indicator */}
           {!isCollapsed && (
-            <div className="mx-1 mb-2 px-2 py-1 rounded bg-[#18181c] border border-[#26272d] text-[9px] text-[#8e8e93] flex items-center justify-between font-mono">
+            <div
+              className="mx-1 mb-2 px-2 py-1 rounded bg-[#18181c] border border-[#26272d] text-[9px] text-[#8e8e93] flex items-center justify-between font-mono"
+              title={`Build Time: ${import.meta.env.VITE_BUILD_TIME || 'Live'}`}
+            >
               <span className="flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span>RelayPOS Cloud</span>
               </span>
-              <span className="text-[#00ffff] font-semibold">build 6459b76</span>
+              <span className="text-[#00ffff] font-semibold">
+                build {import.meta.env.VITE_BUILD_COMMIT || 'latest'}
+              </span>
             </div>
           )}
 

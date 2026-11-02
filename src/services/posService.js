@@ -12,6 +12,10 @@ export class PosCheckoutError extends Error {
     this.name = 'PosCheckoutError'
     this.code = code
     this.details = details
+    this.isStockError = code === 'INSUFFICIENT_STOCK'
+    this.isPaymentError = code === 'PAYMENT_UNDERPAID'
+    this.isPriceMismatch = code === 'PRICE_MISMATCH'
+    this.isDuplicate = code === 'DUPLICATE_TRANSACTION'
   }
 }
 
@@ -112,12 +116,56 @@ export const posService = {
       throw new PosCheckoutError('Tenant ID wajib disertakan untuk transaksi POS.', 'MISSING_TENANT_ID')
     }
 
+    // Normalisasi cafeItems agar konsisten baik untuk camelCase maupun snake_case
+    const normalizedCafeItems = (cafeItems || []).map(item => {
+      const price = parseFloat(item.harga_satuan ?? item.harga ?? item.price ?? 0)
+      const qty = parseFloat(item.qty ?? item.quantity ?? 1)
+      const subtotal = parseFloat(item.subtotal ?? item.total ?? (price * qty))
+      const name = item.nama_menu || item.nama || item.name || 'Menu'
+
+      return {
+        ...item,
+        id_menu: item.id_menu || item.id || null,
+        nama_menu: name,
+        nama: name,
+        harga: price,
+        harga_satuan: price,
+        qty: qty,
+        quantity: qty,
+        subtotal: subtotal,
+        total: subtotal
+      }
+    })
+
+    // Normalisasi strukPayload agar konsisten dengan field database
+    const totalTagihan = parseFloat(strukPayload.total_tagihan ?? strukPayload.total ?? strukPayload.total_biaya ?? strukPayload.total_belanja ?? 0)
+    const rawNominalBayar = strukPayload.nominal_bayar ?? strukPayload.bayar ?? (
+      (strukPayload.nominal_cash !== undefined || strukPayload.nominal_qris !== undefined)
+        ? (parseFloat(strukPayload.nominal_cash || 0) + parseFloat(strukPayload.nominal_qris || 0))
+        : (parseFloat(strukPayload.uang_diterima || 0) || totalTagihan)
+    )
+    const nominalBayar = parseFloat(rawNominalBayar ?? totalTagihan)
+    const kembalian = parseFloat(strukPayload.kembalian ?? (nominalBayar > totalTagihan ? nominalBayar - totalTagihan : 0))
+
+    const normalizedStruk = {
+      ...strukPayload,
+      subtotal: parseFloat(strukPayload.subtotal ?? strukPayload.total_biaya ?? totalTagihan),
+      diskon: parseFloat(strukPayload.diskon ?? strukPayload.total_diskon ?? (parseFloat(strukPayload.diskon_cafe || 0) + parseFloat(strukPayload.diskon_carwash || 0)) ?? 0),
+      pajak: parseFloat(strukPayload.pajak ?? 0),
+      nominal_bayar: nominalBayar,
+      bayar: nominalBayar,
+      uang_diterima: parseFloat(strukPayload.uang_diterima ?? nominalBayar),
+      kembalian: kembalian,
+      total_tagihan: totalTagihan,
+      total_belanja: totalTagihan
+    }
+
     try {
       const result = await api.transaksi.executeCheckout({
         tenant_id: tenantId,
         branch_id: branchId || null,
-        struk_payload: strukPayload,
-        cafe_items: cafeItems,
+        struk_payload: normalizedStruk,
+        cafe_items: normalizedCafeItems,
         carwash_payload: carwashPayload
       })
 
