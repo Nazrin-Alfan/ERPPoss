@@ -4313,6 +4313,59 @@
   - **Skor Pengujian Cloud**: **18/18 Tests Lulus Sempurna (100% PASS)**.
   - **Vitest Frontend Suite**: **59 test files, 359/359 tests Lulus Sempurna (100% PASS)**.
 
+---
+
+### [2026-11-03] - PENYELESAIAN LENGKAP AUDIT PERBAIKAN BACKLOG LIVE-01 SAMPAI LIVE-12
+- **Status**: SELESAI, DIPERBAIKI & TERVERIFIKASI PENUH DI DATABASE CLOUD DAN LIVE DEPLOYMENT
+- **Commit SHA**: `6459b76` (dengan bundle produksi termutakhir `assets/index-C1ZJvWWH.js`)
+- **Versi Deployment**: `https://erpposs.pages.dev` (Active Cloudflare Pages preview: `https://a48bf586.erpposs.pages.dev`)
+- **Migrasi DDL Diterapkan**:
+  - `supabase/migrations/010_enterprise_hardening_pack.sql` (Hardening RPC, concurrency advisory locks, dynamic licensing)
+  - `supabase/migrations/011_reconcile_live_audit_fixes.sql` (Penegakan role profile `FORBIDDEN_ROLE_ESCALATION`, proteksi IDOR tenant `FORBIDDEN_TENANT_MUTATION`, isolasi RLS COA, penegakan server-side price check, validasi diskon <= subtotal, sinkronisasi boolean `apakah_stok`, trigger restock `barang_masuk`, dan resolusi duplikasi lisensi)
+- **Ringkasan Perubahan per Temuan (LIVE-01 s/d LIVE-12)**:
+  1. **LIVE-01 (Deployment Version & POS Checkout RPC Alignment)**:
+     - *Status*: TERVERIFIKASI.
+     - *Perbaikan*: Bundle produksi terbaru dibuild dan dideploy ke Cloudflare Pages (`assets/index-C1ZJvWWH.js`). Memastikan seluruh alur checkout POS berjalan melalui RPC kanonikal `fn_execute_checkout` dan indikator build `v2.2 • build 6459b76` ditampilkan di sidebar.
+  2. **LIVE-02 (Resolusi Duplikasi Lisensi Tenant A)**:
+     - *Status*: TERVERIFIKASI.
+     - *Perbaikan*: Menghapus/mengubah lisensi ganda pada tenant A (`44ad5f1e-c777-4a76-8b51-251201dacdf8`), menyisakan tepat 1 lisensi aktif berstatus `ACTIVE` (`LIC-A3C4861BF3F6`, plan `pro`), dan menandai duplikat `RLPOS-TRL-F25A7E00` menjadi `SUPERSEDED`. Menambahkan penanganan konflik pada `fn_initialize_tenant_defaults`.
+  3. **LIVE-03 (Integritas Relasi barang_masuk & stok_barang)**:
+     - *Status*: TERVERIFIKASI.
+     - *Perbaikan*: Validasi UUID regex di `src/pages/Gudang.jsx` pada submit restock; implementasi trigger function `fn_apply_barang_masuk_to_stock` di database cloud untuk memastikan stok barang terupdate secara otomatis dan konsisten.
+  4. **LIVE-04 (Standarisasi Tipe Data apakah_stok Boolean)**:
+     - *Status*: TERVERIFIKASI.
+     - *Perbaikan*: Menyelaraskan seluruh frontend (`src/utils/financeHelpers.js`, `src/pages/pos/HybridPOSPage.jsx`, dan unit test) untuk mengirimkan nilai boolean murni (`true`/`false`), bukan string `'Ya'`/`'Tidak'`. Divalidasi langsung pada kolom `cashflow.apakah_stok` dan `pengeluaran.apakah_stok` di DB Supabase Cloud.
+  5. **LIVE-05 (Isolasi COA Multi-Tenant)**:
+     - *Status*: TERVERIFIKASI.
+     - *Perbaikan*: Penerapan dan verifikasi kebijakan RLS `tenant_isolation_policy` pada tabel `chart_of_accounts`, `journal_entries`, dan `journal_entry_lines` menggunakan `current_tenant_id()`. Mencegah akses IDOR lintas tenant secara menyeluruh.
+  6. **LIVE-06 (Rekonsiliasi Otomatis Transaksi POS ke Buku Kas / Cashflow)**:
+     - *Status*: TERVERIFIKASI.
+     - *Perbaikan*: DDL `fn_execute_checkout` di Supabase Cloud secara otomatis menyisipkan record ke tabel `cashflow` dengan pos saldo dinamis (Cash vs QRIS/Transfer) pada setiap transaksi POS yang berstatus 'Selesai'.
+  7. **LIVE-07 (General Ledger Multi-Tenant & Pelaporan Cloud)**:
+     - *Status*: TERVERIFIKASI.
+     - *Perbaikan*: `src/components/reports/GeneralLedgerView.jsx` diperbarui agar terhubung langsung dengan Supabase Cloud data store saat beroperasi di mode online cloud, mengeksekusi kalkulasi Neraca Saldo, Neraca Keuangan, dan Laba Rugi terisolasi per tenant.
+  8. **LIVE-08 (Validasi Server-Side Diskon Tidak Melebihi Subtotal)**:
+     - *Status*: TERVERIFIKASI.
+     - *Perbaikan*: Validasi ketat di `fn_execute_checkout` menolak diskon negatif dan diskon yang melebihi subtotal kotor dengan error `INVALID_DISCOUNT: Diskon tidak boleh melebihi subtotal kotor transaksi`.
+  9. **LIVE-09 (Jurnal Akuntansi Dinamis & Posting Otomatis HPP)**:
+     - *Status*: TERVERIFIKASI.
+     - *Perbaikan*: `fn_execute_checkout` memetakan pendapatan secara terpisah ke akun 4101 (Carwash) dan 4102 (Cafe), serta mendebit akun 5101 (HPP) dan mengkredit akun 1103 (Persediaan) berdasarkan resep BOM atau harga pokok retail, lalu menandai status jurnal menjadi `POSTED` (immutable).
+  10. **LIVE-10 (Eliminasi Mock Fallback pada Dashboard)**:
+      - *Status*: TERVERIFIKASI.
+      - *Perbaikan*: Menghapus seluruh array data fiktif hardcoded (`Paket Cuci Snow`, `French Fries`, `Kopi Susu Aren Gula Aren`) di `src/pages/Dashboard.jsx` dan mengembalikan state kosong informatif (*empty state*) ketika data riil belum tersedia.
+  11. **LIVE-11 (Eliminasi Hardcoded Tenant JayaBersama)**:
+      - *Status*: TERVERIFIKASI.
+      - *Perbaikan*: Menghapus string literal `Laporan_Cashflow_JayaBersama` di `src/pages/Finance.jsx` dan menggantinya dengan dynamic slug nama tenant aktif (`tenantSlug`). Memperbarui `src/utils/receiptHelpers.js`, `CafePOSPage.jsx`, dan `HybridPOSPage.jsx` agar memprioritaskan nama tenant aktif pada struk termal.
+  12. **LIVE-12 (Sinkronisasi Seragam Stok Barang: stok vs stok_akhir)**:
+      - *Status*: TERVERIFIKASI.
+      - *Perbaikan*: DDL fungsi `fn_sync_stok_barang_advanced` dan `fn_execute_checkout` di Supabase Cloud selalu memperbarui kolom `stok` dan `stok_akhir` secara berbarengan, menghilangkan desinkronisasi kuantitas stok fisik.
+- **Hasil Pengujian**:
+  - `Vitest Suite`: **59 test files, 359/359 tests passed (100% Green)**.
+  - `Vite Production Build`: **Sukses tanpa error (dist/assets/index-C1ZJvWWH.js)**.
+  - `Deployment CDN Cloudflare Pages`: **Aktif dan terverifikasi live di https://erpposs.pages.dev**.
+  - `Automated Cloud DB & Live Verification (scripts/verify_live_01_to_12.py)`: **12/12 temuan tervalidasi 100% LULUS**.
+
+
 
 
 

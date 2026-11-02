@@ -63,7 +63,7 @@ describe('Finance Helpers', () => {
       })
 
       expect(payload.cashflow.pengeluaran).toBe(15000)
-      expect(payload.cashflow.apakah_stok).toBe('Tidak')
+      expect(payload.cashflow.apakah_stok).toBe(false)
       expect(payload.details).toEqual([])
     })
 
@@ -95,7 +95,7 @@ describe('Finance Helpers', () => {
         pemasukan: 0,
         pengeluaran: 30000,
         pos: 'SALDO CASH',
-        apakah_stok: 'Tidak',
+        apakah_stok: false,
         qty: 0,
         created_at: '2026-08-06T15:22:00.000Z'
       })
@@ -130,8 +130,8 @@ describe('Finance Helpers', () => {
         timestamp: '2026-08-06T15:22:00.000Z'
       })
 
-      expect(payload.cashflow.apakah_stok).toBe('Ya')
-      expect(payload.cashflow.qty).toBe(3) // 2 + 1
+      expect(payload.cashflow.apakah_stok).toBe(true)
+      expect(payload.cashflow.qty).toBe(3)
       expect(payload.details.length).toBe(2)
 
       expect(payload.details[0]).toEqual({
@@ -245,7 +245,7 @@ describe('Finance Helpers', () => {
         kategori: 'Operasional',
         nominal: 25000,
         nama_pengeluaran: 'Beli Sabun Cuci',
-        apakah_stok: 'Tidak',
+        apakah_stok: false,
         id_bahan_baku: '',
         qty: 0
       })

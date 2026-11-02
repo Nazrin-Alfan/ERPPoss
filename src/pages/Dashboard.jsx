@@ -827,26 +827,7 @@ const Dashboard = () => {
       }
     }
     if (combined.length === 0) {
-      if (activeSection === 'CAFE') {
-        return [
-          { id: 1, name: 'Kopi Susu Aren Gula Aren', category: 'Cafe F&B', sales: 289, revenue: 'Rp 6.358.000', growth: '+15%', rating: 4.8, stock: 65 },
-          { id: 2, name: 'Matcha Latte Iced', category: 'Cafe F&B', sales: 142, revenue: 'Rp 3.976.000', growth: '+14%', rating: 4.6, stock: 42 },
-          { id: 3, name: 'French Fries Crispy', category: 'Cafe Snack', sales: 110, revenue: 'Rp 2.200.000', growth: '+8%', rating: 4.7, stock: 30 }
-        ]
-      }
-      if (activeSection === 'CARWASH') {
-        return [
-          { id: 1, name: 'Paket Cuci Snow Carwash', category: 'Carwash', sales: 342, revenue: 'Rp 15.390.000', growth: '+23%', rating: 4.9, stock: 100 },
-          { id: 2, name: 'Cuci Hidrolik + Wax', category: 'Carwash', sales: 198, revenue: 'Rp 11.880.000', growth: '+9%', rating: 4.7, stock: 100 },
-          { id: 3, name: 'Detailing Interior Mobil', category: 'Detailing', sales: 45, revenue: 'Rp 6.750.000', growth: '+11%', rating: 4.9, stock: 100 }
-        ]
-      }
-      return [
-        { id: 1, name: 'Paket Cuci Snow Carwash', category: 'Carwash', sales: 342, revenue: 'Rp 15.390.000', growth: '+23%', rating: 4.9, stock: 100 },
-        { id: 2, name: 'Kopi Susu Aren Gula Aren', category: 'Cafe F&B', sales: 289, revenue: 'Rp 6.358.000', growth: '+15%', rating: 4.8, stock: 65 },
-        { id: 3, name: 'Cuci Hidrolik + Wax', category: 'Carwash', sales: 198, revenue: 'Rp 11.880.000', growth: '+9%', rating: 4.7, stock: 100 },
-        { id: 4, name: 'Matcha Latte Iced', category: 'Cafe F&B', sales: 142, revenue: 'Rp 3.976.000', growth: '+14%', rating: 4.6, stock: 42 }
-      ]
+      return []
     }
     return combined.sort((a, b) => b.sales - a.sales).slice(0, 5)
   }, [activeSection, cafeAnalytics.topMenus, carwashAnalytics.topModels, carwashAnalytics.carwashAOV])
@@ -1908,35 +1889,42 @@ const Dashboard = () => {
             </div>
 
             <div className="py-4 space-y-3">
-              {topProductsList.map((prod, idx) => (
-                <div key={prod.id || idx} className="flex items-center p-3 rounded-xl bg-[#18181c] border border-[#26272d] gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30 flex items-center justify-center text-xs font-bold font-mono shrink-0">
-                    #{idx + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <p className="text-xs font-bold text-white truncate">{prod.name}</p>
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#26272d] text-[#bbcbb2] shrink-0 font-medium">
-                          {prod.category}
+              {topProductsList.length === 0 ? (
+                <div className="py-8 text-center text-[#8e8e93]">
+                  <p className="text-xs font-semibold">Belum ada transaksi pada periode ini</p>
+                  <p className="text-[11px] text-[#555] mt-1">Data penjualan produk dan layanan akan muncul secara otomatis setelah transaksi POS dicatat.</p>
+                </div>
+              ) : (
+                topProductsList.map((prod, idx) => (
+                  <div key={prod.id || idx} className="flex items-center p-3 rounded-xl bg-[#18181c] border border-[#26272d] gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30 flex items-center justify-center text-xs font-bold font-mono shrink-0">
+                      #{idx + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <p className="text-xs font-bold text-white truncate">{prod.name}</p>
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#26272d] text-[#bbcbb2] shrink-0 font-medium">
+                            {prod.category}
+                          </span>
+                        </div>
+                        <span className="text-xs font-mono font-bold text-white shrink-0">{prod.revenue}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 mt-1">
+                        <div className="flex items-center gap-1 text-[11px] text-[#bbcbb2]">
+                          <Star size={11} className="text-[#ffc71f] fill-[#ffc71f]" />
+                          <span>{prod.rating}</span>
+                          <span>•</span>
+                          <span className="font-mono text-[#ffc71f] font-semibold">{prod.sales} order</span>
+                        </div>
+                        <span className="text-[10px] text-[#00ffff] font-semibold font-mono bg-[#00ffff]/10 px-1.5 py-0.2 rounded border border-[#00ffff]/20">
+                          {prod.growth}
                         </span>
                       </div>
-                      <span className="text-xs font-mono font-bold text-white shrink-0">{prod.revenue}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-2 mt-1">
-                      <div className="flex items-center gap-1 text-[11px] text-[#bbcbb2]">
-                        <Star size={11} className="text-[#ffc71f] fill-[#ffc71f]" />
-                        <span>{prod.rating}</span>
-                        <span>•</span>
-                        <span className="font-mono text-[#ffc71f] font-semibold">{prod.sales} order</span>
-                      </div>
-                      <span className="text-[10px] text-[#00ffff] font-semibold font-mono bg-[#00ffff]/10 px-1.5 py-0.2 rounded border border-[#00ffff]/20">
-                        {prod.growth}
-                      </span>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
 
             <div className="pt-3 border-t border-[#26272d] flex items-center justify-between text-xs text-[#bbcbb2]">

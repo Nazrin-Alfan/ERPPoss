@@ -1276,6 +1276,7 @@ const Finance = () => {
   const handleExportCSV = () => {
     const dateTag = filterPeriodMode === 'month' ? selectedMonth : 
                     filterPeriodMode === 'custom' ? `${customStartDate}_sd_${customEndDate}` : quickPreset
+    const tenantSlug = (activeTenant?.nama || 'RelayPOS').replace(/[^a-zA-Z0-9_-]/g, '_')
 
     if (activeTab === 'cashflow') {
       const headers = [
@@ -1290,7 +1291,7 @@ const Finance = () => {
         { label: 'Waktu Input', key: 'created_at' }
       ]
       const csvStr = generateCSVString(headers, filteredCashflow)
-      downloadCSV(csvStr, `Laporan_Cashflow_JayaBersama_${dateTag}`)
+      downloadCSV(csvStr, `Laporan_Cashflow_${tenantSlug}_${dateTag}`)
     } else if (activeTab === 'carwash') {
       const headers = [
         { label: 'ID Carwash', key: 'id_carwash' },
@@ -1307,7 +1308,7 @@ const Finance = () => {
         { label: 'Status', key: 'status' }
       ]
       const csvStr = generateCSVString(headers, filteredCarwash)
-      downloadCSV(csvStr, `Laporan_Carwash_JayaBersama_${dateTag}`)
+      downloadCSV(csvStr, `Laporan_Carwash_${tenantSlug}_${dateTag}`)
     } else if (activeTab === 'cafe') {
       const headers = [
         { label: 'ID Detail', key: 'id_detail' },
@@ -1322,7 +1323,7 @@ const Finance = () => {
         { label: 'Subtotal (Rp)', accessor: (r) => r.subtotal || r.total_harga || ((r.qty || r.jumlah || 1) * (r.harga_satuan || 0)) }
       ]
       const csvStr = generateCSVString(headers, filteredCafe)
-      downloadCSV(csvStr, `Laporan_Cafe_JayaBersama_${dateTag}`)
+      downloadCSV(csvStr, `Laporan_Cafe_${tenantSlug}_${dateTag}`)
     } else if (activeTab === 'expenses') {
       const headers = [
         { label: 'ID Pengeluaran', key: 'id_pengeluaran' },
@@ -1335,7 +1336,7 @@ const Finance = () => {
         { label: 'Nominal (Rp)', accessor: (r) => r.nominal || r.total_harga || 0 }
       ]
       const csvStr = generateCSVString(headers, filteredExpenses)
-      downloadCSV(csvStr, `Laporan_Pengeluaran_JayaBersama_${dateTag}`)
+      downloadCSV(csvStr, `Laporan_Pengeluaran_${tenantSlug}_${dateTag}`)
     }
   }
 

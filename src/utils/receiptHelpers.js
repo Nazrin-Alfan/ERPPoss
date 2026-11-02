@@ -171,7 +171,7 @@ export const buildOrderReceiptData = (order, customConfig = null) => {
     hasCarwash: hasCarwashItems,
     title: orderTitle,
     subtitle: orderSubtitle,
-    storeName: config.storeName || DEFAULT_RECEIPT_CONFIG.storeName,
+    storeName: order?.tenantName || order?.tenant_nama || order?.storeName || config.storeName || DEFAULT_RECEIPT_CONFIG.storeName,
     storeTagline: config.storeTagline !== undefined ? config.storeTagline : DEFAULT_RECEIPT_CONFIG.storeTagline,
     storeAddress: config.storeAddress || '',
     storePhone: config.storePhone || '',

@@ -385,7 +385,7 @@ export const CafePOSPage = () => {
           paymentMethod: selectedPayment,
           cashTendered: Number(nominalBayar) || grandTotal,
           kembalian: kembalian,
-          tenantName: activeTenant?.name || 'Cafe RelayPOS'
+          tenantName: activeTenant?.nama || activeTenant?.name || 'Cafe RelayPOS'
         })
         setActiveReceipt(receiptData)
       }

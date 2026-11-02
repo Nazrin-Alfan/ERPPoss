@@ -791,7 +791,7 @@ const CafePOS = () => {
           id_bahan_baku: posExpenseForm.id_bahan_baku || '',
           id_barang: posExpenseForm.id_bahan_baku || '',
           qty: parseFloat(posExpenseForm.qty || 0),
-          apakah_stok: posExpenseForm.id_bahan_baku ? 'Ya' : 'Tidak'
+          apakah_stok: Boolean(posExpenseForm.id_bahan_baku)
         }
 
         const { error: updErr } = await supabase
@@ -1481,7 +1481,8 @@ const CafePOS = () => {
             harga_satuan: surchargeAmount,
             subtotal: surchargeAmount
           }] : [])
-        ]
+        ],
+        tenantName: activeTenant?.nama || activeTenant?.name
       })
 
       setActiveReceipt(settledReceiptData)
@@ -1838,6 +1839,7 @@ const CafePOS = () => {
 
       // Siapkan payload struk untuk cetak thermal / kirim WhatsApp
       const receiptOrderPayload = {
+        tenantName: activeTenant?.nama || activeTenant?.name,
         id_struk: effectiveStrukId,
         tanggal: todayDate,
         jam: currentTime,

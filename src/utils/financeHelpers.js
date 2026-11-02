@@ -165,7 +165,7 @@ export const formatExpensePayload = ({
     pemasukan: 0,
     pengeluaran: totalVal,
     pos: form.pos,
-    apakah_stok: isBahanBaku ? 'Ya' : 'Tidak',
+    apakah_stok: Boolean(isBahanBaku),
     qty: isBahanBaku ? barangMasukList.reduce((sum, item) => sum + parseFloat(item.jumlah || 0), 0) : 0,
     created_at: timestamp
   }
@@ -269,7 +269,7 @@ export const formatPosExpensePayload = ({ form, todayDate, currentTime, newExpId
     kategori: isEmployeeRelated ? `${normKat} - ${form.karyawan}` : normKat,
     nominal: nominalVal,
     nama_pengeluaran: isEmployeeRelated ? `${normKat} ${form.karyawan} (${form.keterangan || 'Tanpa catatan'})` : form.keterangan,
-    apakah_stok: hasRawMaterial ? 'Ya' : 'Tidak',
+    apakah_stok: Boolean(hasRawMaterial),
     id_bahan_baku: rawItemId,
     qty: qtyVal
   }

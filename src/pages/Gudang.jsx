@@ -321,13 +321,16 @@ export default function Gudang() {
 
     try {
       const totalAmount = qtyVal * costVal
+      const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+      const targetUuid = isUuid(restockTarget.id) ? restockTarget.id : (isUuid(restockTarget.id_bahan_baku) ? restockTarget.id_bahan_baku : null)
+
       // Catat ke tabel barang_masuk
       const { error: bmErr } = await supabase
         .from('barang_masuk')
         .insert({
-          id_barang: restockTarget.id_barang,
-          id_bahan_baku: restockTarget.id_barang,
-          nama_barang: restockTarget.nama_barang,
+          id_barang: restockTarget.id_barang || restockTarget.id,
+          id_bahan_baku: targetUuid,
+          nama_barang: restockTarget.nama_barang || restockTarget.nama_produk,
           jumlah_masuk: qtyVal,
           harga_satuan: costVal,
           total_harga: totalAmount,

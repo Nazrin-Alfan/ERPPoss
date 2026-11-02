@@ -1,6 +1,7 @@
 import { LedgerTable, OperationalTable } from '../ui/tables'
 import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../supabaseClient'
+import { GeneralLedgerService } from '../../services/generalLedgerService'
 import {
   Scale,
   BookOpen,
@@ -52,15 +53,75 @@ export default function GeneralLedgerView({ tenantId }) {
     plat_nomor: '',
   })
 
-  const loadGlData = () => {
+  const [glService, setGlService] = useState(null)
+
+  const loadGlData = async () => {
     setLoading(true)
     try {
-      const gl = supabase.localDb?.gl || supabase.erp?.gl
+      let gl = supabase.localDb?.gl || supabase.erp?.gl
+
+      if (!gl && tenantId) {
+        // Ambil data COA, jurnal, dan saldo dari PostgreSQL Supabase Cloud
+        const [coaRes, entriesRes, linesRes, stockRes, strukRes, cashflowRes] = await Promise.all([
+          supabase.from('chart_of_accounts').select('*').eq('tenant_id', tenantId),
+          supabase.from('journal_entries').select('*').eq('tenant_id', tenantId),
+          supabase.from('journal_entry_lines').select('*').eq('tenant_id', tenantId),
+          supabase.from('stok_barang').select('*').eq('tenant_id', tenantId),
+          supabase.from('struk').select('*').eq('tenant_id', tenantId),
+          supabase.from('cashflow').select('*').eq('tenant_id', tenantId)
+        ])
+
+        const mapCategory = (tipe) => {
+          if (!tipe) return 'ASSET'
+          const upper = tipe.toUpperCase()
+          if (upper === 'PENDAPATAN' || upper === 'REVENUE') return 'REVENUE'
+          if (upper === 'BEBAN' || upper === 'BIAYA' || upper === 'EXPENSE') return 'EXPENSE'
+          if (upper === 'ASET' || upper === 'AKTIVA' || upper === 'ASSET') return 'ASSET'
+          if (upper === 'KEWAJIBAN' || upper === 'LIABILITAS' || upper === 'LIABILITY' || upper === 'HUTANG') return 'LIABILITY'
+          if (upper === 'EKUITAS' || upper === 'MODAL' || upper === 'EQUITY') return 'EQUITY'
+          return upper
+        }
+
+        const normalizedCoa = (coaRes.data || []).map((a) => {
+          const cat = mapCategory(a.tipe_akun || a.category)
+          const normBal = (a.saldo_normal || a.normal_balance || (cat === 'REVENUE' || cat === 'LIABILITY' || cat === 'EQUITY' ? 'CREDIT' : 'DEBIT')).toUpperCase()
+          return {
+            id: a.id,
+            tenant_id: a.tenant_id,
+            code: a.kode_akun || a.code || '',
+            name: a.nama_akun || a.name || '',
+            category: cat,
+            normal_balance: normBal,
+            is_active: a.is_active !== undefined ? a.is_active : true
+          }
+        })
+
+        const memoryStore = {
+          data: {
+            chart_of_accounts: normalizedCoa,
+            journal_entries: entriesRes.data || [],
+            journal_entry_lines: linesRes.data || [],
+            stok_barang: stockRes.data || [],
+            struk: strukRes.data || [],
+            cashflow: cashflowRes.data || []
+          },
+          getTable(name) {
+            return this.data[name] || []
+          }
+        }
+
+        gl = new GeneralLedgerService(memoryStore)
+        setGlService(gl)
+      } else if (gl) {
+        setGlService(gl)
+      }
+
       if (gl) {
         const tb = gl.getTrialBalance(tenantId)
         const bs = gl.getBalanceSheet(tenantId)
         const is = gl.getIncomeStatement(tenantId)
-        const ledger = gl.getAccountLedger(tenantId, selectedAccountId)
+        const targetAccountId = selectedAccountId || (tb?.accounts?.[0]?.id)
+        const ledger = targetAccountId ? gl.getAccountLedger(tenantId, targetAccountId) : null
 
         setTrialBalance(tb)
         setBalanceSheet(bs)
@@ -85,7 +146,7 @@ export default function GeneralLedgerView({ tenantId }) {
   }
 
   const handleOpenDrilldown = (account) => {
-    const gl = supabase.localDb?.gl || supabase.erp?.gl
+    const gl = glService || supabase.localDb?.gl || supabase.erp?.gl
     if (!gl) return
     const accObj = trialBalance?.accounts.find(a => a.id === account.id || a.code === account.code) || account
     setDrilldownAccount(accObj)
