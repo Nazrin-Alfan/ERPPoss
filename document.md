@@ -4183,6 +4183,69 @@
   - **Vitest Unit/Integration Suite**: 59 file pengujian lulus sempurna (**359/359 tests PASS - 100% Green**).
   - **Vite Production Build**: Kompilasi sukses bersih tanpa peringatan/galat dalam **2.68 detik**.
 
+---
+
+### Entri 118 - Production-Grade Zero-Defect Enterprise Hardening (Batch 6 Audit Resolution)
+- **Konteks & Masalah**:
+  Review mendalam terhadap commit `b8639f8` (Batch 5) menemukan 7 celah integritas dan kelemahan arsitektural yang harus diperbaiki secara tuntas sebelum sistem dinyatakan siap produksi:
+  1. *Double Stock Deduction*: `fn_execute_checkout` mengupdate `stok_barang` dan `bahan_baku` secara terpisah, padahal `bahan_baku` adalah view langsung atas `stok_barang`.
+  2. *Profil Protection Gap*: Trigger hanya berjalan pada `BEFORE UPDATE OF role, tenant_id`, membuka celah bagi kasir untuk menghapus profil sendiri (`DELETE`) lalu membuat profil baru (`INSERT`) dengan role 'Super Admin'.
+  3. *Concurrency Idempotency Race Condition*: Dua request konkuren dapat lolos pemeriksaan keberadaan struk secara simultan dan memotong stok dua kali. Selain itu, nomor struk sama dengan payload berbeda tidak divalidasi.
+  4. *Carwash Catalog Pricing*: Harga carwash diambil langsung dari payload client tanpa pencocokan katalog resmi `carwash_packages`.
+  5. *Public Production Serials*: Kunci serial resmi sempat tertulis dalam migrasi SQL statis di repositori publik.
+  6. *Journal Immutability Gap*: Trigger baris jurnal hanya berjalan pada `UPDATE/DELETE` dan rentan eksploitasi perpindahan baris dari draft ke posted; header jurnal hanya melindungi sebagian kolom.
+  7. *Quota Expiration Gap*: Pengecekan kuota lisensi tidak mensyaratkan `valid_until > NOW()` dan penguncian row lock rentan miss jika lisensi belum ada.
+
+- **Solusi & Rekayasa Arsitektur (Migrasi `009_production_grade_zero_defect_hardening.sql`)**:
+  1. **Single-Source Stock Deduction**:
+     - Menghapus seluruh mutasi terpisah ke view `bahan_baku`.
+     - Seluruh pengurangan inventori (baik bahan baku resep BOM maupun barang retail jadi) dieksekusi secara eksklusif pada tabel fisik `public.stok_barang` dengan row lock `FOR UPDATE`.
+     - Pencatatan movement mutasi dicatat secara atomik ke `public.barang_keluar` (`jumlah_keluar`, `alasan`, `nama_produk`, `nama_barang`).
+  2. **Comprehensive Profiles Security (INSERT, UPDATE, DELETE)**:
+     - Trigger `trg_protect_profile_role` diperluas menjadi `BEFORE INSERT OR UPDATE OR DELETE ON public.profiles`.
+     - Operasi `DELETE` oleh non-Owner/Super Admin ditolak (`FORBIDDEN_PROFILE_MUTATION`).
+     - Operasi `INSERT` role 'Super Admin' atau 'Owner' oleh non-otoritas ditolak (`FORBIDDEN_ROLE_ESCALATION`).
+     - Hak akses direct `DELETE` pada tabel `profiles` dicabut dari role `authenticated`, `anon`, dan `PUBLIC`.
+  3. **Advisory Lock & Payload Hash Idempotency**:
+     - Memasang PostgreSQL Transactional Advisory Lock berbasis hash tenant & struk: `PERFORM pg_advisory_xact_lock(...)` untuk menjamin request konkuren terserialisasi secara deterministik.
+     - Menyimpan dan membandingkan `payload_hash` (MD5 dari gabungan payload struk, cafe, dan carwash).
+     - Jika request kedua mengirim `id_struk` yang sama dengan data berbeda, ditolak seketika dengan eksepsi `IDEMPOTENCY_CONFLICT`.
+     - Jika payload persis sama pada transaksi selesai, dikembalikan status `ALREADY_COMPLETED` dengan `is_idempotent: true` tanpa memotong stok ulang.
+  4. **Strict Server-Side Carwash Catalog Pricing**:
+     - Memvalidasi paket carwash terhadap tabel resmi `public.carwash_packages` berdasarkan tenant dan branch.
+     - Jika paket tidak ditemukan, ditolak dengan `CARWASH_PACKAGE_NOT_FOUND`.
+     - Jika harga client menyimpang dari tarif resmi katalog, ditolak mutlak dengan `PRICE_MISMATCH`.
+  5. **Purge Public Serials & On-Demand Cryptographic Generation**:
+     - Menghapus seluruh serial statis publik dari database `license_keys`.
+     - Mengimplementasikan RPC generator administratif `public.fn_admin_generate_license_key(...)` berbasis `gen_random_uuid()` yang hanya dapat diakses oleh `service_role` dan `Super Admin`.
+     - Menambahkan penanda `is_test BOOLEAN`; kunci uji coba ditolak bila diaktivasi pada tenant produksi (`TEST_KEY_RESTRICTED`).
+  6. **Complete Accounting Immutability**:
+     - Trigger pada `journal_entry_lines` diperluas menjadi `BEFORE INSERT OR UPDATE OR DELETE`, memeriksa status parent lama (`OLD`) maupun parent baru (`NEW`). Penambahan baris baru ke jurnal POSTED ditolak seketika (`JOURNAL_POSTED_IMMUTABLE`).
+     - Trigger pada `journal_entries` menolak setiap perubahan (`OLD.* IS DISTINCT FROM NEW.*`) maupun penghapusan pada entri POSTED.
+  7. **Strict License Expiration & Tenant Row Locking**:
+     - Menambahkan klausul `valid_until > NOW()` pada pencarian lisensi kuota. Lisensi yang telah kedaluwarsa otomatis fallback ke batas dasar starter (1 cabang, 3 user).
+     - Mengunci baris `public.tenants` (`FOR UPDATE`) yang dijamin selalu ada, mengeliminasi race condition penambahan cabang/user secara simultan.
+
+- **Hasil Pengujian Komprehensif Live Cloud (`scripts/verify_batch6_production_hardening.py`)**:
+  - **Test 1 (Single-Source Stock Deduction)**: Terbukti stok terpotong tepat 1x dari 10.0 menjadi 8.0, view `bahan_baku` tersinkronisasi 8.0, dan zero double deduction [PASS].
+  - **Test 2a (Kasir Delete Profile Blocked)**: Ditolak dengan `FORBIDDEN_PROFILE_MUTATION` [PASS].
+  - **Test 2b (Kasir Insert Super Admin Blocked)**: Ditolak dengan `FORBIDDEN_ROLE_ESCALATION` [PASS].
+  - **Test 2c (Kasir Update Role Blocked)**: Ditolak dengan `FORBIDDEN_ROLE_ESCALATION` [PASS].
+  - **Test 2d (Kasir Mutasi Tenant Blocked)**: Ditolak dengan `FORBIDDEN_TENANT_MUTATION` [PASS].
+  - **Test 3a (Idempotent Safe-Replay)**: Mengembalikan `ALREADY_COMPLETED`, stok tidak terpotong ulang [PASS].
+  - **Test 3b (Payload Hash Conflict)**: Struk berulang dengan data transaksi berbeda ditolak dengan `IDEMPOTENCY_CONFLICT` [PASS].
+  - **Test 4a (Carwash Price Tampering)**: Manipulasi tarif layanan ditolak dengan `PRICE_MISMATCH` [PASS].
+  - **Test 4b (Unregistered Carwash Package)**: Layanan fiktif ditolak dengan `CARWASH_PACKAGE_NOT_FOUND` [PASS].
+  - **Test 4c (Legitimate Carwash Checkout)**: Transaksi dengan tarif katalog resmi sukses diproses [PASS].
+  - **Test 5 (Dynamic On-Demand Licensing & Anti-Replay)**: Serial publik bersih, serial kriptografis dinamis aktif, replay attack ditolak [PASS].
+  - **Test 6a (Insert Line to POSTED Journal Blocked)**: Ditolak dengan `JOURNAL_POSTED_IMMUTABLE` [PASS].
+  - **Test 6b (Header Modification on POSTED Journal Blocked)**: Ditolak dengan `JOURNAL_POSTED_IMMUTABLE` [PASS].
+  - **Test 7 (Expired License Fallback & Quota Lock)**: Lisensi kedaluwarsa otomatis fallback ke batas 1 cabang, penambahan cabang kedua ilegal diblokir dengan `BRANCH_LIMIT_EXCEEDED` [PASS].
+  - **Skor Pengujian Live Cloud**: Seluruh 7 grup temuan audit (**100% PASS**).
+  - **Test Vitest Frontend**: 59 file pengujian, 359/359 tests lulus (**100% PASS**).
+  - **Build Vite Produksi**: Kompilasi sukses bersih tanpa error dalam **3.02 detik**.
+
+
 
 
 
