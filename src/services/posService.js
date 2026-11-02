@@ -56,6 +56,42 @@ export const posService = {
       return new PosCheckoutError(cleanDesc, 'PAYMENT_UNDERPAID', { raw: rawMsg })
     }
 
+    if (rawMsg.includes('UNAUTHORIZED')) {
+      return new PosCheckoutError('Sesi kasir tidak terotentikasi. Silakan login kembali.', 'UNAUTHORIZED', { raw: rawMsg })
+    }
+
+    if (rawMsg.includes('USER_INACTIVE')) {
+      return new PosCheckoutError('Akun pengguna dinonaktifkan. Hubungi Administrator.', 'USER_INACTIVE', { raw: rawMsg })
+    }
+
+    if (rawMsg.includes('TENANT_FORBIDDEN')) {
+      return new PosCheckoutError('Akses transaksi lintas tenant ditolak.', 'TENANT_FORBIDDEN', { raw: rawMsg })
+    }
+
+    if (rawMsg.includes('BRANCH_FORBIDDEN')) {
+      return new PosCheckoutError('Anda tidak memiliki akses transaksi ke cabang ini.', 'BRANCH_FORBIDDEN', { raw: rawMsg })
+    }
+
+    if (rawMsg.includes('INVALID_QUANTITY')) {
+      const match = rawMsg.match(/INVALID_QUANTITY:\s*(.*)/)
+      const cleanDesc = match ? match[1].trim() : 'Kuantitas item tidak valid (harus lebih besar dari nol).'
+      return new PosCheckoutError(cleanDesc, 'INVALID_QUANTITY', { raw: rawMsg })
+    }
+
+    if (rawMsg.includes('CARWASH_PACKAGE_NOT_FOUND')) {
+      const match = rawMsg.match(/CARWASH_PACKAGE_NOT_FOUND:\s*(.*)/)
+      const cleanDesc = match ? match[1].trim() : 'Paket carwash tidak terdaftar dalam katalog resmi.'
+      return new PosCheckoutError(cleanDesc, 'CARWASH_PACKAGE_NOT_FOUND', { raw: rawMsg })
+    }
+
+    if (rawMsg.includes('CUSTOM_PRICING_UNAUTHORIZED')) {
+      return new PosCheckoutError('Hanya Owner atau Administrator yang berwenang menetapkan tarif custom carwash.', 'CUSTOM_PRICING_UNAUTHORIZED', { raw: rawMsg })
+    }
+
+    if (rawMsg.includes('IDEMPOTENCY_CONFLICT')) {
+      return new PosCheckoutError('Nomor struk ini telah digunakan pada transaksi lain dengan isi berbeda.', 'IDEMPOTENCY_CONFLICT', { raw: rawMsg })
+    }
+
     if (rawMsg.includes('FORBIDDEN')) {
       return new PosCheckoutError('Akses tenant tidak sah atau sesi telah berakhir.', 'FORBIDDEN', { raw: rawMsg })
     }

@@ -4245,6 +4245,75 @@
   - **Test Vitest Frontend**: 59 file pengujian, 359/359 tests lulus (**100% PASS**).
   - **Build Vite Produksi**: Kompilasi sukses bersih tanpa error dalam **3.02 detik**.
 
+---
+
+### Entri 119 - Batch 7 Audit Resolution: Enterprise Authorization, Concurrency Hardening & RPC Harmonization (2026-11-03)
+- **Konteks & Latar Belakang Audit**:
+  Audit teknis komprehensif (Batch 7) dari berkas audit `pasted-text-2026-11-02_23-45-24-403.md` mengidentifikasi serangkaian celah potensial pada tingkat otentikasi sesi RPC, keselarasan tanda tangan fungsi database vs frontend, penegakan integritas katalog harga, pemotongan stok tunggal, dan perlindungan konkurensi multi-threading:
+  1. **SEC-01 & SEC-02 (Authorization & Tenant Isolation)**:
+     - Fungsi `SECURITY DEFINER` mengeksekusi dengan wewenang pemilik skema (superuser/postgres), sehingga validasi sesi berbasis `auth.uid()` dan verifikasi keanggotaan cabang (`branch_id`) dan tenant (`tenant_id`) wajib ditegakkan di dalam tubuh fungsi sebelum operasi mutasi apapun diizinkan.
+     - Penutupan celah eskalasi peran pada tabel `profiles` (mencegah kasir mengubah role menjadi Owner/Super Admin) serta pencegahan pembajakan profil lintas tenant.
+  2. **API-01 (RPC Signature Harmonization)**:
+     - Ketidaksesuaian tanda tangan parameter RPC antara frontend React (`AuthContext.jsx`, `Admin.jsx`, `posService.js`) dan skema database untuk `fn_activate_license_key` dan `fn_execute_checkout`.
+  3. **LIC-01 (Dynamic License Lifecycle & Anti-Replay)**:
+     - Penghapusan tuntas seed serial statis publik (`RELAY-*`), penerbitan kunci kriptografis dinamis on-demand (`fn_admin_generate_license_key`), penolakan serial fiktif, pencegahan replay kunci terpakai, dan penolakan aktivasi lintas tenant.
+     - Sinkronisasi atomik kolom `tier` dan `plan` pada tabel `tenant_licenses` dan master `tenants`.
+  4. **POS-01 (Advisory Lock Idempotency & Concurrency)**:
+     - Idempotensi mutlak berbasis PostgreSQL Transactional Advisory Lock (`pg_advisory_xact_lock`) dan payload hashing (MD5), mencegah double deduction saat kasir melakukan double click atau koneksi jaringan tidak stabil.
+     - Penolakan manipulasi payload dengan nomor struk yang sama (`IDEMPOTENCY_CONFLICT`).
+  5. **POS-02 (Server-Side Price Catalog Enforcement)**:
+     - Penegakan harga menu Cafe (`daftar_harga_menu`) dan tarif Carwash (`carwash_packages`) langsung di tingkat database; transaksi yang mengirim harga modifikasi ditolak seketika (`PRICE_MISMATCH`).
+  6. **POS-03 (Single-Source Inventory & Recipe BOM Deduction)**:
+     - Pemotongan inventori bahan baku (BOM) dan barang jadi eksklusif pada tabel fisik `public.stok_barang` (`FOR UPDATE`), menolak mutasi jika stok tidak mencukupi (`INSUFFICIENT_STOCK`) dan mencatat mutasi atomik ke `barang_keluar`.
+  7. **POS-04 (Absolute Accounting Immutability)**:
+     - Perlindungan mutlak terhadap entri jurnal akuntansi berstatus `POSTED` pada level header (`journal_entries`) maupun baris rincian (`journal_entry_lines`).
+
+- **Solusi Rekayasa & Implementasi Kode**:
+  1. **Migrasi Database (`supabase/migrations/010_enterprise_authorization_and_pos_idempotency_hardening.sql`)**:
+     - Memperbarui fungsi `public.fn_execute_checkout` dengan:
+       - Ekstraksi `v_caller_id := auth.uid()` dan pengecekan JWT claims (`request.jwt.claims`).
+       - Validasi profil aktif (`is_active = TRUE`), validasi cabang (`branch_id`), dan otorisasi tenant.
+       - Pemasangan `pg_advisory_xact_lock` berbasis tenant hash dan struk hash.
+       - Verifikasi katalog harga Cafe (`daftar_harga_menu`) dan Carwash (`carwash_packages`).
+       - Pemotongan stok eksklusif pada `public.stok_barang` (`FOR UPDATE`) dengan pencatatan mutasi ke `barang_keluar`.
+       - Siklus posting jurnal atomik: insert header status `DRAFT` -> insert lines debet & kredit -> update status `POSTED`.
+       - Return JSON kompatibel ganda: `success: true, status: 'SUCCESS' / 'ALREADY_COMPLETED', was_replayed: boolean`.
+     - Memperbarui fungsi `public.fn_activate_license_key(p_license_key text, p_tenant_id uuid DEFAULT NULL)`:
+       - Otorisasi wewenang aktivasi (khusus Owner atau Super Admin).
+       - Validasi keabsahan kunci, masa berlaku, status pencabutan (`is_revoked`), dan riwayat penggunaan (`is_used`).
+       - Sinkronisasi serentak pada `tenant_licenses` (`tier`, `plan`) dan `tenants` (`plan`).
+     - Mengembangkan fungsi penerbitan dinamis `public.fn_admin_generate_license_key(...)` berbasis format kriptografis ber-prefix `RELAY-<TIER>-<TAHUN>-<HEX>`.
+     - Memperkuat trigger `trg_enforce_journal_line_immutability` dan `trg_enforce_journal_header_immutability` menolak modifikasi atau penyisipan baru pada jurnal POSTED (`JOURNAL_POSTED_IMMUTABLE`).
+     - Memperkuat trigger `trg_protect_profile_role` pada `public.profiles` (`INSERT`, `UPDATE`, `DELETE`).
+  2. **Penyelarasan Client Frontend**:
+     - `src/services/posService.js`: Penyelarasan pemanggilan RPC `fn_execute_checkout` dengan payload kanonikal, penanganan balasan `status: 'SUCCESS'` dan `was_replayed: true`.
+     - `src/context/AuthContext.jsx`: Penyelarasan pemanggilan `fn_activate_license_key` dengan signature resmi `(p_license_key, p_tenant_id)`.
+     - `src/pages/Admin.jsx`: Penyelarasan modul aktivasi lisensi tenant dengan pembaruan state reaktif pasca aktivasi.
+
+- **Hasil Pengujian Komprehensif Live Cloud (`scripts/run_batch7_full_verification.py`)**:
+  - `SEC-01A (Anon Checkout Blocked)`: PASS - Ditolak dengan `UNAUTHORIZED: Pengguna tidak terotentikasi`.
+  - `SEC-01B (Inactive User Blocked)`: PASS - Ditolak dengan `USER_INACTIVE: Akun pengguna dinonaktifkan`.
+  - `SEC-01C (Branch IDOR Blocked)`: PASS - Ditolak dengan `BRANCH_FORBIDDEN: Pengguna tidak memiliki akses transaksi ke cabang ini`.
+  - `SEC-01D (Tenant IDOR Blocked)`: PASS - Ditolak dengan `TENANT_FORBIDDEN: Anda tidak memiliki akses transaksi ke tenant ini`.
+  - `SEC-01E (Profile Role Escalation Blocked)`: PASS - Ditolak dengan `FORBIDDEN_ROLE_ESCALATION: Pengguna tanpa hak akses Owner/Super Admin dilarang mengubah role`.
+  - `SEC-02 (Tenant Hijack Blocked)`: PASS - Ditolak dengan `FORBIDDEN_TENANT_MUTATION: Pemindahan tenant_id profil pengguna hanya dapat dilakukan oleh Super Admin`.
+  - `LIC-01A (License Gen Auth Enforcement)`: PASS - Non-SuperAdmin diblokir dari menerbitkan serial lisensi.
+  - `LIC-01B (Invalid License Key Blocked)`: PASS - Serial palsu ditolak dengan `INVALID_LICENSE_KEY`.
+  - `LIC-01C (Dynamic License Lifecycle & Canonical RPC)`: PASS - Sukses aktivasi lisensi dinamis, sinkronisasi tier Enterprise ke `tenant_licenses` dan `tenants`.
+  - `LIC-01D (Replay License Key Blocked)`: PASS - Kunci terpakai ditolak dengan `LICENSE_KEY_ALREADY_USED`.
+  - `LIC-01E (Cross-Tenant License Hijack Blocked)`: PASS - Aktivasi lisensi untuk tenant lain ditolak dengan `TENANT_FORBIDDEN`.
+  - `POS-01A (Valid Checkout Transaction)`: PASS - Transaksi kasir berhasil diproses secara atomik.
+  - `POS-01B (Idempotent Identical Replay Safe)`: PASS - Replay identik dikembalikan dengan aman (`ALREADY_COMPLETED`, tanpa mutasi ulang).
+  - `POS-01C (Anti-Tampering Idempotency)`: PASS - Nomor struk sama dengan payload berbeda ditolak dengan `IDEMPOTENCY_CONFLICT`.
+  - `POS-02A (Cafe Price Tamper Blocked)`: PASS - Manipulasi harga menu Cafe ditolak dengan `PRICE_MISMATCH`.
+  - `POS-02B (Carwash Price Tamper Blocked)`: PASS - Manipulasi tarif layanan Carwash ditolak dengan `PRICE_MISMATCH`.
+  - `POS-03 (BOM Insufficient Stock Blocked)`: PASS - Penjualan melebihi stok ditolak dengan `INSUFFICIENT_STOCK`.
+  - `POS-04 (Accounting Journal Immutability)`: PASS - Penyisipan baris ke jurnal POSTED ditolak dengan `JOURNAL_POSTED_IMMUTABLE`.
+  - `CONCURRENCY-01 (5 Multi-Thread Race Condition Protection)`: PASS - 5 thread paralel simultan dieksekusi bersamaan; tepat 1 thread memproses transaksi (stok terpotong tepat 1 unit), 4 thread teridentifikasi sebagai replay aman, count struk = 1.
+  - **Skor Pengujian Cloud**: **18/18 Tests Lulus Sempurna (100% PASS)**.
+  - **Vitest Frontend Suite**: **59 test files, 359/359 tests Lulus Sempurna (100% PASS)**.
+
+
 
 
 

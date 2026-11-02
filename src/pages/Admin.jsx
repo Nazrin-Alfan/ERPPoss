@@ -683,7 +683,8 @@ const Admin = () => {
 
     // Panggil RPC aman sisi server fn_activate_license_key
     const { data: rpcRes, error: rpcErr } = await supabase.rpc('fn_activate_license_key', {
-      p_license_key: serialKey.trim().toUpperCase()
+      p_license_key: serialKey.trim().toUpperCase(),
+      p_tenant_id: activeTenant?.id
     })
 
     if (rpcErr) {
