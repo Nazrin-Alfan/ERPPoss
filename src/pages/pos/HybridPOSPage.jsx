@@ -40,6 +40,7 @@ import {
   recordLoyaltyClaim,
   upsertCRMCustomerProfile
 } from '../../services/crmService'
+import { posService } from '../../services/posService'
 import { OperationalTable } from '../../components/ui/tables'
 import {
   TableContainer,
@@ -1709,92 +1710,44 @@ const CafePOS = () => {
         nCash = grandTotal
       }
 
-      if (editingStrukId) {
-        const { error: strukErr } = await supabase
-          .from('struk')
-          .update({
-            metode_bayar: effectivePayment,
-            nominal_cash: nCash,
-            nominal_qris: nQris,
-            status_bayar: paymentStatus,
-            kasir: selectedCashier.toUpperCase(),
-            diskon_carwash: totalDiskonCarwash,
-            diskon_cafe: diskonCafeNominal,
-            total_tagihan: grandTotal,
-            tipe_pesanan: orderType,
-            no_meja: tableOrQueueNumber || (effectiveHasCarwash ? carwashForm.platNomor : ''),
-            nama_pelanggan: tableOrQueueNumber || (effectiveHasCarwash ? carwashForm.platNomor : '') || 'Pelanggan',
-            waktu_dibayar: paymentStatus === 'Selesai' ? new Date().toISOString() : null
-          })
-          .eq('id_struk', effectiveStrukId)
-
-        if (strukErr) throw strukErr
-
-        // Hapus item cafe lama
-        const { error: delCafeErr } = await supabase
-          .from('cafe')
-          .delete()
-          .eq('id_struk', effectiveStrukId)
-
-        if (delCafeErr) throw delCafeErr
-
-        // Hapus item carwash lama
-        const { error: delCwErr } = await supabase
-          .from('carwash')
-          .delete()
-          .eq('id_struk', effectiveStrukId)
-
-        if (delCwErr) throw delCwErr
-      } else {
-        const { error: strukErr } = await supabase
-          .from('struk')
-          .insert({
-            id_struk: effectiveStrukId,
-            tenant_id: effectiveTenantId,
-            tanggal: todayDate,
-            jam: currentTime,
-            metode_bayar: effectivePayment,
-            nominal_cash: nCash,
-            nominal_qris: nQris,
-            status_bayar: paymentStatus,
-            kasir: selectedCashier.toUpperCase(),
-            diskon_carwash: totalDiskonCarwash,
-            diskon_cafe: diskonCafeNominal,
-            total_tagihan: grandTotal,
-            tipe_pesanan: orderType,
-            no_meja: tableOrQueueNumber || (effectiveHasCarwash ? carwashForm.platNomor : ''),
-            nama_pelanggan: tableOrQueueNumber || (effectiveHasCarwash ? carwashForm.platNomor : '') || 'Pelanggan',
-            waktu_dibuat: new Date().toISOString(),
-            waktu_dibayar: paymentStatus === 'Selesai' ? new Date().toISOString() : null
-          })
-
-        if (strukErr) throw strukErr
+      // 1. Siapkan Payload Header Struk untuk Atomic Checkout
+      const strukPayload = {
+        id_struk: effectiveStrukId,
+        tenant_id: effectiveTenantId,
+        tanggal: todayDate,
+        jam: currentTime,
+        metode_bayar: effectivePayment,
+        nominal_cash: nCash,
+        nominal_qris: nQris,
+        status_bayar: paymentStatus,
+        kasir: selectedCashier.toUpperCase(),
+        diskon_carwash: totalDiskonCarwash,
+        diskon_cafe: diskonCafeNominal,
+        total_tagihan: grandTotal,
+        tipe_pesanan: orderType,
+        no_meja: tableOrQueueNumber || (effectiveHasCarwash ? carwashForm.platNomor : ''),
+        nama_pelanggan: tableOrQueueNumber || (effectiveHasCarwash ? carwashForm.platNomor : '') || 'Pelanggan',
+        waktu_dibuat: new Date().toISOString(),
+        waktu_dibayar: paymentStatus === 'Selesai' ? new Date().toISOString() : null
       }
 
-      // 2. Simpan Item Cafe (jika ada)
-      if (cart.length > 0) {
-        const cafeItems = cart.map(item => ({
-          id_detail: generateUUID(),
-          id_struk: effectiveStrukId,
-          tenant_id: effectiveTenantId,
-          tanggal: todayDate,
-          jam: currentTime,
-          nama_menu: item.nama_menu,
-          qty: item.qty,
-          harga_satuan: item.harga,
-          subtotal: item.qty * item.harga,
-          catatan: item.catatan || '',
-          status: paymentStatus
-        }))
+      // 2. Siapkan Payload Item Cafe (jika ada)
+      const cafeItems = cart.map(item => ({
+        id_detail: generateUUID(),
+        id_struk: effectiveStrukId,
+        tenant_id: effectiveTenantId,
+        tanggal: todayDate,
+        jam: currentTime,
+        nama_menu: item.nama_menu,
+        qty: item.qty,
+        harga_satuan: item.harga,
+        subtotal: item.qty * item.harga,
+        catatan: item.catatan || '',
+        status: paymentStatus
+      }))
 
-        const { error: cafeErr } = await supabase
-          .from('cafe')
-          .insert(cafeItems)
-
-        if (cafeErr) throw cafeErr
-      }
-
-      // 3. Simpan Item Carwash (jika ada & didukung oleh model tenant)
+      // 3. Siapkan Payload Carwash (jika ada & didukung oleh model tenant)
+      let carwashPayload = null
       if (effectiveHasCarwash) {
         const hasAnggota2 = carwashForm.anggota2 && carwashForm.anggota2.trim() ? true : false;
         const gajiPerAnggota = hasAnggota2 ? carwashForm.gaji_pencuci / 2 : carwashForm.gaji_pencuci;
@@ -1814,39 +1767,45 @@ const CafePOS = () => {
         const treatmentPrice = Math.max(0, carwashForm.harga - basicWashPrice);
         const cashierShift = getShiftForCashier(selectedCashier)
 
-        const { error: cwErr } = await supabase
-          .from('carwash')
-          .insert({
-            id_transaksi: generateUUID(),
-            id_struk: effectiveStrukId,
-            tenant_id: effectiveTenantId,
-            tanggal: todayDate,
-            jam: currentTime,
-            kehadiran: carwashForm.kehadiran,
-            model: carwashForm.model || 'Mobil',
-            plat: (carwashForm.platNomor || '').replace(/\s+/g, '').toUpperCase(),
-            no_telepon: carwashForm.noTelepon || null,
-            variant: carwashForm.variant,
-            ukuran: carwashForm.ukuran,
-            paket: carwashForm.paket,
-            metode: effectivePayment,
-            harga: carwashForm.harga,
-            harga_cuci: basicWashPrice,
-            harga_paket: treatmentPrice,
-            harga_custom: carwashForm.ukuran === 'Custom' ? carwashForm.harga : 0,
-            anggota_1: carwashForm.anggota1,
-            anggota_2: carwashForm.anggota2 || null,
-            status: paymentStatus === 'Selesai' ? 'Selesai' : 'Pending',
-            status_pengerjaan: paymentStatus === 'Selesai' ? 'Siap Diambil' : 'Sedang Dicuci',
-            kondisi_bodi: carwashForm.kondisi_bodi || 'Normal',
-            barang_berharga: carwashForm.barang_berharga || 'Aman',
-            catatan_kendaraan: carwashForm.catatan_kendaraan || '',
-            gaji_anggota: gajiPerAnggota,
-            gaji_pencuci: carwashForm.gaji_pencuci,
-            shift: cashierShift
-          })
+        carwashPayload = {
+          id_transaksi: generateUUID(),
+          id_struk: effectiveStrukId,
+          tenant_id: effectiveTenantId,
+          tanggal: todayDate,
+          jam: currentTime,
+          kehadiran: carwashForm.kehadiran,
+          model: carwashForm.model || 'Mobil',
+          plat: (carwashForm.platNomor || '').replace(/\s+/g, '').toUpperCase(),
+          no_telepon: carwashForm.noTelepon || null,
+          variant: carwashForm.variant,
+          ukuran: carwashForm.ukuran,
+          paket: carwashForm.paket,
+          metode: effectivePayment,
+          harga: carwashForm.harga,
+          harga_cuci: basicWashPrice,
+          harga_paket: treatmentPrice,
+          harga_custom: carwashForm.ukuran === 'Custom' ? carwashForm.harga : 0,
+          anggota_1: carwashForm.anggota1,
+          anggota_2: carwashForm.anggota2 || null,
+          status: paymentStatus === 'Selesai' ? 'Selesai' : 'Pending',
+          status_pengerjaan: paymentStatus === 'Selesai' ? 'Siap Diambil' : 'Sedang Dicuci',
+          kondisi_bodi: carwashForm.kondisi_bodi || 'Normal',
+          barang_berharga: carwashForm.barang_berharga || 'Aman',
+          catatan_kendaraan: carwashForm.catatan_kendaraan || '',
+          gaji_anggota: gajiPerAnggota,
+          gaji_pencuci: carwashForm.gaji_pencuci,
+          shift: cashierShift
+        }
+      }
 
-        if (cwErr) throw cwErr
+      // 4. Eksekusi Checkout Atomik Server-Side
+      await posService.executeCheckout({
+        tenantId: effectiveTenantId,
+        branchId: null,
+        strukPayload,
+        cafeItems,
+        carwashPayload
+      })
 
         // Sinkronkan data pelanggan ke CRM terpadu & catat klaim reward jika ada
         const cleanPlat = (carwashForm.platNomor || '').replace(/\s+/g, '').toUpperCase();
@@ -1876,7 +1835,6 @@ const CafePOS = () => {
         } catch (crmSyncErr) {
           console.warn('CRM sync warning in HybridPOS checkout:', crmSyncErr)
         }
-      }
 
       // Siapkan payload struk untuk cetak thermal / kirim WhatsApp
       const receiptOrderPayload = {

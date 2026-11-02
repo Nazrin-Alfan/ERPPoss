@@ -33,6 +33,7 @@ import {
   recordLoyaltyClaim,
   upsertCRMCustomerProfile
 } from '../../services/crmService'
+import { posService } from '../../services/posService'
 import {
   buildOrderReceiptData,
   getReceiptConfig
@@ -250,47 +251,73 @@ export const CarwashPOSPage = () => {
     try {
       const orderId = settlingVehicle?.id_struk || `CW-${Date.now()}`
       const statusBayar = isBayarBelakangan ? 'Pending' : 'Selesai'
+      const todayDate = new Date().toLocaleDateString('en-CA')
+      const currentTime = new Date().toTimeString().split(' ')[0]
 
-      // 1. Simpan ke tabel struk
+      // 1. Siapkan Payload Header Struk untuk Atomic Checkout
       const strukPayload = {
         id_struk: orderId,
+        tenant_id: effectiveTenantId,
+        tanggal: todayDate,
+        jam: currentTime,
         kasir: selectedCashier,
-        metode_pembayaran: selectedPayment,
+        metode_bayar: selectedPayment,
         subtotal: subtotal,
         diskon: totalEffectiveDiskon,
-        total: grandTotal,
+        diskon_carwash: totalEffectiveDiskon,
+        total_tagihan: grandTotal,
         nominal_bayar: isBayarBelakangan ? 0 : (Number(nominalBayar) || grandTotal),
+        nominal_cash: selectedPayment === 'CASH' ? (Number(nominalBayar) || grandTotal) : 0,
+        nominal_qris: selectedPayment !== 'CASH' ? grandTotal : 0,
         kembalian: isBayarBelakangan ? 0 : kembalian,
-        status_pembayaran: statusBayar,
+        status_bayar: statusBayar,
         no_meja: `Bay ${carwashForm.kehadiran}`,
         nama_pelanggan: carwashForm.platNomor.toUpperCase(),
-        tenant_id: effectiveTenantId
+        waktu_dibuat: new Date().toISOString(),
+        waktu_dibayar: statusBayar === 'Selesai' ? new Date().toISOString() : null
       }
 
-      const { error: strukErr } = await supabase.from('struk').upsert(strukPayload)
-      if (strukErr) throw strukErr
+      // 2. Siapkan Payload Carwash
+      const hasAnggota2 = carwashForm.anggota2 && carwashForm.anggota2.trim() ? true : false
+      const gajiPerAnggota = hasAnggota2 ? carwashForm.gaji_pencuci / 2 : carwashForm.gaji_pencuci
+      const basicWashPrice = 50000
+      const treatmentPrice = Math.max(0, subtotal - basicWashPrice)
 
-      // 2. Simpan ke tabel carwash
       const carwashPayload = {
+        id_transaksi: generateUUID(),
         id_struk: orderId,
+        tenant_id: effectiveTenantId,
+        tanggal: todayDate,
+        jam: currentTime,
+        plat: carwashForm.platNomor.toUpperCase(),
         plat_nomor: carwashForm.platNomor.toUpperCase(),
         model: carwashForm.model,
         ukuran: carwashForm.ukuran,
         paket: carwashForm.paket,
         variant: carwashForm.variant,
         harga: subtotal,
+        harga_cuci: basicWashPrice,
+        harga_paket: treatmentPrice,
+        harga_custom: carwashForm.ukuran === 'Custom' ? subtotal : 0,
         anggota_1: carwashForm.anggota1,
         anggota_2: carwashForm.anggota2 || null,
+        gaji_anggota: gajiPerAnggota,
         gaji_pencuci: carwashForm.gaji_pencuci,
         kehadiran: carwashForm.kehadiran,
         no_telepon: carwashForm.noTelepon || '',
         catatan_kendaraan: carwashForm.catatan_kendaraan || '',
         status: isBayarBelakangan ? 'Sedang Cuci' : 'Selesai',
-        tenant_id: effectiveTenantId
+        status_pengerjaan: isBayarBelakangan ? 'Sedang Cuci' : 'Siap Diambil'
       }
 
-      const { error: cwErr } = await supabase.from('carwash').insert([carwashPayload])
-      if (cwErr) throw cwErr
+      // 3. Eksekusi Checkout Atomik Server-Side
+      await posService.executeCheckout({
+        tenantId: effectiveTenantId,
+        branchId: null,
+        strukPayload,
+        cafeItems: [],
+        carwashPayload
+      })
 
       // 3. Sinkronkan profil pelanggan ke CRM secara otomatis
       try {

@@ -34,6 +34,22 @@ export const posService = {
       return new PosCheckoutError(cleanDesc, 'PRICE_MISMATCH', { raw: rawMsg })
     }
 
+    if (rawMsg.includes('MENU_NOT_FOUND')) {
+      const match = rawMsg.match(/MENU_NOT_FOUND:\s*(.*)/)
+      const cleanDesc = match ? match[1].trim() : 'Item menu tidak terdaftar dalam katalog resmi.'
+      return new PosCheckoutError(cleanDesc, 'MENU_NOT_FOUND', { raw: rawMsg })
+    }
+
+    if (rawMsg.includes('INVALID_DISCOUNT')) {
+      const match = rawMsg.match(/INVALID_DISCOUNT:\s*(.*)/)
+      const cleanDesc = match ? match[1].trim() : 'Nominal diskon tidak valid atau melebihi total pesanan.'
+      return new PosCheckoutError(cleanDesc, 'INVALID_DISCOUNT', { raw: rawMsg })
+    }
+
+    if (rawMsg.includes('DUPLICATE_TRANSACTION')) {
+      return new PosCheckoutError('Nomor struk transaksi ini sudah pernah tersimpan sebelumnya.', 'DUPLICATE_TRANSACTION', { raw: rawMsg })
+    }
+
     if (rawMsg.includes('PAYMENT_UNDERPAID')) {
       const match = rawMsg.match(/PAYMENT_UNDERPAID:\s*(.*)/)
       const cleanDesc = match ? match[1].trim() : 'Nominal pembayaran kurang dari total tagihan.'

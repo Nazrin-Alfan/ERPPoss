@@ -41,6 +41,7 @@ import {
   getShiftForCashier,
   calculateTutupKasirRecap
 } from '../../utils/helpers'
+import { posService } from '../../services/posService'
 import { addToCart as cartAdd, updateQty as cartUpdate, updateItemNotes as cartUpdateNotes, removeFromCart as cartRemove } from '../../utils/cartHelpers'
 import { validatePosExpenseForm, formatPosExpensePayload } from '../../utils/financeHelpers'
 import { DEFAULT_MASTER_DATA } from '../../constants/masterDataDefaults'
@@ -247,40 +248,32 @@ export const CafePOSPage = () => {
       const currentTime = new Date().toTimeString().split(' ')[0]
       const strukId = settlingBill?.id_struk || `BILL-${Date.now().toString().slice(-6)}`
 
-      // 1. Simpan atau Update Header Struk (Status Pending)
+      // 1. Simpan atau Update Header Struk (Status Pending) via posService Atomic RPC
       const strukPayload = {
         id_struk: strukId,
+        tenant_id: effectiveTenantId,
         tanggal: todayDate,
         jam: currentTime,
         nama_pelanggan: tableOrCustomer.trim(),
         no_meja: tableOrCustomer.trim(),
         total_biaya: grandTotal,
+        total_tagihan: grandTotal,
         subtotal: subtotal,
         diskon: diskonAmount,
-        status_pembayaran: 'Pending',
+        status_bayar: 'Pending',
         kasir: selectedCashier || 'KASIR UTAMA',
         catatan: orderNotes,
         created_at: new Date().toISOString()
       }
 
-      if (settlingBill) {
-        await supabase
-          .from('struk')
-          .update(strukPayload)
-          .eq('id_struk', settlingBill.id_struk)
-
-        // Hapus item lama lalu masukkan item baru
-        await supabase.from('cafe').delete().eq('id_struk', settlingBill.id_struk)
-      } else {
-        await supabase.from('struk').insert([strukPayload])
-      }
-
-      // 2. Simpan Rincian Item Menu
+      // 2. Siapkan Rincian Item Menu
       const itemsPayload = cart.map(item => ({
+        id_detail: generateUUID(),
         id_struk: strukId,
+        tenant_id: effectiveTenantId,
         tanggal: todayDate,
         jam: currentTime,
-        daftar_menu: item.nama_menu,
+        nama_menu: item.nama_menu,
         harga: item.harga,
         qty: item.qty,
         total: item.harga * item.qty,
@@ -288,8 +281,13 @@ export const CafePOSPage = () => {
         created_at: new Date().toISOString()
       }))
 
-      const { error: itemsErr } = await supabase.from('cafe').insert(itemsPayload)
-      if (itemsErr) throw itemsErr
+      await posService.executeCheckout({
+        tenantId: effectiveTenantId,
+        branchId: null,
+        strukPayload,
+        cafeItems: itemsPayload,
+        carwashPayload: null
+      })
 
       setSuccess(true)
       handleClearCart()
@@ -317,42 +315,38 @@ export const CafePOSPage = () => {
       const currentTime = new Date().toTimeString().split(' ')[0]
       const strukId = settlingBill?.id_struk || `STRUK-${Date.now().toString().slice(-6)}`
 
-      // 1. Simpan Header Struk Lunas
+      // 1. Simpan Header Struk Lunas via posService Atomic RPC
       const strukPayload = {
         id_struk: strukId,
+        tenant_id: effectiveTenantId,
         tanggal: todayDate,
         jam: currentTime,
         nama_pelanggan: tableOrCustomer.trim() || 'Pelanggan Walk-In',
         no_meja: tableOrCustomer.trim() || '-',
         total_biaya: grandTotal,
+        total_tagihan: grandTotal,
         subtotal: subtotal,
         diskon: diskonAmount,
-        metode_pembayaran: selectedPayment,
+        metode_bayar: selectedPayment,
         nominal_bayar: Number(nominalBayar) || grandTotal,
+        nominal_cash: selectedPayment === 'CASH' ? (Number(nominalBayar) || grandTotal) : 0,
+        nominal_qris: selectedPayment !== 'CASH' ? grandTotal : 0,
         kembalian: kembalian,
-        status_pembayaran: 'Lunas',
+        status_bayar: 'Selesai',
         kasir: selectedCashier || 'KASIR UTAMA',
         catatan: orderNotes,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        waktu_dibayar: new Date().toISOString()
       }
 
-      if (settlingBill) {
-        await supabase
-          .from('struk')
-          .update(strukPayload)
-          .eq('id_struk', settlingBill.id_struk)
-
-        await supabase.from('cafe').delete().eq('id_struk', settlingBill.id_struk)
-      } else {
-        await supabase.from('struk').insert([strukPayload])
-      }
-
-      // 2. Simpan Item Menu
+      // 2. Siapkan Item Menu
       const itemsPayload = cart.map(item => ({
+        id_detail: generateUUID(),
         id_struk: strukId,
+        tenant_id: effectiveTenantId,
         tanggal: todayDate,
         jam: currentTime,
-        daftar_menu: item.nama_menu,
+        nama_menu: item.nama_menu,
         harga: item.harga,
         qty: item.qty,
         total: item.harga * item.qty,
@@ -360,35 +354,14 @@ export const CafePOSPage = () => {
         created_at: new Date().toISOString()
       }))
 
-      const { error: itemsErr } = await supabase.from('cafe').insert(itemsPayload)
-      if (itemsErr) throw itemsErr
-
-      // 3. Potong Stok Bahan Baku Resep (BOM Otomatis)
-      try {
-        for (const item of cart) {
-          const resepItems = resepList.filter(r => r.nama_menu === item.nama_menu)
-          for (const r of resepItems) {
-            const usage = (parseFloat(r.jumlah_dibutuhkan) || 0) * item.qty
-            if (usage > 0) {
-              const { data: currentBahan } = await supabase
-                .from('bahan_baku')
-                .select('stok')
-                .eq('nama_bahan', r.nama_bahan)
-                .single()
-
-              if (currentBahan) {
-                const updatedStok = Math.max(0, (parseFloat(currentBahan.stok) || 0) - usage)
-                await supabase
-                  .from('bahan_baku')
-                  .update({ stok: updatedStok })
-                  .eq('nama_bahan', r.nama_bahan)
-              }
-            }
-          }
-        }
-      } catch (bomErr) {
-        console.warn('Gagal update BOM bahan baku:', bomErr)
-      }
+      // 3. Eksekusi Atomic Server-side Checkout (termasuk pengurangan stok BOM otomatis)
+      await posService.executeCheckout({
+        tenantId: effectiveTenantId,
+        branchId: null,
+        strukPayload,
+        cafeItems: itemsPayload,
+        carwashPayload: null
+      })
 
       // 4. Siapkan Data Struk Cetak Thermal
       const receiptConfig = getReceiptConfig()

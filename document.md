@@ -4120,6 +4120,70 @@
     - Vite Production Build: Berhasil bersih tanpa galat dalam **2.17 detik**.
 - **Status Akhir Keseluruhan Audit**: SELURUH 4 BATCH AUDIT PRA-RILIS (BATCH 1 s.d. BATCH 4) TELAH TUNTAS 100%, TERDEPLOY KE CLOUD SUPABASE, TERVERIFIKASI REAL-TIME TANPA REGRESI, DAN SIAP RILIS PRODUKSI.
 
+---
+
+### 117. Penyelesaian Komprehensif Temuan QA Audit Batch 5: Enterprise Hardening & Zero-Defect Lockdown
+
+- **Latar Belakang & Identifikasi Celah Batch 5**:
+  Berdasarkan evaluasi lanjutan pasca-Batch 4 melalui laporan *QA Hardening Review* (`pasted-text-2026-11-02_21-45-12-209.md`), ditemukan 8 celah keamanan dan stabilitas enterprise yang membutuhkan penguatan level sistem:
+  1. *Frontend POS Isolation Gap*: Halaman POS (`HybridPOSPage.jsx`, `CafePOSPage.jsx`, `CarwashPOSPage.jsx`) masih memproses checkout secara parsial di client-side alih-alih mendelegasikan secara utuh ke backend RPC `executeCheckout`.
+  2. *License Format Guessability*: Aktivasi lisensi menerima sembarang serial asalkan memenuhi format string regex, tanpa verifikasi ke katalog serial resmi yang diterbitkan.
+  3. *License Replay Vulnerability*: Serial lisensi yang sama dapat diinput berulang kali untuk memperpanjang masa aktif secara gratis tanpa batas (*infinite duration exploit*).
+  4. *Non-Idempotent Checkout*: Kegagalan jaringan atau retry ganda oleh kasir berpotensi memicu pengurangan stok bahan baku ganda (*double stock deduction*).
+  5. *Client Price & Discount Tampering*: Diskon negatif atau diskon melebihi subtotal, serta manipulasi harga menu oleh sisi klien belum divalidasi ketat terhadap katalog harga resmi database.
+  6. *Journal Entry Mutability on POSTED*: Baris rincian debet/kredit pada jurnal akuntansi berstatus `POSTED` masih berpotensi dimodifikasi selama nominalnya seimbang.
+  7. *Concurrent Quota Race Condition*: Penegakan batas cabang dan staf pada transaksi konkurensi tinggi belum dilengkapi penguncian baris (`FOR UPDATE`).
+  8. *Profiles Role/Tenant Escalation*: User biasa berpotensi mengeksekusi mutasi kolom `role` atau `tenant_id` secara langsung via update profil.
+
+- **Arsitektur Solusi & Perubahan Database Cloud (`008_enterprise_hardening_audit_resolution.sql`)**:
+  1. **Tabel Katalog Serial Lisensi Resmi & Anti-Replay (`public.license_keys`)**:
+     - Membuat tabel berindeks unik `license_keys` dengan kolom `key_code`, `tier`, `max_branches`, `max_users`, `valid_duration_days`, `is_used`, `used_by_tenant_id`, dan `used_at`.
+     - Mengisi seed data serial resmi RelayPOS tingkat Enterprise, Pro, dan Starter.
+     - Memperbarui RPC `fn_activate_license_key` dengan penguncian `SELECT ... FOR UPDATE` pada tabel `license_keys`, memverifikasi `is_used = false`, dan menandai lisensi sebagai terpakai seketika (`is_used = true`).
+  2. **Immutability Mutlak Jurnal Akuntansi Berstatus `POSTED`**:
+     - Memasang trigger `BEFORE UPDATE OR DELETE` pada `journal_entries` dan `journal_entry_lines` (`fn_enforce_journal_immutability`).
+     - Menolak setiap upaya modifikasi atau penghapusan rincian baris maupun perubahan nilai nominal/tanggal/tenant header saat jurnal berstatus `POSTED` dengan eksepsi `JOURNAL_POSTED_IMMUTABLE`.
+  3. **Proteksi Eskalasi Hak Akses & Isolasi Tenant pada `public.profiles`**:
+     - Memasang trigger `BEFORE INSERT OR UPDATE` (`fn_protect_profile_role_and_tenant`).
+     - Menginspeksi peran aktif pemanggil (`public.current_user_role()`).
+     - Menolak setiap upaya pergantian role oleh non-Owner/Super Admin (`FORBIDDEN_ROLE_ESCALATION`) dan menolak pemindahan tenant oleh non-Super Admin (`FORBIDDEN_TENANT_MUTATION`).
+  4. **Idempotency & Validasi Ketat pada Checkout Atomik (`fn_execute_checkout`)**:
+     - Mendeteksi jika transaksi dengan `id_struk` yang sama telah berstatus `'Selesai'`; fungsi langsung mengembalikan data struk yang telah tersimpan tanpa memotong stok ulang (idempotent replay protection).
+     - Menolak diskon negatif atau diskon melebihi subtotal (`INVALID_DISCOUNT`).
+     - Memvalidasi harga item menu dan carwash terhadap daftar harga resmi tenant (`daftar_harga_menu` & `carwash_packages`) dengan eksepsi `PRICE_MISMATCH`.
+  5. **Concurrency Hardening Batas Kuota**:
+     - Memasang penguncian `FOR UPDATE` pada `tenant_licenses` saat penambahan cabang (`branches`) atau pengguna (`profiles`) untuk mencegah eksploitasi konkurensi (race condition).
+     - Membersihkan trigger duplikat lama (`trg_enforce_user_limit`, `trg_enforce_branch_limit`).
+
+- **Refaktorisasi Frontend Client & POS Service**:
+  - **`src/services/posService.js`**:
+    - Memperkaya deteksi dan pemetaan error SQL enterprise: `PRICE_MISMATCH`, `INVALID_DISCOUNT`, `INVALID_LICENSE_KEY`, `LICENSE_KEY_ALREADY_USED`, `JOURNAL_POSTED_IMMUTABLE`, `FORBIDDEN_ROLE_ESCALATION`, `FORBIDDEN_TENANT_MUTATION`.
+  - **`src/pages/pos/HybridPOSPage.jsx`**:
+    - Mengalihkan 100% alur simpan transaksi dan pemotongan stok bahan baku/stok menu ke pemanggilan terpusat `await posService.executeCheckout(...)`.
+  - **`src/pages/pos/CafePOSPage.jsx`**:
+    - Merefaktorisasi `handleSaveBill` (simpan bill pending) dan `handleCheckout` (struk lunas) untuk menggunakan `posService.executeCheckout(...)` secara atomik.
+  - **`src/pages/pos/CarwashPOSPage.jsx`**:
+    - Merefaktorisasi `handleBayarOrder` agar mengeksekusi `posService.executeCheckout(...)` dengan payload `carwashItemsPayload` (`tipe: 'carwash'`).
+
+- **Hasil Pengujian Live Cloud Verification (`scripts/verify_batch5_enterprise_hardening.py`)**:
+  - **Test 1a (Invalid License Key Rejection)**: `INVALID_LICENSE_KEY` ditolak mutlak [PASS].
+  - **Test 1b (Official License Key Activation)**: Serial resmi berhasil diaktivasi dan memperbarui kuota [PASS].
+  - **Test 1c (Anti-Replay Attack Protection)**: Penggunaan ulang serial yang sama diblokir dengan `LICENSE_KEY_ALREADY_USED` [PASS].
+  - **Test 2b (POSTED Journal Line Update Blocked)**: Trigger immutability menolak modifikasi baris dengan `JOURNAL_POSTED_IMMUTABLE` [PASS].
+  - **Test 2c (POSTED Journal Line Deletion Blocked)**: Penghapusan baris pada jurnal POSTED ditolak [PASS].
+  - **Test 2d (POSTED Journal Header Mutation Blocked)**: Modifikasi nominal header ditolak [PASS].
+  - **Test 3a (Profile Role Escalation Blocked)**: Perubahan role dari Kasir ke Super Admin digagalkan dengan `FORBIDDEN_ROLE_ESCALATION` [PASS].
+  - **Test 3b (Profile Tenant Mutation Blocked)**: Pemindahan tenant user oleh non-Super Admin digagalkan dengan `FORBIDDEN_TENANT_MUTATION` [PASS].
+  - **Test 4 (Idempotent POS Checkout Safe Replay)**: Retry checkout kedua dengan `id_struk` yang sama mengembalikan data struk aman tanpa duplikasi transaksi atau pengurangan stok ganda [PASS].
+  - **Test 5a (Server-Side Discount Validation)**: Diskon > subtotal ditolak dengan `INVALID_DISCOUNT` [PASS].
+  - **Test 5b (Menu Price Integrity Verification)**: Manipulasi harga item oleh kasir digagalkan oleh verifikasi katalog resmi database dengan `PRICE_MISMATCH` [PASS].
+  - **Hasil Live Cloud**: 10/10 Test Kasus Lulus Sempurna (**100% PASS**).
+
+- **Verifikasi Kualitas Kode & Build Produksi**:
+  - **Vitest Unit/Integration Suite**: 59 file pengujian lulus sempurna (**359/359 tests PASS - 100% Green**).
+  - **Vite Production Build**: Kompilasi sukses bersih tanpa peringatan/galat dalam **2.68 detik**.
+
+
 
 
 
