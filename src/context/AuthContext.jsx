@@ -505,52 +505,49 @@ export const AuthProvider = ({ children }) => {
     if (!activeTenant) throw new Error('Tidak ada tenant aktif terpilih.')
     const cleanKey = (serialKey || '').trim().toUpperCase()
     if (!cleanKey || cleanKey.length < 8) {
-      throw new Error('Format kunci lisensi tidak valid.')
+      throw new Error('Format kunci lisensi tidak valid (minimal 8 karakter).')
     }
 
-    const newExpiry = new Date()
-    newExpiry.setFullYear(newExpiry.getFullYear() + 1)
-    const expiryIso = newExpiry.toISOString()
+    // Panggil RPC aman sisi server fn_activate_license_key
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc('fn_activate_license_key', {
+      p_license_key: cleanKey
+    })
 
-    const { data: existingLic } = await supabase
-      .from('tenant_licenses')
-      .select('id')
-      .eq('tenant_id', activeTenant.id)
-      .limit(1)
+    if (rpcErr) {
+      // Fallback untuk mock database lokal jika RPC belum didaftarkan di client emulator
+      const isMissingRpc = rpcErr.message?.includes('function') && rpcErr.message?.includes('does not exist')
+      if (isMissingRpc && String(activeTenant.id).startsWith('tenant_')) {
+        const newExpiry = new Date()
+        newExpiry.setFullYear(newExpiry.getFullYear() + 1)
+        const expiryIso = newExpiry.toISOString()
 
-    if (existingLic && existingLic.length > 0) {
-      const { error } = await supabase
-        .from('tenant_licenses')
-        .update({
-          license_key: cleanKey,
-          status: 'ACTIVE',
-          expires_at: expiryIso,
-          valid_until: expiryIso,
-          tier: 'PRO_ANNUAL',
-          plan: 'pro',
-          updated_at: new Date().toISOString()
-        })
-        .eq('tenant_id', activeTenant.id)
-      if (error) throw error
-    } else {
-      const { error } = await supabase
-        .from('tenant_licenses')
-        .insert({
-          id: 'lic_' + Date.now(),
-          tenant_id: activeTenant.id,
-          license_key: cleanKey,
-          status: 'ACTIVE',
-          expires_at: expiryIso,
-          valid_until: expiryIso,
-          tier: 'PRO_ANNUAL',
-          plan: 'pro',
-          created_at: new Date().toISOString()
-        })
-      if (error) throw error
+        const { data: existingLic } = await supabase
+          .from('tenant_licenses')
+          .select('id')
+          .eq('tenant_id', activeTenant.id)
+          .limit(1)
+
+        if (existingLic && existingLic.length > 0) {
+          await supabase
+            .from('tenant_licenses')
+            .update({
+              license_key: cleanKey,
+              status: 'ACTIVE',
+              expires_at: expiryIso,
+              valid_until: expiryIso,
+              tier: 'PRO_ANNUAL',
+              plan: 'pro',
+              updated_at: new Date().toISOString()
+            })
+            .eq('tenant_id', activeTenant.id)
+        }
+      } else {
+        throw new Error(rpcErr.message || 'Gagal mengaktivasi lisensi di server.')
+      }
     }
 
     await loadTenantLicense(activeTenant.id, profile)
-    return { success: true, message: 'Lisensi Pro 1 Tahun berhasil diaktifkan!' }
+    return { success: true, message: rpcRes?.message || 'Lisensi berhasil diaktifkan!' }
   }
 
   return (

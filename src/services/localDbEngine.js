@@ -665,7 +665,9 @@ export class LocalDatabaseStore {
     const totalCredit = lines.reduce((sum, l) => sum + (parseFloat(l.credit) || 0), 0)
 
     if (Math.abs(totalDebit - totalCredit) > 0.001) {
-      console.warn(`[DOUBLE_ENTRY_WARNING] Imbalance in journal entry: Debit=${totalDebit}, Credit=${totalCredit}`)
+      const errMsg = `[DOUBLE_ENTRY_VIOLATION] Jurnal tidak seimbang: Total Debit (${totalDebit}) != Total Credit (${totalCredit})`
+      console.error(errMsg)
+      throw new Error(errMsg)
     }
 
     const journalId = `je_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`

@@ -218,6 +218,32 @@ export const api = {
       return data
     },
 
+    async executeCheckout({ tenant_id, branch_id, struk_payload, cafe_items = [], carwash_payload = null }) {
+      if (isCloudBackend) {
+        const { data, error } = await supabase.rpc('fn_execute_checkout', {
+          p_tenant_id: tenant_id,
+          p_branch_id: branch_id || null,
+          p_struk_payload: struk_payload,
+          p_cafe_items: cafe_items,
+          p_carwash_payload: carwash_payload
+        })
+        if (error) throw error
+        return data
+      } else {
+        const strukRes = await supabase.from('struk').insert([struk_payload])
+        if (strukRes.error) throw strukRes.error
+        if (cafe_items && cafe_items.length > 0) {
+          const cafeRes = await supabase.from('cafe').insert(cafe_items)
+          if (cafeRes.error) throw cafeRes.error
+        }
+        if (carwash_payload) {
+          const cwRes = await supabase.from('carwash').insert([carwash_payload])
+          if (cwRes.error) throw cwRes.error
+        }
+        return { status: 'SUCCESS', id_struk: struk_payload.id_struk }
+      }
+    },
+
     async getCarwashQueue(tanggal) {
       let query = supabase.from('carwash').select('*').order('created_at', { ascending: false })
       if (tanggal) query = query.eq('tanggal', tanggal)

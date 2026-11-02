@@ -13,6 +13,8 @@ Selamat datang di direktori dokumentasi resmi **Sistem POS & Manajemen Operasion
 | **02** | [**02. Arsitektur & Arus Data Teknis**](./02_arsitektur_dan_arus_data_teknis.md) | Software Engineer, System Architect | Arsitektur akuntansi dua tingkat (*Two-Tier Accounting*), diagram Mermaid alur data, integrasi Supabase, sinkronisasi Google Sheets/AppSheet, serta formula bisnis HPP & komisi. |
 | **03** | [**03. Laporan Audit Arsitektur QA/QC**](./03_laporan_audit_arsitektur_qa.md) | Lead Developer, QA Tester | Hasil evaluasi mendalam performa, stabilitas fungsional (analisis bug Split Payment), keamanan API Key WhatsApp, dan prioritas action plan perbaikan sistem. |
 | **04** | [**04. Skema Database & Kamus Data**](./04_skema_database_dan_kamus_data.md) | Database Administrator, Backend Developer | Definisi kamus data 13 tabel, relasi foreign key, tipe data kolom, view agregasi `pos_balances`, dan indeks optimasi kueri. |
+| **08** | [**08. Perbaikan Temuan QA (31 Okt 2026)**](./08_perbaikan_temuan_qa.md) | Engineering Team, QA Tester | Tindak lanjut perbaikan temuan payroll date rollover, CSV formula injection, dan reward entitlement. |
+| **10** | [**10. Catatan Khusus Perbaikan & Testing 4-Batch QA (02 Nov 2026)**](./10_catatan_khusus_perbaikan_dan_testing_4_batch_qa.md) | Lead Orchestrator, QA Auditor, DevOps | Catatan lengkap perbaikan keamanan P0 (K01-K04), integritas jurnal & composite FK (T01, T03, T08, T09), checkout atomik POS (T02, T04, T05), penegakan kuota lisensi DB, serta bukti 22 live cloud test. |
 
 ---
 

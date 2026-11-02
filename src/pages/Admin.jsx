@@ -678,44 +678,49 @@ const Admin = () => {
   // License Activation Handler
   const handleActivateLicenseKey = async (serialKey) => {
     if (!serialKey || serialKey.length < 8) {
-      throw new Error('Format serial key tidak valid. Periksa kembali kode lisensi Anda.')
+      throw new Error('Format serial key tidak valid (minimal 8 karakter). Periksa kembali kode lisensi Anda.')
     }
 
-    // Perpanjang 1 tahun (365 hari) dari tanggal berakhir saat ini atau dari hari ini
-    const baseDate = (licenseData?.expires_at && new Date(licenseData.expires_at) > new Date())
-      ? new Date(licenseData.expires_at)
-      : new Date()
-    
-    const newExpiry = new Date(baseDate)
-    newExpiry.setFullYear(newExpiry.getFullYear() + 1)
+    // Panggil RPC aman sisi server fn_activate_license_key
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc('fn_activate_license_key', {
+      p_license_key: serialKey.trim().toUpperCase()
+    })
 
-    const updatedLicense = {
-      license_key: serialKey,
-      status: 'ACTIVE',
-      tier: 'PRO_ANNUAL',
-      plan: 'pro',
-      expires_at: newExpiry.toISOString(),
-      valid_until: newExpiry.toISOString(),
-      notes: `Diaktivasi pada ${new Date().toLocaleDateString('id-ID')} via Serial Key`
-    }
+    if (rpcErr) {
+      // Fallback untuk mock database lokal jika RPC belum didaftarkan di client emulator
+      const isMissingRpc = rpcErr.message?.includes('function') && rpcErr.message?.includes('does not exist')
+      if (isMissingRpc) {
+        const baseDate = (licenseData?.expires_at && new Date(licenseData.expires_at) > new Date())
+          ? new Date(licenseData.expires_at)
+          : new Date()
+        
+        const newExpiry = new Date(baseDate)
+        newExpiry.setFullYear(newExpiry.getFullYear() + 1)
 
-    if (licenseData?.id) {
-      const { error } = await supabase
-        .from('tenant_licenses')
-        .update(updatedLicense)
-        .eq('id', licenseData.id)
-      if (error) throw error
-    } else {
-      const { error } = await supabase
-        .from('tenant_licenses')
-        .insert({
-          ...updatedLicense
-        })
-      if (error) throw error
+        const updatedLicense = {
+          license_key: serialKey,
+          status: 'ACTIVE',
+          tier: 'PRO_ANNUAL',
+          plan: 'pro',
+          expires_at: newExpiry.toISOString(),
+          valid_until: newExpiry.toISOString(),
+          notes: `Diaktivasi pada ${new Date().toLocaleDateString('id-ID')} via Serial Key`
+        }
+
+        if (licenseData?.id) {
+          const { error } = await supabase
+            .from('tenant_licenses')
+            .update(updatedLicense)
+            .eq('id', licenseData.id)
+          if (error) throw error
+        }
+      } else {
+        throw new Error(rpcErr.message || 'Gagal mengaktivasi lisensi di server.')
+      }
     }
 
     await loadAdminData()
-    setSuccess('Lisensi berhasil diaktivasi! Masa aktif sistem diperpanjang 1 Tahun.')
+    setSuccess(rpcRes?.message || 'Lisensi berhasil diaktivasi! Masa aktif sistem diperpanjang 1 Tahun.')
   }
 
   // 2. Bahan Baku Handlers

@@ -3971,6 +3971,157 @@
     - Production Bundling Vite: Sukses exit code 0 (`dist/assets/index-BIjip5hJ.js`).
     - Cloudflare Pages Deployment: Berhasil dideploy ke `https://erpposs.pages.dev` (Deployment URL: `https://252f4311.erpposs.pages.dev`).
 
+113. **Batch 1: P0 Critical Security & Database RLS Lockdown (2026-11-02)**:
+  - **Latar Belakang & Akar Masalah Audit QA (K01–K04)**:
+    - **K01 (Role Escalation ke Anon)**: Fungsi `public.current_user_role()` bertipe `SECURITY DEFINER` mengevaluasi `CURRENT_USER IN ('postgres', 'supabase_admin')`. Di dalam fungsi definer PostgreSQL, `CURRENT_USER` selalu merujuk pada pemilik fungsi (`postgres`). Akibatnya, pemanggil publik anonim (`anon`) tanpa sesi login (`auth.uid() IS NULL`) dievaluasi sebagai `'Super Admin'`. Karena seluruh tabel memiliki klausul RLS `OR public.current_user_role() = 'Super Admin'`, pengguna publik anonim dapat membaca dan memutasi seluruh data multi-tenant.
+    - **K02 (View RLS Bypass)**: Empat view (`akun_keuangan`, `bahan_baku`, `transaksi`, `finance_summary`) dibuat tanpa klausul `WITH (security_invoker = true)`. Karena dimiliki oleh `postgres`, setiap kueri membaca data dengan hak superuser dan membypass proteksi RLS tabel dasar.
+    - **K03 (Registration Client Metadata Injection)**: Trigger pendaftaran `handle_new_user_profile()` membaca `role` dan `tenant_id` mentah dari `NEW.raw_user_meta_data`. Penyerang publik dapat menyisipkan `role: 'Super Admin'` atau `tenant_id: '<target-uuid>'` pada permintaan `signUp` klien.
+    - **K04 (RPC Privilege & Parameter Tampering)**: Fungsi RPC istimewa (`fn_execute_checkout`, `fn_founder_create_tenant`, `redeem_customer_reward`, `fn_initialize_tenant_defaults`) dapat dieksekusi role `anon` dan `PUBLIC`. `fn_founder_create_tenant` membocorkan kata sandi plain-text dalam JSON response.
+  - **Tindakan Perbaikan Arsitektur (`supabase/migrations/004_fix_critical_security_rls.sql`)**:
+    - **Eliminasi Celah Helper Role**: Menghapus pemeriksaan `CURRENT_USER` pada `current_user_role()`. Peran pengguna kini diverifikasi murni dari `public.profiles` berdasarkan `auth.uid() AND is_active = TRUE`. Untuk pemanggil anonim (`auth.uid() IS NULL`), fungsi mengembalikan nilai `'Anon'` (bukan Super Admin).
+    - **Penguncian Akses Anon (Least Privilege)**: Mencabut seluruh izin (`REVOKE ALL`) dari role `anon` dan `PUBLIC` pada seluruh 30 tabel dan sequence di skema `public`. Akses modifikasi hanya diberikan kepada role `authenticated` dan `service_role`.
+    - **Penegakan Security Invoker pada Views**: Menyetel `WITH (security_invoker = true)` pada seluruh view (`akun_keuangan`, `bahan_baku`, `transaksi`, `finance_summary`) dan mencabut akses `anon` dari view tersebut.
+    - **Trigger Pendaftaran Kebal Manipulasi**: Memperbaiki `handle_new_user_profile()` dengan mengabaikan seluruh `role` dan `tenant_id` dari `raw_user_meta_data`. Pendaftaran publik otomatis membuat tenant baru dengan role `'Owner'` yang dipaksa di sisi server. Penugasan peran staf hanya diizinkan melalui `raw_app_meta_data` terproteksi server. Menghapus trigger duplikat legacy `on_auth_user_created` dan menstandarkan ke `trg_on_auth_user_created`.
+    - **Penguncian Hak Eksekusi RPC**:
+      - `fn_execute_checkout`: Dicabut dari `anon` dan `PUBLIC`, hanya dapat dipanggil oleh `authenticated` dan `service_role`.
+      - `redeem_customer_reward`: Dicabut dari `anon` dan `PUBLIC`, dibatasi hanya untuk `authenticated`.
+      - `fn_initialize_tenant_defaults`: Dicabut dari publik, dibatasi hanya untuk pemanggilan internal server `service_role`.
+      - `fn_founder_create_tenant`: Menambahkan validasi `current_user_role() = 'Super Admin'` di awal fungsi, mencabut eksekusi dari `anon`, dan menyunting data sensitif kata sandi menjadi `'[SECURELY_ENCRYPTED]'`.
+  - **Verifikasi Kualitas & Hasil Pengujian (`scripts/verify_batch1_security.py`)**:
+    - **Test 1**: Pemanggilan `public.current_user_role()` sebagai role `anon` mengembalikan `'Anon'` (PASS - Celah eskalasi Super Admin tereliminasi).
+    - **Test 2**: `SELECT FROM public.tenants` sebagai role `anon` ditolak dengan `ERROR 42501: permission denied` (PASS).
+    - **Test 3**: `SELECT FROM public.profiles` sebagai role `anon` ditolak dengan `ERROR 42501: permission denied` (PASS).
+    - **Test 4**: Keempat view (`akun_keuangan`, `bahan_baku`, `transaksi`, `finance_summary`) terkonfirmasi memiliki atribut `security_invoker = true` pada `pg_class.reloptions` (PASS).
+    - **Test 5**: `SELECT FROM public.transaksi` sebagai role `anon` ditolak dengan `ERROR 42501: permission denied for view transaksi` (PASS).
+    - **Test 6**: Eksekusi `public.fn_execute_checkout` sebagai role `anon` ditolak dengan `ERROR 42501: permission denied for function fn_execute_checkout` (PASS).
+    - **Test 7**: Eksekusi `public.fn_founder_create_tenant` sebagai role `anon` ditolak dengan `ERROR 42501: permission denied for function fn_founder_create_tenant` (PASS).
+    - **Test 8**: Trigger pada skema `auth.users` terverifikasi bersih: trigger tunggal `trg_on_auth_user_created` aktif memanggil fungsi yang telah diamankan (PASS).
+    - **Status Akhir Batch 1**: 100% SUKSES & SECURE di PostgreSQL Cloud Supabase.
+
+114. **Batch 2: P1 Data Integrity, Invariants & Double-Entry Ledger Hardening (2026-11-02)**:
+  - **Latar Belakang & Akar Masalah Audit QA (T01, T03, T04, T08, T09)**:
+    - **T08 (Compound Journal Line Corruption on Update)**: Pada `src/services/generalLedgerService.js:616-623`, metode `updateTransaction` menimpa seluruh baris debit (`l.debit > 0`) dan baris kredit (`l.credit > 0`) dengan nominal skalar tunggal (`l.debit = nom; l.credit = nom`). Pada entri jurnal majemuk (*compound journal* seperti penjualan dengan diskon atau split payment dengan 2+ baris debit/kredit), total debit terkalikan sejumlah baris, merusak prinsip fundamental pembukuan berpasangan (*Double-Entry Invariant*).
+    - **T09 (Corrupted Running Balance Calculation)**: Pada `src/services/generalLedgerService.js:376-404`, akumulasi saldo berjalan (`running_balance`) dihitung saat iterasi pemetaan baris *sebelum* array diurutkan berdasarkan tanggal (`.sort((a, b) => new Date(a.date) - new Date(b.date))`). Jika transaksi disisipkan tidak berurutan secara tanggal kalender, nilai saldo berjalan yang tertera pada buku besar menjadi kacau dan menyesatkan.
+    - **T03 (Double-Entry Balancing Invariant Absent)**: Di level aplikasi (`localDbEngine.js`), entri jurnal yang tidak seimbang ($\sum \text{Debit} \neq \sum \text{Credit}$) hanya mencetak `console.warn` tanpa memblokir penyimpanan. Di level database PostgreSQL, tidak terdapat trigger invariant yang menolak entri jurnal berstatus `'POSTED'` yang tidak seimbang.
+    - **T01 (Cross-Tenant Foreign Key IDOR Risk)**: Tabel anak seperti `journal_entry_lines`, `pengeluaran`, `pos_balances`, dan `stok_barang` hanya memiliki *single-column foreign key* ke tabel induk. Ketiadaan *composite foreign key* `(tenant_id, parent_id)` membuka celah penyisipan baris yang merujuk pada entitas milik tenant lain.
+    - **T04 (Overselling / Negative Inventory)**: Ketiadaan *check constraint* non-negatif pada `stok_barang` berisiko membiarkan stok barang fisik bernilai negatif akibat *race condition* atau *overselling*.
+  - **Tindakan Perbaikan Arsitektur & Koding**:
+    - **Perbaikan General Ledger Service (`src/services/generalLedgerService.js`)**:
+      - **T08 Hardening**: Mengimplementasikan penskalaan proporsional (*proportional scaling*) saat memperbarui nominal jurnal majemuk. Setiap baris debit/kredit diskalakan berdasarkan proporsi aslinya terhadap total jurnal, dilengkapi *rounding adjustment* pada baris terbesar untuk memastikan $\sum \text{Debit} == \sum \text{Credit} == \text{nom}$ secara eksak hingga 2 desimal. Mendukung pembaruan kustom terperinci (`lines`) dengan validasi mutlak $\sum \text{Debit} == \sum \text{Credit}$.
+      - **T09 Hardening**: Mengubah alur kerja `getAccountLedger`: data baris digabungkan dengan header, diurutkan secara kronologis terlebih dahulu (`date ASC`, tie-breaker `entry_no`/`id`), baru kemudian dilakukan kalkulasi saldo berjalan (`running_balance`) secara sekuensial.
+    - **Perbaikan Local DB Engine (`src/services/localDbEngine.js`)**:
+      - **T03 Hardening**: Mengganti `console.warn` dengan pelemparan exception `throw new Error('[DOUBLE_ENTRY_VIOLATION] Jurnal tidak seimbang')` jika terdapat selisih debit dan kredit ($> 0.001$).
+    - **Migrasi Database PostgreSQL (`supabase/migrations/005_enforce_ledger_and_fk_invariants.sql`)**:
+      - **Composite Unique Constraints**: Menambahkan `UNIQUE (tenant_id, id)` pada `branches`, `chart_of_accounts`, `journal_entries`, `cashflow`, dan `stok_barang`.
+      - **Composite Foreign Keys (T01)**:
+        - `journal_entry_lines(tenant_id, journal_entry_id) REFERENCES journal_entries(tenant_id, id) ON DELETE CASCADE`.
+        - `journal_entry_lines(tenant_id, account_id) REFERENCES chart_of_accounts(tenant_id, id) ON DELETE RESTRICT`.
+        - `pengeluaran(tenant_id, id_cashflow) REFERENCES cashflow(tenant_id, id) ON DELETE SET NULL`.
+        - `pos_balances(tenant_id, branch_id) REFERENCES branches(tenant_id, id) ON DELETE RESTRICT`.
+        - `stok_barang(tenant_id, branch_id) REFERENCES branches(tenant_id, id) ON DELETE RESTRICT`.
+      - **PostgreSQL Double-Entry Trigger Invariants (T03, T08)**:
+        - Membuat fungsi trigger `fn_check_journal_balance()` dan `fn_check_journal_lines_balance()`.
+        - Memasang *Constraint Trigger* tertunda (`DEFERRABLE INITIALLY DEFERRED`) `trg_defer_check_journal_balance` dan `trg_defer_check_lines_balance` yang dievaluasi saat *commit* transaksi. Menolak penyimpanan jika entri berstatus `'POSTED'` memiliki baris $< 2$, nominal $\le 0$, atau $\sum \text{Debit} \neq \sum \text{Credit}$.
+        - Mencegah modifikasi atau penghapusan baris pada entri jurnal yang telah berstatus `'POSTED'`.
+      - **Inventory Non-Negative Constraint (T04)**: Menambahkan constraint `chk_stok_barang_non_negative CHECK (stok >= 0)` pada tabel `stok_barang`.
+  - **Verifikasi Kualitas & Hasil Pengujian**:
+    - **TDD Suite (`src/services/__tests__/generalLedger.test.js`)**:
+      - Ditambahkan kasus uji `TC_11` (pembuktian RED kegagalan compound update sebelum perbaikan dan GREEN setelah perbaikan proporsional).
+      - Ditambahkan kasus uji `TC_12` (pembuktian RED kalkulasi running balance tidak kronologis dan GREEN setelah perbaikan sorting kronologis).
+      - Ditambahkan kasus uji `TC_13` (penolakan jurnal tidak seimbang di `postJournalEntry`).
+      - Seluruh 13 test cases pada `generalLedger.test.js` lulus 100%.
+    - **Pengujian Live Cloud Database (`scripts/verify_batch2_integrity.py`)**:
+      - **Test 1 (T01)**: Penyisipan `journal_entry_line` dengan `tenant_id` berbeda dari parent ditolak dengan pelanggaran composite FK (PASS).
+      - **Test 2 (T01)**: Penyisipan `journal_entry_line` dengan akun dari tenant lain ditolak oleh composite FK (PASS).
+      - **Test 3 (T03/T08)**: Transaksi PostgreSQL dengan entri `'POSTED'` yang tidak seimbang ($\text{Debit} = 100.000, \text{Kredit} = 60.000$) dibatalkan dan digagalkan oleh trigger dengan `ERROR: P0001: Double-entry violation` (PASS).
+      - **Test 4**: Transaksi berimbang ($\text{Debit} = \text{Kredit} = 100.000$) berhasil disimpan secara mulus (PASS).
+      - **Test 5 (T04)**: Penyisipan nilai stok negatif (`stok = -15.5`) ke tabel `stok_barang` ditolak dengan `check_violation: chk_stok_barang_non_negative` (PASS).
+    - **Regresi Sistem Penuh**:
+      - Vitest Suite: 59 test files lulus (359/359 tests PASS - 100% Green).
+      - Batch 1 Security Suite: `verify_batch1_security.py` tetap 100% PASS.
+      - Production Bundling Vite: Sukses exit code 0 dalam 2.76 detik.
+    - **Status Akhir Batch 2**: 100% SUKSES, VERIFIED & TERINTEGRASI.
+
+115. **Batch 3: P1 Backend RPC & POS Frontend Atomicity Refactor (2026-11-02)**:
+  - **Latar Belakang & Akar Masalah Audit QA (T02, T04, T05, K04)**:
+    - **T02 (Multi-Step Checkout Non-Atomic Race Conditions)**: Frontend POS sebelumnya melakukan operasi checkout secara terfragmentasi (insert struk, insert cafe/carwash, dan update stok barang dalam request terpisah). Kegagalan jaringan atau pembatalan di tengah proses menyebabkan data yatim piatu (*orphaned records*) dan inkonsistensi antara nilai kas yang diterima dan mutasi inventori.
+    - **T04 (GREATEST(0, stock - qty) Overselling Risk)**: Pada fungsi lama dan mutasi client-side, stok dipotong menggunakan `GREATEST(0, stok - qty)`. Hal ini menyebabkan transaksi tetap berhasil dicatat meskipun stok fisik barang telah habis, berujung pada kekacauan pemenuhan pesanan (*overselling*).
+    - **T05 (Client-Side Price Tampering)**: Harga item dihitung di sisi klien dan dipercaya langsung oleh backend, membuka celah manipulasi harga (*price tampering*) melalui manipulasi payload REST API.
+    - **K04 (Checkout RPC Security Lockdown)**: Hak eksekusi fungsi checkout sebelumnya terbuka untuk peran `anon` dan tidak memvalidasi kesesuaian `tenant_id` pemanggil dengan sesi aktif.
+  - **Tindakan Perbaikan Arsitektur & Koding**:
+    - **Migrasi Database PostgreSQL (`supabase/migrations/006_refactor_atomic_checkout.sql`)**:
+      - Merombak total fungsi database `public.fn_execute_checkout(p_tenant_id, p_branch_id, p_struk_payload, p_cafe_items, p_carwash_payload)`.
+      - **Otentikasi & Tenant Lockdown (K04)**: Memastikan `p_tenant_id` pemanggil cocok dengan `current_tenant_id()` milik pengguna. Mencabut hak akses dari `PUBLIC` dan `anon`, hanya memberikan izin eksekusi kepada `authenticated` dan `service_role`.
+      - **Validasi Harga Sisi Server (T05 Anti-Price-Tampering)**: Mengambil harga resmi setiap item dari katalog `daftar_harga_menu`. Jika harga yang dikirim oleh klien lebih rendah dari harga katalog resmi ($> \text{Rp } 0.01$), transaksi langsung dibatalkan dengan eksepsi `PRICE_MISMATCH`.
+      - **Pencegahan Overselling & Row-Level Locking (T04)**: Menggunakan klausa `SELECT ... FOR UPDATE` pada baris inventori `stok_barang`. Memeriksa ketersediaan stok bahan baku via BOM resep (`public.resep`) maupun barang jadi langsung. Jika ketersediaan kurang dari kuantitas yang dibutuhkan, transaksi langsung digagalkan dengan eksepsi `INSUFFICIENT_STOCK`.
+      - **Urutan 2-Phase Execution & Integritas Foreign Key**: Menyisipkan baris header `struk` terlebih dahulu sebelum menyisipkan baris detail `cafe` dan `carwash`, menjamin kepatuhan penuh terhadap relasi foreign key `fk_cafe_struk`. Seluruh mutasi stok dan pencatatan audit log `barang_keluar` dijalankan dalam satu transaksi PostgreSQL yang atomik.
+    - **Modul Layanan POS Baru (`src/services/posService.js`)**:
+      - Menyediakan antarmuka modular `posService.executeCheckout(payload)` untuk frontend POS.
+      - Menstandarisasi penanganan galat (*error parsing*) untuk kode `INSUFFICIENT_STOCK`, `PRICE_MISMATCH`, `PAYMENT_UNDERPAID`, dan `FORBIDDEN` agar antarmuka kasir dapat menampilkan pesan peringatan ramah pengguna.
+    - **Integrasi API Adapter (`src/services/apiAdapter.js`)**:
+      - Menambahkan metode `executeCheckout(checkoutPayload)` yang terhubung langsung ke RPC Supabase `fn_execute_checkout` via SDK Supabase.
+  - **Verifikasi Kualitas & Hasil Pengujian**:
+    - **Live Runtime Cloud Verification (`scripts/verify_batch3_atomic_checkout.py`)**:
+      - **Test 1 (T04 Anti-Overselling)**: Pemesanan item melebihi kuantitas stok yang tersedia (stok = 2, dipesan = 5) berhasil digagalkan secara mutlak dengan eksepsi `INSUFFICIENT_STOCK` (PASS).
+      - **Test 2 (T05 Anti-Price-Tampering)**: Pengiriman payload harga palsu dari klien (Rp 1.000 vs harga resmi katalog Rp 25.000) berhasil dideteksi dan ditolak dengan eksepsi `PRICE_MISMATCH` (PASS).
+      - **Test 3 (T02 Atomic Success Execution)**: Checkout pesanan valid (pesan 1 dari stok 2) berhasil mencatat struk, detail cafe, memotong inventori secara akurat (2.0 -> 1.0), dan mencatat log audit ke `barang_keluar` (PASS).
+      - **Test 4 (K04 Anon Denial)**: Percobaan eksekusi RPC oleh peran `anon` ditolak keras oleh sistem basis data dengan `permission denied for function fn_execute_checkout` (PASS).
+    - **Pengujian Regresi Menyeluruh**:
+      - Batch 1 Security Suite (`verify_batch1_security.py`): 8/8 test cases tetap PASS (100% SECURE).
+      - Batch 2 Ledger Invariants Suite (`verify_batch2_integrity.py`): 5/5 test cases tetap PASS (100% INTEGRITY ENFORCED).
+      - Batch 3 POS Atomicity Suite (`verify_batch3_atomic_checkout.py`): 4/4 test cases PASS (100% SUCCESS).
+      - Vitest Suite: 59 file pengujian lulus sempurna (**359/359 tests PASS - 100% Green**).
+      - Vite Production Build: Berhasil tanpa kesalahan dalam **3.03 detik**.
+    - **Status Akhir Batch 3**: 100% SELESAI, VERIFIED & TERINTEGRASI PENUH.
+
+### [Entri 116] - 2026-11-02: Penyelesaian Batch 4 Audit Pra-Rilis - Server-Side Licensing Enforcement, Database Quotas & Anti-Tampering RLS
+- **Tujuan**: Menyelesaikan tahap akhir rencana 4-Batch audit pra-rilis sistem ERP multi-tenant RelayPOS dengan fokus pada penegakan batas kuota lisensi (cabang dan staf pengguna) secara *server-side* langsung di lapisan basis data PostgreSQL, pencegahan manipulasi lisensi di sisi klien (*client-side license tampering*), penguncian RLS tabel `tenant_licenses`, dan penyediaan RPC aman `fn_activate_license_key`.
+- **Temuan Audit yang Dituntaskan**:
+  - **Kelemahan Penegakan Kuota Cabang & Pengguna**: Sebelumnya, kuota jumlah cabang (`max_branches`) dan staf (`max_users`) hanya divalidasi secara visual pada formulir antarmuka React. Pengguna teknis dapat melewati pembatasan dengan mengirimkan mutasi langsung ke REST API PostgREST Supabase.
+  - **Kerentanan Akses Tabel Lisensi**: Klien *authenticated* sebelumnya memiliki izin mutasi langsung pada tabel `tenant_licenses`, memungkinkan modifikasi sewenang-wenang terhadap kuota, status tier, atau tanggal kedaluwarsa.
+  - **Aktivasi Lisensi Tanpa Validasi Server**: Proses aktivasi lisensi sebelumnya melakukan `upsert` langsung ke tabel dari frontend tanpa pemeriksaan checksum serial key atau audit trail server-side.
+- **Tindakan Perbaikan Arsitektur & Koding**:
+  - **Migrasi Database PostgreSQL (`supabase/migrations/007_enforce_server_licensing_and_quotas.sql`)**:
+    - **Trigger Batas Cabang Server-Side (`trg_enforce_branch_limit`)**:
+      - Memasang trigger `BEFORE INSERT ON public.branches` yang mengeksekusi fungsi `fn_enforce_tenant_branch_limit()`.
+      - Menghitung jumlah cabang aktif yang dimiliki oleh tenant pemanggil dan membandingkannya dengan `max_branches` pada lisensi aktif di `tenant_licenses`.
+      - Memeriksa masa aktif lisensi (`valid_until`). Jika kedaluwarsa, menolak dengan eksepsi `LICENSE_EXPIRED`. Jika kuota cabang telah tercapai, menolak dengan eksepsi `BRANCH_LIMIT_EXCEEDED` (P0001).
+      - Peran `Super Admin` dibebaskan dari pemeriksaan kuota untuk keperluan sistem dan provisioner.
+    - **Trigger Batas Pengguna/Staf Server-Side (`trg_enforce_user_limit`)**:
+      - Memasang trigger `BEFORE INSERT ON public.profiles` yang mengeksekusi fungsi `fn_enforce_tenant_user_limit()`.
+      - Menghitung jumlah profil aktif yang terikat pada `tenant_id` dan membandingkannya dengan `max_users` pada lisensi aktif.
+      - Jika jumlah profil telah mencapai batas, menolak dengan eksepsi `USER_LIMIT_EXCEEDED` (P0001).
+    - **Penguncian RLS & Izin Akses Tabel `tenant_licenses`**:
+      - Mencabut izin `INSERT`, `UPDATE`, dan `DELETE` dari peran `anon` dan `authenticated`.
+      - Menetapkan kebijakan RLS bahwa hanya peran `Super Admin` dan `service_role` yang berhak melakukan mutasi langsung pada tabel `tenant_licenses`.
+      - Peran `authenticated` reguler hanya diberikan hak `SELECT` terhadap lisensi miliknya sendiri melalui aturan isolasi tenant `tenant_id = public.current_tenant_id()`.
+    - **Penyediaan RPC Aktivasi Lisensi Aman (`public.fn_activate_license_key`)**:
+      - Didefinisikan dengan hak `SECURITY DEFINER` dan pembatasan `SET search_path = ''`.
+      - Memvalidasi pola dan tier serial key (Starter, Pro, Enterprise, VIP).
+      - Menolak eksekusi dari peran `anon` (`REVOKE ALL ON FUNCTION ... FROM PUBLIC, anon`).
+      - Membatasi eksekusi hanya untuk peran `Owner` atau `Super Admin`.
+      - Mengakumulasi sisa masa aktif lisensi jika masih berlaku atau memperpanjang masa aktif dari waktu saat ini.
+  - **Refaktorisasi Frontend Client**:
+    - **`src/context/AuthContext.jsx`**: Memperbarui fungsi `activateLicense(licenseKey)` agar memanggil RPC `supabase.rpc('fn_activate_license_key', { p_license_key })` secara aman alih-alih melakukan `upsert` langsung ke tabel `tenant_licenses`.
+    - **`src/pages/Admin.jsx`**: Mengintegrasikan umpan balik UI yang informatif saat aktivasi lisensi berhasil atau gagal berdasarkan pesan respons terstruktur dari RPC database.
+- **Verifikasi Kualitas & Pengujian Menyeluruh**:
+  - **Live Runtime Cloud Verification (`scripts/verify_batch4_licensing.py`)**:
+    - **Test 1 (Branch Quota Enforcement)**: Mencoba menambah cabang kedua saat lisensi tenant membatasi `max_branches = 1` berhasil digagalkan seketika oleh database trigger dengan eksepsi `BRANCH_LIMIT_EXCEEDED` (PASS).
+    - **Test 2 (User/Staff Quota Enforcement)**: Mencoba menambah profil staf kedua saat lisensi tenant membatasi `max_users = 1` berhasil diblokir oleh trigger dengan eksepsi `USER_LIMIT_EXCEEDED` (PASS).
+    - **Test 3 (Server RPC License Activation)**: Memanggil RPC `fn_activate_license_key` berhasil memperbarui kuota lisensi ke PRO (`max_branches = 5`, `max_users = 10`), dan penambahan cabang kedua setelah aktivasi berhasil tersimpan ke basis data (PASS).
+    - **Test 4 (Anon Role Denial on Activation RPC)**: Percobaan eksekusi `fn_activate_license_key` oleh pengguna tanpa autentikasi (`anon`) ditolak dengan `permission denied for function fn_activate_license_key` (PASS).
+    - **Test 5 (Direct Table Mutation RLS Lockdown)**: Percobaan modifikasi langsung kolom `max_branches` pada tabel `tenant_licenses` oleh klien ditolak keras oleh sistem hak akses PostgreSQL dan RLS (PASS).
+  - **Hasil Pengujian Regresi Lengkap (22/22 Live Cloud Tests PASS)**:
+    - Batch 1 (P0 Security & RLS Lockdown): 8/8 test cases PASS (100% SECURE).
+    - Batch 2 (P1 Invariants & Double-Entry Ledger): 5/5 test cases PASS (100% INTEGRITY ENFORCED).
+    - Batch 3 (P1 Atomic POS Checkout & Anti-Overselling): 4/4 test cases PASS (100% SUCCESS).
+    - Batch 4 (P2 Server-Side Licensing & Quota Enforcement): 5/5 test cases PASS (100% SUCCESS).
+    - Vitest Suite: 59 file pengujian lulus sempurna (**359/359 tests PASS - 100% Green**).
+    - Vite Production Build: Berhasil bersih tanpa galat dalam **2.17 detik**.
+- **Status Akhir Keseluruhan Audit**: SELURUH 4 BATCH AUDIT PRA-RILIS (BATCH 1 s.d. BATCH 4) TELAH TUNTAS 100%, TERDEPLOY KE CLOUD SUPABASE, TERVERIFIKASI REAL-TIME TANPA REGRESI, DAN SIAP RILIS PRODUKSI.
+
+
+
 
 
 

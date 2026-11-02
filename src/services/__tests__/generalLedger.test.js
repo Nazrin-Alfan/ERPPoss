@@ -353,5 +353,124 @@ describe('General Ledger & Inventory Valuation Service (TDD)', () => {
       const rowDeleted = ledgerDeleted.rows.find(r => r.journal_id === createRes.journal_id)
       expect(rowDeleted).toBeUndefined()
     })
+
+    it('TC_11: [T08 Fix] should update compound multi-line journal without corrupting debit/credit balance', () => {
+      // Post compound entry:
+      // Debit Kas (acc_1001): 80,000 (80%)
+      // Debit Potongan (acc_4002): 20,000 (20%)
+      // Credit Pendapatan (acc_4001): 100,000 (100%)
+      const compoundEntry = store.postJournalEntry({
+        tenant_id: DEFAULT_TENANT_ID,
+        branch_id: DEFAULT_BRANCH_ID,
+        entry_no: 'JV-CMP-001',
+        date: '2026-09-20',
+        memo: 'Penjualan Diskon Majemuk',
+        lines: [
+          { account_id: 'acc_1001', debit: 80000, credit: 0, memo: 'Kas Bersih' },
+          { account_id: 'acc_4002', debit: 20000, credit: 0, memo: 'Diskon Diberikan' },
+          { account_id: 'acc_4001', debit: 0, credit: 100000, memo: 'Total Pendapatan' },
+        ],
+      })
+
+      expect(compoundEntry).toBeDefined()
+      expect(compoundEntry.total_amount).toBe(100000)
+
+      // Update total nominal from 100,000 to 150,000
+      glService.updateTransaction({
+        tenant_id: DEFAULT_TENANT_ID,
+        journalId: compoundEntry.id,
+        newAmount: 150000,
+        newMemo: 'Penjualan Diskon Majemuk (Revisi)',
+      })
+
+      // Verify that debit lines were scaled proportionally (120,000 and 30,000) instead of overwritten to 150,000 each!
+      const lines = store.getTable('journal_entry_lines').filter(l => l.journal_entry_id === compoundEntry.id)
+      const kasLine = lines.find(l => l.account_id === 'acc_1001')
+      const diskonLine = lines.find(l => l.account_id === 'acc_4002')
+      const revLine = lines.find(l => l.account_id === 'acc_4001')
+
+      expect(kasLine.debit).toBe(120000)
+      expect(diskonLine.debit).toBe(30000)
+      expect(revLine.credit).toBe(150000)
+
+      // Strict Double-Entry Invariant: Total Debit MUST EXACTLY EQUAL Total Credit
+      const totalDebit = lines.reduce((s, l) => s + l.debit, 0)
+      const totalCredit = lines.reduce((s, l) => s + l.credit, 0)
+      expect(totalDebit).toBe(150000)
+      expect(totalCredit).toBe(150000)
+      expect(totalDebit).toBe(totalCredit)
+    })
+
+    it('TC_12: [T09 Fix] should calculate running balance chronologically regardless of line insertion order', () => {
+      // Post transactions with out-of-order dates:
+      // Entry 1: 2026-09-25 (+500,000)
+      // Entry 2: 2026-09-10 (+200,000)
+      // Entry 3: 2026-09-18 (-100,000)
+      store.postJournalEntry({
+        tenant_id: DEFAULT_TENANT_ID,
+        date: '2026-09-25',
+        entry_no: 'JV-ORDER-3',
+        memo: 'Transaksi Akhir',
+        lines: [
+          { account_id: 'acc_1001', debit: 500000, credit: 0 },
+          { account_id: 'acc_3001', debit: 0, credit: 500000 },
+        ],
+      })
+
+      store.postJournalEntry({
+        tenant_id: DEFAULT_TENANT_ID,
+        date: '2026-09-10',
+        entry_no: 'JV-ORDER-1',
+        memo: 'Transaksi Awal',
+        lines: [
+          { account_id: 'acc_1001', debit: 200000, credit: 0 },
+          { account_id: 'acc_3001', debit: 0, credit: 200000 },
+        ],
+      })
+
+      store.postJournalEntry({
+        tenant_id: DEFAULT_TENANT_ID,
+        date: '2026-09-18',
+        entry_no: 'JV-ORDER-2',
+        memo: 'Transaksi Tengah',
+        lines: [
+          { account_id: 'acc_1001', debit: 0, credit: 100000 },
+          { account_id: 'acc_6002', debit: 100000, credit: 0 },
+        ],
+      })
+
+      // Fetch ledger for Kas (acc_1001)
+      const ledger = glService.getAccountLedger(DEFAULT_TENANT_ID, 'acc_1001')
+
+      // Chronological order MUST BE:
+      // 1. 2026-09-10: debit 200,000 -> running_balance = 200,000
+      // 2. 2026-09-18: credit 100,000 -> running_balance = 100,000
+      // 3. 2026-09-25: debit 500,000 -> running_balance = 600,000
+      expect(ledger.rows.length).toBe(3)
+      expect(ledger.rows[0].date).toBe('2026-09-10')
+      expect(ledger.rows[0].running_balance).toBe(200000)
+
+      expect(ledger.rows[1].date).toBe('2026-09-18')
+      expect(ledger.rows[1].running_balance).toBe(100000)
+
+      expect(ledger.rows[2].date).toBe('2026-09-25')
+      expect(ledger.rows[2].running_balance).toBe(600000)
+      expect(ledger.closing_balance).toBe(600000)
+    })
+
+    it('TC_13: [T03 Fix] should reject imbalanced journal entries with DOUBLE_ENTRY_VIOLATION error', () => {
+      expect(() => {
+        store.postJournalEntry({
+          tenant_id: DEFAULT_TENANT_ID,
+          date: '2026-09-30',
+          entry_no: 'JV-IMBALANCED',
+          memo: 'Transaksi Cacat',
+          lines: [
+            { account_id: 'acc_1001', debit: 500000, credit: 0 },
+            { account_id: 'acc_3001', debit: 0, credit: 450000 }, // Selisih 50,000!
+          ],
+        })
+      }).toThrow(/DOUBLE_ENTRY_VIOLATION/i)
+    })
   })
 })

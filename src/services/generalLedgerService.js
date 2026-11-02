@@ -373,34 +373,47 @@ export class GeneralLedgerService {
       (l) => l.account_id === accountId && l.tenant_id === tenant_id
     )
 
+    // FIX T09: Map lines first, sort chronologically, THEN compute running balance
+    const mappedRows = lines.map((line) => {
+      const header = entries.find((e) => e.id === line.journal_entry_id) || {}
+      return {
+        id: line.id,
+        journal_id: line.journal_entry_id,
+        entry_no: header.entry_no || '-',
+        date: header.date || '-',
+        memo: line.memo || header.memo || '-',
+        source_type: header.source_type || null,
+        source_id: header.source_id || null,
+        debit: parseFloat(line.debit) || 0,
+        credit: parseFloat(line.credit) || 0,
+        createdAt: header.created_at || line.created_at || '',
+      }
+    })
+
+    // Sort chronologically ascending
+    mappedRows.sort((a, b) => {
+      const timeA = new Date(a.date).getTime()
+      const timeB = new Date(b.date).getTime()
+      if (!isNaN(timeA) && !isNaN(timeB) && timeA !== timeB) {
+        return timeA - timeB
+      }
+      return String(a.entry_no || a.id).localeCompare(String(b.entry_no || b.id))
+    })
+
+    // Compute running balance in strict chronological order
     let runningBalance = 0
+    const rows = mappedRows.map((row) => {
+      if (coa.normal_balance === 'DEBIT') {
+        runningBalance += (row.debit - row.credit)
+      } else {
+        runningBalance += (row.credit - row.debit)
+      }
 
-    const rows = lines
-      .map((line) => {
-        const header = entries.find((e) => e.id === line.journal_entry_id) || {}
-        const debit = parseFloat(line.debit) || 0
-        const credit = parseFloat(line.credit) || 0
-
-        if (coa.normal_balance === 'DEBIT') {
-          runningBalance += (debit - credit)
-        } else {
-          runningBalance += (credit - debit)
-        }
-
-        return {
-          id: line.id,
-          journal_id: line.journal_entry_id,
-          entry_no: header.entry_no || '-',
-          date: header.date || '-',
-          memo: line.memo || header.memo || '-',
-          source_type: header.source_type || null,
-          source_id: header.source_id || null,
-          debit,
-          credit,
-          running_balance: runningBalance,
-        }
-      })
-      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      return {
+        ...row,
+        running_balance: runningBalance,
+      }
+    })
 
     return {
       account: coa,
@@ -593,54 +606,146 @@ export class GeneralLedgerService {
 
   /**
    * Two-Way Sync Mutasi: Update existing journal line & source record
+   * T08 Fix: Preserves compound double-entry balance invariants via proportional scaling
    */
   updateTransaction({
     tenant_id = DEFAULT_TENANT_ID,
     journalId,
+    journal_id,
+    source_type,
+    source_id,
     newDate,
+    tanggal,
     newAmount,
+    nominal,
     newMemo,
-  }) {
+    keterangan,
+    lines: updatedLines,
+  } = {}) {
     const entries = this.store.getTable('journal_entries')
     const lines = this.store.getTable('journal_entry_lines')
 
-    const entry = entries.find((e) => e.id === journalId && e.tenant_id === tenant_id)
+    const targetJournalId = journalId || journal_id
+    let entry = null
+
+    if (targetJournalId) {
+      entry = entries.find((e) => e.id === targetJournalId && e.tenant_id === tenant_id)
+    }
+    if (!entry && source_type && source_id) {
+      entry = entries.find((e) => e.tenant_id === tenant_id && e.source_type === source_type && e.source_id === source_id)
+    }
+
     if (!entry) throw new Error('Entri jurnal tidak ditemukan')
 
-    const nom = parseFloat(newAmount)
-    if (newDate) entry.date = newDate
-    if (newMemo) entry.memo = newMemo
-    if (!isNaN(nom) && nom > 0) entry.total_amount = nom
+    const resolvedDate = newDate || tanggal
+    const resolvedMemo = newMemo || keterangan
+    const rawNom = newAmount !== undefined ? newAmount : nominal
+    const nom = parseFloat(rawNom)
+    const hasValidNom = !isNaN(nom) && nom > 0
+
+    if (resolvedDate) entry.date = resolvedDate
+    if (resolvedMemo) entry.memo = resolvedMemo
 
     // Update lines
-    const relatedLines = lines.filter((l) => l.journal_entry_id === journalId && l.tenant_id === tenant_id)
-    relatedLines.forEach((l) => {
-      if (newMemo) l.memo = newMemo
-      if (!isNaN(nom) && nom > 0) {
-        if (l.debit > 0) l.debit = nom
-        if (l.credit > 0) l.credit = nom
+    const relatedLines = lines.filter((l) => l.journal_entry_id === entry.id && l.tenant_id === tenant_id)
+
+    if (updatedLines && Array.isArray(updatedLines) && updatedLines.length > 0) {
+      // Custom explicit lines: validate double-entry balance
+      const totalDeb = updatedLines.reduce((s, l) => s + (parseFloat(l.debit) || 0), 0)
+      const totalCred = updatedLines.reduce((s, l) => s + (parseFloat(l.credit) || 0), 0)
+      if (Math.abs(totalDeb - totalCred) > 0.001) {
+        throw new Error(`Integritas Jurnal Terlanggar: Total Debit (${totalDeb}) != Total Kredit (${totalCred})`)
       }
-    })
+      // Replace existing lines
+      const otherLines = lines.filter((l) => !(l.journal_entry_id === entry.id && l.tenant_id === tenant_id))
+      lines.length = 0
+      lines.push(...otherLines)
+      updatedLines.forEach((l) => {
+        lines.push({
+          id: l.id || `jel_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          tenant_id,
+          journal_entry_id: entry.id,
+          account_id: l.account_id,
+          account_code: l.account_code || '',
+          account_name: l.account_name || '',
+          debit: parseFloat(l.debit) || 0,
+          credit: parseFloat(l.credit) || 0,
+          memo: l.memo || resolvedMemo || entry.memo,
+          created_at: l.created_at || new Date().toISOString(),
+        })
+      })
+      entry.total_amount = totalDeb
+    } else if (hasValidNom) {
+      // FIX T08: Proportional scaling for existing multi-line entries to preserve double-entry invariant
+      const oldDebitTotal = relatedLines.reduce((s, l) => s + (parseFloat(l.debit) || 0), 0)
+      const oldCreditTotal = relatedLines.reduce((s, l) => s + (parseFloat(l.credit) || 0), 0)
+
+      if (oldDebitTotal > 0 && oldCreditTotal > 0) {
+        let scaledDebits = 0
+        let scaledCredits = 0
+
+        relatedLines.forEach((l) => {
+          if (resolvedMemo) l.memo = resolvedMemo
+          const origDebit = parseFloat(l.debit) || 0
+          const origCredit = parseFloat(l.credit) || 0
+
+          if (origDebit > 0) {
+            l.debit = Math.round((origDebit / oldDebitTotal) * nom * 100) / 100
+            scaledDebits += l.debit
+          }
+          if (origCredit > 0) {
+            l.credit = Math.round((origCredit / oldCreditTotal) * nom * 100) / 100
+            scaledCredits += l.credit
+          }
+        })
+
+        // Rounding adjustment: adjust largest line to ensure sum matches nom exactly
+        const debitDiff = Math.round((nom - scaledDebits) * 100) / 100
+        if (debitDiff !== 0) {
+          const largestDebitLine = [...relatedLines].sort((a, b) => b.debit - a.debit).find((l) => l.debit > 0)
+          if (largestDebitLine) largestDebitLine.debit = Math.round((largestDebitLine.debit + debitDiff) * 100) / 100
+        }
+
+        const creditDiff = Math.round((nom - scaledCredits) * 100) / 100
+        if (creditDiff !== 0) {
+          const largestCreditLine = [...relatedLines].sort((a, b) => b.credit - a.credit).find((l) => l.credit > 0)
+          if (largestCreditLine) largestCreditLine.credit = Math.round((largestCreditLine.credit + creditDiff) * 100) / 100
+        }
+      } else {
+        relatedLines.forEach((l) => {
+          if (resolvedMemo) l.memo = resolvedMemo
+          if (l.debit > 0) l.debit = nom
+          if (l.credit > 0) l.credit = nom
+        })
+      }
+      entry.total_amount = nom
+    } else if (resolvedMemo) {
+      relatedLines.forEach((l) => {
+        l.memo = resolvedMemo
+      })
+    }
 
     // Update data sumber asli jika ada
-    if (entry.source_type && entry.source_id) {
-      if (entry.source_type === 'pengeluaran') {
+    const targetSourceId = entry.source_id
+    const targetSourceType = entry.source_type
+    if (targetSourceType && targetSourceId) {
+      if (targetSourceType === 'pengeluaran') {
         const expTable = this.store.getTable('pengeluaran')
-        const exp = expTable.find((p) => p.id_pengeluaran === entry.source_id)
+        const exp = expTable.find((p) => p.id_pengeluaran === targetSourceId && p.tenant_id === tenant_id) || expTable.find((p) => p.id_pengeluaran === targetSourceId)
         if (exp) {
-          if (newDate) exp.tanggal = newDate
-          if (newMemo) exp.nama_pengeluaran = newMemo
-          if (!isNaN(nom) && nom > 0) exp.nominal = nom
+          if (resolvedDate) exp.tanggal = resolvedDate
+          if (resolvedMemo) exp.nama_pengeluaran = resolvedMemo
+          if (hasValidNom) exp.nominal = nom
         }
       }
 
       // Update cashflow jika cocok
       const cfTable = this.store.getTable('cashflow')
-      const cf = cfTable.find((c) => c.id_sumber === entry.source_id || c.id_cashflow === entry.source_id)
+      const cf = cfTable.find((c) => (c.id_sumber === targetSourceId || c.id_cashflow === targetSourceId) && c.tenant_id === tenant_id) || cfTable.find((c) => c.id_sumber === targetSourceId || c.id_cashflow === targetSourceId)
       if (cf) {
-        if (newDate) cf.tanggal = newDate
-        if (newMemo) cf.keterangan_transaksi = newMemo
-        if (!isNaN(nom) && nom > 0) {
+        if (resolvedDate) cf.tanggal = resolvedDate
+        if (resolvedMemo) cf.keterangan_transaksi = resolvedMemo
+        if (hasValidNom) {
           if (cf.pengeluaran > 0) cf.pengeluaran = nom
           if (cf.pemasukan > 0) cf.pemasukan = nom
         }
