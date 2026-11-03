@@ -55,6 +55,7 @@ import {
 } from '../../components/ui/Table'
 
 import MerchandiseCatalog from '../../components/pos/MerchandiseCatalog'
+import { mapPosHistoryTransaction, buildHistoryPaymentReceipt } from '../../utils/posHistory'
 import CustomSelect from '../../components/common/CustomSelect'
 import {
   buildOrderReceiptData,
@@ -580,6 +581,8 @@ const CafePOS = () => {
           nama_pelanggan,
           nominal_cash,
           nominal_qris,
+          uang_diterima,
+          kembalian,
           waktu_dibayar,
           cafe (nama_menu, qty, harga_satuan),
           carwash (paket, plat, harga, model, no_telepon, kehadiran)
@@ -594,32 +597,7 @@ const CafePOS = () => {
           return item.tanggal === targetDate || settleDate === targetDate
         })
 
-        const formatted = filtered.map(item => ({
-          id: item.id_struk,
-          tanggal: item.tanggal,
-          jam: item.jam,
-          kasir: item.kasir,
-          total_harga: item.total_tagihan,
-          metode_bayar: item.metode_bayar,
-          status_bayar: item.status_bayar,
-          nama_pelanggan: item.nama_pelanggan,
-          nominal_cash: item.nominal_cash,
-          nominal_qris: item.nominal_qris,
-          waktu_dibayar: item.waktu_dibayar,
-          cafe: (item.cafe || []).map(c => ({
-            nama_menu: c.nama_menu,
-            jumlah: c.qty,
-            harga_satuan: c.harga_satuan
-          })),
-          carwash: (item.carwash || []).map(cw => ({
-            paket: cw.paket,
-            plat_nomor: cw.plat,
-            harga: cw.harga,
-            merk_mobil: cw.model,
-            no_telepon: cw.no_telepon,
-            kehadiran: cw.kehadiran
-          }))
-        }))
+        const formatted = filtered.map(mapPosHistoryTransaction)
         setTodayTransactions(formatted)
       } else {
         setTodayTransactions([])
@@ -3026,31 +3004,7 @@ const CafePOS = () => {
                             type="button"
                             onClick={() => {
                               const receipt = isSelesai 
-                                ? buildPaymentReceiptData({
-                                    id_struk: tx.id,
-                                    tanggal: tx.tanggal,
-                                    jam: tx.jam,
-                                    kasir: tx.kasir,
-                                    status_bayar: tx.status_bayar,
-                                    metode_bayar: tx.metode_bayar,
-                                    nominal_cash: tx.nominal_cash,
-                                    nominal_qris: tx.nominal_qris,
-                                    total_tagihan: tx.total_harga,
-                                    carwash: tx.carwash?.map(cw => ({
-                                      plat: cw.plat_nomor,
-                                      model: cw.merk_mobil,
-                                      paket: cw.paket,
-                                      harga: cw.harga,
-                                      kehadiran: cw.kehadiran || 'hadir',
-                                      no_telepon: cw.no_telepon || ''
-                                    })) || [],
-                                    cafe: tx.cafe?.map(c => ({
-                                      nama_menu: c.nama_menu,
-                                      qty: c.jumlah,
-                                      harga_satuan: c.harga_satuan,
-                                      subtotal: c.jumlah * c.harga_satuan
-                                    })) || []
-                                  })
+                                ? buildHistoryPaymentReceipt(tx, activeTenant?.nama || activeTenant?.name)
                                 : buildOrderReceiptData({
                                     id_struk: tx.id,
                                     tanggal: tx.tanggal,

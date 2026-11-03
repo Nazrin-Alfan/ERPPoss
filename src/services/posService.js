@@ -144,17 +144,27 @@ export const posService = {
         ? (parseFloat(strukPayload.nominal_cash || 0) + parseFloat(strukPayload.nominal_qris || 0))
         : (parseFloat(strukPayload.uang_diterima || 0) || totalTagihan)
     )
-    const nominalBayar = parseFloat(rawNominalBayar ?? totalTagihan)
-    const kembalian = parseFloat(strukPayload.kembalian ?? (nominalBayar > totalTagihan ? nominalBayar - totalTagihan : 0))
+    const paymentMethod = String(strukPayload.metode_bayar ?? strukPayload.metode_pembayaran ?? 'CASH').toUpperCase().trim()
+    const nonCash = paymentMethod === 'SPLIT'
+      ? parseFloat(strukPayload.nominal_qris || 0) + parseFloat(strukPayload.nominal_transfer || 0)
+      : 0
+    const uangDiterima = parseFloat(strukPayload.uang_diterima ?? (parseFloat(rawNominalBayar) - nonCash))
+    const tenderTotal = uangDiterima + nonCash
+    const nominalBayar = Math.min(tenderTotal, totalTagihan)
+    // Preview only: the RPC independently validates payment and computes change.
+    const isCash = ['CASH', 'TUNAI', 'SPLIT'].includes(paymentMethod)
+    const kembalian = isCash ? Math.max(0, Math.round((tenderTotal - totalTagihan) * 100) / 100) : 0
 
     const normalizedStruk = {
       ...strukPayload,
+      metode_bayar: paymentMethod,
+      metode_pembayaran: paymentMethod,
       subtotal: parseFloat(strukPayload.subtotal ?? strukPayload.total_biaya ?? totalTagihan),
       diskon: parseFloat(strukPayload.diskon ?? strukPayload.total_diskon ?? (parseFloat(strukPayload.diskon_cafe || 0) + parseFloat(strukPayload.diskon_carwash || 0)) ?? 0),
       pajak: parseFloat(strukPayload.pajak ?? 0),
       nominal_bayar: nominalBayar,
       bayar: nominalBayar,
-      uang_diterima: parseFloat(strukPayload.uang_diterima ?? nominalBayar),
+      uang_diterima: uangDiterima,
       kembalian: kembalian,
       total_tagihan: totalTagihan,
       total_belanja: totalTagihan
