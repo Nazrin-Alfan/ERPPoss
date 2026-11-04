@@ -98,6 +98,60 @@ describe('pending bill settlement (Tahap 1)', () => {
       }))
     })
 
+    it('handles SPLIT payment with excess cash tender and calculates exact cash change', async () => {
+      const settleSpy = vi.spyOn(api.transaksi, 'settlePendingBill').mockResolvedValue({
+        success: true,
+        status: 'COMPLETED',
+        id_struk: 'STRUK-SPLIT-EXCESS-002'
+      })
+
+      const res = await posService.settlePendingBill({
+        tenantId: '11111111-1111-1111-1111-111111111111',
+        settlePayload: {
+          id_struk: 'STRUK-SPLIT-EXCESS-002',
+          metode_bayar: 'SPLIT',
+          base_total: 100000,
+          split_cash: 40000,
+          split_qris: 60000,
+          uang_diterima: 100000 // Serahkan uang tunai 100.000 untuk porsi tunai 40.000 (kelebihan 60.000)
+        }
+      })
+
+      expect(res.success).toBe(true)
+      expect(settleSpy).toHaveBeenCalledWith(expect.objectContaining({
+        settle_payload: expect.objectContaining({
+          metode_bayar: 'SPLIT',
+          nominal_cash: 40000,
+          nominal_qris: 60000,
+          uang_diterima: 100000,
+          kembalian: 60000,
+          nominal_bayar: 100000
+        })
+      }))
+    })
+
+    it('handles journal failure after initial mutations and maps to JOURNAL_POSTING_FAILED error', async () => {
+      vi.spyOn(api.transaksi, 'settlePendingBill').mockRejectedValue(
+        new Error('JOURNAL_POSTING_FAILED: Trigger fn_check_journal_balance mendeteksi debit != kredit pada journal_entries')
+      )
+
+      await expect(posService.settlePendingBill({
+        tenantId: '11111111-1111-1111-1111-111111111111',
+        settlePayload: {
+          id_struk: 'STRUK-FAIL-JOURNAL-001',
+          base_total: 75000,
+          metode_bayar: 'CASH',
+          uang_diterima: 100000
+        }
+      })).rejects.toSatisfy((err) => {
+        expect(err).toBeInstanceOf(PosCheckoutError)
+        expect(err.code).toBe('JOURNAL_POSTING_FAILED')
+        expect(err.message).toMatch(/jurnal buku besar/i)
+        expect(err.message).toMatch(/Zero Partial State/i)
+        return true
+      })
+    })
+
     it('generates an idempotency key when not explicitly provided', async () => {
       const settleSpy = vi.spyOn(api.transaksi, 'settlePendingBill').mockResolvedValue({
         success: true,

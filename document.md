@@ -4524,7 +4524,7 @@ Sebelum perbaikan ini, alur pelunasan tagihan tertunda (*pending bill*) di kasir
 1. **Perpetual Standard Costing & Snapshot Biaya Asal**:
    - Kolom `struk.total_cogs` dan `barang_keluar.biaya_satuan` & `total_biaya` mengunci snapshot biaya perolehan saat barang dikeluarkan.
    - Pembedaan tegas:
-     - `total_cogs IS NULL`: Biaya historis tidak diketahui. Sistem mencari catatan mutasi `barang_keluar` menggunakan isolasi tenant ketat (`tenant_id = p_tenant_id`) dan pencocokan token regex tepat (`(^|[^a-zA-Z0-9_-])Struk:\s*<id_struk>($|[^a-zA-Z0-9_-])`) agar kebal terhadap tabrakan parsial (partial-substring collision). Jika ditemukan dan ada biaya dihitung fallback (`cogs_status: 'HISTORICAL_RESOLVED'`); jika tidak ada, dikelola tanpa memaksakan jurnal sembarangan (`cogs_status: 'HISTORICAL_UNKNOWN'`).
+     - `total_cogs IS NULL`: Biaya historis tidak diketahui. Sistem memeriksa tabel `barang_keluar` menggunakan isolasi tenant ketat (`tenant_id = p_tenant_id`) dan pencocokan token regex tepat (`(^|[^a-zA-Z0-9_-])Struk:\s*<id_struk>($|[^a-zA-Z0-9_-])`) HANYA berdasarkan snapshot biaya asal (`total_biaya` atau `jumlah_keluar * biaya_satuan`). DILARANG KERAS fallback ke harga master terbaru. Jika catatan biaya tidak lengkap atau tidak ada, dikelola sebagai `HISTORICAL_UNKNOWN` tanpa memaksakan baris jurnal fiktif.
      - `total_cogs = 0.00`: Biaya nol terverifikasi (layanan jasa carwash). Jurnal HPP/Persediaan sengaja ditiadakan (`cogs_status: 'ZERO_COST'`).
      - `total_cogs > 0.00`: Snapshot biaya asal dibukukan presisi ke GL (`cogs_status: 'SNAPSHOT_RECORDED'`).
 2. **Kekebalan Perubahan Master Harga**:

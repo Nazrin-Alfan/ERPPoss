@@ -108,6 +108,12 @@ export const posService = {
       return new PosCheckoutError('Tagihan tidak ditemukan dalam tenant aktif.', 'BILL_NOT_FOUND', { raw: rawMsg })
     }
 
+    if (rawMsg.includes('JOURNAL_POSTING_FAILED') || rawMsg.includes('LEDGER_UNBALANCED')) {
+      const match = rawMsg.match(/(?:JOURNAL_POSTING_FAILED|LEDGER_UNBALANCED):\s*(.*)/)
+      const detail = match ? match[1].trim() : 'Debit dan kredit tidak seimbang.'
+      return new PosCheckoutError(`Gagal membukukan transaksi ke jurnal buku besar (Zero Partial State): ${detail}`, 'JOURNAL_POSTING_FAILED', { raw: rawMsg })
+    }
+
     if (rawMsg.includes('INVALID_SURCHARGE')) {
       const match = rawMsg.match(/INVALID_SURCHARGE:\s*(.*)/)
       const cleanDesc = match ? match[1].trim() : 'Biaya inap tidak valid atau melebihi batas wajar operasional.'

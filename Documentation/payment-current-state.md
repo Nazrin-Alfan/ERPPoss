@@ -216,8 +216,9 @@ Untuk mencegah klik ganda dan inkonsistensi jaringan, pelunasan menerapkan proto
    - **`total_cogs IS NULL` (Biaya Historis Tidak Diketahui / Untracked Legacy)**:
      - Terjadi pada transaksi pending lama yang dibuat sebelum migrasi ini atau tanpa modul persediaan.
      - Penanganan di `fn_settle_pending_bill`: Sistem memeriksa tabel `barang_keluar` untuk mutasi yang berelasi (`id_struk = v_id_struk` atau regex token boundary `(^|[^a-zA-Z0-9_-])Struk:\s*<id_struk>($|[^a-zA-Z0-9_-])`) yang terisolasi ketat pada `tenant_id = p_tenant_id`.
-       - Jika ada baris mutasi berbiaya (`total_biaya > 0` atau hasil kali `jumlah_keluar * harga_beli` master): `cogs_status = 'HISTORICAL_RESOLVED'`, nilai HPP diposting ke jurnal.
-       - Jika tidak ada catatan biaya: `cogs_status = 'HISTORICAL_UNKNOWN'`. Sistem **DILARANG mengarang angka HPP sembarangan**. Tidak ada baris jurnal HPP/Persediaan yang dipaksakan agar tidak mendistorsi balance jurnal dan integritas pembukuan; memo jurnal ditandai `(HPP historis tidak diketahui)`.
+       - HANYA menggunakan snapshot biaya asal (`COALESCE(total_biaya, jumlah_keluar * biaya_satuan)`).
+       - Jika catatan biaya asal tidak lengkap atau salah satu mutasi tidak memiliki snapshot biaya: `cogs_status = 'HISTORICAL_UNKNOWN'`. Sistem **DILARANG fallback ke harga master terbaru** agar tidak mendistorsi pembukuan historis. Baris jurnal HPP/Persediaan ditiadakan, dan memo jurnal ditandai `(HPP historis tidak diketahui)`.
+       - Jika snapshot biaya asal lengkap: `cogs_status = 'HISTORICAL_RESOLVED'`, nilai HPP diposting presisi ke GL.
    - **`total_cogs = 0.00` (Biaya Nol Terverifikasi / Legitimate Zero-Cost)**:
      - Terjadi pada transaksi murni layanan jasa carwash, penyerahan barang promo gratis, atau item tanpa pemakaian bahan baku BOM.
      - Penanganan di `fn_settle_pending_bill`: `cogs_status = 'ZERO_COST'`. Baris jurnal HPP (5101) dan Persediaan (1103) **secara sengaja tidak diterbitkan** karena biaya riil adalah Rp 0,00 dan trigger kekekalan jurnal `fn_check_journal_balance` menolak debit/kredit <= 0.

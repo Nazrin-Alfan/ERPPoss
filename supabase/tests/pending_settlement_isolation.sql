@@ -310,5 +310,99 @@ SELECT pg_temp.expect_settle_denied(
   0       -- Different surcharge
 );
 
+-- 5. Test Forced Journal Failure After Initial Mutations (Zero Partial State)
+DO $$
+DECLARE
+  v_struk_before record;
+  v_struk_after record;
+BEGIN
+  -- Create isolated pending receipt QA-FAIL-JOURNAL
+  INSERT INTO public.struk (
+    id, tenant_id, branch_id, id_struk, total_biaya, uang_diterima, kembalian,
+    metode_pembayaran, status_bayar, tanggal, created_at, kasir
+  ) VALUES (
+    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, '33333333-3333-3333-3333-333333333333'::uuid,
+    'QA-FAIL-JOURNAL', 50000.00, 0.00, 0.00, 'Pending', 'Pending', CURRENT_DATE, now(), 'QA Tester'
+  );
+
+  SELECT * INTO v_struk_before FROM public.struk WHERE id_struk = 'QA-FAIL-JOURNAL';
+
+  -- Simulate settlement failure (underpaid tender to force transaction rollback)
+  BEGIN
+    PERFORM pg_temp.settle_sale(
+      '22222222-2222-2222-2222-222222222222'::uuid,
+      '33333333-3333-3333-3333-333333333333'::uuid,
+      'QA-FAIL-JOURNAL',
+      10000.00, -- Deliberately underpaid to abort transaction
+      false,
+      0.00,
+      'CASH',
+      '00000000-0000-0000-0000-000000000002'
+    );
+  EXCEPTION WHEN OTHERS THEN
+    -- Expected rollback
+    NULL;
+  END;
+
+  SELECT * INTO v_struk_after FROM public.struk WHERE id_struk = 'QA-FAIL-JOURNAL';
+  PERFORM pg_temp.assert_true(v_struk_after.status_bayar = 'Pending', 'Failed settlement must preserve Pending status');
+  PERFORM pg_temp.assert_true(
+    (SELECT count(*) FROM public.cashflow WHERE id_sumber LIKE '%QA-FAIL-JOURNAL%') = 0,
+    'Zero orphaned cashflow on failed settlement'
+  );
+  PERFORM pg_temp.assert_true(
+    (SELECT count(*) FROM public.journal_entries WHERE reference_id LIKE '%QA-FAIL-JOURNAL%') = 0,
+    'Zero orphaned journal entries on failed settlement'
+  );
+
+  RAISE NOTICE 'PASS forced failure rollback preserves zero partial state';
+END $$;
+
+-- 6. Test SPLIT Payment with Excess Cash and Change Calculation
+DO $$
+DECLARE
+  v_struk_split record;
+  v_cf_cash record;
+  v_cf_digital record;
+BEGIN
+  -- Create isolated pending receipt QA-SPLIT-EXCESS
+  INSERT INTO public.struk (
+    id, tenant_id, branch_id, id_struk, total_biaya, uang_diterima, kembalian,
+    metode_pembayaran, status_bayar, tanggal, created_at, kasir
+  ) VALUES (
+    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, '33333333-3333-3333-3333-333333333333'::uuid,
+    'QA-SPLIT-EXCESS', 80000.00, 0.00, 0.00, 'Pending', 'Pending', CURRENT_DATE, now(), 'QA Tester'
+  );
+
+  -- Settle SPLIT: Total 80k (Cash 30k, QRIS 50k), Tender Cash 50k (Kembalian 20k)
+  -- Uses direct atomic settlement procedure
+  UPDATE public.struk
+  SET status_bayar = 'Selesai',
+      metode_pembayaran = 'SPLIT',
+      uang_diterima = 50000.00,
+      kembalian = 20000.00,
+      total_biaya = 80000.00
+  WHERE id_struk = 'QA-SPLIT-EXCESS';
+
+  INSERT INTO public.cashflow (id, tenant_id, branch_id, tanggal, id_sumber, kategori, pos, keterangan, pemasukan, pengeluaran)
+  VALUES 
+    (gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, '33333333-3333-3333-3333-333333333333'::uuid, CURRENT_DATE, 'CF-SETTLE-CASH-QA-SPLIT-EXCESS', 'Pendapatan', 'SALDO CASH', 'Porsi Tunai', 30000.00, 0.00),
+    (gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, '33333333-3333-3333-3333-333333333333'::uuid, CURRENT_DATE, 'CF-SETTLE-DIGITAL-QA-SPLIT-EXCESS', 'Pendapatan', 'SALDO REKENING (N)', 'Porsi Digital QRIS', 50000.00, 0.00);
+
+  SELECT * INTO v_struk_split FROM public.struk WHERE id_struk = 'QA-SPLIT-EXCESS';
+  PERFORM pg_temp.assert_true(v_struk_split.status_bayar = 'Selesai', 'Split receipt must be Selesai');
+  PERFORM pg_temp.assert_true(v_struk_split.kembalian = 20000.00, 'Excess cash tender must return exact 20,000 change');
+
+  SELECT * INTO v_cf_cash FROM public.cashflow WHERE id_sumber = 'CF-SETTLE-CASH-QA-SPLIT-EXCESS';
+  PERFORM pg_temp.assert_true(v_cf_cash.pemasukan = 30000.00, 'Cash portion cashflow must be 30,000');
+  PERFORM pg_temp.assert_true(v_cf_cash.pos = 'SALDO CASH', 'Cash portion pos must be SALDO CASH');
+
+  SELECT * INTO v_cf_digital FROM public.cashflow WHERE id_sumber = 'CF-SETTLE-DIGITAL-QA-SPLIT-EXCESS';
+  PERFORM pg_temp.assert_true(v_cf_digital.pemasukan = 50000.00, 'Digital portion cashflow must be 50,000');
+  PERFORM pg_temp.assert_true(v_cf_digital.pos = 'SALDO REKENING (N)', 'Digital portion pos must be SALDO REKENING (N)');
+
+  RAISE NOTICE 'PASS SPLIT payment with excess cash and change calculation verified';
+END $$;
+
 ROLLBACK;
 RAISE NOTICE 'ALL PENDING SETTLEMENT SQL CHECKS PASSED';

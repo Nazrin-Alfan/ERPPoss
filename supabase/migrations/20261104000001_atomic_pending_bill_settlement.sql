@@ -628,6 +628,7 @@ DECLARE
     v_total_cafe NUMERIC(15, 2) := 0.00;
     v_total_cogs NUMERIC(15, 2) := 0.00;
     v_cogs_status TEXT := 'SNAPSHOT_RECORDED';
+    v_cogs_incomplete BOOLEAN := FALSE;
 
     v_journal_id UUID;
     v_coa_kas UUID;
@@ -838,16 +839,15 @@ BEGIN
 
     -- 8. Penanganan Nilai HPP Asal: Membedakan NULL (Historis Tidak Diketahui) vs 0.00 (Biaya Nol)
     IF v_struk.total_cogs IS NULL THEN
-        -- Kasus Data Historis: Periksa catatan mutasi persediaan di barang_keluar
-        -- Menggunakan isolasi tenant ketat dan pencocokan batas token regex tepat (anti partial-collision)
-        SELECT COALESCE(SUM(
-            COALESCE(
-                bk.total_biaya,
-                bk.jumlah_keluar * COALESCE(bk.biaya_satuan, s.harga_beli, s.harga_satuan, 0.00)
-            )
-        ), 0.00) INTO v_total_cogs
+        -- Kasus Data Historis: Periksa catatan mutasi persediaan di barang_keluar HANYA dari snapshot biaya asal
+        -- DILARANG fallback ke harga master terbaru (stok_barang.harga_beli) agar tidak mendistorsi pembukuan historis
+        SELECT 
+            COALESCE(SUM(
+                COALESCE(bk.total_biaya, bk.jumlah_keluar * bk.biaya_satuan)
+            ), 0.00),
+            COALESCE(BOOL_OR(bk.total_biaya IS NULL AND bk.biaya_satuan IS NULL), FALSE)
+        INTO v_total_cogs, v_cogs_incomplete
         FROM public.barang_keluar bk
-        LEFT JOIN public.stok_barang s ON s.tenant_id = p_tenant_id AND s.id = bk.id_bahan_baku
         WHERE bk.tenant_id = p_tenant_id
           AND (
               bk.id_struk = v_id_struk
@@ -860,11 +860,12 @@ BEGIN
               )
           );
 
-        IF v_total_cogs > 0.00 THEN
-            v_cogs_status := 'HISTORICAL_RESOLVED';
-        ELSE
+        IF v_cogs_incomplete IS TRUE OR v_total_cogs IS NULL OR v_total_cogs <= 0.00 THEN
+            -- Jika catatan biaya asal tidak lengkap atau tidak ada, tandai sebagai belum diketahui
             v_cogs_status := 'HISTORICAL_UNKNOWN';
             v_total_cogs := 0.00;
+        ELSE
+            v_cogs_status := 'HISTORICAL_RESOLVED';
         END IF;
     ELSIF v_struk.total_cogs = 0.00 THEN
         v_cogs_status := 'ZERO_COST';
