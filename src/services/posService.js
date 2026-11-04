@@ -60,6 +60,14 @@ export const posService = {
       return new PosCheckoutError(cleanDesc, 'PAYMENT_UNDERPAID', { raw: rawMsg })
     }
 
+    if (rawMsg.includes('CUSTOM_PRICING_UNAUTHORIZED')) {
+      return new PosCheckoutError('Hanya Owner atau Administrator yang berwenang menetapkan tarif custom carwash.', 'CUSTOM_PRICING_UNAUTHORIZED', { raw: rawMsg })
+    }
+
+    if (rawMsg.includes('SURCHARGE_UNAUTHORIZED')) {
+      return new PosCheckoutError('Biaya inap di atas Rp 500.000 memerlukan otorisasi Owner atau Administrator.', 'SURCHARGE_UNAUTHORIZED', { raw: rawMsg })
+    }
+
     if (rawMsg.includes('UNAUTHORIZED')) {
       return new PosCheckoutError('Sesi kasir tidak terotentikasi. Silakan login kembali.', 'UNAUTHORIZED', { raw: rawMsg })
     }
@@ -88,12 +96,26 @@ export const posService = {
       return new PosCheckoutError(cleanDesc, 'CARWASH_PACKAGE_NOT_FOUND', { raw: rawMsg })
     }
 
-    if (rawMsg.includes('CUSTOM_PRICING_UNAUTHORIZED')) {
-      return new PosCheckoutError('Hanya Owner atau Administrator yang berwenang menetapkan tarif custom carwash.', 'CUSTOM_PRICING_UNAUTHORIZED', { raw: rawMsg })
+    if (rawMsg.includes('BILL_ALREADY_SETTLED')) {
+      return new PosCheckoutError('Tagihan ini sudah diselesaikan sebelumnya.', 'BILL_ALREADY_SETTLED', { raw: rawMsg })
+    }
+
+    if (rawMsg.includes('BILL_CANCELLED')) {
+      return new PosCheckoutError('Tagihan ini telah dibatalkan dan tidak dapat dilunasi.', 'BILL_CANCELLED', { raw: rawMsg })
+    }
+
+    if (rawMsg.includes('BILL_NOT_FOUND')) {
+      return new PosCheckoutError('Tagihan tidak ditemukan dalam tenant aktif.', 'BILL_NOT_FOUND', { raw: rawMsg })
+    }
+
+    if (rawMsg.includes('INVALID_SURCHARGE')) {
+      const match = rawMsg.match(/INVALID_SURCHARGE:\s*(.*)/)
+      const cleanDesc = match ? match[1].trim() : 'Biaya inap tidak valid atau melebihi batas wajar operasional.'
+      return new PosCheckoutError(cleanDesc, 'INVALID_SURCHARGE', { raw: rawMsg })
     }
 
     if (rawMsg.includes('IDEMPOTENCY_CONFLICT')) {
-      return new PosCheckoutError('Nomor struk ini telah digunakan pada transaksi lain dengan isi berbeda.', 'IDEMPOTENCY_CONFLICT', { raw: rawMsg })
+      return new PosCheckoutError('Struk ini telah diproses dengan payload transaksi yang berbeda.', 'IDEMPOTENCY_CONFLICT', { raw: rawMsg })
     }
 
     if (rawMsg.includes('FORBIDDEN')) {
@@ -177,6 +199,107 @@ export const posService = {
         struk_payload: normalizedStruk,
         cafe_items: normalizedCafeItems,
         carwash_payload: carwashPayload
+      })
+
+      return {
+        success: true,
+        data: result
+      }
+    } catch (err) {
+      throw this.parseCheckoutError(err)
+    }
+  },
+
+  /**
+   * Executes atomic settlement for pending bills via Backend RPC
+   * Guarantees all-or-nothing execution, server tender calculation, overnight fee isolation,
+   * cashflow recording, and double-entry posting without double stock deduction.
+   */
+  async settlePendingBill({ tenantId, branchId, settlePayload = {} }) {
+    if (!tenantId) {
+      throw new PosCheckoutError('Tenant ID wajib disertakan untuk pelunasan tagihan POS.', 'MISSING_TENANT_ID')
+    }
+
+    const idStruk = settlePayload.id_struk || settlePayload.no_struk || settlePayload.id
+    if (!idStruk) {
+      throw new PosCheckoutError('Nomor struk wajib disertakan untuk pelunasan.', 'MISSING_ID_STRUK')
+    }
+
+    const paymentMethod = String(settlePayload.metode_bayar || 'CASH').toUpperCase().trim()
+    const baseTotal = parseFloat(settlePayload.base_total ?? settlePayload.total_tagihan ?? settlePayload.total ?? 0)
+
+    // Surcharge handling (overnight fee)
+    const surcharge = settlePayload.surcharge || {}
+    const isSurchargeEnabled = Boolean(surcharge.enabled && parseFloat(surcharge.nominal || 0) > 0)
+    const surchargeNominal = isSurchargeEnabled ? parseFloat(surcharge.nominal || 0) : 0
+    const surchargeKeterangan = surcharge.keterangan || 'Biaya Inap Kendaraan (1 Malam)'
+
+    if (isSurchargeEnabled && surchargeNominal > 5000000) {
+      throw new PosCheckoutError('Biaya inap melebihi batas wajar operasional (maksimum Rp 5.000.000).', 'INVALID_SURCHARGE')
+    }
+
+    const finalTotal = baseTotal + surchargeNominal
+
+    let nCash = 0
+    let nQris = 0
+    let nTransfer = 0
+    let tenderTotal = 0
+    let uangDiterima = parseFloat(settlePayload.uang_diterima || 0)
+
+    if (paymentMethod === 'SPLIT') {
+      nCash = parseFloat(settlePayload.nominal_cash ?? settlePayload.split_cash ?? 0)
+      nQris = parseFloat(settlePayload.nominal_qris ?? settlePayload.split_qris ?? 0)
+      nTransfer = parseFloat(settlePayload.nominal_transfer ?? 0)
+      tenderTotal = nCash + nQris + nTransfer
+      if (!uangDiterima) uangDiterima = nCash
+    } else if (['CASH', 'TUNAI'].includes(paymentMethod)) {
+      nCash = finalTotal
+      tenderTotal = uangDiterima || finalTotal
+      if (!uangDiterima) uangDiterima = finalTotal
+    } else if (paymentMethod === 'QRIS') {
+      nQris = finalTotal
+      tenderTotal = finalTotal
+      uangDiterima = finalTotal
+    } else {
+      nTransfer = finalTotal
+      tenderTotal = finalTotal
+      uangDiterima = finalTotal
+    }
+
+    if (tenderTotal < finalTotal) {
+      throw new PosCheckoutError('Pembayaran kurang dari total tagihan.', 'PAYMENT_UNDERPAID')
+    }
+
+    const isCashPayment = ['CASH', 'TUNAI', 'SPLIT'].includes(paymentMethod)
+    const targetCash = paymentMethod === 'SPLIT' ? nCash : finalTotal
+    const kembalian = isCashPayment && uangDiterima > targetCash ? Math.round((uangDiterima - targetCash) * 100) / 100 : 0
+
+    const idempotencyKey = settlePayload.idempotency_key || `${idStruk}:settle:${Date.now()}`
+
+    const normalizedPayload = {
+      ...settlePayload,
+      id_struk: idStruk,
+      metode_bayar: paymentMethod,
+      total_tagihan: finalTotal,
+      nominal_bayar: finalTotal,
+      nominal_cash: nCash,
+      nominal_qris: nQris,
+      nominal_transfer: nTransfer,
+      uang_diterima: uangDiterima,
+      kembalian: kembalian,
+      idempotency_key: idempotencyKey,
+      surcharge: {
+        enabled: isSurchargeEnabled,
+        nominal: surchargeNominal,
+        keterangan: surchargeKeterangan
+      }
+    }
+
+    try {
+      const result = await api.transaksi.settlePendingBill({
+        tenant_id: tenantId,
+        branch_id: branchId || null,
+        settle_payload: normalizedPayload
       })
 
       return {

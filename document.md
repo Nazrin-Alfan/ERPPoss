@@ -4449,7 +4449,40 @@
 
 ---
 
-### [2026-11-03] - AUDIT KEAMANAN LIVE BROWSER & VERIFIKASI ANTI-KEBOCORAN (ZERO-LEAK GATE)
+### [2026-11-04] - TAHAP 0: REKONSILIASI BASELINE & ATURAN AKUNTANSI PEMBAYARAN
+- **Status**: SELESAI, BASELINE RECONCILED & DOCUMENTED
+- **Dokumen Referensi**: `Documentation/payment-current-state.md`
+- **Branch Kerja**: `fix/pending-settlement-atomicity` (berbasis `main` / `cb00973`)
+- **Ruang Lingkup & Temuan Rekonsiliasi**:
+  1. **Status Lingkungan & Baseline**:
+     - HEAD Git: `cb00973` (Merge PR #1: checkout authorization and cash tender fix).
+     - Database Cloud Supabase (`jutidxobdedygmjngmcq`): Migration `20261103023738` (`checkout_tenant_authorization_and_cash_tender`) aktif.
+     - Vitest suite: 62 test files, 369 tests passed (100% Green).
+  2. **Temuan Kritis pada Tagihan Tertunda (Pending Bills)**:
+     - **HybridPOSPage.jsx (`handleSettleBill`)**: Melakukan 4 mutasi client-side langsung tanpa RPC/transaksi atomik. Tidak mencatat `cashflow` dan tidak mencatat `journal_entries` (pendapatan kasir hilang dari pembukuan!). Rentan race condition/klik ganda tanpa row locking server.
+     - **CafePOSPage.jsx (`handleCheckout`)**: Menyelesaikan tagihan meja pending dengan memanggil ulang `fn_execute_checkout`, menyebabkan pengurangan stok BOM berulang (**double stock deduction**) dan duplikasi baris detail `cafe`.
+     - **HybridPOSPage.jsx (`handleCancelBill`)**: Membatalkan struk pending tanpa mengembalikan stok bahan baku yang sudah terpotong saat pesanan dibuat (kebocoran stok).
+  3. **6 Keputusan Akuntansi Sistemik (Revisi Blueprint Disetujui)**:
+     - *Pengurangan Stok*: Dilakukan saat pesanan pertama kali dibuat/disimpan (pada pemanggilan pertama `fn_execute_checkout`). Pelunasan tagihan tertunda (`fn_settle_pending_bill`) **tidak boleh** mengurangi stok untuk kedua kalinya (Zero Double Stock Deduction).
+     - *Pengakuan Pendapatan*: Diakui saat status menjadi `Selesai`/`Lunas`. Pelunasan tertunda mencatat Kredit Pendapatan (4101/4102/4103) dan Debit Kas/Bank (1101/1102), serta HPP (5101) & Persediaan (1103).
+     - *Biaya Pengeluaran Asal (Origin COGS)*: Kolom `total_cogs` dipersistensikan pada `struk` sejak pemanggilan pertama checkout (`fn_execute_checkout`). Saat pelunasan (`fn_settle_pending_bill`), nilai HPP yang dibukukan ke jurnal mengacu pada biaya asal tersebut, mencegah distorsi HPP jika master harga beli berubah saat tagihan tertunda.
+     - *Piutang Usaha*: Tidak membentuk piutang usaha (COA tidak memiliki akun piutang konsumen walk-in; pesanan disimpan sebagai open operational order/WIP).
+     - *Pembayaran Sebagian*: Tidak didukung; pelunasan adalah pelunasan penuh (`PAYMENT_UNDERPAID` ditolak).
+     - *Biaya Tambahan (Surcharge Biaya Inap)*: Dicatat pada kolom tersendiri di `struk` (`biaya_inap`, `catatan_inap`). Di jurnal dibukukan ke COA 4103 (atau 4101 Pendapatan Jasa Layanan Kendaraan jika 4103 tidak ada), **bukan ke pendapatan cafe F&B (4102)** dan tidak mengotori tabel `cafe`.
+     - *Penilaian Persediaan*: Perpetual Standard Costing berbasis biaya standar pada master `stok_barang.harga_beli`.
+  4. **Tahap 1: Pelunasan Tagihan Tertunda Atomik (Branch: `fix/pending-settlement-atomicity`)**:
+     - *Database RPC*: `public.fn_settle_pending_bill` (`supabase/migrations/20261104000001_atomic_pending_bill_settlement.sql`) mengamankan eksekusi all-or-nothing, advisory lock transaksional, SELECT FOR UPDATE, otorisasi ketat caller, verifikasi tender server-side, idempotency replay safe, pencatatan cashflow kasir, dan posting jurnal double-entry otomatis.
+     - *Frontend Integration*:
+       - `src/pages/pos/HybridPOSPage.jsx` mengganti 4 mutasi REST langsung di `handleSettleBill` dengan satu pemanggilan atomik `posService.settlePendingBill`.
+       - `src/pages/pos/CafePOSPage.jsx` memperbaiki alur `settlingBill` di `handleCheckout` agar memanggil `posService.settlePendingBill` alih-alih `executeCheckout`, melenyapkan pemotongan stok berulang.
+       - `src/services/apiAdapter.js` & `src/services/posService.js` menyediakan abstraksi RPC, normalisasi tender, perhitungan kembalian, dan pemetaan error POS terstandar.
+     - *Pengujian TDD & Regresi*:
+       - `src/services/__tests__/pendingSettlement.test.js`: 10 pengujian vitest mencakup validasi parameter, kalkulasi tunai/split, surcharge, idempotency key generation, dan error mapping (100% Green).
+       - Total Vitest Suite: 63 test files, 379 tests passed (100% Green).
+       - Linting & Build: `oxlint` lulus, `vite build` 100% bebas error.
+       - Harness SQL Uji Isolasi: `supabase/tests/pending_settlement_isolation.sql` dan `scripts/test_pending_settlement_isolation.sh` disiapkan untuk verifikasi lingkungan container terisolasi.
+     - *Status Deployment*: Sesuai instruksi pengguna, kode disiapkan di branch terpisah `fix/pending-settlement-atomicity`, **belum di-merge ke main dan belum di-deploy ke produksi**.
+
 - **Status**: SELESAI, 100% LULUS SELURUH GERBANG KUALITAS & KEAMANAN
 - **Target URL**: `https://erpposs.pages.dev` (Cloudflare Pages Production CDN)
 - **Database Engine**: Supabase PostgreSQL Cloud (`jutidxobdedygmjngmcq.supabase.co`)
@@ -4476,7 +4509,48 @@
      - Eksekusi "Keluar Aplikasi" (Logout) dari sidebar langsung menghapus `relaypos_active_tenant_id` dan token autentikasi Supabase dari `localStorage`.
      - Tidak ada sisa sesi atau token yang tertinggal saat kembali ke halaman `/login`.
   7. **Pencegahan Akses Anonim / OWASP Boundary (LULUS)**:
-     - Request anonim dari luar sesi terhadap REST endpoint sensitif (`profiles`, `cashflow`, `chart_of_accounts`, `tenant_licenses`, `struk`) secara tegas ditolak dengan status HTTP `401: Unauthorized`.
+---
+
+## 📅 Audit Log & Implementasi Milestone: Atomic Pending Bill Settlement (Branch: fix/pending-settlement-atomicity)
+
+### 1. Latar Belakang & Identifikasi Cacat Kritis
+Sebelum perbaikan ini, alur pelunasan tagihan tertunda (*pending bill*) di kasir hybrid dan cafe memiliki cacat sistemik:
+1. **Zero Cashflow & Jurnal**: Pelunasan di `HybridPOSPage.jsx` mengeksekusi REST update langsung dari browser ke tabel `struk`, `carwash`, dan `cafe` tanpa mencatat mutasi kas (`cashflow`) dan tanpa menerbitkan jurnal akuntansi (`journal_entries`).
+2. **Double Stock Deduction**: Pelunasan di `CafePOSPage.jsx` memanggil ulang `posService.executeCheckout`, menyebabkan pengurangan bahan baku BOM dipotong untuk kedua kalinya.
+3. **Misklasifikasi Biaya Inap**: Biaya inap kendaraan disisipkan ke tabel `cafe` sebagai menu makanan fiktif, mengotori katalog dan pendapatan cafe (4102).
+4. **HPP Tidak Terkunci**: Perubahan harga master bahan baku mendistorsi nilai HPP pesanan terdahulu saat pelunasan dilakukan.
+
+### 2. Keputusan Arsitektur & Rekonsiliasi Akuntansi
+1. **Perpetual Standard Costing & Snapshot Biaya Asal**:
+   - Kolom `struk.total_cogs` dan `barang_keluar.biaya_satuan` & `total_biaya` mengunci snapshot biaya perolehan saat barang dikeluarkan.
+   - Pembedaan tegas:
+     - `total_cogs IS NULL`: Biaya historis tidak diketahui. Dikelola tanpa memaksakan jurnal sembarangan (`cogs_status: 'HISTORICAL_UNKNOWN'`).
+     - `total_cogs = 0.00`: Biaya nol terverifikasi (layanan jasa carwash). Jurnal HPP/Persediaan sengaja ditiadakan (`cogs_status: 'ZERO_COST'`).
+     - `total_cogs > 0.00`: Snapshot biaya asal dibukukan presisi ke GL (`cogs_status: 'SNAPSHOT_RECORDED'`).
+2. **Kekebalan Perubahan Master Harga**:
+   - Nilai HPP yang dibukukan saat pelunasan sepenuhnya mengacu pada snapshot asal di `struk.total_cogs`. Perubahan `harga_beli` master di kemudian hari tidak mendistorsi HPP pesanan pending.
+3. **Rekonsiliasi Persediaan Pending (Zero Double Deduction)**:
+   - Kuantitas fisik berkurang saat order dibuat (WIP di operasional).
+   - Saat pelunasan (`fn_settle_pending_bill`): **Stok fisik tidak dikurangi lagi**. HPP dibukukan berpasangan dengan kas dan pendapatan.
+4. **Idempotensi Kanonikal & Payload Fingerprint**:
+   - Hashing seluruh input relevan (`tenant_id`, `id_struk`, `branch_id`, `metode_bayar`, `final_total`, `uang_diterima`, `cash`, `qris`, `transfer`, `surcharge_nominal`, `surcharge_keterangan`, `idempotency_key`).
+   - Replay identik menghasilkan `was_replayed: true` tanpa menduplikasi cashflow/jurnal.
+   - Perubahan tender/metode bayar menghasilkan `IDEMPOTENCY_CONFLICT` (40900).
+5. **Validasi & Isolasi Biaya Inap**:
+   - Validasi server-side: Non-negatif, keterangan wajib jika nominal > 0, cap operasional Rp 5.000.000, batasan kasir <= Rp 500.000.
+   - Disimpan di header `struk` (`biaya_inap`, `catatan_inap`). 0 baris masuk ke `cafe`. Dikreditkan ke COA 4103/4101.
+
+### 3. Bukti Verifikasi Database Nyata & Regresi
+- **Skrip Uji Database Langsung**: `scripts/test_real_db_pending_settlement.py`
+  - 7 test suites lulus 100% pada Supabase Cloud (Otorisasi, Origin Cost Snapshot, Surcharge Validation, Master Price Tampering Immunity, Zero Double Stock Deduction, Canonical Idempotency Replay vs Conflict, Historical NULL vs 0.00 COGS, Rollback Atomicity).
+  - Seluruh data uji di-rollback secara transaksional bersih (`TEST_ALL_PASSED_TRANSACTION_ROLLED_BACK`).
+- **Regresi Frontend & Service**:
+  - `checkoutPaymentRegression.test.js`: 4/4 passed (100%).
+  - `pendingSettlement.test.js`: 14/14 passed (100%).
+  - Vitest Global: 63 test files, 383 tests passed (100% Green).
+  - Linter (`oxlint`) & `vite build`: Clean (0 error).
+- **Status Deployment**: Terisolasi pada branch `fix/pending-settlement-atomicity`. Belum di-merge ke `main` dan belum di-deploy ke produksi.
+
 
 
 

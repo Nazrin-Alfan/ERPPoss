@@ -244,6 +244,54 @@ export const api = {
       }
     },
 
+    async settlePendingBill({ tenant_id, branch_id, settle_payload }) {
+      if (isCloudBackend) {
+        const { data, error } = await supabase.rpc('fn_settle_pending_bill', {
+          p_tenant_id: tenant_id,
+          p_branch_id: branch_id || null,
+          p_settle_payload: settle_payload
+        })
+        if (error) throw error
+        return data
+      } else {
+        const { data, error } = await supabase.from('struk').update({
+          status_bayar: 'Selesai',
+          status_pembayaran: 'Selesai',
+          metode_bayar: settle_payload.metode_bayar || 'CASH',
+          metode_pembayaran: settle_payload.metode_bayar || 'CASH',
+          total_tagihan: settle_payload.nominal_bayar,
+          total: settle_payload.nominal_bayar,
+          total_biaya: settle_payload.nominal_bayar,
+          nominal_bayar: settle_payload.nominal_bayar,
+          bayar: settle_payload.nominal_bayar,
+          nominal_cash: settle_payload.nominal_cash || 0,
+          nominal_qris: settle_payload.nominal_qris || 0,
+          nominal_transfer: settle_payload.nominal_transfer || 0,
+          uang_diterima: settle_payload.uang_diterima || settle_payload.nominal_bayar,
+          kembalian: settle_payload.kembalian || 0,
+          biaya_inap: settle_payload.surcharge?.enabled ? (settle_payload.surcharge?.nominal || 0) : 0,
+          catatan_inap: settle_payload.surcharge?.enabled ? settle_payload.surcharge?.keterangan : null,
+          waktu_dibayar: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }).eq('id_struk', settle_payload.id_struk)
+        if (error) throw error
+
+        await supabase.from('carwash').update({ status: 'Selesai' }).eq('id_struk', settle_payload.id_struk)
+        await supabase.from('cafe').update({ status: 'Selesai' }).eq('id_struk', settle_payload.id_struk)
+
+        return {
+          success: true,
+          status: 'COMPLETED',
+          id_struk: settle_payload.id_struk,
+          total_tagihan: settle_payload.nominal_bayar,
+          nominal_bayar: settle_payload.nominal_bayar,
+          uang_diterima: settle_payload.uang_diterima,
+          kembalian: settle_payload.kembalian || 0,
+          was_replayed: false
+        }
+      }
+    },
+
     async getCarwashQueue(tanggal) {
       let query = supabase.from('carwash').select('*').order('created_at', { ascending: false })
       if (tanggal) query = query.eq('tanggal', tanggal)

@@ -354,14 +354,34 @@ export const CafePOSPage = () => {
         created_at: new Date().toISOString()
       }))
 
-      // 3. Eksekusi Atomic Server-side Checkout (termasuk pengurangan stok BOM otomatis)
-      await posService.executeCheckout({
-        tenantId: effectiveTenantId,
-        branchId: null,
-        strukPayload,
-        cafeItems: itemsPayload,
-        carwashPayload: null
-      })
+      // 3. Eksekusi Atomic Server-side Checkout / Settlement
+      if (settlingBill) {
+        // Pelunasan tagihan meja terbuka atomik (mencegah pemotongan stok ganda & duplikasi rincian)
+        await posService.settlePendingBill({
+          tenantId: effectiveTenantId,
+          branchId: null,
+          settlePayload: {
+            id_struk: settlingBill.id_struk,
+            metode_bayar: selectedPayment,
+            base_total: grandTotal,
+            total_tagihan: grandTotal,
+            nominal_bayar: grandTotal,
+            uang_diterima: selectedPayment === 'CASH' ? (Number(nominalBayar) || grandTotal) : grandTotal,
+            nominal_cash: selectedPayment === 'CASH' ? grandTotal : 0,
+            nominal_qris: selectedPayment !== 'CASH' ? grandTotal : 0,
+            kembalian: kembalian
+          }
+        })
+      } else {
+        // Transaksi baru langsung lunas (termasuk pengurangan stok BOM otomatis)
+        await posService.executeCheckout({
+          tenantId: effectiveTenantId,
+          branchId: null,
+          strukPayload,
+          cafeItems: itemsPayload,
+          carwashPayload: null
+        })
+      }
 
       // 4. Siapkan Data Struk Cetak Thermal
       const receiptConfig = getReceiptConfig()
