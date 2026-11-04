@@ -242,22 +242,23 @@ Untuk mencegah klik ganda dan inkonsistensi jaringan, pelunasan menerapkan proto
 1. **Persistensi Data**:
    - `struk.idempotency_key`: Menyimpan UUID atau token idempotensi yang dikirim klien (fallback: `id_struk || ':settle'`).
    - `struk.settle_hash`: Menyimpan hash kanonikal seluruh parameter transaksi.
-2. **Kanonikal Fingerprint Formula**:
+2. **Kanonikal Fingerprint Formula (Representasi Terstruktur Canonical JSONB)**:
    ```sql
-   v_current_settle_fingerprint := md5(
-       p_tenant_id::text || '|' ||
-       v_id_struk || '|' ||
-       COALESCE(v_effective_branch_id::text, '') || '|' ||
-       v_metode_bayar || '|' ||
-       ROUND(v_final_total, 2)::text || '|' ||
-       ROUND(v_uang_diterima, 2)::text || '|' ||
-       ROUND(v_nominal_cash, 2)::text || '|' ||
-       ROUND(v_nominal_qris, 2)::text || '|' ||
-       ROUND(v_nominal_transfer, 2)::text || '|' ||
-       ROUND(v_surcharge_nominal, 2)::text || '|' ||
-       COALESCE(v_surcharge_keterangan, '') || '|' ||
-       v_idempotency_key
+   v_canonical_settle_payload := jsonb_build_object(
+       'tenant_id', p_tenant_id,
+       'id_struk', v_id_struk,
+       'branch_id', v_effective_branch_id,
+       'metode_bayar', v_metode_bayar,
+       'final_total', ROUND(v_final_total, 2),
+       'uang_diterima', ROUND(v_uang_diterima, 2),
+       'nominal_cash', ROUND(v_nominal_cash, 2),
+       'nominal_qris', ROUND(v_nominal_qris, 2),
+       'nominal_transfer', ROUND(v_nominal_transfer, 2),
+       'surcharge_nominal', ROUND(v_surcharge_nominal, 2),
+       'surcharge_keterangan', COALESCE(v_surcharge_keterangan, ''),
+       'idempotency_key', v_idempotency_key
    );
+   v_current_settle_fingerprint := md5(v_canonical_settle_payload::text);
    ```
 3. **Penegakan Aturan Idempotensi**:
    - Jika struk telah berstatus `Selesai`:
@@ -298,7 +299,27 @@ Untuk mencegah klik ganda dan inkonsistensi jaringan, pelunasan menerapkan proto
    - Test 6B (Data Biaya Nol 0.00 COGS): `[PASS]` Berhasil diselesaikan dengan status `ZERO_COST` tanpa baris HPP nol.
    - Test 7 (Rollback Atomicity): `[PASS]` Kegagalan tender kurang membatalkan seluruh mutasi dan membiarkan status tetap Pending.
    - Status Rollback Akhir: Seluruh data uji di-rollback secara transaksional bersih (`TEST_ALL_PASSED_TRANSACTION_ROLLED_BACK`).
-2. **Pengujian Regresi Checkout Lama**:
+
+2. **Pengujian Konkurensi 2 Koneksi Tumpang Tindih (`scripts/test_real_db_concurrency_overlap.py`)**:
+   - **Test 2A (Payload Sama)**: `[PASS]` Koneksi 1 sukses melunasi bill (`COMPLETED`), Koneksi 2 mendeteksi selesai dan mengembalikan `was_replayed=true`. Database mencatat tepat 1 baris cashflow dan 1 journal entry (0 duplikasi).
+   - **Test 2B (Payload Berbeda)**: `[PASS]` Koneksi 1 sukses melunasi tunai, Koneksi 2 (tender berbeda) secara tegas ditolak dengan `IDEMPOTENCY_CONFLICT` (kode `40900`). Database mencatat tepat 1 transaksi tanpa korupsi data.
+
+3. **Pengujian Pembayaran SPLIT & Kegagalan Jurnal (`scripts/test_real_db_forced_failure_and_split.py`)**:
+   - **Alokasi SPLIT**: `[PASS]` Terbukti matematis dan akuntansi:
+     - Cashflow: 1 entri Rp 20.000 ke `SALDO CASH`, 1 entri Rp 30.000 ke `SALDO REKENING (N)`.
+     - GL: Debit 1101 (Kas) Rp 20.000, Debit 1102 (Bank) Rp 30.000, Kredit 4101 (Carwash) Rp 30.000, Kredit 4102 (Cafe) Rp 20.000. Total Debit = Total Kredit = Rp 50.000 (100% Berimbang).
+   - **Forced Failure Rollback**: `[PASS]` Snapshot tabel `struk`, `cashflow`, `journal_entries`, `carwash`, `cafe` sebelum dan sesudah kegagalan pelunasan 100% identik (Zero Partial State).
+
+4. **Pengujian Regresi Checkout Database (`scripts/test_real_db_checkout_regression.py`)**:
+   - `[PASS]` Test 1 (Missing Auth): `UNAUTHORIZED`.
+   - `[PASS]` Test 2 (Cross-Tenant): `TENANT_FORBIDDEN`.
+   - `[PASS]` Test 3 (Cash Underpaid): `PAYMENT_UNDERPAID`.
+   - `[PASS]` Test 4 (Insufficient Stock): Gagal dan me-rollback tanpa menyimpan struk.
+   - `[PASS]` Test 5 (Valid Checkout): Tender Rp 50k, Tagihan Rp 36k, Kembalian Rp 14k, Stok terpotong 0.040 kg, `barang_keluar` dan `struk.total_cogs` mencatat snapshot Rp 2.000, Cashflow mencatat penjualan bersih Rp 36k, Jurnal berimbang Debit=Kredit=Rp 38k.
+   - `[PASS]` Test 6 (Idempotent Replay): Mengembalikan `ALREADY_COMPLETED` dengan data kembalian/tender utuh, 0 duplikasi cashflow/stok.
+   - Rollback transaksional: `REGRESSION_ALL_PASSED_TRANSACTION_ROLLED_BACK`.
+
+5. **Pengujian Regresi Unit & E2E**:
    - `src/services/__tests__/checkoutPaymentRegression.test.js`: `4 passed` (100%).
    - `src/services/__tests__/pendingSettlement.test.js`: `14 passed` (100%).
    - Seluruh test suite lokal: `63 test files passed, 383 passed` (100% Green).

@@ -621,6 +621,7 @@ DECLARE
     v_struk RECORD;
     v_advisory_key BIGINT;
     v_idempotency_key TEXT;
+    v_canonical_settle_payload JSONB;
     v_current_settle_fingerprint TEXT;
 
     v_total_carwash NUMERIC(15, 2) := 0.00;
@@ -787,21 +788,22 @@ BEGIN
         v_kembalian := 0.00;
     END IF;
 
-    -- Hitung Fingerprint Seluruh Input Relevan Secara Kanonikal
-    v_current_settle_fingerprint := md5(
-        p_tenant_id::text || '|' ||
-        v_id_struk || '|' ||
-        COALESCE(v_effective_branch_id::text, '') || '|' ||
-        v_metode_bayar || '|' ||
-        ROUND(v_final_total, 2)::text || '|' ||
-        ROUND(v_uang_diterima, 2)::text || '|' ||
-        ROUND(v_nominal_cash, 2)::text || '|' ||
-        ROUND(v_nominal_qris, 2)::text || '|' ||
-        ROUND(v_nominal_transfer, 2)::text || '|' ||
-        ROUND(v_surcharge_nominal, 2)::text || '|' ||
-        COALESCE(v_surcharge_keterangan, '') || '|' ||
-        v_idempotency_key
+    -- Hitung Fingerprint Seluruh Input Relevan Secara Terstruktur (Canonical JSONB)
+    v_canonical_settle_payload := jsonb_build_object(
+        'tenant_id', p_tenant_id,
+        'id_struk', v_id_struk,
+        'branch_id', v_effective_branch_id,
+        'metode_bayar', v_metode_bayar,
+        'final_total', ROUND(v_final_total, 2),
+        'uang_diterima', ROUND(v_uang_diterima, 2),
+        'nominal_cash', ROUND(v_nominal_cash, 2),
+        'nominal_qris', ROUND(v_nominal_qris, 2),
+        'nominal_transfer', ROUND(v_nominal_transfer, 2),
+        'surcharge_nominal', ROUND(v_surcharge_nominal, 2),
+        'surcharge_keterangan', COALESCE(v_surcharge_keterangan, ''),
+        'idempotency_key', v_idempotency_key
     );
+    v_current_settle_fingerprint := md5(v_canonical_settle_payload::text);
 
     -- 6. Evaluasi Status & Idempotensi
     IF v_struk.status_bayar IN ('Selesai', 'Paid', 'Lunas') THEN
@@ -839,7 +841,7 @@ BEGIN
         -- Kasus Data Historis: Periksa apakah ada catatan mutasi persediaan di barang_keluar
         SELECT COALESCE(SUM(total_biaya), 0.00) INTO v_total_cogs
         FROM public.barang_keluar
-        WHERE tenant_id = p_tenant_id AND (id_struk = v_id_struk OR keterangan LIKE '%Struk: ' || v_id_struk || '%');
+        WHERE tenant_id = p_tenant_id AND (id_struk = v_id_struk OR keterangan LIKE '%Struk: ' || v_id_struk || '%' OR alasan LIKE '%Struk: ' || v_id_struk || '%');
 
         IF v_total_cogs > 0.00 THEN
             v_cogs_status := 'HISTORICAL_RESOLVED';
@@ -889,23 +891,52 @@ BEGIN
     SET status = 'Selesai'
     WHERE tenant_id = p_tenant_id AND id_struk = v_id_struk;
 
-    -- 11. Pencatatan Mutasi Kas Masuk ke Buku Kas (cashflow)
-    v_pos := CASE
-        WHEN v_metode_bayar IN ('CASH', 'TUNAI') THEN 'SALDO CASH'
-        WHEN v_metode_bayar = 'SPLIT' AND v_nominal_cash > 0 AND (v_nominal_qris + v_nominal_transfer) = 0 THEN 'SALDO CASH'
-        ELSE 'SALDO REKENING (N)'
-    END;
+    -- 11. Pencatatan Mutasi Kas Masuk ke Buku Kas (cashflow) Terstruktur
+    IF v_metode_bayar = 'SPLIT' THEN
+        -- Alokasi Tunai ke SALDO CASH
+        IF v_nominal_cash > 0.00 THEN
+            INSERT INTO public.cashflow (
+                id, tenant_id, branch_id, id_sumber, tanggal,
+                keterangan_transaksi, jenis, kategori, pemasukan, pengeluaran,
+                pos, apakah_stok, created_at
+            ) VALUES (
+                gen_random_uuid(), p_tenant_id, v_effective_branch_id, 'CF-SETTLE-CASH-' || v_id_struk, CURRENT_DATE,
+                'Pelunasan POS (Tunai Split) Struk: ' || v_id_struk || ' (' || COALESCE(v_struk.nama_pelanggan, 'Umum') || ')',
+                'Pemasukan', 'Pendapatan Kasir', v_nominal_cash, 0.00,
+                'SALDO CASH', FALSE, NOW()
+            );
+        END IF;
 
-    INSERT INTO public.cashflow (
-        id, tenant_id, branch_id, id_sumber, tanggal,
-        keterangan_transaksi, jenis, kategori, pemasukan, pengeluaran,
-        pos, apakah_stok, created_at
-    ) VALUES (
-        gen_random_uuid(), p_tenant_id, v_effective_branch_id, 'CF-SETTLE-' || v_id_struk, CURRENT_DATE,
-        'Pelunasan POS Struk: ' || v_id_struk || ' (' || COALESCE(v_struk.nama_pelanggan, 'Umum') || ')',
-        'Pemasukan', 'Pendapatan Kasir', v_final_total, 0.00,
-        v_pos, FALSE, NOW()
-    );
+        -- Alokasi Digital (QRIS / Transfer) ke SALDO REKENING (N)
+        IF (v_nominal_qris + v_nominal_transfer) > 0.00 THEN
+            INSERT INTO public.cashflow (
+                id, tenant_id, branch_id, id_sumber, tanggal,
+                keterangan_transaksi, jenis, kategori, pemasukan, pengeluaran,
+                pos, apakah_stok, created_at
+            ) VALUES (
+                gen_random_uuid(), p_tenant_id, v_effective_branch_id, 'CF-SETTLE-DIGITAL-' || v_id_struk, CURRENT_DATE,
+                'Pelunasan POS (Digital Split) Struk: ' || v_id_struk || ' (' || COALESCE(v_struk.nama_pelanggan, 'Umum') || ')',
+                'Pemasukan', 'Pendapatan Kasir', (v_nominal_qris + v_nominal_transfer), 0.00,
+                'SALDO REKENING (N)', FALSE, NOW()
+            );
+        END IF;
+    ELSE
+        v_pos := CASE
+            WHEN v_metode_bayar IN ('CASH', 'TUNAI') THEN 'SALDO CASH'
+            ELSE 'SALDO REKENING (N)'
+        END;
+
+        INSERT INTO public.cashflow (
+            id, tenant_id, branch_id, id_sumber, tanggal,
+            keterangan_transaksi, jenis, kategori, pemasukan, pengeluaran,
+            pos, apakah_stok, created_at
+        ) VALUES (
+            gen_random_uuid(), p_tenant_id, v_effective_branch_id, 'CF-SETTLE-' || v_id_struk, CURRENT_DATE,
+            'Pelunasan POS Struk: ' || v_id_struk || ' (' || COALESCE(v_struk.nama_pelanggan, 'Umum') || ')',
+            'Pemasukan', 'Pendapatan Kasir', v_final_total, 0.00,
+            v_pos, FALSE, NOW()
+        );
+    END IF;
 
     -- 12. Double-Entry General Ledger Auto-Posting
     SELECT id INTO v_coa_kas FROM public.chart_of_accounts

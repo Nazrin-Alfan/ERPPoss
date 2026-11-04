@@ -4541,9 +4541,12 @@ Sebelum perbaikan ini, alur pelunasan tagihan tertunda (*pending bill*) di kasir
    - Disimpan di header `struk` (`biaya_inap`, `catatan_inap`). 0 baris masuk ke `cafe`. Dikreditkan ke COA 4103/4101.
 
 ### 3. Bukti Verifikasi Database Nyata & Regresi
-- **Skrip Uji Database Langsung**: `scripts/test_real_db_pending_settlement.py`
-  - 7 test suites lulus 100% pada Supabase Cloud (Otorisasi, Origin Cost Snapshot, Surcharge Validation, Master Price Tampering Immunity, Zero Double Stock Deduction, Canonical Idempotency Replay vs Conflict, Historical NULL vs 0.00 COGS, Rollback Atomicity).
-  - Seluruh data uji di-rollback secara transaksional bersih (`TEST_ALL_PASSED_TRANSACTION_ROLLED_BACK`).
+- **Skrip Uji Database Langsung**:
+  1. `scripts/test_real_db_pending_settlement.py`: 7 test suites lulus 100% pada Supabase Cloud (Otorisasi, Origin Cost Snapshot, Surcharge Validation, Master Price Tampering Immunity, Zero Double Stock Deduction, Canonical Idempotency Replay vs Conflict, Historical NULL vs 0.00 COGS, Rollback Atomicity).
+  2. `scripts/test_real_db_concurrency_overlap.py`: Uji konkurensi 2 koneksi simultan lulus (Test 2A: identical payload `was_replayed: true` zero duplicate, Test 2B: conflicting payload `IDEMPOTENCY_CONFLICT` 40900).
+  3. `scripts/test_real_db_forced_failure_and_split.py`: Alokasi SPLIT terbukti matematis (Cashflow Cash & Bank terpisah presisi, Debit = Kredit GL berimbang), dan perbandingan snapshot sebelum/sesudah kegagalan pelunasan terbukti 100% identik tanpa partial state.
+  4. `scripts/test_real_db_checkout_regression.py`: 6 test suite regresi checkout langsung pada database lulus 100% (Auth, Tenant, Underpaid, Stock Rollback, Valid Checkout with Origin Snapshot, Idempotent Replay).
+  - Seluruh pengujian cloud menggunakan transaksi terisolasi atau di-rollback secara transaksional bersih (`TEST_ALL_PASSED_TRANSACTION_ROLLED_BACK` / `REGRESSION_ALL_PASSED_TRANSACTION_ROLLED_BACK`).
 - **Regresi Frontend & Service**:
   - `checkoutPaymentRegression.test.js`: 4/4 passed (100%).
   - `pendingSettlement.test.js`: 14/14 passed (100%).
