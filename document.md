@@ -4429,6 +4429,55 @@
   - `Cloudflare Pages Live`: **Aktif dan terverifikasi live di https://erpposs.pages.dev**.
   - `Browser E2E Execution`: **Sukses 100% dari Login -> Katalog Stok -> Kasir POS -> Pembayaran -> Rekonsiliasi Buku Besar & Laporan Keuangan**.
 
+---
+
+### [2026-11-03] - INTEGRASI DAN VERIFIKASI CABANG FIX/CHECKOUT-TENANT-ISOLATION (COMMIT 3cc1845)
+- **Status**: SELESAI, BERHASIL DIGABUNGKAN (MERGED) & TERVERIFIKASI PENUH DI LIVE
+- **Commit Tergabung**: `3cc1845` (*Merge checkout tenant authorization and cash tender fix*, mencakup commit `4a44fdf`)
+- **Hasil Verifikasi Multi-Lapisan**:
+  1. **Git & Repository Sync**:
+     - Branch `main` telah ditarik dan sinkron dengan `origin/main` (`3cc1845`).
+     - Seluruh unit test regresi kasir dan riwayat transaksi (`checkoutPaymentRegression.test.js`, `posHistory.test.js`) lulus **100% Green (62 files, 369/369 tests passed)**.
+  2. **Supabase Cloud Database**:
+     - Migrasi forward `20261103003944_checkout_tenant_authorization_and_cash_tender.sql` terbukti telah aktif di instance PostgreSQL Supabase Cloud (`jutidxobdedygmjngmcq.supabase.co`).
+     - Kolom `struk.uang_diterima` telah terpasang dengan tipe data `numeric`.
+     - Fungsi RPC `fn_execute_checkout` memverifikasi otorisasi `auth.uid()` secara ketat, menolak panggilan anonim (`42501: UNAUTHORIZED`), menolak pengguna nonaktif (`42501: USER_INACTIVE`), menolak akses transaksi lintas tenant (`42501: TENANT_FORBIDDEN`), dan menolak transaksi cabang yang tidak diizinkan (`42501: BRANCH_FORBIDDEN`).
+  3. **Live Cloudflare Pages CDN (`erpposs.pages.dev`)**:
+     - Bundle produksi terbaru aktif: `/assets/index-D0Br7svj.js`.
+     - Indikator versi di sidebar UI live terverifikasi menampilkan: **`RelayPOS Cloud build 3cc1845`**.
+     - Alur riwayat transaksi kasir dan reprint struk kini membaca `uang_diterima` dan `kembalian` yang divalidasi server tanpa melipatgandakan dana non-tunai.
+
+---
+
+### [2026-11-03] - AUDIT KEAMANAN LIVE BROWSER & VERIFIKASI ANTI-KEBOCORAN (ZERO-LEAK GATE)
+- **Status**: SELESAI, 100% LULUS SELURUH GERBANG KUALITAS & KEAMANAN
+- **Target URL**: `https://erpposs.pages.dev` (Cloudflare Pages Production CDN)
+- **Database Engine**: Supabase PostgreSQL Cloud (`jutidxobdedygmjngmcq.supabase.co`)
+- **Build Hash**: `3828c2d` (`RelayPOS Cloud build 3828c2d`)
+- **Tenant Uji Coba**: `qa_audit_live_2026@relaypos.com` (Tenant ID: `525eb257-9a12-4e72-9ba0-251ab789624b`)
+- **Ruang Lingkup & Hasil Verifikasi**:
+  1. **Audit Bundle & PII Leakage (LULUS)**:
+     - Bundle JavaScript klien (`assets/index-zC0Lgc5h.js`) bebas dari `service_role` key, token admin, atau dump database pelanggan riil.
+     - Fixture default menggunakan entitas sintetis aman tanpa memuat data pribadi (plat kendaraan asli, nomor HP riil).
+  2. **Registrasi Tenant Baru & Auto-Provisioning (LULUS)**:
+     - Registrasi Owner baru via UI live berhasil menerbitkan Tenant ID `525eb257-9a12-4e72-9ba0-251ab789624b`.
+     - Lisensi trial 14 hari aktif otomatis hingga `2026-11-17 00:21:15` (`ACTIVE`).
+     - Inisialisasi otomatis menghasilkan 12 Chart of Accounts (COA) standar dan 1 cabang utama (`PST`).
+  3. **Isolasi Multi-Tenant & Anti-Mock Dashboard (LULUS)**:
+     - Dashboard awal menampilkan status kosong murni (`Rp 0`, 0 transaksi) tanpa array fallback fiktif dan tanpa kebocoran data dari tenant lain.
+  4. **Alur Transaksi Kasir POS & Pemotongan Resep BOM (LULUS)**:
+     - Checkout item `Kopi Susu Aren` (Rp 18.000) tunai (CASH) sukses membentuk struk transaksi `6db28973-e556-484d-bf04-31a6f186cc3f`.
+     - Pemotongan bahan baku BOM tercatat atomik di `barang_keluar`: Biji Kopi (0.02 kg) dan Susu Segar UHT (0.15 liter) dengan alasan `POS_SALE`.
+  5. **Rekonsiliasi Buku Kas & Jurnal Double-Entry (LULUS)**:
+     - Mutasi buku kas `cashflow` mencatat penerimaan `+ Rp 18.000` pada pos `SALDO CASH`.
+     - Jurnal akuntansi `JE-POS-6db28973-e556-484d-bf04-31a6f186cc3f` terposting dengan status `POSTED` (Debit 1101 Kas Tunai Rp 18.000, Kredit 4102 Pendapatan Cafe Rp 18.000) — seimbang 100%.
+     - Laporan Akuntansi pada tab General Ledger menampilkan badge hijau `Buku Besar: 100% Seimbang (Debit = Kredit)`.
+  6. **Pembersihan Storage Sesi Bersama / Shared Device Cleanliness (LULUS)**:
+     - Eksekusi "Keluar Aplikasi" (Logout) dari sidebar langsung menghapus `relaypos_active_tenant_id` dan token autentikasi Supabase dari `localStorage`.
+     - Tidak ada sisa sesi atau token yang tertinggal saat kembali ke halaman `/login`.
+  7. **Pencegahan Akses Anonim / OWASP Boundary (LULUS)**:
+     - Request anonim dari luar sesi terhadap REST endpoint sensitif (`profiles`, `cashflow`, `chart_of_accounts`, `tenant_licenses`, `struk`) secara tegas ditolak dengan status HTTP `401: Unauthorized`.
+
 
 
 
