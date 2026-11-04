@@ -838,10 +838,27 @@ BEGIN
 
     -- 8. Penanganan Nilai HPP Asal: Membedakan NULL (Historis Tidak Diketahui) vs 0.00 (Biaya Nol)
     IF v_struk.total_cogs IS NULL THEN
-        -- Kasus Data Historis: Periksa apakah ada catatan mutasi persediaan di barang_keluar
-        SELECT COALESCE(SUM(total_biaya), 0.00) INTO v_total_cogs
-        FROM public.barang_keluar
-        WHERE tenant_id = p_tenant_id AND (id_struk = v_id_struk OR keterangan LIKE '%Struk: ' || v_id_struk || '%' OR alasan LIKE '%Struk: ' || v_id_struk || '%');
+        -- Kasus Data Historis: Periksa catatan mutasi persediaan di barang_keluar
+        -- Menggunakan isolasi tenant ketat dan pencocokan batas token regex tepat (anti partial-collision)
+        SELECT COALESCE(SUM(
+            COALESCE(
+                bk.total_biaya,
+                bk.jumlah_keluar * COALESCE(bk.biaya_satuan, s.harga_beli, s.harga_satuan, 0.00)
+            )
+        ), 0.00) INTO v_total_cogs
+        FROM public.barang_keluar bk
+        LEFT JOIN public.stok_barang s ON s.tenant_id = p_tenant_id AND s.id = bk.id_bahan_baku
+        WHERE bk.tenant_id = p_tenant_id
+          AND (
+              bk.id_struk = v_id_struk
+              OR (
+                  v_id_struk IS NOT NULL AND v_id_struk <> '' AND (
+                      bk.keterangan ~* ('(^|[^a-zA-Z0-9_-])Struk:\s*' || regexp_replace(v_id_struk, '([^a-zA-Z0-9])', '\\\1', 'g') || '($|[^a-zA-Z0-9_-])')
+                      OR
+                      bk.alasan ~* ('(^|[^a-zA-Z0-9_-])Struk:\s*' || regexp_replace(v_id_struk, '([^a-zA-Z0-9])', '\\\1', 'g') || '($|[^a-zA-Z0-9_-])')
+                  )
+              )
+          );
 
         IF v_total_cogs > 0.00 THEN
             v_cogs_status := 'HISTORICAL_RESOLVED';
