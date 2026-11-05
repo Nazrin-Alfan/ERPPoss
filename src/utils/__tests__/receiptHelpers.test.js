@@ -145,4 +145,41 @@ describe('Receipt Generator & Thermal Printing Helpers', () => {
     // Footer catatan kaki wajib terkunci sebagai media branding RelayPOS
     expect(customOrderReceipt.footerText).toBe('Powered by RelayPOS • Cloud Enterprise System')
   })
+
+  it('7. should accurately format Cafe POS settlement receipt without missing fields or fallback to ORD-00000000', () => {
+    const cafeSettledOrder = {
+      id_struk: 'BILL-889900',
+      receiptNumber: 'BILL-889900',
+      tanggal: '2026-11-05',
+      jam: '14:30:00',
+      kasir: 'KASIR CAFE',
+      no_meja: 'Meja 05',
+      nama_pelanggan: 'Pelanggan Meja 05',
+      cafe: [
+        { nama_menu: 'Espresso', qty: 2, harga_satuan: 18000, subtotal: 36000, catatan: 'Less sugar' },
+        { nama_menu: 'Croissant', qty: 1, harga_satuan: 25000, subtotal: 25000, catatan: '' }
+      ],
+      subtotal: 61000,
+      diskon_cafe: 10000,
+      total_tagihan: 51000,
+      metode_bayar: 'QRIS',
+      uang_diterima: 51000,
+      kembalian: 0,
+      tenantName: 'RelayPOS Cafe Kemang'
+    }
+
+    const receipt = buildPaymentReceiptData(cafeSettledOrder)
+
+    expect(receipt.orderNumber).not.toBe('ORD-00000000')
+    expect(receipt.orderNumber).toBe('ORD-BILL-889')
+    expect(receipt.total).toBe(51000)
+    expect(receipt.totalTagihan).toBe(51000)
+    expect(receipt.items.length).toBe(2)
+    expect(receipt.items[0].name).toBe('Espresso')
+    expect(receipt.items[0].qty).toBe(2)
+    expect(receipt.items[1].name).toBe('Croissant')
+    expect(receipt.metodeBayar).toBe('QRIS')
+    expect(receipt.isPaid).toBe(true)
+    expect(receipt.statusBayar).toBe('LUNAS')
+  })
 })

@@ -1380,50 +1380,32 @@ const CafePOS = () => {
         nCash = finalTotal
       }
 
-      // 1. Simpan item biaya inap / cas tambahan jika ada
-      if (surchargeAmount > 0) {
-        await supabase.from('cafe').insert({
-          id_detail: generateUUID(),
+      // Eksekusi Pelunasan Atomik Server-Side via posService (RPC fn_settle_pending_bill)
+      // Menjamin atomisitas, pencatatan cashflow, posting jurnal, dan isolasi biaya inap tanpa pemotongan stok ganda
+      const settleResponse = await posService.settlePendingBill({
+        tenantId: effectiveTenantId,
+        branchId: activeBranchId || null,
+        settlePayload: {
           id_struk: settlingBill.id,
-          tenant_id: effectiveTenantId,
-          tanggal: todayDate,
-          jam: currentTime,
-          nama_menu: surchargeDescription || 'Biaya Inap Kendaraan',
-          qty: 1,
-          harga_satuan: surchargeAmount,
-          subtotal: surchargeAmount,
-          status: 'Selesai'
-        })
-      }
-
-      // 2. Update status struk menjadi lunas dengan total tagihan yang telah disesuaikan
-      const { error: strukErr } = await supabase
-        .from('struk')
-        .update({
-          status_bayar: 'Selesai',
           metode_bayar: settlePaymentMethod,
+          base_total: settlingBill.total_harga,
           total_tagihan: finalTotal,
+          nominal_bayar: finalTotal,
           nominal_cash: nCash,
           nominal_qris: nQris,
-          waktu_dibayar: new Date().toISOString()
-        })
-        .eq('id_struk', settlingBill.id)
+          uang_diterima: parseFloat(settleCashReceived) || (settleMethodUpper === 'SPLIT' ? nCash : finalTotal),
+          idempotency_key: settlingBill.attemptKey,
+          surcharge: {
+            enabled: settleSurcharge.enabled && surchargeAmount > 0,
+            nominal: surchargeAmount,
+            keterangan: surchargeDescription
+          }
+        }
+      })
 
-      if (strukErr) throw strukErr
-
-      // Update status carwash jika ada
-      await supabase
-        .from('carwash')
-        .update({ status: 'Selesai' })
-        .eq('id_struk', settlingBill.id)
-
-      // Update status cafe jika ada
-      await supabase
-        .from('cafe')
-        .update({ status: 'Selesai' })
-        .eq('id_struk', settlingBill.id)
-
-      const finalKembalian = (settleCashReceived && targetCashToPay > 0) ? Math.max(0, parseFloat(settleCashReceived) - targetCashToPay) : 0
+      const finalKembalian = settleResponse.data?.kembalian !== undefined
+        ? parseFloat(settleResponse.data.kembalian)
+        : ((settleCashReceived && targetCashToPay > 0) ? Math.max(0, parseFloat(settleCashReceived) - targetCashToPay) : 0)
 
       // Siapkan payload struk bukti pembayaran untuk kasir
       const settledReceiptData = buildPaymentReceiptData({
@@ -2801,7 +2783,7 @@ const CafePOS = () => {
                           </button>
                           <button
                             onClick={() => {
-                              setSettlingBill(bill)
+                              setSettlingBill({ ...bill, attemptKey: `${bill.id}:settle:${effectiveTenantId}` })
                               setSettlePaymentMethod(paymentMethods[0]?.nama || 'CASH')
                               setSettleCashReceived('')
                               setSettleSurcharge({ enabled: false, nominal: 50000, keterangan: 'Biaya Inap Kendaraan (1 Malam)' })
@@ -3054,7 +3036,7 @@ const CafePOS = () => {
                             <>
                               <button
                                 onClick={() => {
-                                  setSettlingBill(tx)
+                                  setSettlingBill({ ...tx, attemptKey: `${tx.id}:settle:${effectiveTenantId}` })
                                   setSettlePaymentMethod(paymentMethods[0]?.nama || 'CASH')
                                   setSettleCashReceived('')
                                 }}

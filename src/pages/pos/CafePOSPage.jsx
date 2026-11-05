@@ -22,7 +22,8 @@ import {
   User,
   Tag,
   CreditCard,
-  DollarSign
+  DollarSign,
+  Lock
 } from 'lucide-react'
 
 import ThermalReceiptModal from '../../components/pos/ThermalReceiptModal'
@@ -47,6 +48,7 @@ import { validatePosExpenseForm, formatPosExpensePayload } from '../../utils/fin
 import { DEFAULT_MASTER_DATA } from '../../constants/masterDataDefaults'
 import { getCategoriesForPOS } from '../../utils/posCategoryHelpers'
 import { isCategoryMatch } from '../../utils/categoryMatchingHelpers'
+import { processCafeCheckout } from '../../utils/cafeCheckoutHelpers'
 
 const getMenuPhoto = (menuName) => {
   const name = String(menuName || '').toLowerCase()
@@ -192,22 +194,38 @@ export const CafePOSPage = () => {
 
   // Cart Operations
   const handleAddToCart = (menu) => {
+    if (settlingBill) {
+      setError('Tagihan terbuka sedang dalam mode pelunasan. Keranjang terkunci untuk mencegah ketidaksesuaian stok dan struk. Selesaikan pembayaran atau klik Batal Pelunasan.')
+      return
+    }
     setCart(prev => cartAdd(prev, menu))
   }
 
   const handleUpdateQty = (menuName, delta) => {
+    if (settlingBill) {
+      setError('Item pesanan tagihan terbuka terkunci selama proses pelunasan.')
+      return
+    }
     setCart(prev => cartUpdate(prev, menuName, delta))
   }
 
   const handleUpdateNotes = (menuName, note) => {
+    if (settlingBill) return
     setCart(prev => cartUpdateNotes(prev, menuName, note))
   }
 
   const handleRemoveItem = (menuName) => {
+    if (settlingBill) {
+      setError('Item pesanan tagihan terbuka terkunci selama proses pelunasan.')
+      return
+    }
     setCart(prev => cartRemove(prev, menuName))
   }
 
   const handleClearCart = () => {
+    if (settlingBill && effectiveTenantId) {
+      posService.clearSettlementAttempt(effectiveTenantId, settlingBill.id_struk)
+    }
     setCart([])
     setSelectedDiskonId('')
     setNominalBayar('')
@@ -234,10 +252,37 @@ export const CafePOSPage = () => {
   }, [selectedDiskon, subtotal])
 
   const grandTotal = Math.max(0, subtotal - diskonAmount)
-  const kembalian = Math.max(0, (Number(nominalBayar) || 0) - grandTotal)
+
+  // Nilai efektif saat mode pelunasan aktif (menggunakan nilai tersimpan DB untuk konsistensi tagihan & diskon - Finding 3)
+  const effectiveSubtotal = useMemo(() => {
+    if (settlingBill) {
+      return Number(settlingBill.subtotal || subtotal)
+    }
+    return subtotal
+  }, [settlingBill, subtotal])
+
+  const effectiveDiskon = useMemo(() => {
+    if (settlingBill) {
+      return Number(settlingBill.diskon || settlingBill.diskon_cafe || 0)
+    }
+    return diskonAmount
+  }, [settlingBill, diskonAmount])
+
+  const effectiveGrandTotal = useMemo(() => {
+    if (settlingBill) {
+      return Number(settlingBill.total_biaya || settlingBill.total_tagihan || settlingBill.total || Math.max(0, effectiveSubtotal - effectiveDiskon))
+    }
+    return grandTotal
+  }, [settlingBill, effectiveSubtotal, effectiveDiskon, grandTotal])
+
+  const effectiveKembalian = Math.max(0, (Number(nominalBayar) || 0) - effectiveGrandTotal)
 
   // Simpan Pesanan sebagai Pending (Dine-in Order / Bill Meja)
   const handleSaveBill = async () => {
+    // Cegah penyimpanan ulang bill yang sudah berstatus pending untuk menghindari pemotongan ganda stok (Finding 1)
+    if (settlingBill) {
+      return setError('Tagihan ini sudah tersimpan sebagai bill meja aktif. Selesaikan pembayaran atau batalkan mode pelunasan.')
+    }
     if (cart.length === 0) return setError('Pilih minimal 1 menu sebelum menyimpan bill.')
     if (!tableOrCustomer.trim()) return setError('Harap masukkan nomor meja atau nama pelanggan.')
 
@@ -246,7 +291,7 @@ export const CafePOSPage = () => {
     try {
       const todayDate = new Date().toLocaleDateString('en-CA')
       const currentTime = new Date().toTimeString().split(' ')[0]
-      const strukId = settlingBill?.id_struk || `BILL-${Date.now().toString().slice(-6)}`
+      const strukId = `BILL-${Date.now().toString().slice(-6)}`
 
       // 1. Simpan atau Update Header Struk (Status Pending) via posService Atomic RPC
       const strukPayload = {
@@ -303,103 +348,33 @@ export const CafePOSPage = () => {
 
   // Checkout Pembayaran Selesai (Lunas)
   const handleCheckout = async () => {
-    if (cart.length === 0) return setError('Keranjang belanja masih kosong.')
-    if (selectedPayment === 'CASH' && (Number(nominalBayar) || 0) < grandTotal) {
-      return setError('Nominal pembayaran tunai kurang dari total tagihan.')
-    }
-
-    setLoading(true)
-    setError('')
-    try {
-      const todayDate = new Date().toLocaleDateString('en-CA')
-      const currentTime = new Date().toTimeString().split(' ')[0]
-      const strukId = settlingBill?.id_struk || `STRUK-${Date.now().toString().slice(-6)}`
-
-      // 1. Simpan Header Struk Lunas via posService Atomic RPC
-      const strukPayload = {
-        id_struk: strukId,
-        tenant_id: effectiveTenantId,
-        tanggal: todayDate,
-        jam: currentTime,
-        nama_pelanggan: tableOrCustomer.trim() || 'Pelanggan Walk-In',
-        no_meja: tableOrCustomer.trim() || '-',
-        total_biaya: grandTotal,
-        total_tagihan: grandTotal,
-        subtotal: subtotal,
-        diskon: diskonAmount,
-        metode_bayar: selectedPayment,
-        nominal_bayar: Number(nominalBayar) || grandTotal,
-        nominal_cash: selectedPayment === 'CASH' ? (Number(nominalBayar) || grandTotal) : 0,
-        nominal_qris: selectedPayment !== 'CASH' ? grandTotal : 0,
-        kembalian: kembalian,
-        status_bayar: 'Selesai',
-        kasir: selectedCashier || 'KASIR UTAMA',
-        catatan: orderNotes,
-        created_at: new Date().toISOString(),
-        waktu_dibayar: new Date().toISOString()
-      }
-
-      // 2. Siapkan Item Menu
-      const itemsPayload = cart.map(item => ({
-        id_detail: generateUUID(),
-        id_struk: strukId,
-        tenant_id: effectiveTenantId,
-        tanggal: todayDate,
-        jam: currentTime,
-        nama_menu: item.nama_menu,
-        harga: item.harga,
-        qty: item.qty,
-        total: item.harga * item.qty,
-        catatan: item.catatan || '',
-        created_at: new Date().toISOString()
-      }))
-
-      // 3. Eksekusi Atomic Server-side Checkout (termasuk pengurangan stok BOM otomatis)
-      await posService.executeCheckout({
-        tenantId: effectiveTenantId,
-        branchId: null,
-        strukPayload,
-        cafeItems: itemsPayload,
-        carwashPayload: null
-      })
-
-      // 4. Siapkan Data Struk Cetak Thermal
-      const receiptConfig = getReceiptConfig()
-      if (receiptConfig?.autoPrintOnCheckout !== false) {
-        const receiptData = buildPaymentReceiptData({
-          receiptNumber: strukId,
-          date: todayDate,
-          time: currentTime,
-          cashier: selectedCashier || 'KASIR',
-          customerName: tableOrCustomer || 'Pelanggan Cafe',
-          items: cart.map(i => ({
-            name: i.nama_menu,
-            qty: i.qty,
-            price: i.harga,
-            subtotal: i.harga * i.qty,
-            notes: i.catatan
-          })),
-          subtotal: subtotal,
-          discount: diskonAmount,
-          total: grandTotal,
-          paymentMethod: selectedPayment,
-          cashTendered: Number(nominalBayar) || grandTotal,
-          kembalian: kembalian,
-          tenantName: activeTenant?.nama || activeTenant?.name || 'Cafe RelayPOS'
-        })
-        setActiveReceipt(receiptData)
-      }
-
-      setSuccess(true)
-      handleClearCart()
-      loadPendingBills()
-      setTimeout(() => setSuccess(false), 3000)
-    } catch (err) {
-      console.error('Checkout error:', err)
-      setError(err.message || 'Gagal memproses transaksi kasir')
-    } finally {
-      setLoading(false)
-    }
+    return processCafeCheckout({
+      cart,
+      settlingBill,
+      selectedPayment,
+      nominalBayar,
+      tableOrCustomer,
+      orderNotes,
+      selectedCashier,
+      effectiveTenantId,
+      activeTenant,
+      subtotal,
+      diskonAmount,
+      grandTotal,
+      effectiveSubtotal,
+      effectiveDiskon,
+      effectiveGrandTotal,
+      effectiveKembalian,
+      posServiceInstance: posService,
+      receiptConfigGetter: getReceiptConfig,
+      receiptBuilder: buildPaymentReceiptData,
+      setActiveReceipt,
+      setSuccess,
+      setError,
+      setLoading,
+      handleClearCart,
+      loadPendingBills
+    })
   }
 
   // Buka Bill Pending untuk diselesaikan
@@ -410,18 +385,23 @@ export const CafePOSPage = () => {
         .select('*')
         .eq('id_struk', bill.id_struk)
 
-      if (items && items.length > 0) {
-        setCart(items.map(i => ({
-          nama_menu: i.daftar_menu,
-          harga: i.harga,
-          qty: i.qty,
-          catatan: i.catatan
-        })))
-      }
+      const savedItems = (items && items.length > 0)
+        ? items.map(i => ({
+            nama_menu: i.nama_menu || i.daftar_menu,
+            harga: Number(i.harga || i.harga_satuan || 0),
+            qty: Number(i.qty || 1),
+            catatan: i.catatan || ''
+          }))
+        : []
 
+      setCart(savedItems)
       setTableOrCustomer(bill.no_meja || bill.nama_pelanggan || '')
       setSelectedCashier(bill.kasir || selectedCashier)
-      setSettlingBill(bill)
+      setSettlingBill({
+        ...bill,
+        savedItems,
+        attemptKey: `${bill.id_struk}:settle:${bill.tenant_id || effectiveTenantId}`
+      })
       setShowPendingModal(false)
     } catch (err) {
       console.error('Error opening bill:', err)
@@ -547,7 +527,11 @@ export const CafePOSPage = () => {
                   <div
                     key={menu.id || menu.nama_menu}
                     onClick={() => handleAddToCart(menu)}
-                    className="group relative flex flex-col bg-surface rounded-xl border border-border hover:border-primary/60 overflow-hidden cursor-pointer hover:shadow-lg active:scale-[0.98] transition-all justify-between"
+                    className={`group relative flex flex-col bg-surface rounded-xl border border-border overflow-hidden transition-all justify-between ${
+                      settlingBill
+                        ? 'opacity-50 cursor-not-allowed border-dashed'
+                        : 'hover:border-primary/60 cursor-pointer hover:shadow-lg active:scale-[0.98]'
+                    }`}
                   >
                     <div className="aspect-[4/3] w-full bg-subsurface overflow-hidden relative">
                       <img
@@ -600,10 +584,26 @@ export const CafePOSPage = () => {
                 onClick={handleClearCart}
                 className="text-[11px] text-destructive hover:underline flex items-center gap-1 cursor-pointer"
               >
-                <Trash2 className="w-3 h-3" /> Reset
+                <Trash2 className="w-3 h-3" /> {settlingBill ? 'Batal Pelunasan' : 'Reset'}
               </button>
             )}
           </div>
+
+          {/* Locked Bill Indicator */}
+          {settlingBill && (
+            <div className="mx-3 mt-3 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center justify-between text-xs text-amber-300">
+              <div className="flex items-center gap-1.5 truncate">
+                <Lock className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+                <span className="truncate"><strong>Pelunasan Meja:</strong> {settlingBill.id_struk} (Item Terkunci)</span>
+              </div>
+              <button
+                onClick={handleClearCart}
+                className="text-white hover:underline text-[11px] shrink-0 font-medium cursor-pointer"
+              >
+                Batal
+              </button>
+            </div>
+          )}
 
           {/* INPUT NO MEJA / NAMA TAMU */}
           <div className="p-3 border-b border-border bg-subsurface shrink-0">
@@ -645,22 +645,25 @@ export const CafePOSPage = () => {
                     <input
                       type="text"
                       value={item.catatan || ''}
+                      disabled={!!settlingBill}
                       onChange={(e) => handleUpdateNotes(item.nama_menu, e.target.value)}
                       placeholder="Catatan: less sugar, pedas..."
-                      className="text-[10px] text-muted placeholder-[#6b7367] bg-transparent border-b border-dotted border-border focus:border-primary focus:outline-none w-32 sm:w-40"
+                      className="text-[10px] text-muted placeholder-[#6b7367] bg-transparent border-b border-dotted border-border focus:border-primary focus:outline-none w-32 sm:w-40 disabled:opacity-50"
                     />
 
                     <div className="flex items-center gap-1.5 bg-surface border border-border rounded-lg px-1.5 py-0.5">
                       <button
                         onClick={() => handleUpdateQty(item.nama_menu, -1)}
-                        className="text-muted hover:text-destructive transition cursor-pointer"
+                        disabled={!!settlingBill}
+                        className={`text-muted transition ${settlingBill ? 'opacity-30 cursor-not-allowed' : 'hover:text-destructive cursor-pointer'}`}
                       >
                         <Minus className="w-3 h-3" />
                       </button>
                       <span className="text-xs font-bold font-mono px-1 text-white">{item.qty}</span>
                       <button
                         onClick={() => handleUpdateQty(item.nama_menu, 1)}
-                        className="text-muted hover:text-primary transition cursor-pointer"
+                        disabled={!!settlingBill}
+                        className={`text-muted transition ${settlingBill ? 'opacity-30 cursor-not-allowed' : 'hover:text-primary cursor-pointer'}`}
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -681,7 +684,8 @@ export const CafePOSPage = () => {
                 </span>
                 <CustomSelect
                   value={selectedDiskonId}
-                  onChange={(val) => setSelectedDiskonId(val)}
+                  disabled={!!settlingBill}
+                  onChange={(val) => !settlingBill && setSelectedDiskonId(val)}
                   options={[
                     { value: '', label: 'Tanpa Diskon' },
                     ...diskonList.map(d => ({
@@ -699,17 +703,17 @@ export const CafePOSPage = () => {
             <div className="space-y-1 text-xs">
               <div className="flex justify-between text-muted">
                 <span>Subtotal Menu</span>
-                <span className="font-mono text-white">{formatRupiah(subtotal)}</span>
+                <span className="font-mono text-white">{formatRupiah(effectiveSubtotal)}</span>
               </div>
-              {diskonAmount > 0 && (
+              {effectiveDiskon > 0 && (
                 <div className="flex justify-between text-primary font-medium">
-                  <span>Potongan Promo</span>
-                  <span className="font-mono">-{formatRupiah(diskonAmount)}</span>
+                  <span>Potongan Promo {settlingBill ? '(Terkunci)' : ''}</span>
+                  <span className="font-mono">-{formatRupiah(effectiveDiskon)}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm font-bold pt-1.5 border-t border-border">
                 <span className="text-white">Total Tagihan</span>
-                <span className="font-mono text-lg font-bold text-primary">{formatRupiah(grandTotal)}</span>
+                <span className="font-mono text-lg font-bold text-primary">{formatRupiah(effectiveGrandTotal)}</span>
               </div>
             </div>
 
@@ -742,16 +746,16 @@ export const CafePOSPage = () => {
                     className="w-full px-2.5 py-1.5 bg-subsurface border border-border rounded-lg text-xs font-mono text-white placeholder-[#6b7367] focus:outline-none focus:border-primary"
                   />
                   <button
-                    onClick={() => setNominalBayar(grandTotal)}
+                    onClick={() => setNominalBayar(effectiveGrandTotal)}
                     className="px-2.5 py-1.5 bg-subsurface hover:bg-[#242428] border border-border text-primary text-[11px] font-mono font-bold rounded-lg whitespace-nowrap cursor-pointer transition"
                   >
                     Uang Pas
                   </button>
                 </div>
-                {Number(nominalBayar) >= grandTotal && (
+                {Number(nominalBayar) >= effectiveGrandTotal && (
                   <div className="flex justify-between items-center text-xs bg-subsurface p-2 rounded-lg border border-border">
                     <span className="font-semibold text-muted">Kembalian:</span>
-                    <span className="font-mono font-bold text-sm text-primary">{formatRupiah(kembalian)}</span>
+                    <span className="font-mono font-bold text-sm text-primary">{formatRupiah(effectiveKembalian)}</span>
                   </div>
                 )}
               </div>
@@ -760,9 +764,14 @@ export const CafePOSPage = () => {
             {/* ACTION BUTTONS: Simpan Meja (Dine-in Pending) & Bayar Langsung */}
             <div className="grid grid-cols-2 gap-2 pt-2">
               <button
-                disabled={loading}
+                disabled={loading || !!settlingBill}
                 onClick={handleSaveBill}
-                className="h-11 px-2 bg-subsurface hover:bg-[#242428] text-white border border-border rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className={`h-11 px-2 border border-border rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                  settlingBill
+                    ? 'bg-subsurface/40 text-muted/40 border-border/30 cursor-not-allowed opacity-50'
+                    : 'bg-subsurface hover:bg-[#242428] text-white cursor-pointer'
+                }`}
+                title={settlingBill ? 'Tagihan meja sudah tersimpan (gunakan Bayar Sekarang untuk melunasi)' : 'Simpan tagihan meja (Pending)'}
               >
                 <Clock className="w-3.5 h-3.5 text-warning" />
                 <span>Simpan Meja</span>

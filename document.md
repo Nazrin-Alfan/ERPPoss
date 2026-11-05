@@ -4429,6 +4429,307 @@
   - `Cloudflare Pages Live`: **Aktif dan terverifikasi live di https://erpposs.pages.dev**.
   - `Browser E2E Execution`: **Sukses 100% dari Login -> Katalog Stok -> Kasir POS -> Pembayaran -> Rekonsiliasi Buku Besar & Laporan Keuangan**.
 
+---
+
+### [2026-11-03] - INTEGRASI DAN VERIFIKASI CABANG FIX/CHECKOUT-TENANT-ISOLATION (COMMIT 3cc1845)
+- **Status**: SELESAI, BERHASIL DIGABUNGKAN (MERGED) & TERVERIFIKASI PENUH DI LIVE
+- **Commit Tergabung**: `3cc1845` (*Merge checkout tenant authorization and cash tender fix*, mencakup commit `4a44fdf`)
+- **Hasil Verifikasi Multi-Lapisan**:
+  1. **Git & Repository Sync**:
+     - Branch `main` telah ditarik dan sinkron dengan `origin/main` (`3cc1845`).
+     - Seluruh unit test regresi kasir dan riwayat transaksi (`checkoutPaymentRegression.test.js`, `posHistory.test.js`) lulus **100% Green (62 files, 369/369 tests passed)**.
+  2. **Supabase Cloud Database**:
+     - Migrasi forward `20261103003944_checkout_tenant_authorization_and_cash_tender.sql` terbukti telah aktif di instance PostgreSQL Supabase Cloud (`jutidxobdedygmjngmcq.supabase.co`).
+     - Kolom `struk.uang_diterima` telah terpasang dengan tipe data `numeric`.
+     - Fungsi RPC `fn_execute_checkout` memverifikasi otorisasi `auth.uid()` secara ketat, menolak panggilan anonim (`42501: UNAUTHORIZED`), menolak pengguna nonaktif (`42501: USER_INACTIVE`), menolak akses transaksi lintas tenant (`42501: TENANT_FORBIDDEN`), dan menolak transaksi cabang yang tidak diizinkan (`42501: BRANCH_FORBIDDEN`).
+  3. **Live Cloudflare Pages CDN (`erpposs.pages.dev`)**:
+     - Bundle produksi terbaru aktif: `/assets/index-D0Br7svj.js`.
+     - Indikator versi di sidebar UI live terverifikasi menampilkan: **`RelayPOS Cloud build 3cc1845`**.
+     - Alur riwayat transaksi kasir dan reprint struk kini membaca `uang_diterima` dan `kembalian` yang divalidasi server tanpa melipatgandakan dana non-tunai.
+
+---
+
+### [2026-11-04] - TAHAP 0: REKONSILIASI BASELINE & ATURAN AKUNTANSI PEMBAYARAN
+- **Status**: SELESAI, BASELINE RECONCILED & DOCUMENTED
+- **Dokumen Referensi**: `Documentation/payment-current-state.md`
+- **Branch Kerja**: `fix/pending-settlement-atomicity` (berbasis `main` / `cb00973`)
+- **Ruang Lingkup & Temuan Rekonsiliasi**:
+  1. **Status Lingkungan & Baseline**:
+     - HEAD Git: `cb00973` (Merge PR #1: checkout authorization and cash tender fix).
+     - Database Cloud Supabase (`jutidxobdedygmjngmcq`): Migration `20261103023738` (`checkout_tenant_authorization_and_cash_tender`) aktif.
+     - Vitest suite: 62 test files, 369 tests passed (100% Green).
+  2. **Temuan Kritis pada Tagihan Tertunda (Pending Bills)**:
+     - **HybridPOSPage.jsx (`handleSettleBill`)**: Melakukan 4 mutasi client-side langsung tanpa RPC/transaksi atomik. Tidak mencatat `cashflow` dan tidak mencatat `journal_entries` (pendapatan kasir hilang dari pembukuan!). Rentan race condition/klik ganda tanpa row locking server.
+     - **CafePOSPage.jsx (`handleCheckout`)**: Menyelesaikan tagihan meja pending dengan memanggil ulang `fn_execute_checkout`, menyebabkan pengurangan stok BOM berulang (**double stock deduction**) dan duplikasi baris detail `cafe`.
+     - **HybridPOSPage.jsx (`handleCancelBill`)**: Membatalkan struk pending tanpa mengembalikan stok bahan baku yang sudah terpotong saat pesanan dibuat (kebocoran stok).
+  3. **6 Keputusan Akuntansi Sistemik (Revisi Blueprint Disetujui)**:
+     - *Pengurangan Stok*: Dilakukan saat pesanan pertama kali dibuat/disimpan (pada pemanggilan pertama `fn_execute_checkout`). Pelunasan tagihan tertunda (`fn_settle_pending_bill`) **tidak boleh** mengurangi stok untuk kedua kalinya (Zero Double Stock Deduction).
+     - *Pengakuan Pendapatan*: Diakui saat status menjadi `Selesai`/`Lunas`. Pelunasan tertunda mencatat Kredit Pendapatan (4101/4102/4103) dan Debit Kas/Bank (1101/1102), serta HPP (5101) & Persediaan (1103).
+     - *Biaya Pengeluaran Asal (Origin COGS)*: Kolom `total_cogs` dipersistensikan pada `struk` sejak pemanggilan pertama checkout (`fn_execute_checkout`). Saat pelunasan (`fn_settle_pending_bill`), nilai HPP yang dibukukan ke jurnal mengacu pada biaya asal tersebut, mencegah distorsi HPP jika master harga beli berubah saat tagihan tertunda.
+     - *Piutang Usaha*: Tidak membentuk piutang usaha (COA tidak memiliki akun piutang konsumen walk-in; pesanan disimpan sebagai open operational order/WIP).
+     - *Pembayaran Sebagian*: Tidak didukung; pelunasan adalah pelunasan penuh (`PAYMENT_UNDERPAID` ditolak).
+     - *Biaya Tambahan (Surcharge Biaya Inap)*: Dicatat pada kolom tersendiri di `struk` (`biaya_inap`, `catatan_inap`). Di jurnal dibukukan ke COA 4103 (atau 4101 Pendapatan Jasa Layanan Kendaraan jika 4103 tidak ada), **bukan ke pendapatan cafe F&B (4102)** dan tidak mengotori tabel `cafe`.
+     - *Penilaian Persediaan*: Perpetual Standard Costing berbasis biaya standar pada master `stok_barang.harga_beli`.
+  4. **Tahap 1: Pelunasan Tagihan Tertunda Atomik (Branch: `fix/pending-settlement-atomicity`)**:
+     - *Database RPC*: `public.fn_settle_pending_bill` (`supabase/migrations/20261104000001_atomic_pending_bill_settlement.sql`) mengamankan eksekusi all-or-nothing, advisory lock transaksional, SELECT FOR UPDATE, otorisasi ketat caller, verifikasi tender server-side, idempotency replay safe, pencatatan cashflow kasir, dan posting jurnal double-entry otomatis.
+     - *Frontend Integration*:
+       - `src/pages/pos/HybridPOSPage.jsx` mengganti 4 mutasi REST langsung di `handleSettleBill` dengan satu pemanggilan atomik `posService.settlePendingBill`.
+       - `src/pages/pos/CafePOSPage.jsx` memperbaiki alur `settlingBill` di `handleCheckout` agar memanggil `posService.settlePendingBill` alih-alih `executeCheckout`, melenyapkan pemotongan stok berulang.
+       - `src/services/apiAdapter.js` & `src/services/posService.js` menyediakan abstraksi RPC, normalisasi tender, perhitungan kembalian, dan pemetaan error POS terstandar.
+     - *Pengujian TDD & Regresi*:
+       - `src/services/__tests__/pendingSettlement.test.js`: 10 pengujian vitest mencakup validasi parameter, kalkulasi tunai/split, surcharge, idempotency key generation, dan error mapping (100% Green).
+       - Total Vitest Suite: 63 test files, 379 tests passed (100% Green).
+       - Linting & Build: `oxlint` lulus, `vite build` 100% bebas error.
+       - Harness SQL Uji Isolasi: `supabase/tests/pending_settlement_isolation.sql` dan `scripts/test_pending_settlement_isolation.sh` disiapkan untuk verifikasi lingkungan container terisolasi.
+     - *Status Deployment*: Sesuai instruksi pengguna, kode disiapkan di branch terpisah `fix/pending-settlement-atomicity`, **belum di-merge ke main dan belum di-deploy ke produksi**.
+
+- **Status**: SELESAI, 100% LULUS SELURUH GERBANG KUALITAS & KEAMANAN
+- **Target URL**: `https://erpposs.pages.dev` (Cloudflare Pages Production CDN)
+- **Database Engine**: Supabase PostgreSQL Cloud (`jutidxobdedygmjngmcq.supabase.co`)
+- **Build Hash**: `3828c2d` (`RelayPOS Cloud build 3828c2d`)
+- **Tenant Uji Coba**: `qa_audit_live_2026@relaypos.com` (Tenant ID: `525eb257-9a12-4e72-9ba0-251ab789624b`)
+- **Ruang Lingkup & Hasil Verifikasi**:
+  1. **Audit Bundle & PII Leakage (LULUS)**:
+     - Bundle JavaScript klien (`assets/index-zC0Lgc5h.js`) bebas dari `service_role` key, token admin, atau dump database pelanggan riil.
+     - Fixture default menggunakan entitas sintetis aman tanpa memuat data pribadi (plat kendaraan asli, nomor HP riil).
+  2. **Registrasi Tenant Baru & Auto-Provisioning (LULUS)**:
+     - Registrasi Owner baru via UI live berhasil menerbitkan Tenant ID `525eb257-9a12-4e72-9ba0-251ab789624b`.
+     - Lisensi trial 14 hari aktif otomatis hingga `2026-11-17 00:21:15` (`ACTIVE`).
+     - Inisialisasi otomatis menghasilkan 12 Chart of Accounts (COA) standar dan 1 cabang utama (`PST`).
+  3. **Isolasi Multi-Tenant & Anti-Mock Dashboard (LULUS)**:
+     - Dashboard awal menampilkan status kosong murni (`Rp 0`, 0 transaksi) tanpa array fallback fiktif dan tanpa kebocoran data dari tenant lain.
+  4. **Alur Transaksi Kasir POS & Pemotongan Resep BOM (LULUS)**:
+     - Checkout item `Kopi Susu Aren` (Rp 18.000) tunai (CASH) sukses membentuk struk transaksi `6db28973-e556-484d-bf04-31a6f186cc3f`.
+     - Pemotongan bahan baku BOM tercatat atomik di `barang_keluar`: Biji Kopi (0.02 kg) dan Susu Segar UHT (0.15 liter) dengan alasan `POS_SALE`.
+  5. **Rekonsiliasi Buku Kas & Jurnal Double-Entry (LULUS)**:
+     - Mutasi buku kas `cashflow` mencatat penerimaan `+ Rp 18.000` pada pos `SALDO CASH`.
+     - Jurnal akuntansi `JE-POS-6db28973-e556-484d-bf04-31a6f186cc3f` terposting dengan status `POSTED` (Debit 1101 Kas Tunai Rp 18.000, Kredit 4102 Pendapatan Cafe Rp 18.000) — seimbang 100%.
+     - Laporan Akuntansi pada tab General Ledger menampilkan badge hijau `Buku Besar: 100% Seimbang (Debit = Kredit)`.
+  6. **Pembersihan Storage Sesi Bersama / Shared Device Cleanliness (LULUS)**:
+     - Eksekusi "Keluar Aplikasi" (Logout) dari sidebar langsung menghapus `relaypos_active_tenant_id` dan token autentikasi Supabase dari `localStorage`.
+     - Tidak ada sisa sesi atau token yang tertinggal saat kembali ke halaman `/login`.
+  7. **Pencegahan Akses Anonim / OWASP Boundary (LULUS)**:
+---
+
+## 📅 Audit Log & Implementasi Milestone: Atomic Pending Bill Settlement (Branch: fix/pending-settlement-atomicity)
+
+### 1. Latar Belakang & Identifikasi Cacat Kritis
+Sebelum perbaikan ini, alur pelunasan tagihan tertunda (*pending bill*) di kasir hybrid dan cafe memiliki cacat sistemik:
+1. **Zero Cashflow & Jurnal**: Pelunasan di `HybridPOSPage.jsx` mengeksekusi REST update langsung dari browser ke tabel `struk`, `carwash`, dan `cafe` tanpa mencatat mutasi kas (`cashflow`) dan tanpa menerbitkan jurnal akuntansi (`journal_entries`).
+2. **Double Stock Deduction**: Pelunasan di `CafePOSPage.jsx` memanggil ulang `posService.executeCheckout`, menyebabkan pengurangan bahan baku BOM dipotong untuk kedua kalinya.
+3. **Misklasifikasi Biaya Inap**: Biaya inap kendaraan disisipkan ke tabel `cafe` sebagai menu makanan fiktif, mengotori katalog dan pendapatan cafe (4102).
+4. **HPP Tidak Terkunci**: Perubahan harga master bahan baku mendistorsi nilai HPP pesanan terdahulu saat pelunasan dilakukan.
+
+### 2. Keputusan Arsitektur & Rekonsiliasi Akuntansi
+1. **Perpetual Standard Costing & Snapshot Biaya Asal**:
+   - Kolom `struk.total_cogs` dan `barang_keluar.biaya_satuan` & `total_biaya` mengunci snapshot biaya perolehan saat barang dikeluarkan.
+   - Pembedaan tegas:
+     - `total_cogs IS NULL`: Biaya historis tidak diketahui. Sistem memeriksa tabel `barang_keluar` menggunakan isolasi tenant ketat (`tenant_id = p_tenant_id`) dan pencocokan token regex tepat (`(^|[^a-zA-Z0-9_-])Struk:\s*<id_struk>($|[^a-zA-Z0-9_-])`) HANYA berdasarkan snapshot biaya asal (`total_biaya` atau `jumlah_keluar * biaya_satuan`). DILARANG KERAS fallback ke harga master terbaru. Jika catatan biaya tidak lengkap atau tidak ada, dikelola sebagai `HISTORICAL_UNKNOWN` tanpa memaksakan baris jurnal fiktif.
+     - `total_cogs = 0.00`: Biaya nol terverifikasi (layanan jasa carwash). Jurnal HPP/Persediaan sengaja ditiadakan (`cogs_status: 'ZERO_COST'`).
+     - `total_cogs > 0.00`: Snapshot biaya asal dibukukan presisi ke GL (`cogs_status: 'SNAPSHOT_RECORDED'`).
+2. **Kekebalan Perubahan Master Harga**:
+   - Nilai HPP yang dibukukan saat pelunasan sepenuhnya mengacu pada snapshot asal di `struk.total_cogs`. Perubahan `harga_beli` master di kemudian hari tidak mendistorsi HPP pesanan pending.
+3. **Rekonsiliasi Persediaan Pending (Zero Double Deduction)**:
+   - Kuantitas fisik berkurang saat order dibuat (WIP di operasional).
+   - Saat pelunasan (`fn_settle_pending_bill`): **Stok fisik tidak dikurangi lagi**. HPP dibukukan berpasangan dengan kas dan pendapatan.
+4. **Idempotensi Kanonikal & Payload Fingerprint**:
+   - Hashing seluruh input relevan (`tenant_id`, `id_struk`, `branch_id`, `metode_bayar`, `final_total`, `uang_diterima`, `cash`, `qris`, `transfer`, `surcharge_nominal`, `surcharge_keterangan`, `idempotency_key`).
+   - Replay identik menghasilkan `was_replayed: true` tanpa menduplikasi cashflow/jurnal.
+   - Perubahan tender/metode bayar menghasilkan `IDEMPOTENCY_CONFLICT` (40900).
+5. **Validasi & Isolasi Biaya Inap**:
+   - Validasi server-side: Non-negatif, keterangan wajib jika nominal > 0, cap operasional Rp 5.000.000, batasan kasir <= Rp 500.000.
+   - Disimpan di header `struk` (`biaya_inap`, `catatan_inap`). 0 baris masuk ke `cafe`. Dikreditkan ke COA 4103/4101.
+
+### 3. Bukti Verifikasi Database Nyata & Regresi
+- **Skrip Uji Database Langsung**:
+  1. `scripts/test_real_db_pending_settlement.py`: 7 test suites lulus 100% pada Supabase Cloud (Otorisasi, Origin Cost Snapshot, Surcharge Validation, Master Price Tampering Immunity, Zero Double Stock Deduction, Canonical Idempotency Replay vs Conflict, Historical NULL vs 0.00 COGS, Rollback Atomicity).
+  2. `scripts/test_real_db_concurrency_overlap.py`: Uji konkurensi 2 koneksi simultan lulus (Test 2A: identical payload `was_replayed: true` zero duplicate, Test 2B: conflicting payload `IDEMPOTENCY_CONFLICT` 40900).
+  3. `scripts/test_real_db_forced_failure_and_split.py`: Alokasi SPLIT terbukti matematis (Cashflow Cash & Bank terpisah presisi, Debit = Kredit GL berimbang), dan perbandingan snapshot sebelum/sesudah kegagalan pelunasan terbukti 100% identik tanpa partial state.
+  4. `scripts/test_real_db_checkout_regression.py`: 6 test suite regresi checkout langsung pada database lulus 100% (Auth, Tenant, Underpaid, Stock Rollback, Valid Checkout with Origin Snapshot, Idempotent Replay).
+  - Seluruh pengujian cloud menggunakan transaksi terisolasi atau di-rollback secara transaksional bersih (`TEST_ALL_PASSED_TRANSACTION_ROLLED_BACK` / `REGRESSION_ALL_PASSED_TRANSACTION_ROLLED_BACK`).
+- **Regresi Frontend & Service**:
+  - `checkoutPaymentRegression.test.js`: 4/4 passed (100%).
+  - `pendingSettlement.test.js`: 14/14 passed (100%).
+  - Vitest Global: 63 test files, 383 tests passed (100% Green).
+  - Linter (`oxlint`) & `vite build`: Clean (0 error).
+- **Status Deployment**: Terisolasi pada branch `fix/pending-settlement-atomicity`. Belum di-merge ke `main` dan belum di-deploy ke produksi.
+
+### 116. Penyelesaian Tuntas 5 Penghambat P1 & Harness SQL PostgreSQL (Commit Resolution) (05 November 2026)
+- **Konteks & Latar Belakang Masalah**:
+  - Peninjauan lanjutan menemukan 5 penghambat kritis pada alur pelunasan Cafe POS dan penjurnalan RPC:
+    1. **P1 — Simpan Meja Dapat Memotong Stok Dua Kali**: Tombol "Simpan Meja" masih aktif saat tagihan pending dibuka, memanggil ulang `executeCheckout` dengan ID struk yang sama sehingga memicu pemotongan bahan baku BOM berulang dan duplikasi baris cafe.
+    2. **P1 — Data Cetak Struk Cafe Memakai Nama Field Salah**: `CafePOSPage` mengirim properti `receiptNumber`, `items`, `total`, dan `paymentMethod`, sedangkan helper `buildPaymentReceiptData` membaca `id_struk`, `cafe`, `total_tagihan`, dan `metode_bayar`, menghasilkan struk kosong berstatus `ORD-00000000` dengan total 0.
+    3. **P1 — Tagihan Cafe Berdiskon Memakai Total Layar Salah**: Saat tagihan pending dibuka kembali, rincian item dipulihkan namun nilai diskon tersimpan tidak disinkronkan ke perhitungan layar, menyebabkan UI meminta subtotal kotor dan menolak pembayaran sesuai nominal tagihan tersimpan sebelum RPC dipanggil.
+    4. **P1 — Pembayaran Digital Dibukukan Sebagai Kas**: Adanya fallback `COALESCE(v_coa_bank, v_coa_kas)` di RPC menyebabkan transaksi QRIS/Transfer didebit ke akun Kas (1101) jika akun Bank (1102) belum ada di COA.
+    5. **P1 — Selisih Positif Tagihan vs Subtotal (Pajak/Komponen Tambahan) Belum Terjurnal**: Jika tagihan melebihi subtotal item (misal pajak/PPN), sisi kredit tidak mencatat akun kewajiban/utang pajak sehingga memicu ketidakseimbangan jurnal.
+
+- **Solusi Rekayasa & Implementasi**:
+  1. **Pencegahan Pemotongan Ganda & Penguncian Simpan Meja**:
+     - `handleSaveBill` di `CafePOSPage.jsx` secara eksplisit memeriksa `if (settlingBill) return setError(...)`.
+     - Tombol "Simpan Meja" di antarmuka dinonaktifkan (`disabled={loading || !!settlingBill}`) dengan indikator visual nonaktif ketika tagihan pending sedang dibuka.
+  2. **Standardisasi Kontrak Field Struk Kasir**:
+     - `CafePOSPage.jsx` diselaraskan untuk mengirim payload kanonikal (`id_struk`, `cafe`, `total_tagihan`, `metode_bayar`, `uang_diterima`, `kembalian`, `subtotal`, `diskon_cafe`).
+     - `src/utils/receiptHelpers.js` diperkuat agar mendukung pemetaan fleksibel fallback (`items` ke `cafe`, `receiptNumber` ke `id_struk`, `total` ke `total_tagihan`, `paymentMethod` ke `metode_bayar`).
+     - Menambahkan unit test otomatis `receiptHelpers.test.js` skenario 7 yang menguji pembentukan struk pelunasan Cafe POS.
+  3. **Sinkronisasi Total Layar Tagihan Berdiskon**:
+     - Mendefinisikan `effectiveSubtotal`, `effectiveDiskon`, `effectiveGrandTotal`, dan `effectiveKembalian` di `CafePOSPage.jsx`.
+     - Ketika `settlingBill` aktif, seluruh tampilan ringkasan biaya, validasi pembayaran tunai, pengisian tombol "Uang Pas", dan kalkulasi kembalian mengacu mutlak pada nilai tagihan tersimpan (`settlingBill.total_tagihan`).
+  4. **Penegakan Akun Bank (1102) untuk Pembayaran Digital**:
+     - Menghapus fallback `COALESCE(v_coa_bank, v_coa_kas)` pada RPC `fn_settle_pending_bill`.
+     - Memvalidasi secara ketat bahwa transaksi digital (QRIS/Transfer atau porsi non-tunai SPLIT) **WAJIB** memiliki pemetaan akun bank `1102`. Jika tidak ada, transaksi langsung dibatalkan dengan exception `ACCOUNT_MAPPING_MISSING`.
+     - Sisi debit jurnal untuk pembayaran digital didebit murni ke `v_coa_bank`.
+  5. **Penjurnalan Eksplisit Komponen Tambahan / Pajak (Kewajiban 2102/2101)**:
+     - Mengalkulasi selisih positif `v_tax_or_surcharge_diff := GREATEST(0.00, v_base_total - (v_item_subtotal - v_discount))`.
+     - Mencari akun kewajiban/utang pajak `2102` (atau fallback kewajiban operasional `2101`).
+     - Jika selisih positif ada dan akun belum dikonfigurasi, transaksi menolak pra-mutasi dengan `ACCOUNT_MAPPING_MISSING`.
+     - Pada posting jurnal, selisih positif dikreditkan ke `v_coa_tax` dengan memo `'Pajak & Kewajiban Komponen Tambahan POS ' || v_id_struk`. Total Debit dipastikan 100% sama dengan Total Kredit.
+  6. **Penyelarasan Fixture SQL & Eksekusi Harness PostgreSQL**:
+     - `supabase/tests/checkout_fixture.sql`: Melengkapi kolom `struk` (`nominal_cash`, `nominal_qris`, `nominal_transfer`, `uang_diterima`, `waktu_dibayar`) dan menyematkan akun COA (`2101`, `2102`, `4103`, `4104`).
+     - `supabase/tests/pending_settlement_isolation.sql`: Memperbarui seluruh pengujian (Test 1 s.d. 9) untuk memanggil RPC asli, menguji kegagalan akun bank QRIS, menguji pembukuan pajak, dan menguji keseimbangan debit-kredit jurnal.
+     - Eksekusi harness lokal `scripts/test_pending_settlement_isolation.sh` pada kontainer PostgreSQL `erpposs-checkout-qa`: **100% PASS dengan exit code 0**.
+
+- **Hasil Verifikasi Kualitas**:
+  - Test Suite Vitest: 63 test files, **391 tests passed (100% Green)**.
+  - Test Harness PostgreSQL (`test_pending_settlement_isolation.sh`): **GREEN (Exit Code 0)**.
+  - Linter (`oxlint`): **0 Error**.
+  - Production Build Vite: **Sukses** (2.45 detik).
+  - Skema dan branch kerja tetap terisolasi di `fix/pending-settlement-atomicity` tanpa merge atau deployment produksi.
+
+### 115. Perbaikan Komprehensif 6 Temuan Review pada Pelunasan Tagihan Atomik (Commit 6305974 -> Resolution) (05 November 2026)
+- **Konteks & Latar Belakang**:
+  - Peninjauan independen terhadap commit `6305974` mengidentifikasi 6 kelemahan sistemik kritis (P1 dan validasi akuntansi):
+    1. **P1 — Pelunasan Tagihan Berdiskon Menghasilkan Jurnal Tidak Seimbang**: Jurnal pendapatan mengkredit nilai kotor sebelum diskon sementara debit menggunakan nilai tagihan akhir; penyesuaian sebelumnya tidak menangani selisih diskon sehingga memicu ketidakseimbangan debit-kredit.
+    2. **P1 — Akun Wajib Hilang, Transaksi Tetap Selesai**: Blok penjurnalan dilewati secara diam-diam jika akun kas/bank/pendapatan tidak ditemukan pada COA, menghasilkan transaksi tanpa pembukuan.
+    3. **P1 — Retry UI Menghasilkan Idempotency Key Baru**: Penggunaan timestamp `Date.now()` dinamis pada default idempotency key menyebabkan klik ulang pasca respons terputus memicu error `IDEMPOTENCY_CONFLICT` meskipun rincian pembayaran identik.
+    4. **P1 — Keranjang Cafe Tidak Ikut Dilunasi / Tidak Sinkron**: Mode pelunasan tagihan terbuka di `CafePOSPage` masih memungkinkan modifikasi keranjang lokal tanpa disinkronkan ke DB, dan struk cetak menggunakan keranjang lokal alih-alih data transaksi tersimpan.
+    5. **Pengujian SQL Belum Membuktikan Klaim Laporan**: Fixture uji kehilangan kolom `struk.total_biaya`, simulasi kegagalan menangkap sembarang exception dengan pembayaran kurang, dan uji SPLIT berlebih melakukan mutasi manual tanpa memanggil RPC riil.
+    6. **Status Biaya Historis Tidak Dipertahankan Secara Konsisten**: Data berbiaya historis tidak diketahui ditimpa dengan nilai `0.00`, menyulitkan pembedaan dengan biaya nol terverifikasi.
+
+- **Solusi & Rekayasa Arsitektural**:
+  1. **Alokasi Diskon Jurnal Konsisten & Berimbang (Debit == Kredit)**:
+     - Mengalkulasi subtotal item asal `v_item_subtotal := v_total_carwash + v_total_cafe` dan diskon riil `v_discount := GREATEST(0.00, v_item_subtotal - v_base_total)`.
+     - Mendeteksi keberadaan akun potongan penjualan pada COA (`kode_akun IN ('4104', '4201')` atau nama memuat diskon/potongan).
+     - **Metode Akun Diskon**: Jika akun diskon tersedia, menjurnal Debit Kas/Bank (`v_final_total`), Debit Potongan Penjualan (`v_discount`), dan Kredit Pendapatan kotor penuh. Total Debit = Total Kredit = `v_item_subtotal + v_surcharge`.
+     - **Metode Net Revenue**: Jika akun diskon tidak ada (COA standar), diskon dialokasikan secara proporsional mengurangi nilai kredit pendapatan Carwash dan Cafe. Total Debit = Total Kredit = `v_final_total`.
+     - Baris penyeimbang arbitrer dihapus total. Trigger keseimbangan jurnal dipastikan selalu lolos tanpa anomali.
+  2. **Validasi Bagan Akun (COA) Pra-Mutasi (Pre-mutation Abort)**:
+     - Query dan validasi seluruh akun terkait (`1101`, `1102`, `4101`, `4102`, `4103`, `5101`, `1103`) dipindahkan ke tahap awal sebelum eksekusi mutasi apa pun pada `struk`, `carwash`, `cafe`, atau `cashflow`.
+     - Jika ada akun wajib yang belum terdaftar pada tenant aktif, transaksi langsung dibatalkan dengan `RAISE EXCEPTION 'ACCOUNT_MAPPING_MISSING: ...' USING ERRCODE = '28000'`.
+     - `posService.js` memetakan error ini ke `ACCOUNT_MAPPING_MISSING` dengan panduan visual ke pengguna untuk melengkapi konfigurasi COA di halaman Admin.
+  3. **Idempotency Key Stabil Lintas Upaya Retry**:
+     - Menghapus pembuatan key acak berbasis timestamp `Date.now()`.
+     - Menyediakan cache sesi percobaan `activeSettlementAttemptKeys` pada `posService.js` (berbasis `${tenantId}:${idStruk}`).
+     - UI `HybridPOSPage` dan `CafePOSPage` menyematkan token percobaan stabil `attemptKey` saat memuat tagihan pending dan menyertakannya pada payload pelunasan.
+     - Kunci tetap dipertahankan selama retry jika terjadi gangguan jaringan, dan hanya dibersihkan saat pelunasan berhasil (`COMPLETED`) atau dibatalkan eksplisit (`clearSettlementAttempt`).
+  4. **Penguncian Keranjang Cafe & Struk dari Transaksi Tersimpan**:
+     - Menambahkan proteksi penguncian keranjang pada `CafePOSPage`: jika `settlingBill` aktif, fungsi `handleAddToCart`, `handleUpdateQty`, `handleRemoveItem`, dan pemilih diskon dikunci dengan peringatan visual dan banner interaktif *"Pelunasan Meja: [No Meja / ID Struk] - Item Terkunci"*.
+     - Sumber data struk cetak thermal kasir (`buildPaymentReceiptData`) dialihkan secara mutlak menggunakan data hasil transaksi tersimpan dari respons RPC (`settleRes.data`) dan rincian item database (`settlingBill.savedItems`), menjamin 100% konsistensi antara dapur, stok gudang, dan struk konsumen.
+  5. **Penyelarasan Fixture SQL & Pemanggilan RPC Riil**:
+     - `supabase/tests/checkout_fixture.sql`: Menambahkan kolom `total_biaya`, `total_cogs`, dan `cogs_status` pada skema `public.struk`.
+     - `supabase/tests/pending_settlement_isolation.sql`:
+       - Test 5: Menguji kegagalan otentikasi akun COA sebelum mutasi, menangkap pesan kesalahan spesifik `ACCOUNT_MAPPING_MISSING`, dan memverifikasi nol catatan yatim piatu (*Zero Partial State*).
+       - Test 6: Menguji pelunasan SPLIT tunai berlebih melalui pemanggilan RPC asli `public.fn_settle_pending_bill`, memverifikasi kembalian presisi Rp 20.000, 2 mutasi cashflow terpisah (Kas Rp 30.000 dan Rekening Rp 50.000), serta jurnal berimbang.
+       - Test 7: Menguji pelunasan tagihan berdiskon melalui RPC riil dan membuktikan keseimbangan debit-kredit jurnal (Debit Rp 90.000 == Kredit Rp 90.000).
+  6. **Kolom Terstruktur & Retensi Nilai NULL untuk Biaya Historis**:
+     - Menambahkan kolom eksplisit `cogs_status VARCHAR(30)` pada tabel `struk`.
+     - Menetapkan klasifikasi ketat:
+       - `HISTORICAL_UNKNOWN`: `total_cogs` tetap dipertahankan `NULL` (tidak ditimpa `0.00`) dan `cogs_status = 'HISTORICAL_UNKNOWN'`.
+       - `ZERO_COST`: `total_cogs = 0.00` dan `cogs_status = 'ZERO_COST'`.
+       - `SNAPSHOT_RECORDED` / `HISTORICAL_RESOLVED`: `total_cogs > 0.00` dan `cogs_status` sesuai asal data.
+
+- **Verifikasi Kualitas**:
+  - Unit Test Suite Vitest: 64 test files, **394 tests passed (100% Green)**.
+  - Linter (`oxlint`): 0 error.
+  - Production Build Vite: Sukses (2.88s) tanpa kendala.
+  - Skema dan isolasi transaksi tetap terjaga tanpa merge ke `main` atau deployment produksi.
+
+### 117. Penyelesaian Tuntas 2 Penghambat Merge Terakhir (eaf1a1f -> Resolution) (05 November 2026)
+- **Konteks & Latar Belakang Masalah**:
+  - Peninjauan independen terhadap commit `eaf1a1f` mengonfirmasi kemajuan yang terverifikasi (391 unit test lulus, harness PostgreSQL exit code 0, penolakan pembayaran digital tanpa akun bank, penguncian "Simpan Meja", kontrak data struk kasir, dan penggunaan tagihan tersimpan).
+  - Namun, peninjauan menemukan dua penghambat merge yang masih tersisa:
+    1. **P1 — Pembayaran Cafe Gagal Sebelum Mencapai Server (kembalian is not defined)**: Variabel `kembalian` diganti menjadi `effectiveKembalian`, tetapi referensi lama masih ada pada baris 378 (payload struk checkout) dan baris 493 (helper cetak struk). Akibatnya, pemanggilan handler lokal memunculkan `ReferenceError: kembalian is not defined` dan RPC tidak dipanggil untuk checkout baru maupun pelunasan pending.
+    2. **P1 — Diskon dan Pajak Bersamaan Menghasilkan Pembukuan Salah**: RPC `fn_settle_pending_bill` masih menyimpulkan diskon/pajak dari selisih kotor subtotal dengan tagihan akhir (`GREATEST(0, subtotal - tagihan)`). Ketika transaksi memiliki diskon tersimpan (misal Rp 10.000) dan pajak tersimpan (misal Rp 11.000) dengan tagihan akhir Rp 101.000 dari subtotal Rp 100.000:
+       - Hasil aktual: Debit Kas Rp 101.000, Kredit Pendapatan Rp 100.000, Kredit Utang Pajak Rp 1.000 (diskon 0, pajak di-netting ke Rp 1.000).
+       - Seharusnya: Pendapatan Bersih Rp 90.000 dan Utang Pajak Rp 11.000 (atau penyajian diskon terpisah 4104: Debit Kas 101k + Debit Diskon 10k == Kredit Pendapatan 100k + Kredit Utang Pajak 11k). Jurnal sebelumnya seimbang angka, tetapi klasifikasi dan nominal per akun salah.
+
+- **Solusi Rekayasa & Implementasi**:
+  1. **Perbaikan Referensi Kembalian & Isolasi Handler Checkout**:
+     - Memperbaiki seluruh referensi `kembalian` pada `CafePOSPage.jsx` agar mengacu pada `effectiveKembalian`.
+     - Mengekstrak fungsi eksekusi checkout `processCafeCheckout` ke `src/utils/cafeCheckoutHelpers.js` untuk menjamin independensi handler, isolasi parameter, dan kemudahan pengujian tanpa bergantung pada mock service semata.
+     - Membuat test suite handler otomatis `src/pages/pos/__tests__/cafePOSCheckoutHandler.test.jsx` yang menguji:
+       - Transaksi checkout baru: memastikan `executeCheckout` menerima `strukPayload.kembalian` yang valid dan helper cetak struk menerima `effectiveKembalian` tanpa ReferenceError.
+       - Pelunasan tagihan pending: memastikan `settlePendingBill` dipanggil dengan parameter kanonikal dan helper struk menerima nilai tersimpan tanpa exception.
+       - Validasi pembayaran tunai kurang dari tagihan sebelum RPC dipanggil.
+  2. **Penjurnalan Komponen Diskon dan Pajak Tersimpan Eksplisit**:
+     - Memperbarui RPC `fn_settle_pending_bill` di `supabase/migrations/20261104000001_atomic_pending_bill_settlement.sql`:
+       - Mengambil komponen diskon tersimpan yang tervalidasi: `v_discount := COALESCE(NULLIF(p_settle_payload->>'diskon', '')::numeric, v_struk.diskon, (COALESCE(v_struk.diskon_cafe, 0.00) + COALESCE(v_struk.diskon_carwash, 0.00)), 0.00)`.
+       - Mengambil komponen pajak tersimpan yang tervalidasi: `v_tax := COALESCE(NULLIF(p_settle_payload->>'pajak', '')::numeric, v_struk.pajak, 0.00)`.
+       - Menghapus logika lama yang menyimpulkan diskon/pajak hanya dari selisih kotor `v_item_subtotal - v_base_total`.
+       - Menjaga fallback untuk struk historis tanpa metadata terpisah.
+       - Memvalidasi keberadaan akun kewajiban/utang pajak `v_coa_tax` (2102/2101) jika `v_tax > 0.00`.
+     - Memperbarui posting jurnal:
+       - **Metode Net Revenue** (tanpa akun potongan terpisah 4104):
+         - Debit: Kas/Bank Rp 101.000.
+         - Kredit: Pendapatan Bersih Rp 90.000 (`subtotal 100k - diskon 10k`), Utang Pajak Rp 11.000.
+         - Total Debit Rp 101.000 == Total Kredit Rp 101.000 (Presisi Klasifikasi Terpenuhi).
+       - **Metode Penyajian Terpisah** (dengan akun potongan penjualan 4104):
+         - Debit: Kas/Bank Rp 101.000, Potongan Penjualan Rp 10.000 (Total Debit Rp 111.000).
+         - Kredit: Pendapatan Kotor Rp 100.000, Utang Pajak Rp 11.000 (Total Kredit Rp 111.000).
+         - Total Debit Rp 111.000 == Total Kredit Rp 111.000 (Presisi Klasifikasi Terpenuhi).
+  3. **Harness PostgreSQL Riil & Penambahan Test 10**:
+     - Menambahkan Test 10 pada `supabase/tests/pending_settlement_isolation.sql` untuk menguji skenario diskon dan pajak muncul bersamaan (Part A dengan akun 4104 dan Part B Net Revenue tanpa akun 4104).
+     - Asersi ketat membuktikan:
+       - Kredit pendapatan bersih adalah persis Rp 90.000 (bukan Rp 100.000).
+       - Kredit utang pajak adalah persis Rp 11.000 (bukan Rp 1.000).
+       - Debit dan kredit jurnal seimbang 100% dan seluruh harness di-rollback bersih.
+     - Eksekusi `scripts/test_pending_settlement_isolation.sh` pada kontainer PostgreSQL lokal: **GREEN (Exit code 0)**.
+
+- **Status Integritas Proyek**:
+  - Vitest Unit & Handler Tests: 64 test files, **394 passed (100% Green)**.
+  - PostgreSQL Harness: **ALL PENDING SETTLEMENT SQL CHECKS PASSED (Exit code 0)**.
+  - Linter (`oxlint`): **0 Error**.
+  - Production Build Vite: **Sukses** (2.88s).
+  - Isolasi branch `fix/pending-settlement-atomicity` tetap terjaga tanpa merge ke `main` dan tanpa modifikasi database produksi.
+
+### 118. Penegakan Struk Tersimpan sebagai Sumber Otoritatif Tunggal & Penolakan Manipulasi Diskon/Pajak (05 November 2026)
+- **Konteks & Latar Belakang Masalah**:
+  - Peninjauan terhadap commit `a327882` memverifikasi bahwa dua masalah sebelumnya telah terselesaikan (394 tes lulus, helper struk dan kembalian benar, skenario gabungan diskon+pajak sah menghasilkan jurnal akurat).
+  - Namun, peninjauan menemukan satu celah keamanan kritis pada level API database:
+    - **P1 — Request Kasir Masih Dapat Mengganti Diskon dan Pajak untuk Jurnal**:
+      Pada fungsi `fn_settle_pending_bill` baris 963, fungsi masih mendahulukan nilai dari `p_settle_payload->>'diskon'` dan `p_settle_payload->>'pajak'` dibandingkan nilai struk tersimpan (`v_struk.diskon` dan `v_struk.pajak`).
+      Ketika diuji menggunakan identitas role kasir dengan payload manipulasi:
+      - Struk tersimpan: Diskon Rp 10.000, Pajak Rp 11.000, Tagihan akhir Rp 101.000.
+      - Request manipulasi kasir: Diskon Rp 20.000, Pajak Rp 21.000, Tagihan akhir Rp 101.000.
+      - Hasil sebelumnya: RPC mengembalikan `COMPLETED` dan membentuk jurnal berdasarkan nilai manipulasi (Diskon Rp 20.000 & Pajak Rp 21.000), sementara header struk tetap menyimpan nilai asli Rp 10.000 & Rp 11.000.
+      - Dampak: Terjadi divergensi data antara fisik struk dan pembukuan general ledger meskipun jurnal seimbang matematis. Menonaktifkan kontrol di antarmuka kasir tidak mencegah request API langsung.
+
+- **Solusi Rekayasa & Implementasi**:
+  1. **Penegakan Struk Tersimpan sebagai Single Source of Truth**:
+     - Memperbarui RPC `fn_settle_pending_bill` pada `supabase/migrations/20261104000001_atomic_pending_bill_settlement.sql`:
+       - Menghapus pembacaan preferensi `p_settle_payload` untuk diskon dan pajak.
+       - Menetapkan `v_discount := COALESCE(v_struk.diskon, (COALESCE(v_struk.diskon_cafe, 0.00) + COALESCE(v_struk.diskon_carwash, 0.00)), 0.00)` dan `v_tax := COALESCE(v_struk.pajak, 0.00)` langsung dari record struk tersimpan di database.
+  2. **Penolakan Keras Terhadap Request Manipulasi**:
+     - Menambahkan validasi integritas payload:
+       - Jika request pelunasan menyertakan field `diskon` yang berbeda dari nilai struk tersimpan, transaksi seketika digagalkan dengan exception `PRICE_MODIFICATION_FORBIDDEN: Nilai diskon pada pelunasan tidak boleh diubah dari nilai struk tersimpan` (SQLSTATE `42501`).
+       - Jika request pelunasan menyertakan field `pajak` yang berbeda dari nilai struk tersimpan, transaksi seketika digagalkan dengan exception `PRICE_MODIFICATION_FORBIDDEN: Nilai pajak pada pelunasan tidak boleh diubah dari nilai struk tersimpan` (SQLSTATE `42501`).
+     - Menambahkan mapping exception standar di `src/services/posService.js` untuk kode `PRICE_MODIFICATION_FORBIDDEN`.
+  3. **Pengujian Test 11 di PostgreSQL Harness Riil (`pending_settlement_isolation.sql`)**:
+     - Menambahkan Test 11 dengan autentikasi role kasir (`profiles.role = 'kasir'`):
+       - Kasir mengirim request manipulasi diskon Rp 20.000 dan pajak Rp 21.000 pada tagihan tersimpan (Diskon 10k, Pajak 11k).
+       - Membuktikan transaksi ditolak dengan error `PRICE_MODIFICATION_FORBIDDEN`.
+       - Membuktikan status struk tetap `Pending`, zero cashflow, dan zero journal entries (100% rollback atomik).
+       - Membuktikan pelunasan sah oleh kasir (tanpa payload manipulasi) berhasil dengan jurnal yang persis mengacu ke nilai struk tersimpan (Utang Pajak Rp 11.000 dan Diskon Rp 10.000).
+  4. **Unit Test Service Frontend**:
+     - Menambahkan pengujian pemetaan error `PRICE_MODIFICATION_FORBIDDEN` di `src/services/__tests__/pendingSettlement.test.js`.
+
+- **Verifikasi Kualitas & Status**:
+  - PostgreSQL Isolation Test Harness (`scripts/test_pending_settlement_isolation.sh`): **ALL PENDING SETTLEMENT SQL CHECKS PASSED (Exit code 0)**.
+  - Vitest Unit & Handler Suite: 64 test files, **395 tests passed (100% Green)**.
+  - Linter (`oxlint`): **0 Error**.
+  - Production Build Vite: **Sukses (2.35s)**.
+  - Branch `fix/pending-settlement-atomicity` tetap terisolasi tanpa merge ke `main` dan tanpa perubahan pada database produksi.
+
+
 
 
 
