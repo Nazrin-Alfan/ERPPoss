@@ -1384,7 +1384,7 @@ const CafePOS = () => {
       // Menjamin atomisitas, pencatatan cashflow, posting jurnal, dan isolasi biaya inap tanpa pemotongan stok ganda
       const settleResponse = await posService.settlePendingBill({
         tenantId: effectiveTenantId,
-        branchId: activeBranchId || null,
+        branchId: profile?.branch_id || null,
         settlePayload: {
           id_struk: settlingBill.id,
           metode_bayar: settlePaymentMethod,
