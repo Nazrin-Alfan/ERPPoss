@@ -310,40 +310,66 @@ SELECT pg_temp.expect_settle_denied(
   0       -- Different surcharge
 );
 
--- 5. Test Forced Journal Failure After Initial Mutations (Zero Partial State)
+-- 5. Test Forced Journal Failure (Missing Mandatory Account Rolls Back All Mutations)
 DO $$
 DECLARE
   v_struk_before record;
   v_struk_after record;
+  v_err_caught text := '';
 BEGIN
+  -- Setup test tenant without cash account 1101 to test pre-mutation account validation
+  INSERT INTO public.tenants (id) VALUES ('44444444-4444-4444-4444-444444444444'::uuid) ON CONFLICT DO NOTHING;
+  INSERT INTO public.branches (id, tenant_id, is_active)
+  VALUES ('44444444-aaaa-4444-aaaa-444444444444'::uuid, '44444444-4444-4444-4444-444444444444'::uuid, true)
+  ON CONFLICT DO NOTHING;
+  INSERT INTO public.profiles (id, tenant_id, branch_id, role, is_active)
+  VALUES ('00000000-0000-0000-0000-000000000004', '44444444-4444-4444-4444-444444444444'::uuid, '44444444-aaaa-4444-aaaa-444444444444'::uuid, 'owner', true)
+  ON CONFLICT DO NOTHING;
+
   -- Create isolated pending receipt QA-FAIL-JOURNAL
   INSERT INTO public.struk (
-    id, tenant_id, branch_id, id_struk, total_biaya, uang_diterima, kembalian,
+    id, tenant_id, branch_id, id_struk, total_tagihan, total_biaya, uang_diterima, kembalian,
     metode_pembayaran, status_bayar, tanggal, created_at, kasir
   ) VALUES (
-    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, '33333333-3333-3333-3333-333333333333'::uuid,
-    'QA-FAIL-JOURNAL', 50000.00, 0.00, 0.00, 'Pending', 'Pending', CURRENT_DATE, now(), 'QA Tester'
+    gen_random_uuid(), '44444444-4444-4444-4444-444444444444'::uuid, '44444444-aaaa-4444-aaaa-444444444444'::uuid,
+    'QA-FAIL-JOURNAL', 50000.00, 50000.00, 0.00, 0.00, 'Pending', 'Pending', CURRENT_DATE, now(), 'QA Tester'
+  );
+
+  INSERT INTO public.carwash (
+    id, tenant_id, branch_id, id_struk, tanggal, jam, plat, model, variant, ukuran,
+    paket, harga, status, created_at
+  ) VALUES (
+    gen_random_uuid(), '44444444-4444-4444-4444-444444444444'::uuid, '44444444-aaaa-4444-aaaa-444444444444'::uuid,
+    'QA-FAIL-JOURNAL', CURRENT_DATE, '10:00:00'::time, 'B 4444 QA', 'Mobil', 'Sedan', 'Medium',
+    'Cuci Regular', 50000.00, 'Pending', now()
   );
 
   SELECT * INTO v_struk_before FROM public.struk WHERE id_struk = 'QA-FAIL-JOURNAL';
 
-  -- Simulate settlement failure (underpaid tender to force transaction rollback)
+  -- Simulate settlement without cash account 1101 configured: MUST fail with ACCOUNT_MAPPING_MISSING
+  PERFORM set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000004', true);
   BEGIN
-    PERFORM pg_temp.settle_sale(
-      '22222222-2222-2222-2222-222222222222'::uuid,
-      '33333333-3333-3333-3333-333333333333'::uuid,
-      'QA-FAIL-JOURNAL',
-      10000.00, -- Deliberately underpaid to abort transaction
-      false,
-      0.00,
-      'CASH',
-      '00000000-0000-0000-0000-000000000002'
+    PERFORM public.fn_settle_pending_bill(
+      '44444444-4444-4444-4444-444444444444'::uuid,
+      '44444444-aaaa-4444-aaaa-444444444444'::uuid,
+      jsonb_build_object(
+        'id_struk', 'QA-FAIL-JOURNAL',
+        'metode_bayar', 'CASH',
+        'uang_diterima', 50000.00,
+        'idempotency_key', 'QA-FAIL-JOURNAL:settle:fail-test'
+      )
     );
   EXCEPTION WHEN OTHERS THEN
-    -- Expected rollback
-    NULL;
+    v_err_caught := SQLERRM;
   END;
 
+  -- Assert specific error code
+  PERFORM pg_temp.assert_true(
+    position('ACCOUNT_MAPPING_MISSING' IN v_err_caught) > 0,
+    'Settlement must explicitly fail with ACCOUNT_MAPPING_MISSING when mandatory account is absent'
+  );
+
+  -- Assert Zero Partial State
   SELECT * INTO v_struk_after FROM public.struk WHERE id_struk = 'QA-FAIL-JOURNAL';
   PERFORM pg_temp.assert_true(v_struk_after.status_bayar = 'Pending', 'Failed settlement must preserve Pending status');
   PERFORM pg_temp.assert_true(
@@ -351,48 +377,69 @@ BEGIN
     'Zero orphaned cashflow on failed settlement'
   );
   PERFORM pg_temp.assert_true(
-    (SELECT count(*) FROM public.journal_entries WHERE reference_id LIKE '%QA-FAIL-JOURNAL%') = 0,
+    (SELECT count(*) FROM public.journal_entries WHERE entry_no LIKE '%QA-FAIL-JOURNAL%') = 0,
     'Zero orphaned journal entries on failed settlement'
   );
 
-  RAISE NOTICE 'PASS forced failure rollback preserves zero partial state';
+  RAISE NOTICE 'PASS forced journal failure rollback preserves zero partial state with specific error: %', v_err_caught;
 END $$;
 
--- 6. Test SPLIT Payment with Excess Cash and Change Calculation
+-- 6. Test SPLIT Payment with Excess Cash and Change Calculation via Real RPC
 DO $$
 DECLARE
+  v_split_res jsonb;
   v_struk_split record;
   v_cf_cash record;
   v_cf_digital record;
+  v_je record;
+  v_je_sum record;
 BEGIN
   -- Create isolated pending receipt QA-SPLIT-EXCESS
   INSERT INTO public.struk (
-    id, tenant_id, branch_id, id_struk, total_biaya, uang_diterima, kembalian,
+    id, tenant_id, branch_id, id_struk, total_tagihan, total_biaya, uang_diterima, kembalian,
     metode_pembayaran, status_bayar, tanggal, created_at, kasir
   ) VALUES (
     gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, '33333333-3333-3333-3333-333333333333'::uuid,
-    'QA-SPLIT-EXCESS', 80000.00, 0.00, 0.00, 'Pending', 'Pending', CURRENT_DATE, now(), 'QA Tester'
+    'QA-SPLIT-EXCESS', 80000.00, 80000.00, 0.00, 0.00, 'Pending', 'Pending', CURRENT_DATE, now(), 'QA Tester'
   );
 
-  -- Settle SPLIT: Total 80k (Cash 30k, QRIS 50k), Tender Cash 50k (Kembalian 20k)
-  -- Uses direct atomic settlement procedure
-  UPDATE public.struk
-  SET status_bayar = 'Selesai',
-      metode_pembayaran = 'SPLIT',
-      uang_diterima = 50000.00,
-      kembalian = 20000.00,
-      total_biaya = 80000.00
-  WHERE id_struk = 'QA-SPLIT-EXCESS';
+  INSERT INTO public.carwash (
+    id, tenant_id, branch_id, id_struk, tanggal, jam, plat, model, variant, ukuran,
+    paket, harga, status, created_at
+  ) VALUES (
+    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, '33333333-3333-3333-3333-333333333333'::uuid,
+    'QA-SPLIT-EXCESS', CURRENT_DATE, '11:00:00'::time, 'B 8888 QA', 'Mobil', 'Sedan', 'Medium',
+    'Cuci Regular', 80000.00, 'Pending', now()
+  );
 
-  INSERT INTO public.cashflow (id, tenant_id, branch_id, tanggal, id_sumber, kategori, pos, keterangan, pemasukan, pengeluaran)
-  VALUES 
-    (gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, '33333333-3333-3333-3333-333333333333'::uuid, CURRENT_DATE, 'CF-SETTLE-CASH-QA-SPLIT-EXCESS', 'Pendapatan', 'SALDO CASH', 'Porsi Tunai', 30000.00, 0.00),
-    (gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, '33333333-3333-3333-3333-333333333333'::uuid, CURRENT_DATE, 'CF-SETTLE-DIGITAL-QA-SPLIT-EXCESS', 'Pendapatan', 'SALDO REKENING (N)', 'Porsi Digital QRIS', 50000.00, 0.00);
+  -- Execute Real RPC Call for SPLIT: Total 80k (Cash 30k, QRIS 50k), Cash Handed 50k (Kembalian 20k)
+  PERFORM set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
+  v_split_res := public.fn_settle_pending_bill(
+    '22222222-2222-2222-2222-222222222222'::uuid,
+    '33333333-3333-3333-3333-333333333333'::uuid,
+    jsonb_build_object(
+      'id_struk', 'QA-SPLIT-EXCESS',
+      'metode_bayar', 'SPLIT',
+      'nominal_cash', 30000.00,
+      'nominal_qris', 50000.00,
+      'uang_diterima', 50000.00,
+      'idempotency_key', 'QA-SPLIT-EXCESS:settle:real-test'
+    )
+  );
 
+  -- Asersi respons RPC
+  PERFORM pg_temp.assert_true((v_split_res->>'success')::boolean = true, 'SPLIT RPC must return success: true');
+  PERFORM pg_temp.assert_true((v_split_res->>'status') = 'COMPLETED', 'SPLIT RPC must return status: COMPLETED');
+  PERFORM pg_temp.assert_true((v_split_res->>'kembalian')::numeric = 20000.00, 'SPLIT RPC must return kembalian = 20000.00');
+  PERFORM pg_temp.assert_true((v_split_res->>'total_tagihan')::numeric = 80000.00, 'SPLIT RPC must return total_tagihan = 80000.00');
+
+  -- Asersi Data Struk
   SELECT * INTO v_struk_split FROM public.struk WHERE id_struk = 'QA-SPLIT-EXCESS';
   PERFORM pg_temp.assert_true(v_struk_split.status_bayar = 'Selesai', 'Split receipt must be Selesai');
-  PERFORM pg_temp.assert_true(v_struk_split.kembalian = 20000.00, 'Excess cash tender must return exact 20,000 change');
+  PERFORM pg_temp.assert_true(v_struk_split.kembalian = 20000.00, 'Excess cash tender must store exact 20,000 change on struk');
+  PERFORM pg_temp.assert_true(v_struk_split.uang_diterima = 50000.00, 'Cash tender received must be stored as 50,000');
 
+  -- Asersi Mutasi Cashflow (2 baris terpisah: Tunai & Digital)
   SELECT * INTO v_cf_cash FROM public.cashflow WHERE id_sumber = 'CF-SETTLE-CASH-QA-SPLIT-EXCESS';
   PERFORM pg_temp.assert_true(v_cf_cash.pemasukan = 30000.00, 'Cash portion cashflow must be 30,000');
   PERFORM pg_temp.assert_true(v_cf_cash.pos = 'SALDO CASH', 'Cash portion pos must be SALDO CASH');
@@ -401,7 +448,66 @@ BEGIN
   PERFORM pg_temp.assert_true(v_cf_digital.pemasukan = 50000.00, 'Digital portion cashflow must be 50,000');
   PERFORM pg_temp.assert_true(v_cf_digital.pos = 'SALDO REKENING (N)', 'Digital portion pos must be SALDO REKENING (N)');
 
-  RAISE NOTICE 'PASS SPLIT payment with excess cash and change calculation verified';
+  -- Asersi Jurnal Double-Entry
+  SELECT * INTO v_je FROM public.journal_entries WHERE entry_no = 'JE-SETTLE-QA-SPLIT-EXCESS';
+  PERFORM pg_temp.assert_true(v_je.status = 'POSTED', 'Journal entry must be POSTED');
+  SELECT SUM(debit) AS total_debit, SUM(credit) AS total_credit INTO v_je_sum
+  FROM public.journal_entry_lines WHERE journal_entry_id = v_je.id;
+  PERFORM pg_temp.assert_true(v_je_sum.total_debit = v_je_sum.total_credit, 'Journal lines must strictly balance: debit == credit');
+  PERFORM pg_temp.assert_true(v_je_sum.total_debit = 80000.00, 'Total debit must be 80,000');
+
+  RAISE NOTICE 'PASS real RPC SPLIT payment with excess cash and change calculation verified';
+END $$;
+
+-- 7. Test Discounted Bill General Ledger Balance (Finding 1)
+DO $$
+DECLARE
+  v_disc_res jsonb;
+  v_je_disc record;
+  v_je_disc_sum record;
+BEGIN
+  -- Create isolated pending receipt with discount: Item 100k, Discount 10k, Final Total 90k
+  INSERT INTO public.struk (
+    id, tenant_id, branch_id, id_struk, subtotal, diskon, total_tagihan, total_biaya, uang_diterima, kembalian,
+    metode_pembayaran, status_bayar, tanggal, created_at, kasir
+  ) VALUES (
+    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, '33333333-3333-3333-3333-333333333333'::uuid,
+    'QA-DISC-BILL', 100000.00, 10000.00, 90000.00, 90000.00, 0.00, 0.00, 'Pending', 'Pending', CURRENT_DATE, now(), 'QA Tester'
+  );
+
+  INSERT INTO public.cafe (
+    id, tenant_id, branch_id, id_struk, tanggal, jam, nama_menu, qty, harga_satuan, subtotal, status, created_at
+  ) VALUES (
+    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, '33333333-3333-3333-3333-333333333333'::uuid,
+    'QA-DISC-BILL', CURRENT_DATE, '12:00:00'::time, 'Coffee Bundle', 1, 100000.00, 100000.00, 'Pending', now()
+  );
+
+  -- Execute Real RPC Call
+  PERFORM set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
+  v_disc_res := public.fn_settle_pending_bill(
+    '22222222-2222-2222-2222-222222222222'::uuid,
+    '33333333-3333-3333-3333-333333333333'::uuid,
+    jsonb_build_object(
+      'id_struk', 'QA-DISC-BILL',
+      'metode_bayar', 'CASH',
+      'uang_diterima', 100000.00,
+      'idempotency_key', 'QA-DISC-BILL:settle:disc-test'
+    )
+  );
+
+  PERFORM pg_temp.assert_true((v_disc_res->>'success')::boolean = true, 'Discounted bill settlement must succeed');
+  PERFORM pg_temp.assert_true((v_disc_res->>'total_tagihan')::numeric = 90000.00, 'Final total must be 90,000');
+  PERFORM pg_temp.assert_true((v_disc_res->>'kembalian')::numeric = 10000.00, 'Kembalian must be 10,000');
+
+  -- Verify Journal Balance for Discounted Bill
+  SELECT * INTO v_je_disc FROM public.journal_entries WHERE entry_no = 'JE-SETTLE-QA-DISC-BILL';
+  PERFORM pg_temp.assert_true(v_je_disc.status = 'POSTED', 'Journal entry must be POSTED');
+  SELECT SUM(debit) AS total_debit, SUM(credit) AS total_credit INTO v_je_disc_sum
+  FROM public.journal_entry_lines WHERE journal_entry_id = v_je_disc.id;
+  PERFORM pg_temp.assert_true(v_je_disc_sum.total_debit = v_je_disc_sum.total_credit, 'CRITICAL: Discounted bill journal MUST strictly balance debit == credit');
+  PERFORM pg_temp.assert_true(v_je_disc_sum.total_debit = 90000.00, 'Total debit must be 90,000 (net revenue)');
+
+  RAISE NOTICE 'PASS discounted bill journal balance verified: debit (%) == credit (%)', v_je_disc_sum.total_debit, v_je_disc_sum.total_credit;
 END $$;
 
 ROLLBACK;

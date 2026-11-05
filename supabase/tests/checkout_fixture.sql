@@ -15,7 +15,7 @@ CREATE TABLE public.struk(
  id uuid PRIMARY KEY,tenant_id uuid,branch_id uuid,id_struk text,tanggal date,jam time,kasir text,
  nama_pelanggan text,catatan text,status_bayar text,status_pembayaran text,subtotal numeric,diskon numeric,
  diskon_cafe numeric,diskon_carwash numeric,pajak numeric,nominal_bayar numeric,bayar numeric,kembalian numeric,
- metode_bayar text,metode_pembayaran text,total_tagihan numeric,total numeric,payload_hash text,
+ metode_bayar text,metode_pembayaran text,total_tagihan numeric,total numeric,total_biaya numeric,total_cogs numeric,cogs_status text,payload_hash text,
  created_at timestamptz,waktu_dibuat timestamptz,updated_at timestamptz,
  UNIQUE(tenant_id,id_struk)
 );

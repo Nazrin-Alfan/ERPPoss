@@ -1394,6 +1394,7 @@ const CafePOS = () => {
           nominal_cash: nCash,
           nominal_qris: nQris,
           uang_diterima: parseFloat(settleCashReceived) || (settleMethodUpper === 'SPLIT' ? nCash : finalTotal),
+          idempotency_key: settlingBill.attemptKey,
           surcharge: {
             enabled: settleSurcharge.enabled && surchargeAmount > 0,
             nominal: surchargeAmount,
@@ -2782,7 +2783,7 @@ const CafePOS = () => {
                           </button>
                           <button
                             onClick={() => {
-                              setSettlingBill(bill)
+                              setSettlingBill({ ...bill, attemptKey: `${bill.id}:settle:${effectiveTenantId}` })
                               setSettlePaymentMethod(paymentMethods[0]?.nama || 'CASH')
                               setSettleCashReceived('')
                               setSettleSurcharge({ enabled: false, nominal: 50000, keterangan: 'Biaya Inap Kendaraan (1 Malam)' })
@@ -3035,7 +3036,7 @@ const CafePOS = () => {
                             <>
                               <button
                                 onClick={() => {
-                                  setSettlingBill(tx)
+                                  setSettlingBill({ ...tx, attemptKey: `${tx.id}:settle:${effectiveTenantId}` })
                                   setSettlePaymentMethod(paymentMethods[0]?.nama || 'CASH')
                                   setSettleCashReceived('')
                                 }}

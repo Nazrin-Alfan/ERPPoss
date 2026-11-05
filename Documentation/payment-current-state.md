@@ -322,6 +322,31 @@ Untuk mencegah klik ganda dan inkonsistensi jaringan, pelunasan menerapkan proto
 
 5. **Pengujian Regresi Unit & E2E**:
    - `src/services/__tests__/checkoutPaymentRegression.test.js`: `4 passed` (100%).
-   - `src/services/__tests__/pendingSettlement.test.js`: `14 passed` (100%).
-   - Seluruh test suite lokal: `63 test files passed, 383 passed` (100% Green).
+   - `src/services/__tests__/pendingSettlement.test.js`: `19 passed` (100% Green, termasuk uji stabilitas idempotency key retry, validasi COA pra-mutasi, dan SPLIT overpayment).
+   - Seluruh test suite lokal: `63 test files passed, 388 passed` (100% Green).
    - Linter (`oxlint`) & Vite Build: Sukses tanpa error.
+
+---
+
+## 10. Penyelesaian Komprehensif Temuan Peninjauan Independen (Review Commit 6305974)
+
+1. **Jurnal Tagihan Berdiskon (Debit == Kredit)**:
+   - Menghitung diskon riil dari selisih `(total_carwash + total_cafe) - base_total`.
+   - Jika bagan akun menyediakan akun potongan penjualan (`4104` / `4201`), debit dicatat ke akun potongan penjualan.
+   - Jika tidak ada akun potongan, diskon dialokasikan langsung memotong kredit pendapatan Carwash dan Cafe (Metode Net Revenue). Baris penyeimbang arbitrer dihapus total.
+2. **Validasi Bagan Akun (COA) Pra-Mutasi**:
+   - Seluruh akun kas (1101), bank (1102), pendapatan carwash (4101), pendapatan cafe (4102), biaya inap (4103), serta HPP/Persediaan (5101/1103) divalidasi keberadaannya sebelum mutasi apa pun dieksekusi.
+   - Ketidaklengkapan akun memicu `ACCOUNT_MAPPING_MISSING` dan membatalkan transaksi seketika tanpa meninggalkan perubahan parsial.
+3. **Idempotency Key Stabil Lintas Percobaan Retry**:
+   - Menghapus pembuatan key dinamis berbasis timestamp `Date.now()`.
+   - Menggunakan token percobaan stabil yang dipertahankan dalam state UI dan cache sesi `posService` selama upaya pelunasan tagihan yang sama.
+   - Menjamin pengulangan klik atau retry pasca respons terputus tidak menimbulkan `IDEMPOTENCY_CONFLICT`.
+4. **Konsistensi Keranjang Cafe & Struk dari Transaksi Tersimpan**:
+   - Mengunci keranjang `CafePOSPage` saat mode pelunasan aktif (mencegah penambahan/pengurangan item lokal yang tidak tercatat di DB).
+   - Sumber cetak struk kasir dialihkan menggunakan data transaksi tersimpan dari respons RPC (`settleRes.data`) dan rincian item database (`settlingBill.savedItems`).
+5. **Penyelarasan Fixture SQL & Pemanggilan RPC Riil**:
+   - Menambahkan kolom `total_biaya`, `total_cogs`, dan `cogs_status` pada `checkout_fixture.sql`.
+   - Memperbarui `supabase/tests/pending_settlement_isolation.sql` untuk memanggil RPC riil `fn_settle_pending_bill`, menguji error spesifik `ACCOUNT_MAPPING_MISSING`, serta memverifikasi alokasi SPLIT tunai berlebih dan jurnal diskon berimbang.
+6. **Retensi Nilai NULL & Kolom Status Biaya Historis**:
+   - Menambahkan kolom eksplisit `cogs_status VARCHAR(30)` pada tabel `struk`.
+   - Data historis yang belum diketahui biayanya mempertahankan `total_cogs = NULL` (tidak ditimpa `0.00`) dengan status `HISTORICAL_UNKNOWN`.

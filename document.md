@@ -4554,6 +4554,54 @@ Sebelum perbaikan ini, alur pelunasan tagihan tertunda (*pending bill*) di kasir
   - Linter (`oxlint`) & `vite build`: Clean (0 error).
 - **Status Deployment**: Terisolasi pada branch `fix/pending-settlement-atomicity`. Belum di-merge ke `main` dan belum di-deploy ke produksi.
 
+### 115. Perbaikan Komprehensif 6 Temuan Review pada Pelunasan Tagihan Atomik (Commit 6305974 -> Resolution) (05 November 2026)
+- **Konteks & Latar Belakang**:
+  - Peninjauan independen terhadap commit `6305974` mengidentifikasi 6 kelemahan sistemik kritis (P1 dan validasi akuntansi):
+    1. **P1 — Pelunasan Tagihan Berdiskon Menghasilkan Jurnal Tidak Seimbang**: Jurnal pendapatan mengkredit nilai kotor sebelum diskon sementara debit menggunakan nilai tagihan akhir; penyesuaian sebelumnya tidak menangani selisih diskon sehingga memicu ketidakseimbangan debit-kredit.
+    2. **P1 — Akun Wajib Hilang, Transaksi Tetap Selesai**: Blok penjurnalan dilewati secara diam-diam jika akun kas/bank/pendapatan tidak ditemukan pada COA, menghasilkan transaksi tanpa pembukuan.
+    3. **P1 — Retry UI Menghasilkan Idempotency Key Baru**: Penggunaan timestamp `Date.now()` dinamis pada default idempotency key menyebabkan klik ulang pasca respons terputus memicu error `IDEMPOTENCY_CONFLICT` meskipun rincian pembayaran identik.
+    4. **P1 — Keranjang Cafe Tidak Ikut Dilunasi / Tidak Sinkron**: Mode pelunasan tagihan terbuka di `CafePOSPage` masih memungkinkan modifikasi keranjang lokal tanpa disinkronkan ke DB, dan struk cetak menggunakan keranjang lokal alih-alih data transaksi tersimpan.
+    5. **Pengujian SQL Belum Membuktikan Klaim Laporan**: Fixture uji kehilangan kolom `struk.total_biaya`, simulasi kegagalan menangkap sembarang exception dengan pembayaran kurang, dan uji SPLIT berlebih melakukan mutasi manual tanpa memanggil RPC riil.
+    6. **Status Biaya Historis Tidak Dipertahankan Secara Konsisten**: Data berbiaya historis tidak diketahui ditimpa dengan nilai `0.00`, menyulitkan pembedaan dengan biaya nol terverifikasi.
+
+- **Solusi & Rekayasa Arsitektural**:
+  1. **Alokasi Diskon Jurnal Konsisten & Berimbang (Debit == Kredit)**:
+     - Mengalkulasi subtotal item asal `v_item_subtotal := v_total_carwash + v_total_cafe` dan diskon riil `v_discount := GREATEST(0.00, v_item_subtotal - v_base_total)`.
+     - Mendeteksi keberadaan akun potongan penjualan pada COA (`kode_akun IN ('4104', '4201')` atau nama memuat diskon/potongan).
+     - **Metode Akun Diskon**: Jika akun diskon tersedia, menjurnal Debit Kas/Bank (`v_final_total`), Debit Potongan Penjualan (`v_discount`), dan Kredit Pendapatan kotor penuh. Total Debit = Total Kredit = `v_item_subtotal + v_surcharge`.
+     - **Metode Net Revenue**: Jika akun diskon tidak ada (COA standar), diskon dialokasikan secara proporsional mengurangi nilai kredit pendapatan Carwash dan Cafe. Total Debit = Total Kredit = `v_final_total`.
+     - Baris penyeimbang arbitrer dihapus total. Trigger keseimbangan jurnal dipastikan selalu lolos tanpa anomali.
+  2. **Validasi Bagan Akun (COA) Pra-Mutasi (Pre-mutation Abort)**:
+     - Query dan validasi seluruh akun terkait (`1101`, `1102`, `4101`, `4102`, `4103`, `5101`, `1103`) dipindahkan ke tahap awal sebelum eksekusi mutasi apa pun pada `struk`, `carwash`, `cafe`, atau `cashflow`.
+     - Jika ada akun wajib yang belum terdaftar pada tenant aktif, transaksi langsung dibatalkan dengan `RAISE EXCEPTION 'ACCOUNT_MAPPING_MISSING: ...' USING ERRCODE = '28000'`.
+     - `posService.js` memetakan error ini ke `ACCOUNT_MAPPING_MISSING` dengan panduan visual ke pengguna untuk melengkapi konfigurasi COA di halaman Admin.
+  3. **Idempotency Key Stabil Lintas Upaya Retry**:
+     - Menghapus pembuatan key acak berbasis timestamp `Date.now()`.
+     - Menyediakan cache sesi percobaan `activeSettlementAttemptKeys` pada `posService.js` (berbasis `${tenantId}:${idStruk}`).
+     - UI `HybridPOSPage` dan `CafePOSPage` menyematkan token percobaan stabil `attemptKey` saat memuat tagihan pending dan menyertakannya pada payload pelunasan.
+     - Kunci tetap dipertahankan selama retry jika terjadi gangguan jaringan, dan hanya dibersihkan saat pelunasan berhasil (`COMPLETED`) atau dibatalkan eksplisit (`clearSettlementAttempt`).
+  4. **Penguncian Keranjang Cafe & Struk dari Transaksi Tersimpan**:
+     - Menambahkan proteksi penguncian keranjang pada `CafePOSPage`: jika `settlingBill` aktif, fungsi `handleAddToCart`, `handleUpdateQty`, `handleRemoveItem`, dan pemilih diskon dikunci dengan peringatan visual dan banner interaktif *"Pelunasan Meja: [No Meja / ID Struk] - Item Terkunci"*.
+     - Sumber data struk cetak thermal kasir (`buildPaymentReceiptData`) dialihkan secara mutlak menggunakan data hasil transaksi tersimpan dari respons RPC (`settleRes.data`) dan rincian item database (`settlingBill.savedItems`), menjamin 100% konsistensi antara dapur, stok gudang, dan struk konsumen.
+  5. **Penyelarasan Fixture SQL & Pemanggilan RPC Riil**:
+     - `supabase/tests/checkout_fixture.sql`: Menambahkan kolom `total_biaya`, `total_cogs`, dan `cogs_status` pada skema `public.struk`.
+     - `supabase/tests/pending_settlement_isolation.sql`:
+       - Test 5: Menguji kegagalan otentikasi akun COA sebelum mutasi, menangkap pesan kesalahan spesifik `ACCOUNT_MAPPING_MISSING`, dan memverifikasi nol catatan yatim piatu (*Zero Partial State*).
+       - Test 6: Menguji pelunasan SPLIT tunai berlebih melalui pemanggilan RPC asli `public.fn_settle_pending_bill`, memverifikasi kembalian presisi Rp 20.000, 2 mutasi cashflow terpisah (Kas Rp 30.000 dan Rekening Rp 50.000), serta jurnal berimbang.
+       - Test 7: Menguji pelunasan tagihan berdiskon melalui RPC riil dan membuktikan keseimbangan debit-kredit jurnal (Debit Rp 90.000 == Kredit Rp 90.000).
+  6. **Kolom Terstruktur & Retensi Nilai NULL untuk Biaya Historis**:
+     - Menambahkan kolom eksplisit `cogs_status VARCHAR(30)` pada tabel `struk`.
+     - Menetapkan klasifikasi ketat:
+       - `HISTORICAL_UNKNOWN`: `total_cogs` tetap dipertahankan `NULL` (tidak ditimpa `0.00`) dan `cogs_status = 'HISTORICAL_UNKNOWN'`.
+       - `ZERO_COST`: `total_cogs = 0.00` dan `cogs_status = 'ZERO_COST'`.
+       - `SNAPSHOT_RECORDED` / `HISTORICAL_RESOLVED`: `total_cogs > 0.00` dan `cogs_status` sesuai asal data.
+
+- **Verifikasi Kualitas**:
+  - Unit Test Suite Vitest: 63 test files, **388 tests passed (100% Green)**.
+  - Linter (`oxlint`): 0 error.
+  - Production Build Vite: Sukses (2.53s) tanpa kendala.
+  - Skema dan isolasi transaksi tetap terjaga tanpa merge ke `main` atau deployment produksi.
+
 
 
 

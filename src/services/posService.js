@@ -19,6 +19,10 @@ export class PosCheckoutError extends Error {
   }
 }
 
+// Cache of active settlement attempt keys per `${tenantId}:${idStruk}`
+// Ensures stable idempotency key across retries until settlement succeeds or is explicitly cleared.
+const activeSettlementAttemptKeys = new Map()
+
 export const posService = {
   /**
    * Parse database RPC errors into user-friendly typed errors
@@ -106,6 +110,12 @@ export const posService = {
 
     if (rawMsg.includes('BILL_NOT_FOUND')) {
       return new PosCheckoutError('Tagihan tidak ditemukan dalam tenant aktif.', 'BILL_NOT_FOUND', { raw: rawMsg })
+    }
+
+    if (rawMsg.includes('ACCOUNT_MAPPING_MISSING')) {
+      const match = rawMsg.match(/ACCOUNT_MAPPING_MISSING:\s*(.*)/)
+      const detail = match ? match[1].trim() : 'Bagan akun (COA) belum lengkap.'
+      return new PosCheckoutError(`Konfigurasi bagan akun (COA) belum lengkap: ${detail}`, 'ACCOUNT_MAPPING_MISSING', { raw: rawMsg })
     }
 
     if (rawMsg.includes('JOURNAL_POSTING_FAILED') || rawMsg.includes('LEDGER_UNBALANCED')) {
@@ -280,7 +290,13 @@ export const posService = {
     const targetCash = paymentMethod === 'SPLIT' ? nCash : finalTotal
     const kembalian = isCashPayment && uangDiterima > targetCash ? Math.round((uangDiterima - targetCash) * 100) / 100 : 0
 
-    const idempotencyKey = settlePayload.idempotency_key || `${idStruk}:settle:${Date.now()}`
+    // Stabilize idempotency key across retries for the same settlement attempt
+    const attemptCacheKey = `${tenantId}:${idStruk}`
+    const idempotencyKey = settlePayload.idempotency_key ||
+      activeSettlementAttemptKeys.get(attemptCacheKey) ||
+      `${idStruk}:settle:${Math.random().toString(36).slice(2, 10)}`
+
+    activeSettlementAttemptKeys.set(attemptCacheKey, idempotencyKey)
 
     const normalizedPayload = {
       ...settlePayload,
@@ -308,12 +324,24 @@ export const posService = {
         settle_payload: normalizedPayload
       })
 
+      // Clean up attempt cache on success
+      activeSettlementAttemptKeys.delete(attemptCacheKey)
+
       return {
         success: true,
         data: result
       }
     } catch (err) {
       throw this.parseCheckoutError(err)
+    }
+  },
+
+  /**
+   * Clears the active settlement attempt key for a bill (e.g., when cashier cancels or resets settlement)
+   */
+  clearSettlementAttempt(tenantId, idStruk) {
+    if (tenantId && idStruk) {
+      activeSettlementAttemptKeys.delete(`${tenantId}:${idStruk}`)
     }
   },
 

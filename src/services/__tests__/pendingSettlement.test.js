@@ -175,6 +175,81 @@ describe('pending bill settlement (Tahap 1)', () => {
       }))
     })
 
+    it('generates a stable idempotency key that persists across retries of the same bill', async () => {
+      let firstKey = null
+      let secondKey = null
+
+      const settleSpy = vi.spyOn(api.transaksi, 'settlePendingBill')
+        .mockImplementationOnce(async ({ settle_payload }) => {
+          firstKey = settle_payload.idempotency_key
+          throw new Error('Network timeout: connection lost')
+        })
+        .mockImplementationOnce(async ({ settle_payload }) => {
+          secondKey = settle_payload.idempotency_key
+          return {
+            success: true,
+            status: 'COMPLETED',
+            was_replayed: false,
+            id_struk: 'STRUK-RETRY-001'
+          }
+        })
+
+      // Attempt 1: fails due to network drop
+      await expect(posService.settlePendingBill({
+        tenantId: '11111111-1111-1111-1111-111111111111',
+        settlePayload: {
+          id_struk: 'STRUK-RETRY-001',
+          metode_bayar: 'QRIS',
+          base_total: 50000,
+          uang_diterima: 50000
+        }
+      })).rejects.toThrow()
+
+      // Attempt 2: retry of the exact same bill
+      const retryRes = await posService.settlePendingBill({
+        tenantId: '11111111-1111-1111-1111-111111111111',
+        settlePayload: {
+          id_struk: 'STRUK-RETRY-001',
+          metode_bayar: 'QRIS',
+          base_total: 50000,
+          uang_diterima: 50000
+        }
+      })
+
+      expect(retryRes.success).toBe(true)
+      expect(firstKey).toBeTruthy()
+      expect(secondKey).toBeTruthy()
+      expect(secondKey).toBe(firstKey) // Key MUST be stable across retries to prevent IDEMPOTENCY_CONFLICT
+    })
+
+    it('safely handles lost response replay using stable key without IDEMPOTENCY_CONFLICT', async () => {
+      // Simulate server already completed transaction on attempt 1, but response was lost
+      // On retry with same key, server returns was_replayed = true
+      vi.spyOn(api.transaksi, 'settlePendingBill').mockResolvedValue({
+        success: true,
+        status: 'COMPLETED',
+        was_replayed: true,
+        id_struk: 'STRUK-LOST-RESP-001',
+        total_tagihan: 50000,
+        metode_bayar: 'CASH',
+        kembalian: 0
+      })
+
+      const res = await posService.settlePendingBill({
+        tenantId: '11111111-1111-1111-1111-111111111111',
+        settlePayload: {
+          id_struk: 'STRUK-LOST-RESP-001',
+          metode_bayar: 'CASH',
+          base_total: 50000,
+          uang_diterima: 50000
+        }
+      })
+
+      expect(res.success).toBe(true)
+      expect(res.data.was_replayed).toBe(true)
+      expect(res.data.status).toBe('COMPLETED')
+    })
+
     it('throws error when surcharge exceeds 5,000,000 limit', async () => {
       await expect(posService.settlePendingBill({
         tenantId: '11111111-1111-1111-1111-111111111111',
@@ -220,7 +295,8 @@ describe('pending bill settlement (Tahap 1)', () => {
       ['BILL_CANCELLED: tagihan dibatalkan', 'BILL_CANCELLED', /telah dibatalkan/i],
       ['TENANT_FORBIDDEN: lintas tenant', 'TENANT_FORBIDDEN', /lintas tenant/i],
       ['SURCHARGE_UNAUTHORIZED: di atas 500k', 'SURCHARGE_UNAUTHORIZED', /memerlukan otorisasi/i],
-      ['INVALID_SURCHARGE: keterangan wajib', 'INVALID_SURCHARGE', /keterangan wajib/i]
+      ['INVALID_SURCHARGE: keterangan wajib', 'INVALID_SURCHARGE', /keterangan wajib/i],
+      ['ACCOUNT_MAPPING_MISSING: Akun kas (1101) belum dikonfigurasi', 'ACCOUNT_MAPPING_MISSING', /bagan akun|COA/i]
     ])('maps server error %s to standardized code %s', async (rawError, expectedCode, expectedMsgRegex) => {
       vi.spyOn(api.transaksi, 'settlePendingBill').mockRejectedValue(new Error(rawError))
 

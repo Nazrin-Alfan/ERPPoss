@@ -7,7 +7,9 @@
 -- ==============================================================================
 
 -- 1. Tambahkan kolom pendukung pelunasan, HPP asal, dan biaya inap ke tabel struk
+ALTER TABLE public.struk ADD COLUMN IF NOT EXISTS total_biaya NUMERIC(15, 2);
 ALTER TABLE public.struk ADD COLUMN IF NOT EXISTS total_cogs NUMERIC(15, 2) DEFAULT NULL;
+ALTER TABLE public.struk ADD COLUMN IF NOT EXISTS cogs_status VARCHAR(30) DEFAULT NULL;
 ALTER TABLE public.struk ADD COLUMN IF NOT EXISTS biaya_inap NUMERIC(15, 2) NOT NULL DEFAULT 0.00;
 ALTER TABLE public.struk ADD COLUMN IF NOT EXISTS catatan_inap TEXT;
 ALTER TABLE public.struk ADD COLUMN IF NOT EXISTS idempotency_key TEXT;
@@ -626,7 +628,11 @@ DECLARE
 
     v_total_carwash NUMERIC(15, 2) := 0.00;
     v_total_cafe NUMERIC(15, 2) := 0.00;
-    v_total_cogs NUMERIC(15, 2) := 0.00;
+    v_item_subtotal NUMERIC(15, 2) := 0.00;
+    v_discount NUMERIC(15, 2) := 0.00;
+    v_net_cw NUMERIC(15, 2) := 0.00;
+    v_net_cafe NUMERIC(15, 2) := 0.00;
+    v_total_cogs NUMERIC(15, 2) := NULL;
     v_cogs_status TEXT := 'SNAPSHOT_RECORDED';
     v_cogs_incomplete BOOLEAN := FALSE;
 
@@ -638,6 +644,7 @@ DECLARE
     v_coa_rev_cafe UUID;
     v_coa_rev_inap UUID;
     v_coa_cogs UUID;
+    v_coa_disc UUID;
     v_pos TEXT;
     v_is_cash BOOLEAN;
 BEGIN
@@ -861,9 +868,9 @@ BEGIN
           );
 
         IF v_cogs_incomplete IS TRUE OR v_total_cogs IS NULL OR v_total_cogs <= 0.00 THEN
-            -- Jika catatan biaya asal tidak lengkap atau tidak ada, tandai sebagai belum diketahui
+            -- Jika catatan biaya asal tidak lengkap atau tidak ada, tandai sebagai belum diketahui (pertahankan NULL!)
             v_cogs_status := 'HISTORICAL_UNKNOWN';
-            v_total_cogs := 0.00;
+            v_total_cogs := NULL;
         ELSE
             v_cogs_status := 'HISTORICAL_RESOLVED';
         END IF;
@@ -873,6 +880,64 @@ BEGIN
     ELSE
         v_cogs_status := 'SNAPSHOT_RECORDED';
         v_total_cogs := v_struk.total_cogs;
+    END IF;
+
+    -- 8B. Validasi Pra-Mutasi Konfigurasi Bagan Akun (COA) Terstruktur (Finding 2)
+    -- Ambil seluruh akun COA yang berelasi dan total rincian layanan
+    SELECT id INTO v_coa_kas FROM public.chart_of_accounts
+    WHERE tenant_id = p_tenant_id AND kode_akun = '1101' LIMIT 1;
+
+    SELECT id INTO v_coa_bank FROM public.chart_of_accounts
+    WHERE tenant_id = p_tenant_id AND kode_akun = '1102' LIMIT 1;
+
+    SELECT id INTO v_coa_inv FROM public.chart_of_accounts
+    WHERE tenant_id = p_tenant_id AND kode_akun = '1103' LIMIT 1;
+
+    SELECT id INTO v_coa_rev_cw FROM public.chart_of_accounts
+    WHERE tenant_id = p_tenant_id AND kode_akun = '4101' LIMIT 1;
+
+    SELECT id INTO v_coa_rev_cafe FROM public.chart_of_accounts
+    WHERE tenant_id = p_tenant_id AND kode_akun = '4102' LIMIT 1;
+
+    SELECT id INTO v_coa_rev_inap FROM public.chart_of_accounts
+    WHERE tenant_id = p_tenant_id AND kode_akun = '4103' LIMIT 1;
+
+    SELECT id INTO v_coa_cogs FROM public.chart_of_accounts
+    WHERE tenant_id = p_tenant_id AND kode_akun = '5101' LIMIT 1;
+
+    SELECT id INTO v_coa_disc FROM public.chart_of_accounts
+    WHERE tenant_id = p_tenant_id AND (kode_akun IN ('4104', '4201') OR LOWER(nama_akun) LIKE '%diskon%' OR LOWER(nama_akun) LIKE '%potongan%') LIMIT 1;
+
+    SELECT COALESCE(SUM(harga), 0.00) INTO v_total_carwash
+    FROM public.carwash WHERE tenant_id = p_tenant_id AND id_struk = v_id_struk;
+
+    SELECT COALESCE(SUM(subtotal), 0.00) INTO v_total_cafe
+    FROM public.cafe WHERE tenant_id = p_tenant_id AND id_struk = v_id_struk;
+
+    -- Validasi 1: Akun Pembayaran (Kas / Bank)
+    IF v_nominal_cash > 0.00 AND v_coa_kas IS NULL THEN
+        RAISE EXCEPTION 'ACCOUNT_MAPPING_MISSING: Akun kas (1101) belum dikonfigurasi pada bagan akun (COA).' USING ERRCODE = '28000';
+    END IF;
+    IF (v_nominal_qris + v_nominal_transfer) > 0.00 AND COALESCE(v_coa_bank, v_coa_kas) IS NULL THEN
+        RAISE EXCEPTION 'ACCOUNT_MAPPING_MISSING: Akun bank (1102) atau kas (1101) belum dikonfigurasi pada bagan akun (COA).' USING ERRCODE = '28000';
+    END IF;
+
+    -- Validasi 2: Akun Pendapatan
+    IF v_total_carwash > 0.00 AND v_coa_rev_cw IS NULL THEN
+        RAISE EXCEPTION 'ACCOUNT_MAPPING_MISSING: Akun pendapatan carwash (4101) belum dikonfigurasi pada bagan akun (COA).' USING ERRCODE = '28000';
+    END IF;
+    IF v_total_cafe > 0.00 AND v_coa_rev_cafe IS NULL THEN
+        RAISE EXCEPTION 'ACCOUNT_MAPPING_MISSING: Akun pendapatan cafe (4102) belum dikonfigurasi pada bagan akun (COA).' USING ERRCODE = '28000';
+    END IF;
+    IF v_surcharge_nominal > 0.00 AND COALESCE(v_coa_rev_inap, v_coa_rev_cw) IS NULL THEN
+        RAISE EXCEPTION 'ACCOUNT_MAPPING_MISSING: Akun pendapatan biaya inap (4103/4101) belum dikonfigurasi pada bagan akun (COA).' USING ERRCODE = '28000';
+    END IF;
+
+    -- Validasi 3: Akun HPP & Persediaan (hanya jika ada HPP yang perlu dibukukan)
+    IF v_total_cogs IS NOT NULL AND v_total_cogs > 0.00 AND v_cogs_status IN ('SNAPSHOT_RECORDED', 'HISTORICAL_RESOLVED') THEN
+        IF v_coa_cogs IS NULL OR v_coa_inv IS NULL THEN
+            RAISE EXCEPTION 'ACCOUNT_MAPPING_MISSING: Akun HPP (5101) atau Persediaan (1103) belum dikonfigurasi pada bagan akun (COA).' USING ERRCODE = '28000';
+        END IF;
     END IF;
 
     -- 9. Pembaruan Header Struk Lunas (Zero Double Stock Deduction)
@@ -896,6 +961,7 @@ BEGIN
         idempotency_key = v_idempotency_key,
         settle_hash = v_current_settle_fingerprint,
         total_cogs = v_total_cogs,
+        cogs_status = v_cogs_status,
         waktu_dibayar = NOW(),
         updated_at = NOW()
     WHERE id = v_struk.id AND tenant_id = p_tenant_id;
@@ -957,135 +1023,123 @@ BEGIN
     END IF;
 
     -- 12. Double-Entry General Ledger Auto-Posting
-    SELECT id INTO v_coa_kas FROM public.chart_of_accounts
-    WHERE tenant_id = p_tenant_id AND kode_akun = '1101' LIMIT 1;
+    -- Hitung Subtotal Item Asal dan Alokasi Diskon Konsisten (Finding 1)
+    v_item_subtotal := v_total_carwash + v_total_cafe;
+    v_discount := GREATEST(0.00, v_item_subtotal - v_base_total);
 
-    SELECT id INTO v_coa_bank FROM public.chart_of_accounts
-    WHERE tenant_id = p_tenant_id AND kode_akun = '1102' LIMIT 1;
+    v_journal_id := gen_random_uuid();
 
-    SELECT id INTO v_coa_inv FROM public.chart_of_accounts
-    WHERE tenant_id = p_tenant_id AND kode_akun = '1103' LIMIT 1;
+    INSERT INTO public.journal_entries (
+        id, tenant_id, branch_id, entry_no, date, memo, total_amount, status, created_at
+    ) VALUES (
+        v_journal_id, p_tenant_id, v_effective_branch_id, 'JE-SETTLE-' || v_id_struk, CURRENT_DATE,
+        'Auto-journal Pelunasan POS: ' || v_id_struk || CASE WHEN v_cogs_status = 'HISTORICAL_UNKNOWN' THEN ' (HPP historis tidak diketahui)' ELSE '' END,
+        v_final_total, 'DRAFT', NOW()
+    );
 
-    SELECT id INTO v_coa_rev_cw FROM public.chart_of_accounts
-    WHERE tenant_id = p_tenant_id AND kode_akun = '4101' LIMIT 1;
-
-    SELECT id INTO v_coa_rev_cafe FROM public.chart_of_accounts
-    WHERE tenant_id = p_tenant_id AND kode_akun = '4102' LIMIT 1;
-
-    -- Cari akun biaya inap / pendapatan jasa kendaraan (4103 jika ada)
-    SELECT id INTO v_coa_rev_inap FROM public.chart_of_accounts
-    WHERE tenant_id = p_tenant_id AND kode_akun = '4103' LIMIT 1;
-
-    SELECT id INTO v_coa_cogs FROM public.chart_of_accounts
-    WHERE tenant_id = p_tenant_id AND kode_akun = '5101' LIMIT 1;
-
-    SELECT COALESCE(SUM(harga), 0.00) INTO v_total_carwash
-    FROM public.carwash WHERE tenant_id = p_tenant_id AND id_struk = v_id_struk;
-
-    SELECT COALESCE(SUM(subtotal), 0.00) INTO v_total_cafe
-    FROM public.cafe WHERE tenant_id = p_tenant_id AND id_struk = v_id_struk;
-
-    IF v_coa_kas IS NOT NULL AND (v_coa_rev_cw IS NOT NULL OR v_coa_rev_cafe IS NOT NULL) THEN
-        v_journal_id := gen_random_uuid();
-
-        INSERT INTO public.journal_entries (
-            id, tenant_id, branch_id, entry_no, date, memo, total_amount, status, created_at
-        ) VALUES (
-            v_journal_id, p_tenant_id, v_effective_branch_id, 'JE-SETTLE-' || v_id_struk, CURRENT_DATE,
-            'Auto-journal Pelunasan POS: ' || v_id_struk || CASE WHEN v_cogs_status = 'HISTORICAL_UNKNOWN' THEN ' (HPP historis tidak diketahui)' ELSE '' END,
-            v_final_total, 'DRAFT', NOW()
-        );
-
-        -- A. Sisi Debit (Penerimaan Kas / Bank)
-        IF v_metode_bayar = 'SPLIT' THEN
-            IF v_nominal_cash > 0.00 THEN
-                INSERT INTO public.journal_entry_lines (
-                    id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
-                ) VALUES (
-                    gen_random_uuid(), p_tenant_id, v_journal_id, v_coa_kas,
-                    v_nominal_cash, 0.00, 'Penerimaan Tunai Split POS ' || v_id_struk, NOW()
-                );
-            END IF;
-            IF (v_nominal_qris + v_nominal_transfer) > 0.00 THEN
-                INSERT INTO public.journal_entry_lines (
-                    id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
-                ) VALUES (
-                    gen_random_uuid(), p_tenant_id, v_journal_id, COALESCE(v_coa_bank, v_coa_kas),
-                    (v_nominal_qris + v_nominal_transfer), 0.00, 'Penerimaan Digital Split POS ' || v_id_struk, NOW()
-                );
-            END IF;
-        ELSIF v_is_cash THEN
+    -- A. Sisi Debit (Penerimaan Kas / Bank)
+    IF v_metode_bayar = 'SPLIT' THEN
+        IF v_nominal_cash > 0.00 THEN
             INSERT INTO public.journal_entry_lines (
                 id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
             ) VALUES (
                 gen_random_uuid(), p_tenant_id, v_journal_id, v_coa_kas,
-                v_final_total, 0.00, 'Penerimaan Tunai POS ' || v_id_struk, NOW()
+                v_nominal_cash, 0.00, 'Penerimaan Tunai Split POS ' || v_id_struk, NOW()
             );
-        ELSE
+        END IF;
+        IF (v_nominal_qris + v_nominal_transfer) > 0.00 THEN
             INSERT INTO public.journal_entry_lines (
                 id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
             ) VALUES (
                 gen_random_uuid(), p_tenant_id, v_journal_id, COALESCE(v_coa_bank, v_coa_kas),
-                v_final_total, 0.00, 'Penerimaan Digital POS ' || v_id_struk, NOW()
+                (v_nominal_qris + v_nominal_transfer), 0.00, 'Penerimaan Digital Split POS ' || v_id_struk, NOW()
             );
         END IF;
-
-        -- B. Sisi Kredit (Pendapatan Usaha)
-        IF v_total_carwash > 0.00 AND v_coa_rev_cw IS NOT NULL THEN
-            INSERT INTO public.journal_entry_lines (
-                id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
-            ) VALUES (
-                gen_random_uuid(), p_tenant_id, v_journal_id, v_coa_rev_cw,
-                0.00, v_total_carwash, 'Pendapatan Layanan Carwash ' || v_id_struk, NOW()
-            );
-        END IF;
-
-        -- Kredit Biaya Inap Kendaraan (Surcharge) dialokasikan ke 4103 atau fallback 4101 (BUKAN ke cafe 4102)
-        IF v_surcharge_nominal > 0.00 THEN
-            INSERT INTO public.journal_entry_lines (
-                id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
-            ) VALUES (
-                gen_random_uuid(), p_tenant_id, v_journal_id,
-                COALESCE(v_coa_rev_inap, v_coa_rev_cw),
-                0.00, v_surcharge_nominal, 'Pendapatan Jasa Inap Kendaraan ' || v_id_struk, NOW()
-            );
-        END IF;
-
-        -- Kredit Cafe
-        IF v_total_cafe > 0.00 AND v_coa_rev_cafe IS NOT NULL THEN
-            INSERT INTO public.journal_entry_lines (
-                id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
-            ) VALUES (
-                gen_random_uuid(), p_tenant_id, v_journal_id, v_coa_rev_cafe,
-                0.00, v_total_cafe, 'Pendapatan Cafe ' || v_id_struk, NOW()
-            );
-        END IF;
-
-        -- Penyeimbang selisih diskon/penyesuaian
-        IF (v_total_carwash + v_total_cafe + v_surcharge_nominal) < v_final_total THEN
-            INSERT INTO public.journal_entry_lines (
-                id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
-            ) VALUES (
-                gen_random_uuid(), p_tenant_id, v_journal_id, COALESCE(v_coa_rev_cw, v_coa_rev_cafe),
-                0.00, (v_final_total - (v_total_carwash + v_total_cafe + v_surcharge_nominal)), 'Penyesuaian Pendapatan POS ' || v_id_struk, NOW()
-            );
-        END IF;
-
-        -- C. Jurnal HPP & Persediaan (Hanya jika snapshot HPP > 0 dan status valid)
-        IF v_total_cogs > 0.00 AND v_cogs_status IN ('SNAPSHOT_RECORDED', 'HISTORICAL_RESOLVED')
-           AND v_coa_cogs IS NOT NULL AND v_coa_inv IS NOT NULL THEN
-            INSERT INTO public.journal_entry_lines (
-                id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
-            ) VALUES
-                (gen_random_uuid(), p_tenant_id, v_journal_id, v_coa_cogs, v_total_cogs, 0.00, 'HPP Bahan Baku POS ' || v_id_struk, NOW()),
-                (gen_random_uuid(), p_tenant_id, v_journal_id, v_coa_inv, 0.00, v_total_cogs, 'Pengurangan Persediaan POS ' || v_id_struk, NOW());
-        END IF;
-
-        -- Finalisasi Jurnal: Ubah Status Menjadi POSTED
-        UPDATE public.journal_entries
-        SET status = 'POSTED'
-        WHERE id = v_journal_id AND tenant_id = p_tenant_id;
+    ELSIF v_is_cash THEN
+        INSERT INTO public.journal_entry_lines (
+            id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
+        ) VALUES (
+            gen_random_uuid(), p_tenant_id, v_journal_id, v_coa_kas,
+            v_final_total, 0.00, 'Penerimaan Tunai POS ' || v_id_struk, NOW()
+        );
+    ELSE
+        INSERT INTO public.journal_entry_lines (
+            id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
+        ) VALUES (
+            gen_random_uuid(), p_tenant_id, v_journal_id, COALESCE(v_coa_bank, v_coa_kas),
+            v_final_total, 0.00, 'Penerimaan Digital POS ' || v_id_struk, NOW()
+        );
     END IF;
+
+    -- A2. Sisi Debit Diskon (Jika akun potongan penjualan 4104 tersedia)
+    IF v_discount > 0.00 AND v_coa_disc IS NOT NULL THEN
+        INSERT INTO public.journal_entry_lines (
+            id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
+        ) VALUES (
+            gen_random_uuid(), p_tenant_id, v_journal_id, v_coa_disc,
+            v_discount, 0.00, 'Potongan Penjualan POS ' || v_id_struk, NOW()
+        );
+    END IF;
+
+    -- B. Sisi Kredit (Pendapatan Usaha)
+    -- Jika tidak ada akun potongan terpisah, alokasikan diskon langsung mengurangi pos pendapatan (Net Revenue method)
+    IF v_discount > 0.00 AND v_coa_disc IS NULL THEN
+        IF v_item_subtotal > 0.00 THEN
+            v_net_cw := ROUND(v_total_carwash - (v_discount * (v_total_carwash / v_item_subtotal)), 2);
+            v_net_cafe := v_base_total - v_net_cw;
+        ELSE
+            v_net_cw := 0.00;
+            v_net_cafe := v_base_total;
+        END IF;
+    ELSE
+        v_net_cw := v_total_carwash;
+        v_net_cafe := v_total_cafe;
+    END IF;
+
+    IF v_net_cw > 0.00 AND v_coa_rev_cw IS NOT NULL THEN
+        INSERT INTO public.journal_entry_lines (
+            id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
+        ) VALUES (
+            gen_random_uuid(), p_tenant_id, v_journal_id, v_coa_rev_cw,
+            0.00, v_net_cw, 'Pendapatan Layanan Carwash ' || v_id_struk, NOW()
+        );
+    END IF;
+
+    -- Kredit Biaya Inap Kendaraan (Surcharge) dialokasikan ke 4103 atau fallback 4101 (BUKAN ke cafe 4102)
+    IF v_surcharge_nominal > 0.00 THEN
+        INSERT INTO public.journal_entry_lines (
+            id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
+        ) VALUES (
+            gen_random_uuid(), p_tenant_id, v_journal_id,
+            COALESCE(v_coa_rev_inap, v_coa_rev_cw),
+            0.00, v_surcharge_nominal, 'Pendapatan Jasa Inap Kendaraan ' || v_id_struk, NOW()
+        );
+    END IF;
+
+    -- Kredit Cafe
+    IF v_net_cafe > 0.00 AND v_coa_rev_cafe IS NOT NULL THEN
+        INSERT INTO public.journal_entry_lines (
+            id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
+        ) VALUES (
+            gen_random_uuid(), p_tenant_id, v_journal_id, v_coa_rev_cafe,
+            0.00, v_net_cafe, 'Pendapatan Cafe ' || v_id_struk, NOW()
+        );
+    END IF;
+
+    -- C. Jurnal HPP & Persediaan (Hanya jika snapshot HPP > 0 dan status valid)
+    IF v_total_cogs IS NOT NULL AND v_total_cogs > 0.00 AND v_cogs_status IN ('SNAPSHOT_RECORDED', 'HISTORICAL_RESOLVED')
+       AND v_coa_cogs IS NOT NULL AND v_coa_inv IS NOT NULL THEN
+        INSERT INTO public.journal_entry_lines (
+            id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
+        ) VALUES
+            (gen_random_uuid(), p_tenant_id, v_journal_id, v_coa_cogs, v_total_cogs, 0.00, 'HPP Bahan Baku POS ' || v_id_struk, NOW()),
+            (gen_random_uuid(), p_tenant_id, v_journal_id, v_coa_inv, 0.00, v_total_cogs, 'Pengurangan Persediaan POS ' || v_id_struk, NOW());
+    END IF;
+
+    -- Finalisasi Jurnal: Ubah Status Menjadi POSTED
+    UPDATE public.journal_entries
+    SET status = 'POSTED'
+    WHERE id = v_journal_id AND tenant_id = p_tenant_id;
 
     -- 13. Kembalikan Hasil Sukses
     RETURN jsonb_build_object(
