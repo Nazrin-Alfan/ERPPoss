@@ -4774,7 +4774,47 @@ Sebelum perbaikan ini, alur pelunasan tagihan tertunda (*pending bill*) di kasir
   - Production Build Vite: **Sukses (2.18s)**.
   - Git Branch Aktif: `feat/access-control-rbac-hardening`. Belum ada merge atau perubahan ke lingkungan produksi.
 
+---
 
+### Audit Log — Entri 119: PR-2 Profile Lockdown & Privilege Containment
+**Tanggal**: 2026-11-06
+**Branch**: `feat/access-control-rbac-hardening`
+**Commit**: `99a7ee6`
+
+#### Perubahan yang Dilakukan (QA DB Disposable Saja — Produksi Tidak Disentuh)
+1. **Migration `012_pr2_profile_lockdown_and_privilege_containment.sql`**:
+   - Trigger `fn_protect_profile_role_and_tenant` diperluas: guard `branch_id` (Kasir dilarang ubah), guard `is_active` (hanya Owner/Admin), guard last-active-Owner (tidak bisa deaktivasi/downgrade jika satu-satunya Owner aktif), guard cross-tenant UPDATE.
+   - `INVALID_BRANCH_ASSIGNMENT`: INSERT/UPDATE profil dengan `branch_id` milik tenant lain diblokir via trigger.
+   - `REVOKE TRUNCATE, REFERENCES, TRIGGER, MAINTAIN` dari `authenticated` (defensive, via loop idempotent).
+   - `fn_require_explicit_tenant_context()`: fail-closed — exception `MISSING_TENANT_CONTEXT` jika JWT claim kosong.
+   - RLS policy `UPDATE` pada `profiles`: Owner/Admin hanya bisa mutasi profil dalam tenant sendiri.
+   - `ALTER DEFAULT PRIVILEGES`: tabel baru tidak otomatis mendapat TRUNCATE ke `authenticated`.
+
+2. **Test Harness `supabase/tests/pr2_lockdown_harness.sql`** — 11 kasus, semua PASS:
+
+   | Check | Aktor | Operasi | Expected | Actual | passed | DB State |
+   |-------|-------|---------|----------|--------|--------|----------|
+   | PR2-01 | Kasir A1 | UPDATE branch_id self | FORBIDDEN_BRANCH_MUTATION | Exception: FORBIDDEN_BRANCH_MUTATION | ✅ | DB_UNCHANGED |
+   | PR2-02 | Kasir A1 | UPDATE is_active=false Owner A | FORBIDDEN_STATUS_MUTATION | Exception: FORBIDDEN_STATUS_MUTATION | ✅ | DB_UNCHANGED |
+   | PR2-03 | Owner A | UPDATE is_active=false self (last owner) | LAST_ACTIVE_OWNER_PROTECTED | Exception: LAST_ACTIVE_OWNER_PROTECTED | ✅ | DB_UNCHANGED |
+   | PR2-04 | Owner A | UPDATE role=Admin (last owner) | LAST_ACTIVE_OWNER_PROTECTED | Exception: LAST_ACTIVE_OWNER_PROTECTED | ✅ | DB_UNCHANGED |
+   | PR2-05 | Owner A | UPDATE is_active Owner D (cross-tenant) | 0 rows via RLS | No rows affected (RLS blocked) | ✅ | DB_UNCHANGED |
+   | PR2-06 | Owner A | INSERT profil branch_id Tenant D | INVALID_BRANCH_ASSIGNMENT | Exception: INVALID_BRANCH_ASSIGNMENT | ✅ | DB_CLEAN |
+   | PR2-07 | authenticated | has_table_privilege TRUNCATE | false on 3 tabel | profiles=f struk=f coa=f | ✅ | Metadata only |
+   | PR2-08 | Unauthenticated | fn_require_explicit_tenant_context() | MISSING_TENANT_CONTEXT | Exception: MISSING_TENANT_CONTEXT | ✅ | No mutation |
+   | PR2-09 | Owner A | UPDATE nama Kasir A1 (sama tenant) | Allowed | Updated 1 rows | ✅ | nama diubah |
+   | PR2-10 | Owner A | UPDATE branch_id ke cabang valid A2 | Allowed | Updated 1 rows | ✅ | branch_id berubah |
+   | PR2-11 | Owner A | INSERT Kasir baru di tenant sendiri | Allowed | Inserted count=1 | ✅ | Row tersimpan |
+
+   **Verdict: `*** ALL PR2 CHECKS PASSED ***` — 11/11, 0 failures**
+
+3. **Runner `scripts/test_pr2_lockdown_harness.sh`**: urutan eksekusi fixture → migration 012 → harness di DB disposable `erpposs_qa_pr2`.
+
+#### Catatan Penting
+- **PR2-05 mekanisme**: Penolakan via RLS (0 rows) bukan exception — ini desain yang benar; trigger cross-tenant sebagai lapisan kedua.
+- **Produksi tidak disentuh**: Semua mutasi dibungkus dalam ROLLBACK akhir. DB target: `erpposs-checkout-qa` Docker port 54322 / `erpposs_qa_pr2`.
+- **Gap yang masih perlu review di PR-3+**: `redeem_customer_reward` (tenant isolation, akun aktif, capability, program valid, pembayaran lunas, concurrency/idempotency).
+- Aplikasi belum dinyatakan aman atau siap rilis hanya dari hasil harness ini.
 
 
 
