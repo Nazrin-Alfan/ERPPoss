@@ -387,3 +387,28 @@ Untuk mencegah klik ganda dan inkonsistensi jaringan, pelunasan menerapkan proto
    - Menambahkan Test 10 pada `supabase/tests/pending_settlement_isolation.sql` untuk menguji skenario Part A (Penyajian Terpisah 4104) dan Part B (Net Revenue).
    - Seluruh 10 skenario pengujian SQL lulus 100% dengan exit code 0.
    - Vitest: 64 test files, 394 passed. Oxlint: 0 error. Build: Sukses.
+
+---
+
+## 13. Penyelesaian Audit Review: Penegakan Struk Tersimpan sebagai Sumber Otoritatif Tunggal (Commit Terkini)
+
+1. **Penolakan Celah Manipulasi Diskon & Pajak di Level Request**:
+   - Menghapus ketergantungan `fn_settle_pending_bill` terhadap field diskon/pajak yang dikirimkan via payload request pelunasan.
+   - Diskon (`v_discount`) dan pajak (`v_tax`) kini secara eksklusif dan mutlak dibaca langsung dari record `v_struk` tersimpan di database.
+   - Jika request pelunasan menyertakan field `diskon` atau `pajak` yang berbeda dengan nilai tersimpan pada tagihan, RPC seketika menolak transaksi dengan exception `PRICE_MODIFICATION_FORBIDDEN` (SQLSTATE `42501`).
+   - Mencegah divergensi data antara fisik struk kasir dan pembukuan general ledger, bahkan jika request dipicu langsung di luar antarmuka web.
+
+2. **Eksekusi Harness PostgreSQL (Test 11)**:
+   - Menambahkan Test 11 pada `supabase/tests/pending_settlement_isolation.sql`:
+     - Autentikasi sebagai role kasir (`profiles.role = 'kasir'`).
+     - Kasir mengirim request manipulasi diskon Rp 20.000 dan pajak Rp 21.000 pada tagihan tersimpan (Diskon Rp 10.000 dan Pajak Rp 11.000).
+     - Asersi ketat membuktikan request ditolak dengan exception `PRICE_MODIFICATION_FORBIDDEN`.
+     - Asersi membuktikan tidak ada mutasi parsial: status struk tetap `Pending`, 0 cashflow, dan 0 entri jurnal.
+     - Asersi membuktikan pelunasan sah oleh kasir menghasilkan jurnal yang presisi sesuai nilai struk tersimpan (Utang Pajak Rp 11.000 dan Potongan Penjualan Rp 10.000).
+
+3. **Status Verifikasi Keseluruhan**:
+   - `scripts/test_pending_settlement_isolation.sh`: **ALL PENDING SETTLEMENT SQL CHECKS PASSED (Exit code 0)**.
+   - Vitest Suite: 64 test files, **395 passed (100% Green)**.
+   - Oxlint: **0 Error**.
+   - Production Build: **Sukses (2.35s)**.
+   - Branch: `fix/pending-settlement-atomicity` (isolasi ketat, tidak ada merge ke `main`, tidak ada modifikasi pada database produksi).

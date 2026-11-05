@@ -130,6 +130,12 @@ export const posService = {
       return new PosCheckoutError(cleanDesc, 'INVALID_SURCHARGE', { raw: rawMsg })
     }
 
+    if (rawMsg.includes('PRICE_MODIFICATION_FORBIDDEN')) {
+      const match = rawMsg.match(/PRICE_MODIFICATION_FORBIDDEN:\s*(.*)/)
+      const cleanDesc = match ? match[1].trim() : 'Perubahan nilai diskon atau pajak selama pelunasan tidak diizinkan.'
+      return new PosCheckoutError(cleanDesc, 'PRICE_MODIFICATION_FORBIDDEN', { raw: rawMsg })
+    }
+
     if (rawMsg.includes('IDEMPOTENCY_CONFLICT')) {
       return new PosCheckoutError('Struk ini telah diproses dengan payload transaksi yang berbeda.', 'IDEMPOTENCY_CONFLICT', { raw: rawMsg })
     }

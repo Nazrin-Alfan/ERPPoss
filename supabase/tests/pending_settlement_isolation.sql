@@ -793,5 +793,103 @@ BEGIN
   RAISE NOTICE 'PASS Part B: Simultaneous discount+tax Net Revenue method verified: Net Revenue = 90,000, Tax = 11,000, Cash = 101,000';
 END $$;
 
+-- 11. Test Cashier Attempt to Override Discount/Tax is Strictly Rejected (Finding: Stored Bill is Authoritative)
+DO $$
+DECLARE
+  v_tamper_err text := '';
+  v_struk_check record;
+  v_legit_res jsonb;
+  v_je_check record;
+BEGIN
+  -- Setup Cashier User Profile in Tenant 2
+  INSERT INTO public.profiles (id, tenant_id, branch_id, role, is_active)
+  VALUES ('00000000-0000-0000-0000-000000000077', '22222222-2222-2222-2222-222222222222'::uuid, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid, 'kasir', true)
+  ON CONFLICT (id) DO UPDATE SET is_active = true, role = 'kasir', tenant_id = '22222222-2222-2222-2222-222222222222'::uuid;
+
+  -- Create pending receipt with authoritative stored discount (10k) and tax (11k)
+  INSERT INTO public.struk (
+    id, tenant_id, branch_id, id_struk, subtotal, diskon, pajak, total_tagihan, total_biaya, uang_diterima, kembalian,
+    metode_pembayaran, status_bayar, tanggal, created_at, kasir
+  ) VALUES (
+    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid,
+    'QA-CASHIER-TAMPER-001', 100000.00, 10000.00, 11000.00, 101000.00, 101000.00, 0.00, 0.00, 'Pending', 'Pending', CURRENT_DATE, now(), 'Kasir Uji'
+  );
+
+  INSERT INTO public.cafe (
+    id, tenant_id, branch_id, id_struk, tanggal, jam, nama_menu, qty, harga_satuan, subtotal, status, created_at
+  ) VALUES (
+    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid,
+    'QA-CASHIER-TAMPER-001', CURRENT_DATE, '12:00:00'::time, 'Special Package', 1, 100000.00, 100000.00, 'Pending', now()
+  );
+
+  -- Set Auth Context as Cashier
+  PERFORM set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000077', true);
+
+  -- 1. Attempt manipulated request: Cashier sends manipulated diskon = 20.000 and pajak = 21.000
+  BEGIN
+    PERFORM public.fn_settle_pending_bill(
+      '22222222-2222-2222-2222-222222222222'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid,
+      jsonb_build_object(
+        'id_struk', 'QA-CASHIER-TAMPER-001',
+        'metode_bayar', 'CASH',
+        'uang_diterima', 101000.00,
+        'diskon', 20000.00,
+        'pajak', 21000.00,
+        'idempotency_key', 'QA-CASHIER-TAMPER-001:settle:tamper-attempt'
+      )
+    );
+  EXCEPTION WHEN OTHERS THEN
+    v_tamper_err := SQLERRM;
+  END;
+
+  -- Asersi: Permintaan manipulasi WAJIB ditolak dengan exception PRICE_MODIFICATION_FORBIDDEN
+  PERFORM pg_temp.assert_true(
+    position('PRICE_MODIFICATION_FORBIDDEN' IN v_tamper_err) > 0,
+    'Manipulated settlement request by cashier MUST be rejected with PRICE_MODIFICATION_FORBIDDEN'
+  );
+
+  -- Asersi: Struk harus tetap Pending dan tidak mengalami perubahan parsial
+  SELECT * INTO v_struk_check FROM public.struk WHERE id_struk = 'QA-CASHIER-TAMPER-001';
+  PERFORM pg_temp.assert_true(v_struk_check.status_bayar = 'Pending', 'Receipt status must remain Pending after rejected tamper attempt');
+  PERFORM pg_temp.assert_true(
+    (SELECT count(*) FROM public.cashflow WHERE id_sumber LIKE '%QA-CASHIER-TAMPER-001%') = 0,
+    'Zero cashflow must exist after rejected tamper attempt'
+  );
+  PERFORM pg_temp.assert_true(
+    (SELECT count(*) FROM public.journal_entries WHERE entry_no LIKE '%QA-CASHIER-TAMPER-001%') = 0,
+    'Zero journal entries must exist after rejected tamper attempt'
+  );
+
+  -- 2. Verifikasi pelunasan sah oleh kasir (menggunakan nilai tersimpan secara konsisten)
+  v_legit_res := public.fn_settle_pending_bill(
+    '22222222-2222-2222-2222-222222222222'::uuid,
+    'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid,
+    jsonb_build_object(
+      'id_struk', 'QA-CASHIER-TAMPER-001',
+      'metode_bayar', 'CASH',
+      'uang_diterima', 101000.00,
+      'idempotency_key', 'QA-CASHIER-TAMPER-001:settle:legit'
+    )
+  );
+
+  PERFORM pg_temp.assert_true((v_legit_res->>'success')::boolean = true, 'Legitimate settlement by cashier must succeed');
+
+  -- Verifikasi jurnal yang dibentuk konsisten 100% dengan nilai tersimpan (Diskon 10k, Pajak 11k)
+  SELECT * INTO v_je_check FROM public.journal_entries WHERE entry_no = 'JE-SETTLE-QA-CASHIER-TAMPER-001';
+  PERFORM pg_temp.assert_true(v_je_check.status = 'POSTED', 'Journal entry must be POSTED');
+
+  PERFORM pg_temp.assert_true(
+    (SELECT credit FROM public.journal_entry_lines WHERE journal_entry_id = v_je_check.id AND memo ILIKE '%Pajak%') = 11000.00,
+    'Tax liability credit must be strictly 11,000 from stored bill (NOT 21,000 from tampered request)'
+  );
+  PERFORM pg_temp.assert_true(
+    (SELECT debit FROM public.journal_entry_lines WHERE journal_entry_id = v_je_check.id AND memo ILIKE '%Potongan Penjualan%') = 10000.00,
+    'Discount debit must be strictly 10,000 from stored bill (NOT 20,000 from tampered request)'
+  );
+
+  RAISE NOTICE 'PASS Test 11: Cashier tamper attempt strictly rejected and legitimate settlement uses authoritative stored receipt values';
+END $$;
+
 ROLLBACK;
 SELECT 'ALL PENDING SETTLEMENT SQL CHECKS PASSED' AS status;

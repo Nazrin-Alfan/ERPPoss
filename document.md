@@ -4691,6 +4691,44 @@ Sebelum perbaikan ini, alur pelunasan tagihan tertunda (*pending bill*) di kasir
   - Production Build Vite: **Sukses** (2.88s).
   - Isolasi branch `fix/pending-settlement-atomicity` tetap terjaga tanpa merge ke `main` dan tanpa modifikasi database produksi.
 
+### 118. Penegakan Struk Tersimpan sebagai Sumber Otoritatif Tunggal & Penolakan Manipulasi Diskon/Pajak (05 November 2026)
+- **Konteks & Latar Belakang Masalah**:
+  - Peninjauan terhadap commit `a327882` memverifikasi bahwa dua masalah sebelumnya telah terselesaikan (394 tes lulus, helper struk dan kembalian benar, skenario gabungan diskon+pajak sah menghasilkan jurnal akurat).
+  - Namun, peninjauan menemukan satu celah keamanan kritis pada level API database:
+    - **P1 — Request Kasir Masih Dapat Mengganti Diskon dan Pajak untuk Jurnal**:
+      Pada fungsi `fn_settle_pending_bill` baris 963, fungsi masih mendahulukan nilai dari `p_settle_payload->>'diskon'` dan `p_settle_payload->>'pajak'` dibandingkan nilai struk tersimpan (`v_struk.diskon` dan `v_struk.pajak`).
+      Ketika diuji menggunakan identitas role kasir dengan payload manipulasi:
+      - Struk tersimpan: Diskon Rp 10.000, Pajak Rp 11.000, Tagihan akhir Rp 101.000.
+      - Request manipulasi kasir: Diskon Rp 20.000, Pajak Rp 21.000, Tagihan akhir Rp 101.000.
+      - Hasil sebelumnya: RPC mengembalikan `COMPLETED` dan membentuk jurnal berdasarkan nilai manipulasi (Diskon Rp 20.000 & Pajak Rp 21.000), sementara header struk tetap menyimpan nilai asli Rp 10.000 & Rp 11.000.
+      - Dampak: Terjadi divergensi data antara fisik struk dan pembukuan general ledger meskipun jurnal seimbang matematis. Menonaktifkan kontrol di antarmuka kasir tidak mencegah request API langsung.
+
+- **Solusi Rekayasa & Implementasi**:
+  1. **Penegakan Struk Tersimpan sebagai Single Source of Truth**:
+     - Memperbarui RPC `fn_settle_pending_bill` pada `supabase/migrations/20261104000001_atomic_pending_bill_settlement.sql`:
+       - Menghapus pembacaan preferensi `p_settle_payload` untuk diskon dan pajak.
+       - Menetapkan `v_discount := COALESCE(v_struk.diskon, (COALESCE(v_struk.diskon_cafe, 0.00) + COALESCE(v_struk.diskon_carwash, 0.00)), 0.00)` dan `v_tax := COALESCE(v_struk.pajak, 0.00)` langsung dari record struk tersimpan di database.
+  2. **Penolakan Keras Terhadap Request Manipulasi**:
+     - Menambahkan validasi integritas payload:
+       - Jika request pelunasan menyertakan field `diskon` yang berbeda dari nilai struk tersimpan, transaksi seketika digagalkan dengan exception `PRICE_MODIFICATION_FORBIDDEN: Nilai diskon pada pelunasan tidak boleh diubah dari nilai struk tersimpan` (SQLSTATE `42501`).
+       - Jika request pelunasan menyertakan field `pajak` yang berbeda dari nilai struk tersimpan, transaksi seketika digagalkan dengan exception `PRICE_MODIFICATION_FORBIDDEN: Nilai pajak pada pelunasan tidak boleh diubah dari nilai struk tersimpan` (SQLSTATE `42501`).
+     - Menambahkan mapping exception standar di `src/services/posService.js` untuk kode `PRICE_MODIFICATION_FORBIDDEN`.
+  3. **Pengujian Test 11 di PostgreSQL Harness Riil (`pending_settlement_isolation.sql`)**:
+     - Menambahkan Test 11 dengan autentikasi role kasir (`profiles.role = 'kasir'`):
+       - Kasir mengirim request manipulasi diskon Rp 20.000 dan pajak Rp 21.000 pada tagihan tersimpan (Diskon 10k, Pajak 11k).
+       - Membuktikan transaksi ditolak dengan error `PRICE_MODIFICATION_FORBIDDEN`.
+       - Membuktikan status struk tetap `Pending`, zero cashflow, dan zero journal entries (100% rollback atomik).
+       - Membuktikan pelunasan sah oleh kasir (tanpa payload manipulasi) berhasil dengan jurnal yang persis mengacu ke nilai struk tersimpan (Utang Pajak Rp 11.000 dan Diskon Rp 10.000).
+  4. **Unit Test Service Frontend**:
+     - Menambahkan pengujian pemetaan error `PRICE_MODIFICATION_FORBIDDEN` di `src/services/__tests__/pendingSettlement.test.js`.
+
+- **Verifikasi Kualitas & Status**:
+  - PostgreSQL Isolation Test Harness (`scripts/test_pending_settlement_isolation.sh`): **ALL PENDING SETTLEMENT SQL CHECKS PASSED (Exit code 0)**.
+  - Vitest Unit & Handler Suite: 64 test files, **395 tests passed (100% Green)**.
+  - Linter (`oxlint`): **0 Error**.
+  - Production Build Vite: **Sukses (2.35s)**.
+  - Branch `fix/pending-settlement-atomicity` tetap terisolasi tanpa merge ke `main` dan tanpa perubahan pada database produksi.
+
 
 
 

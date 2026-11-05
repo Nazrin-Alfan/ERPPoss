@@ -955,21 +955,18 @@ BEGIN
         END IF;
     END IF;
 
-    -- Validasi 4: Komponen Diskon & Pajak Tersimpan yang Tervalidasi (Bukan Sekadar Selisih Netted)
+    -- Validasi 4: Komponen Diskon & Pajak Tersimpan sebagai Sumber Otoritatif Tunggal
     v_item_subtotal := v_total_carwash + v_total_cafe;
 
-    -- Ekstraksi diskon tersimpan eksplisit dari header struk atau payload
+    -- Ekstraksi diskon dan pajak tersimpan langsung dari header struk (Struk Tersimpan adalah Sumber Otoritatif Tunggal)
     v_discount := COALESCE(
-        NULLIF(p_settle_payload->>'diskon', '')::numeric,
         v_struk.diskon,
         (COALESCE(v_struk.diskon_cafe, 0.00) + COALESCE(v_struk.diskon_carwash, 0.00)),
         0.00
     );
     IF v_discount < 0.00 THEN v_discount := 0.00; END IF;
 
-    -- Ekstraksi pajak tersimpan eksplisit dari header struk atau payload
     v_tax := COALESCE(
-        NULLIF(p_settle_payload->>'pajak', '')::numeric,
         v_struk.pajak,
         0.00
     );
@@ -993,6 +990,15 @@ BEGIN
         v_tax := v_tax + (v_base_total - (v_item_subtotal - v_discount + v_tax));
     ELSIF (v_item_subtotal - v_discount + v_tax) > v_base_total THEN
         v_discount := v_discount + ((v_item_subtotal - v_discount + v_tax) - v_base_total);
+    END IF;
+
+    -- Penegakan Keamanan: Tolak manipulasi diskon atau pajak melalui request payload pelunasan
+    IF (p_settle_payload ? 'diskon' AND NULLIF(p_settle_payload->>'diskon', '')::numeric IS DISTINCT FROM v_discount) THEN
+        RAISE EXCEPTION 'PRICE_MODIFICATION_FORBIDDEN: Nilai diskon pada pelunasan tidak boleh diubah dari nilai struk tersimpan (tersimpan: %, dikirim: %).' , v_discount, p_settle_payload->>'diskon' USING ERRCODE = '42501';
+    END IF;
+
+    IF (p_settle_payload ? 'pajak' AND NULLIF(p_settle_payload->>'pajak', '')::numeric IS DISTINCT FROM v_tax) THEN
+        RAISE EXCEPTION 'PRICE_MODIFICATION_FORBIDDEN: Nilai pajak pada pelunasan tidak boleh diubah dari nilai struk tersimpan (tersimpan: %, dikirim: %).' , v_tax, p_settle_payload->>'pajak' USING ERRCODE = '42501';
     END IF;
 
     IF v_tax > 0.00 AND v_coa_tax IS NULL THEN
