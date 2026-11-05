@@ -651,7 +651,7 @@ DECLARE
     v_coa_cogs UUID;
     v_coa_disc UUID;
     v_coa_tax UUID;
-    v_tax_or_surcharge_diff NUMERIC(15, 2) := 0.00;
+    v_tax NUMERIC(15, 2) := 0.00;
     v_pos TEXT;
     v_is_cash BOOLEAN;
 BEGIN
@@ -955,12 +955,47 @@ BEGIN
         END IF;
     END IF;
 
-    -- Validasi 4: Akun Pajak / Komponen Tambahan Tagihan Positif (Finding 5)
+    -- Validasi 4: Komponen Diskon & Pajak Tersimpan yang Tervalidasi (Bukan Sekadar Selisih Netted)
     v_item_subtotal := v_total_carwash + v_total_cafe;
-    v_discount := GREATEST(0.00, v_item_subtotal - v_base_total);
-    v_tax_or_surcharge_diff := GREATEST(0.00, v_base_total - (v_item_subtotal - v_discount));
 
-    IF v_tax_or_surcharge_diff > 0.00 AND v_coa_tax IS NULL THEN
+    -- Ekstraksi diskon tersimpan eksplisit dari header struk atau payload
+    v_discount := COALESCE(
+        NULLIF(p_settle_payload->>'diskon', '')::numeric,
+        v_struk.diskon,
+        (COALESCE(v_struk.diskon_cafe, 0.00) + COALESCE(v_struk.diskon_carwash, 0.00)),
+        0.00
+    );
+    IF v_discount < 0.00 THEN v_discount := 0.00; END IF;
+
+    -- Ekstraksi pajak tersimpan eksplisit dari header struk atau payload
+    v_tax := COALESCE(
+        NULLIF(p_settle_payload->>'pajak', '')::numeric,
+        v_struk.pajak,
+        0.00
+    );
+    IF v_tax < 0.00 THEN v_tax := 0.00; END IF;
+
+    -- Fallback struk historis tanpa metadata terpisah
+    IF v_discount = 0.00 AND v_tax = 0.00 THEN
+        IF v_item_subtotal > v_base_total THEN
+            v_discount := v_item_subtotal - v_base_total;
+        ELSIF v_base_total > v_item_subtotal THEN
+            v_tax := v_base_total - v_item_subtotal;
+        END IF;
+    ELSIF v_discount > 0.00 AND v_tax = 0.00 AND v_base_total > (v_item_subtotal - v_discount) THEN
+        v_tax := v_base_total - (v_item_subtotal - v_discount);
+    ELSIF v_tax > 0.00 AND v_discount = 0.00 AND (v_item_subtotal + v_tax) > v_base_total THEN
+        v_discount := (v_item_subtotal + v_tax) - v_base_total;
+    END IF;
+
+    -- Rekonsiliasi batas presisi sen terhadap base_total
+    IF v_base_total > (v_item_subtotal - v_discount + v_tax) THEN
+        v_tax := v_tax + (v_base_total - (v_item_subtotal - v_discount + v_tax));
+    ELSIF (v_item_subtotal - v_discount + v_tax) > v_base_total THEN
+        v_discount := v_discount + ((v_item_subtotal - v_discount + v_tax) - v_base_total);
+    END IF;
+
+    IF v_tax > 0.00 AND v_coa_tax IS NULL THEN
         RAISE EXCEPTION 'ACCOUNT_MAPPING_MISSING: Akun kewajiban/utang pajak (2102/2101) belum dikonfigurasi pada bagan akun (COA) untuk komponen tambahan tagihan.' USING ERRCODE = '28000';
     END IF;
 
@@ -1047,10 +1082,7 @@ BEGIN
     END IF;
 
     -- 12. Double-Entry General Ledger Auto-Posting
-    -- Hitung Subtotal Item Asal dan Alokasi Diskon Konsisten (Finding 1)
-    v_item_subtotal := v_total_carwash + v_total_cafe;
-    v_discount := GREATEST(0.00, v_item_subtotal - v_base_total);
-
+    -- Gunakan komponen diskon dan pajak tersimpan yang tervalidasi dari langkah 8B
     v_journal_id := gen_random_uuid();
 
     INSERT INTO public.journal_entries (
@@ -1150,13 +1182,13 @@ BEGIN
         );
     END IF;
 
-    -- B2. Sisi Kredit Pajak & Kewajiban Komponen Tambahan (Jika tagihan melebihi subtotal item, Finding 5)
-    IF v_tax_or_surcharge_diff > 0.00 AND v_coa_tax IS NOT NULL THEN
+    -- B2. Sisi Kredit Pajak & Kewajiban Komponen Tambahan (Finding 5 & Kasus Pajak+Diskon Bersamaan)
+    IF v_tax > 0.00 AND v_coa_tax IS NOT NULL THEN
         INSERT INTO public.journal_entry_lines (
             id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
         ) VALUES (
             gen_random_uuid(), p_tenant_id, v_journal_id, v_coa_tax,
-            0.00, v_tax_or_surcharge_diff, 'Pajak & Kewajiban Komponen Tambahan POS ' || v_id_struk, NOW()
+            0.00, v_tax, 'Pajak & Kewajiban Komponen Tambahan POS ' || v_id_struk, NOW()
         );
     END IF;
 

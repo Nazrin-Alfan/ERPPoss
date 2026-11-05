@@ -369,3 +369,21 @@ Untuk mencegah klik ganda dan inkonsistensi jaringan, pelunasan menerapkan proto
    - Selisih positif tagihan di atas subtotal item dikreditkan secara eksplisit ke akun kewajiban/utang pajak `v_coa_tax` (2102/2101). Jurnal terbukti seimbang (Debit == Kredit).
 6. **Eksekusi Harness PostgreSQL**:
    - `scripts/test_pending_settlement_isolation.sh` dieksekusi pada kontainer PostgreSQL `erpposs-checkout-qa` lokal. Seluruh 9 skenario pengujian lulus dengan exit code 0.
+
+---
+
+## 12. Penyelesaian Tuntas 2 Penghambat Merge Terakhir (Commit eaf1a1f Resolution)
+
+1. **Perbaikan Referensi Kembalian & Ekstraksi Handler Cafe**:
+   - Memperbaiki `effectiveKembalian` pada baris 378 dan 493 di `CafePOSPage.jsx`.
+   - Mengekstrak `processCafeCheckout` ke `src/utils/cafeCheckoutHelpers.js` untuk memastikan handler dapat diuji secara terisolasi tanpa ReferenceError.
+   - Menambahkan test suite `src/pages/pos/__tests__/cafePOSCheckoutHandler.test.jsx` (3 passed) untuk checkout baru dan pelunasan pending.
+2. **Pemisahan Klasifikasi Diskon & Pajak Bersamaan**:
+   - Mengambil komponen `v_discount` dan `v_tax` tersimpan dari header `struk` secara eksplisit, bukan menyimpulkannya hanya dari selisih kotor `v_item_subtotal - v_base_total`.
+   - Menegakkan klasifikasi akuntansi presisi:
+     - **Net Revenue**: Debit Kas Rp 101.000 == Kredit Pendapatan Bersih Rp 90.000 + Kredit Utang Pajak Rp 11.000.
+     - **Penyajian Terpisah (4104)**: Debit Kas Rp 101.000 + Debit Potongan Penjualan Rp 10.000 == Kredit Pendapatan Kotor Rp 100.000 + Kredit Utang Pajak Rp 11.000.
+3. **Eksekusi Harness PostgreSQL (Test 10)**:
+   - Menambahkan Test 10 pada `supabase/tests/pending_settlement_isolation.sql` untuk menguji skenario Part A (Penyajian Terpisah 4104) dan Part B (Net Revenue).
+   - Seluruh 10 skenario pengujian SQL lulus 100% dengan exit code 0.
+   - Vitest: 64 test files, 394 passed. Oxlint: 0 error. Build: Sukses.

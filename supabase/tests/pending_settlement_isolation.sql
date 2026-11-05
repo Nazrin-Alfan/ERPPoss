@@ -638,5 +638,160 @@ BEGIN
   RAISE NOTICE 'PASS digital QRIS payment strictly requires bank account 1102 with zero fallback to cash: %', v_digital_err;
 END $$;
 
+-- 10. Test Simultaneous Discount & Tax (Proper Separate Classification - Finding 2)
+DO $$
+DECLARE
+  v_sim_res jsonb;
+  v_je_sim record;
+  v_je_sim_sum record;
+  v_sim_cafe_line record;
+  v_sim_tax_line record;
+  v_sim_cash_line record;
+  v_sim_disc_line record;
+  
+  -- Skenario B variables (Net Revenue)
+  v_sim_res_b jsonb;
+  v_je_sim_b record;
+  v_je_sim_sum_b record;
+  v_sim_cafe_line_b record;
+  v_sim_tax_line_b record;
+  v_sim_cash_line_b record;
+BEGIN
+  -- PART A: Skenario Penyajian Diskon Terpisah (dengan akun potongan penjualan 4104)
+  -- Subtotal: 100.000, Diskon: 10.000, Pajak: 11.000, Total: 101.000
+  INSERT INTO public.struk (
+    id, tenant_id, branch_id, id_struk, subtotal, diskon, pajak, total_tagihan, total_biaya, uang_diterima, kembalian,
+    metode_pembayaran, status_bayar, tanggal, created_at, kasir
+  ) VALUES (
+    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid,
+    'QA-SIMULTANEOUS-001', 100000.00, 10000.00, 11000.00, 101000.00, 101000.00, 0.00, 0.00, 'Pending', 'Pending', CURRENT_DATE, now(), 'QA Tester'
+  );
+
+  INSERT INTO public.cafe (
+    id, tenant_id, branch_id, id_struk, tanggal, jam, nama_menu, qty, harga_satuan, subtotal, status, created_at
+  ) VALUES (
+    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid,
+    'QA-SIMULTANEOUS-001', CURRENT_DATE, '12:00:00'::time, 'Signature Platter', 1, 100000.00, 100000.00, 'Pending', now()
+  );
+
+  PERFORM set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
+  v_sim_res := public.fn_settle_pending_bill(
+    '22222222-2222-2222-2222-222222222222'::uuid,
+    'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid,
+    jsonb_build_object(
+      'id_struk', 'QA-SIMULTANEOUS-001',
+      'metode_bayar', 'CASH',
+      'uang_diterima', 101000.00,
+      'idempotency_key', 'QA-SIMULTANEOUS-001:settle:key'
+    )
+  );
+
+  PERFORM pg_temp.assert_true((v_sim_res->>'success')::boolean = true, 'Simultaneous discount + tax settlement (Part A) must succeed');
+  PERFORM pg_temp.assert_true((v_sim_res->>'total_tagihan')::numeric = 101000.00, 'Final total must be 101,000');
+
+  -- Verifikasi Keseimbangan & Klasifikasi Jurnal (Penyajian Terpisah 4104)
+  SELECT * INTO v_je_sim FROM public.journal_entries WHERE entry_no = 'JE-SETTLE-QA-SIMULTANEOUS-001';
+  PERFORM pg_temp.assert_true(v_je_sim.status = 'POSTED', 'Journal entry must be POSTED');
+
+  SELECT SUM(debit) AS total_debit, SUM(credit) AS total_credit INTO v_je_sim_sum
+  FROM public.journal_entry_lines WHERE journal_entry_id = v_je_sim.id;
+  PERFORM pg_temp.assert_true(v_je_sim_sum.total_debit = v_je_sim_sum.total_credit, 'CRITICAL: Simultaneous journal (Part A) MUST strictly balance debit == credit');
+  PERFORM pg_temp.assert_true(v_je_sim_sum.total_debit = 111000.00, 'Total debit must be 111,000 (101k cash + 10k discount)');
+
+  -- Debit Kas: 101.000
+  SELECT * INTO v_sim_cash_line FROM public.journal_entry_lines
+  WHERE journal_entry_id = v_je_sim.id AND memo ILIKE '%Penerimaan Tunai%';
+  PERFORM pg_temp.assert_true(v_sim_cash_line.debit = 101000.00, 'Cash debit must be 101,000');
+
+  -- Debit Diskon: 10.000
+  SELECT * INTO v_sim_disc_line FROM public.journal_entry_lines
+  WHERE journal_entry_id = v_je_sim.id AND memo ILIKE '%Potongan Penjualan%';
+  PERFORM pg_temp.assert_true(v_sim_disc_line.debit = 10000.00, 'Discount debit must be 10,000');
+
+  -- Kredit Pendapatan: Rp 100.000
+  SELECT * INTO v_sim_cafe_line FROM public.journal_entry_lines
+  WHERE journal_entry_id = v_je_sim.id AND memo ILIKE '%Pendapatan Cafe%';
+  PERFORM pg_temp.assert_true(v_sim_cafe_line.credit = 100000.00, 'Gross cafe revenue must be 100,000');
+
+  -- Kredit Utang Pajak: Harus Rp 11.000 (BUKAN Rp 1.000)
+  SELECT * INTO v_sim_tax_line FROM public.journal_entry_lines
+  WHERE journal_entry_id = v_je_sim.id AND memo ILIKE '%Pajak%';
+  PERFORM pg_temp.assert_true(v_sim_tax_line.credit = 11000.00, 'Tax liability credit MUST be strictly 11,000 (not netted down to 1,000)');
+
+  RAISE NOTICE 'PASS Part A: Simultaneous discount+tax with separate 4104 account verified (111k debit == 111k credit, Tax = 11k)';
+
+  -- PART B: Skenario Pendapatan Bersih / Net Revenue (tanpa akun potongan terpisah 4104)
+  INSERT INTO public.tenants (id) VALUES ('66666666-6666-6666-6666-666666666666'::uuid) ON CONFLICT DO NOTHING;
+  INSERT INTO public.branches (id, tenant_id, is_active)
+  VALUES ('66666666-bbbb-6666-bbbb-666666666666'::uuid, '66666666-6666-6666-6666-666666666666'::uuid, true)
+  ON CONFLICT DO NOTHING;
+  INSERT INTO public.profiles (id, tenant_id, branch_id, role, is_active)
+  VALUES ('00000000-0000-0000-0000-000000000066', '66666666-6666-6666-6666-666666666666'::uuid, '66666666-bbbb-6666-bbbb-666666666666'::uuid, 'owner', true)
+  ON CONFLICT (id) DO UPDATE SET is_active = true, tenant_id = '66666666-6666-6666-6666-666666666666'::uuid;
+
+  -- Setup COA tenant 6: Kas, Bank, Cafe, Pajak (DELIBERATELY NO 4104)
+  INSERT INTO public.chart_of_accounts (tenant_id, kode_akun, nama_akun)
+  VALUES 
+    ('66666666-6666-6666-6666-666666666666'::uuid, '1101', 'Kas Tunai'),
+    ('66666666-6666-6666-6666-666666666666'::uuid, '1102', 'Bank Rekening'),
+    ('66666666-6666-6666-6666-666666666666'::uuid, '4102', 'Pendapatan Cafe'),
+    ('66666666-6666-6666-6666-666666666666'::uuid, '2102', 'Utang Pajak')
+  ON CONFLICT DO NOTHING;
+
+  INSERT INTO public.struk (
+    id, tenant_id, branch_id, id_struk, subtotal, diskon, pajak, total_tagihan, total_biaya, uang_diterima, kembalian,
+    metode_pembayaran, status_bayar, tanggal, created_at, kasir
+  ) VALUES (
+    gen_random_uuid(), '66666666-6666-6666-6666-666666666666'::uuid, '66666666-bbbb-6666-bbbb-666666666666'::uuid,
+    'QA-SIMULTANEOUS-NET-002', 100000.00, 10000.00, 11000.00, 101000.00, 101000.00, 0.00, 0.00, 'Pending', 'Pending', CURRENT_DATE, now(), 'QA Tester'
+  );
+
+  INSERT INTO public.cafe (
+    id, tenant_id, branch_id, id_struk, tanggal, jam, nama_menu, qty, harga_satuan, subtotal, status, created_at
+  ) VALUES (
+    gen_random_uuid(), '66666666-6666-6666-6666-666666666666'::uuid, '66666666-bbbb-6666-bbbb-666666666666'::uuid,
+    'QA-SIMULTANEOUS-NET-002', CURRENT_DATE, '12:00:00'::time, 'Signature Platter', 1, 100000.00, 100000.00, 'Pending', now()
+  );
+
+  PERFORM set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000066', true);
+  v_sim_res_b := public.fn_settle_pending_bill(
+    '66666666-6666-6666-6666-666666666666'::uuid,
+    '66666666-bbbb-6666-bbbb-666666666666'::uuid,
+    jsonb_build_object(
+      'id_struk', 'QA-SIMULTANEOUS-NET-002',
+      'metode_bayar', 'CASH',
+      'uang_diterima', 101000.00,
+      'idempotency_key', 'QA-SIMULTANEOUS-NET-002:settle:key'
+    )
+  );
+
+  PERFORM pg_temp.assert_true((v_sim_res_b->>'success')::boolean = true, 'Simultaneous discount + tax settlement (Part B) must succeed');
+
+  SELECT * INTO v_je_sim_b FROM public.journal_entries WHERE entry_no = 'JE-SETTLE-QA-SIMULTANEOUS-NET-002';
+  PERFORM pg_temp.assert_true(v_je_sim_b.status = 'POSTED', 'Journal entry must be POSTED');
+
+  SELECT SUM(debit) AS total_debit, SUM(credit) AS total_credit INTO v_je_sim_sum_b
+  FROM public.journal_entry_lines WHERE journal_entry_id = v_je_sim_b.id;
+  PERFORM pg_temp.assert_true(v_je_sim_sum_b.total_debit = v_je_sim_sum_b.total_credit, 'CRITICAL: Simultaneous journal (Part B) MUST strictly balance debit == credit');
+  PERFORM pg_temp.assert_true(v_je_sim_sum_b.total_debit = 101000.00, 'Total debit must be 101,000 (net revenue cash tendered)');
+
+  -- Debit Kas: 101.000
+  SELECT * INTO v_sim_cash_line_b FROM public.journal_entry_lines
+  WHERE journal_entry_id = v_je_sim_b.id AND debit > 0;
+  PERFORM pg_temp.assert_true(v_sim_cash_line_b.debit = 101000.00, 'Cash debit must be 101,000');
+
+  -- Kredit Pendapatan Bersih: Harus Rp 90.000 (BUKAN Rp 100.000)
+  SELECT * INTO v_sim_cafe_line_b FROM public.journal_entry_lines
+  WHERE journal_entry_id = v_je_sim_b.id AND memo ILIKE '%Pendapatan Cafe%';
+  PERFORM pg_temp.assert_true(v_sim_cafe_line_b.credit = 90000.00, 'Net cafe revenue MUST be strictly 90,000 (100k subtotal - 10k discount)');
+
+  -- Kredit Utang Pajak: Harus Rp 11.000 (BUKAN Rp 1.000)
+  SELECT * INTO v_sim_tax_line_b FROM public.journal_entry_lines
+  WHERE journal_entry_id = v_je_sim_b.id AND memo ILIKE '%Pajak%';
+  PERFORM pg_temp.assert_true(v_sim_tax_line_b.credit = 11000.00, 'Tax liability credit MUST be strictly 11,000 (not netted down to 1,000)');
+
+  RAISE NOTICE 'PASS Part B: Simultaneous discount+tax Net Revenue method verified: Net Revenue = 90,000, Tax = 11,000, Cash = 101,000';
+END $$;
+
 ROLLBACK;
 SELECT 'ALL PENDING SETTLEMENT SQL CHECKS PASSED' AS status;

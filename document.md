@@ -4638,10 +4638,58 @@ Sebelum perbaikan ini, alur pelunasan tagihan tertunda (*pending bill*) di kasir
        - `SNAPSHOT_RECORDED` / `HISTORICAL_RESOLVED`: `total_cogs > 0.00` dan `cogs_status` sesuai asal data.
 
 - **Verifikasi Kualitas**:
-  - Unit Test Suite Vitest: 63 test files, **388 tests passed (100% Green)**.
+  - Unit Test Suite Vitest: 64 test files, **394 tests passed (100% Green)**.
   - Linter (`oxlint`): 0 error.
-  - Production Build Vite: Sukses (2.53s) tanpa kendala.
+  - Production Build Vite: Sukses (2.88s) tanpa kendala.
   - Skema dan isolasi transaksi tetap terjaga tanpa merge ke `main` atau deployment produksi.
+
+### 117. Penyelesaian Tuntas 2 Penghambat Merge Terakhir (eaf1a1f -> Resolution) (05 November 2026)
+- **Konteks & Latar Belakang Masalah**:
+  - Peninjauan independen terhadap commit `eaf1a1f` mengonfirmasi kemajuan yang terverifikasi (391 unit test lulus, harness PostgreSQL exit code 0, penolakan pembayaran digital tanpa akun bank, penguncian "Simpan Meja", kontrak data struk kasir, dan penggunaan tagihan tersimpan).
+  - Namun, peninjauan menemukan dua penghambat merge yang masih tersisa:
+    1. **P1 — Pembayaran Cafe Gagal Sebelum Mencapai Server (kembalian is not defined)**: Variabel `kembalian` diganti menjadi `effectiveKembalian`, tetapi referensi lama masih ada pada baris 378 (payload struk checkout) dan baris 493 (helper cetak struk). Akibatnya, pemanggilan handler lokal memunculkan `ReferenceError: kembalian is not defined` dan RPC tidak dipanggil untuk checkout baru maupun pelunasan pending.
+    2. **P1 — Diskon dan Pajak Bersamaan Menghasilkan Pembukuan Salah**: RPC `fn_settle_pending_bill` masih menyimpulkan diskon/pajak dari selisih kotor subtotal dengan tagihan akhir (`GREATEST(0, subtotal - tagihan)`). Ketika transaksi memiliki diskon tersimpan (misal Rp 10.000) dan pajak tersimpan (misal Rp 11.000) dengan tagihan akhir Rp 101.000 dari subtotal Rp 100.000:
+       - Hasil aktual: Debit Kas Rp 101.000, Kredit Pendapatan Rp 100.000, Kredit Utang Pajak Rp 1.000 (diskon 0, pajak di-netting ke Rp 1.000).
+       - Seharusnya: Pendapatan Bersih Rp 90.000 dan Utang Pajak Rp 11.000 (atau penyajian diskon terpisah 4104: Debit Kas 101k + Debit Diskon 10k == Kredit Pendapatan 100k + Kredit Utang Pajak 11k). Jurnal sebelumnya seimbang angka, tetapi klasifikasi dan nominal per akun salah.
+
+- **Solusi Rekayasa & Implementasi**:
+  1. **Perbaikan Referensi Kembalian & Isolasi Handler Checkout**:
+     - Memperbaiki seluruh referensi `kembalian` pada `CafePOSPage.jsx` agar mengacu pada `effectiveKembalian`.
+     - Mengekstrak fungsi eksekusi checkout `processCafeCheckout` ke `src/utils/cafeCheckoutHelpers.js` untuk menjamin independensi handler, isolasi parameter, dan kemudahan pengujian tanpa bergantung pada mock service semata.
+     - Membuat test suite handler otomatis `src/pages/pos/__tests__/cafePOSCheckoutHandler.test.jsx` yang menguji:
+       - Transaksi checkout baru: memastikan `executeCheckout` menerima `strukPayload.kembalian` yang valid dan helper cetak struk menerima `effectiveKembalian` tanpa ReferenceError.
+       - Pelunasan tagihan pending: memastikan `settlePendingBill` dipanggil dengan parameter kanonikal dan helper struk menerima nilai tersimpan tanpa exception.
+       - Validasi pembayaran tunai kurang dari tagihan sebelum RPC dipanggil.
+  2. **Penjurnalan Komponen Diskon dan Pajak Tersimpan Eksplisit**:
+     - Memperbarui RPC `fn_settle_pending_bill` di `supabase/migrations/20261104000001_atomic_pending_bill_settlement.sql`:
+       - Mengambil komponen diskon tersimpan yang tervalidasi: `v_discount := COALESCE(NULLIF(p_settle_payload->>'diskon', '')::numeric, v_struk.diskon, (COALESCE(v_struk.diskon_cafe, 0.00) + COALESCE(v_struk.diskon_carwash, 0.00)), 0.00)`.
+       - Mengambil komponen pajak tersimpan yang tervalidasi: `v_tax := COALESCE(NULLIF(p_settle_payload->>'pajak', '')::numeric, v_struk.pajak, 0.00)`.
+       - Menghapus logika lama yang menyimpulkan diskon/pajak hanya dari selisih kotor `v_item_subtotal - v_base_total`.
+       - Menjaga fallback untuk struk historis tanpa metadata terpisah.
+       - Memvalidasi keberadaan akun kewajiban/utang pajak `v_coa_tax` (2102/2101) jika `v_tax > 0.00`.
+     - Memperbarui posting jurnal:
+       - **Metode Net Revenue** (tanpa akun potongan terpisah 4104):
+         - Debit: Kas/Bank Rp 101.000.
+         - Kredit: Pendapatan Bersih Rp 90.000 (`subtotal 100k - diskon 10k`), Utang Pajak Rp 11.000.
+         - Total Debit Rp 101.000 == Total Kredit Rp 101.000 (Presisi Klasifikasi Terpenuhi).
+       - **Metode Penyajian Terpisah** (dengan akun potongan penjualan 4104):
+         - Debit: Kas/Bank Rp 101.000, Potongan Penjualan Rp 10.000 (Total Debit Rp 111.000).
+         - Kredit: Pendapatan Kotor Rp 100.000, Utang Pajak Rp 11.000 (Total Kredit Rp 111.000).
+         - Total Debit Rp 111.000 == Total Kredit Rp 111.000 (Presisi Klasifikasi Terpenuhi).
+  3. **Harness PostgreSQL Riil & Penambahan Test 10**:
+     - Menambahkan Test 10 pada `supabase/tests/pending_settlement_isolation.sql` untuk menguji skenario diskon dan pajak muncul bersamaan (Part A dengan akun 4104 dan Part B Net Revenue tanpa akun 4104).
+     - Asersi ketat membuktikan:
+       - Kredit pendapatan bersih adalah persis Rp 90.000 (bukan Rp 100.000).
+       - Kredit utang pajak adalah persis Rp 11.000 (bukan Rp 1.000).
+       - Debit dan kredit jurnal seimbang 100% dan seluruh harness di-rollback bersih.
+     - Eksekusi `scripts/test_pending_settlement_isolation.sh` pada kontainer PostgreSQL lokal: **GREEN (Exit code 0)**.
+
+- **Status Integritas Proyek**:
+  - Vitest Unit & Handler Tests: 64 test files, **394 passed (100% Green)**.
+  - PostgreSQL Harness: **ALL PENDING SETTLEMENT SQL CHECKS PASSED (Exit code 0)**.
+  - Linter (`oxlint`): **0 Error**.
+  - Production Build Vite: **Sukses** (2.88s).
+  - Isolasi branch `fix/pending-settlement-atomicity` tetap terjaga tanpa merge ke `main` dan tanpa modifikasi database produksi.
 
 
 
