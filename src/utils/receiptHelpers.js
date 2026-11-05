@@ -130,14 +130,15 @@ export const buildOrderReceiptData = (order, customConfig = null) => {
   }
 
   // Cafe items if any
-  if (order?.cafe && order.cafe.length > 0) {
-    order.cafe.forEach(c => {
+  const cafeList = order?.cafe || (Array.isArray(order?.items) ? order.items : [])
+  if (cafeList && cafeList.length > 0) {
+    cafeList.forEach(c => {
       const qty = parseInt(c.qty || c.jumlah || 1)
-      const price = parseFloat(c.harga_satuan || c.harga || 0)
+      const price = parseFloat(c.harga_satuan || c.harga || c.price || 0)
       const note = c.catatan || c.notes || null
       items.push({
-        type: 'CAFE',
-        name: c.nama_menu || 'Menu Cafe',
+        type: c.type || 'CAFE',
+        name: c.nama_menu || c.name || 'Menu Cafe',
         detail: note ? `Catatan: ${note}` : null,
         catatan: note,
         qty,
@@ -147,12 +148,12 @@ export const buildOrderReceiptData = (order, customConfig = null) => {
     })
   }
 
-  const rawId = (order?.id_struk || order?.id || '00000000').toString()
+  const rawId = (order?.id_struk || order?.id || order?.receiptNumber || '00000000').toString()
   let cleanId = rawId.toUpperCase().replace(/^ORD-?/, '')
   const shortId = cleanId.length >= 8 ? cleanId.substring(0, 8) : cleanId
   const orderNumber = `ORD-${shortId}`
 
-  const total = parseFloat(order?.total_tagihan || order?.total_harga || 0)
+  const total = parseFloat(order?.total_tagihan || order?.total_harga || order?.total || 0)
 
   const hasCarwashItems = !!(carwashItem.plat || carwashItem.plat_nomor || carwashItem.layanan || carwashItem.paket || (order.carwash && order.carwash.length > 0))
 
@@ -208,11 +209,11 @@ export const buildOrderReceiptData = (order, customConfig = null) => {
 export const buildPaymentReceiptData = (order, customConfig = null) => {
   const config = customConfig || getReceiptConfig()
   const baseData = buildOrderReceiptData(order, config)
-  const metodeBayar = order?.metode_bayar || 'CASH'
-  const total = parseFloat(order?.total_tagihan || order?.total_harga || 0)
+  const metodeBayar = order?.metode_bayar || order?.paymentMethod || 'CASH'
+  const total = parseFloat(order?.total_tagihan || order?.total_harga || order?.total || 0)
   const cashAmount = parseFloat(order?.nominal_cash || (metodeBayar === 'CASH' ? total : 0))
   const qrisAmount = parseFloat(order?.nominal_qris || (metodeBayar === 'QRIS' ? total : 0))
-  const uangDiterima = parseFloat(order?.uang_diterima || cashAmount || total)
+  const uangDiterima = parseFloat(order?.uang_diterima || order?.cashTendered || cashAmount || total)
   const kembalian = parseFloat(order?.kembalian || (metodeBayar === 'CASH' && uangDiterima >= total ? uangDiterima - total : 0))
 
   const paymentTitle = config.paymentReceiptTitle !== undefined ? config.paymentReceiptTitle : DEFAULT_RECEIPT_CONFIG.paymentReceiptTitle

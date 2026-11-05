@@ -251,10 +251,37 @@ export const CafePOSPage = () => {
   }, [selectedDiskon, subtotal])
 
   const grandTotal = Math.max(0, subtotal - diskonAmount)
-  const kembalian = Math.max(0, (Number(nominalBayar) || 0) - grandTotal)
+
+  // Nilai efektif saat mode pelunasan aktif (menggunakan nilai tersimpan DB untuk konsistensi tagihan & diskon - Finding 3)
+  const effectiveSubtotal = useMemo(() => {
+    if (settlingBill) {
+      return Number(settlingBill.subtotal || subtotal)
+    }
+    return subtotal
+  }, [settlingBill, subtotal])
+
+  const effectiveDiskon = useMemo(() => {
+    if (settlingBill) {
+      return Number(settlingBill.diskon || settlingBill.diskon_cafe || 0)
+    }
+    return diskonAmount
+  }, [settlingBill, diskonAmount])
+
+  const effectiveGrandTotal = useMemo(() => {
+    if (settlingBill) {
+      return Number(settlingBill.total_biaya || settlingBill.total_tagihan || settlingBill.total || Math.max(0, effectiveSubtotal - effectiveDiskon))
+    }
+    return grandTotal
+  }, [settlingBill, effectiveSubtotal, effectiveDiskon, grandTotal])
+
+  const effectiveKembalian = Math.max(0, (Number(nominalBayar) || 0) - effectiveGrandTotal)
 
   // Simpan Pesanan sebagai Pending (Dine-in Order / Bill Meja)
   const handleSaveBill = async () => {
+    // Cegah penyimpanan ulang bill yang sudah berstatus pending untuk menghindari pemotongan ganda stok (Finding 1)
+    if (settlingBill) {
+      return setError('Tagihan ini sudah tersimpan sebagai bill meja aktif. Selesaikan pembayaran atau batalkan mode pelunasan.')
+    }
     if (cart.length === 0) return setError('Pilih minimal 1 menu sebelum menyimpan bill.')
     if (!tableOrCustomer.trim()) return setError('Harap masukkan nomor meja atau nama pelanggan.')
 
@@ -263,7 +290,7 @@ export const CafePOSPage = () => {
     try {
       const todayDate = new Date().toLocaleDateString('en-CA')
       const currentTime = new Date().toTimeString().split(' ')[0]
-      const strukId = settlingBill?.id_struk || `BILL-${Date.now().toString().slice(-6)}`
+      const strukId = `BILL-${Date.now().toString().slice(-6)}`
 
       // 1. Simpan atau Update Header Struk (Status Pending) via posService Atomic RPC
       const strukPayload = {
@@ -321,7 +348,7 @@ export const CafePOSPage = () => {
   // Checkout Pembayaran Selesai (Lunas)
   const handleCheckout = async () => {
     if (cart.length === 0) return setError('Keranjang belanja masih kosong.')
-    if (selectedPayment === 'CASH' && (Number(nominalBayar) || 0) < grandTotal) {
+    if (selectedPayment === 'CASH' && (Number(nominalBayar) || 0) < effectiveGrandTotal) {
       return setError('Nominal pembayaran tunai kurang dari total tagihan.')
     }
 
@@ -374,7 +401,7 @@ export const CafePOSPage = () => {
       // 3. Eksekusi Atomic Server-side Checkout / Settlement
       if (settlingBill) {
         // Pelunasan tagihan meja terbuka atomik (mencegah pemotongan stok ganda & inkonsistensi keranjang)
-        const settleBillTotal = Number(settlingBill.total_biaya || settlingBill.total_tagihan || settlingBill.total || grandTotal)
+        const settleBillTotal = effectiveGrandTotal
         const settleUangDiterima = selectedPayment === 'CASH' ? (Number(nominalBayar) || settleBillTotal) : settleBillTotal
         const settleKembalian = selectedPayment === 'CASH' && settleUangDiterima > settleBillTotal
           ? Math.round((settleUangDiterima - settleBillTotal) * 100) / 100
@@ -397,7 +424,7 @@ export const CafePOSPage = () => {
           }
         })
 
-        // 4. Siapkan Data Struk Cetak Thermal Menggunakan Data Transaksi Tersimpan Database
+        // 4. Siapkan Data Struk Cetak Thermal Menggunakan Kontrak Helper Asli & Nilai Tersimpan DB (Finding 2)
         const receiptConfig = getReceiptConfig()
         if (receiptConfig?.autoPrintOnCheckout !== false) {
           const settledData = settleRes?.data || {}
@@ -406,23 +433,25 @@ export const CafePOSPage = () => {
             : cart
 
           const receiptData = buildPaymentReceiptData({
+            id_struk: settlingBill.id_struk,
             receiptNumber: settlingBill.id_struk,
-            date: todayDate,
-            time: currentTime,
-            cashier: selectedCashier || settlingBill.kasir || 'KASIR',
-            customerName: tableOrCustomer || settlingBill.nama_pelanggan || 'Pelanggan Cafe',
-            items: receiptItems.map(i => ({
-              name: i.nama_menu,
-              qty: i.qty,
-              price: i.harga,
-              subtotal: i.harga * i.qty,
-              notes: i.catatan
+            tanggal: todayDate,
+            jam: currentTime,
+            kasir: selectedCashier || settlingBill.kasir || 'KASIR',
+            no_meja: tableOrCustomer || settlingBill.no_meja || '',
+            nama_pelanggan: tableOrCustomer || settlingBill.nama_pelanggan || 'Pelanggan Cafe',
+            cafe: receiptItems.map(i => ({
+              nama_menu: i.nama_menu || i.name,
+              qty: Number(i.qty || 1),
+              harga_satuan: Number(i.harga || i.price || 0),
+              subtotal: Number(i.subtotal || (Number(i.qty || 1) * Number(i.harga || i.price || 0))),
+              catatan: i.catatan || i.notes || ''
             })),
-            subtotal: Number(settlingBill.subtotal || subtotal),
-            discount: Number(settlingBill.diskon || 0),
-            total: Number(settledData.total_tagihan || settleBillTotal),
-            paymentMethod: selectedPayment,
-            cashTendered: Number(settledData.uang_diterima || settleUangDiterima),
+            subtotal: effectiveSubtotal,
+            diskon_cafe: effectiveDiskon,
+            total_tagihan: Number(settledData.total_tagihan || settleBillTotal),
+            metode_bayar: selectedPayment,
+            uang_diterima: Number(settledData.uang_diterima || settleUangDiterima),
             kembalian: settledData.kembalian !== undefined ? Number(settledData.kembalian) : settleKembalian,
             tenantName: activeTenant?.nama || activeTenant?.name || 'Cafe RelayPOS'
           })
@@ -438,27 +467,29 @@ export const CafePOSPage = () => {
           carwashPayload: null
         })
 
-        // 4. Siapkan Data Struk Cetak Thermal
+        // 4. Siapkan Data Struk Cetak Thermal Menggunakan Kontrak Helper Asli
         const receiptConfig = getReceiptConfig()
         if (receiptConfig?.autoPrintOnCheckout !== false) {
           const receiptData = buildPaymentReceiptData({
+            id_struk: strukId,
             receiptNumber: strukId,
-            date: todayDate,
-            time: currentTime,
-            cashier: selectedCashier || 'KASIR',
-            customerName: tableOrCustomer || 'Pelanggan Cafe',
-            items: cart.map(i => ({
-              name: i.nama_menu,
-              qty: i.qty,
-              price: i.harga,
-              subtotal: i.harga * i.qty,
-              notes: i.catatan
+            tanggal: todayDate,
+            jam: currentTime,
+            kasir: selectedCashier || 'KASIR',
+            no_meja: tableOrCustomer || '',
+            nama_pelanggan: tableOrCustomer || 'Pelanggan Cafe',
+            cafe: cart.map(i => ({
+              nama_menu: i.nama_menu,
+              qty: Number(i.qty || 1),
+              harga_satuan: Number(i.harga || 0),
+              subtotal: Number(i.harga * i.qty),
+              catatan: i.catatan || ''
             })),
             subtotal: subtotal,
-            discount: diskonAmount,
-            total: grandTotal,
-            paymentMethod: selectedPayment,
-            cashTendered: Number(nominalBayar) || grandTotal,
+            diskon_cafe: diskonAmount,
+            total_tagihan: grandTotal,
+            metode_bayar: selectedPayment,
+            uang_diterima: Number(nominalBayar) || grandTotal,
             kembalian: kembalian,
             tenantName: activeTenant?.nama || activeTenant?.name || 'Cafe RelayPOS'
           })
@@ -804,17 +835,17 @@ export const CafePOSPage = () => {
             <div className="space-y-1 text-xs">
               <div className="flex justify-between text-muted">
                 <span>Subtotal Menu</span>
-                <span className="font-mono text-white">{formatRupiah(subtotal)}</span>
+                <span className="font-mono text-white">{formatRupiah(effectiveSubtotal)}</span>
               </div>
-              {diskonAmount > 0 && (
+              {effectiveDiskon > 0 && (
                 <div className="flex justify-between text-primary font-medium">
-                  <span>Potongan Promo</span>
-                  <span className="font-mono">-{formatRupiah(diskonAmount)}</span>
+                  <span>Potongan Promo {settlingBill ? '(Terkunci)' : ''}</span>
+                  <span className="font-mono">-{formatRupiah(effectiveDiskon)}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm font-bold pt-1.5 border-t border-border">
                 <span className="text-white">Total Tagihan</span>
-                <span className="font-mono text-lg font-bold text-primary">{formatRupiah(grandTotal)}</span>
+                <span className="font-mono text-lg font-bold text-primary">{formatRupiah(effectiveGrandTotal)}</span>
               </div>
             </div>
 
@@ -847,16 +878,16 @@ export const CafePOSPage = () => {
                     className="w-full px-2.5 py-1.5 bg-subsurface border border-border rounded-lg text-xs font-mono text-white placeholder-[#6b7367] focus:outline-none focus:border-primary"
                   />
                   <button
-                    onClick={() => setNominalBayar(grandTotal)}
+                    onClick={() => setNominalBayar(effectiveGrandTotal)}
                     className="px-2.5 py-1.5 bg-subsurface hover:bg-[#242428] border border-border text-primary text-[11px] font-mono font-bold rounded-lg whitespace-nowrap cursor-pointer transition"
                   >
                     Uang Pas
                   </button>
                 </div>
-                {Number(nominalBayar) >= grandTotal && (
+                {Number(nominalBayar) >= effectiveGrandTotal && (
                   <div className="flex justify-between items-center text-xs bg-subsurface p-2 rounded-lg border border-border">
                     <span className="font-semibold text-muted">Kembalian:</span>
-                    <span className="font-mono font-bold text-sm text-primary">{formatRupiah(kembalian)}</span>
+                    <span className="font-mono font-bold text-sm text-primary">{formatRupiah(effectiveKembalian)}</span>
                   </div>
                 )}
               </div>
@@ -865,9 +896,14 @@ export const CafePOSPage = () => {
             {/* ACTION BUTTONS: Simpan Meja (Dine-in Pending) & Bayar Langsung */}
             <div className="grid grid-cols-2 gap-2 pt-2">
               <button
-                disabled={loading}
+                disabled={loading || !!settlingBill}
                 onClick={handleSaveBill}
-                className="h-11 px-2 bg-subsurface hover:bg-[#242428] text-white border border-border rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className={`h-11 px-2 border border-border rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                  settlingBill
+                    ? 'bg-subsurface/40 text-muted/40 border-border/30 cursor-not-allowed opacity-50'
+                    : 'bg-subsurface hover:bg-[#242428] text-white cursor-pointer'
+                }`}
+                title={settlingBill ? 'Tagihan meja sudah tersimpan (gunakan Bayar Sekarang untuk melunasi)' : 'Simpan tagihan meja (Pending)'}
               >
                 <Clock className="w-3.5 h-3.5 text-warning" />
                 <span>Simpan Meja</span>

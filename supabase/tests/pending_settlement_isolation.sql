@@ -260,7 +260,7 @@ BEGIN
   PERFORM pg_temp.assert_true(v_cf.pos = 'SALDO CASH', 'Cashflow pos must be SALDO CASH');
 
   -- Journal entry balance verification
-  SELECT * INTO v_je FROM journal_entries WHERE reference_id = 'SETTLE-QA-PENDING-001';
+  SELECT * INTO v_je FROM journal_entries WHERE entry_no = 'JE-SETTLE-QA-PENDING-001';
   PERFORM pg_temp.assert_true(v_je.status = 'POSTED', 'Journal entry must be POSTED and immutable');
   SELECT SUM(debit) AS total_debit, SUM(credit) AS total_credit INTO v_lines_sum FROM journal_entry_lines WHERE journal_entry_id = v_je.id;
   PERFORM pg_temp.assert_true(v_lines_sum.total_debit = v_lines_sum.total_credit, 'Journal lines must strictly balance: debit == credit');
@@ -292,7 +292,7 @@ BEGIN
   -- Verify no duplicate cashflow or journal
   SELECT COUNT(*) INTO v_cf_count FROM cashflow WHERE id_sumber = 'CF-SETTLE-QA-PENDING-001';
   PERFORM pg_temp.assert_true(v_cf_count = 1, 'Cashflow must not be duplicated on replay');
-  SELECT COUNT(*) INTO v_je_count FROM journal_entries WHERE reference_id = 'SETTLE-QA-PENDING-001';
+  SELECT COUNT(*) INTO v_je_count FROM journal_entries WHERE entry_no = 'JE-SETTLE-QA-PENDING-001';
   PERFORM pg_temp.assert_true(v_je_count = 1, 'Journal must not be duplicated on replay');
 
   RAISE NOTICE 'PASS idempotent replay safe with was_replayed: true';
@@ -323,8 +323,8 @@ BEGIN
   VALUES ('44444444-aaaa-4444-aaaa-444444444444'::uuid, '44444444-4444-4444-4444-444444444444'::uuid, true)
   ON CONFLICT DO NOTHING;
   INSERT INTO public.profiles (id, tenant_id, branch_id, role, is_active)
-  VALUES ('00000000-0000-0000-0000-000000000004', '44444444-4444-4444-4444-444444444444'::uuid, '44444444-aaaa-4444-aaaa-444444444444'::uuid, 'owner', true)
-  ON CONFLICT DO NOTHING;
+  VALUES ('00000000-0000-0000-0000-000000000099', '44444444-4444-4444-4444-444444444444'::uuid, '44444444-aaaa-4444-aaaa-444444444444'::uuid, 'owner', true)
+  ON CONFLICT (id) DO UPDATE SET is_active = true, tenant_id = '44444444-4444-4444-4444-444444444444'::uuid;
 
   -- Create isolated pending receipt QA-FAIL-JOURNAL
   INSERT INTO public.struk (
@@ -347,7 +347,7 @@ BEGIN
   SELECT * INTO v_struk_before FROM public.struk WHERE id_struk = 'QA-FAIL-JOURNAL';
 
   -- Simulate settlement without cash account 1101 configured: MUST fail with ACCOUNT_MAPPING_MISSING
-  PERFORM set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000004', true);
+  PERFORM set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000099', true);
   BEGIN
     PERFORM public.fn_settle_pending_bill(
       '44444444-4444-4444-4444-444444444444'::uuid,
@@ -363,6 +363,7 @@ BEGIN
     v_err_caught := SQLERRM;
   END;
 
+  RAISE NOTICE 'Test 5 caught error: %', v_err_caught;
   -- Assert specific error code
   PERFORM pg_temp.assert_true(
     position('ACCOUNT_MAPPING_MISSING' IN v_err_caught) > 0,
@@ -399,7 +400,7 @@ BEGIN
     id, tenant_id, branch_id, id_struk, total_tagihan, total_biaya, uang_diterima, kembalian,
     metode_pembayaran, status_bayar, tanggal, created_at, kasir
   ) VALUES (
-    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, '33333333-3333-3333-3333-333333333333'::uuid,
+    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid,
     'QA-SPLIT-EXCESS', 80000.00, 80000.00, 0.00, 0.00, 'Pending', 'Pending', CURRENT_DATE, now(), 'QA Tester'
   );
 
@@ -407,7 +408,7 @@ BEGIN
     id, tenant_id, branch_id, id_struk, tanggal, jam, plat, model, variant, ukuran,
     paket, harga, status, created_at
   ) VALUES (
-    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, '33333333-3333-3333-3333-333333333333'::uuid,
+    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid,
     'QA-SPLIT-EXCESS', CURRENT_DATE, '11:00:00'::time, 'B 8888 QA', 'Mobil', 'Sedan', 'Medium',
     'Cuci Regular', 80000.00, 'Pending', now()
   );
@@ -416,7 +417,7 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
   v_split_res := public.fn_settle_pending_bill(
     '22222222-2222-2222-2222-222222222222'::uuid,
-    '33333333-3333-3333-3333-333333333333'::uuid,
+    'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid,
     jsonb_build_object(
       'id_struk', 'QA-SPLIT-EXCESS',
       'metode_bayar', 'SPLIT',
@@ -471,14 +472,14 @@ BEGIN
     id, tenant_id, branch_id, id_struk, subtotal, diskon, total_tagihan, total_biaya, uang_diterima, kembalian,
     metode_pembayaran, status_bayar, tanggal, created_at, kasir
   ) VALUES (
-    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, '33333333-3333-3333-3333-333333333333'::uuid,
+    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid,
     'QA-DISC-BILL', 100000.00, 10000.00, 90000.00, 90000.00, 0.00, 0.00, 'Pending', 'Pending', CURRENT_DATE, now(), 'QA Tester'
   );
 
   INSERT INTO public.cafe (
     id, tenant_id, branch_id, id_struk, tanggal, jam, nama_menu, qty, harga_satuan, subtotal, status, created_at
   ) VALUES (
-    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, '33333333-3333-3333-3333-333333333333'::uuid,
+    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid,
     'QA-DISC-BILL', CURRENT_DATE, '12:00:00'::time, 'Coffee Bundle', 1, 100000.00, 100000.00, 'Pending', now()
   );
 
@@ -486,7 +487,7 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
   v_disc_res := public.fn_settle_pending_bill(
     '22222222-2222-2222-2222-222222222222'::uuid,
-    '33333333-3333-3333-3333-333333333333'::uuid,
+    'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid,
     jsonb_build_object(
       'id_struk', 'QA-DISC-BILL',
       'metode_bayar', 'CASH',
@@ -505,10 +506,137 @@ BEGIN
   SELECT SUM(debit) AS total_debit, SUM(credit) AS total_credit INTO v_je_disc_sum
   FROM public.journal_entry_lines WHERE journal_entry_id = v_je_disc.id;
   PERFORM pg_temp.assert_true(v_je_disc_sum.total_debit = v_je_disc_sum.total_credit, 'CRITICAL: Discounted bill journal MUST strictly balance debit == credit');
-  PERFORM pg_temp.assert_true(v_je_disc_sum.total_debit = 90000.00, 'Total debit must be 90,000 (net revenue)');
+  PERFORM pg_temp.assert_true(v_je_disc_sum.total_debit = 100000.00, 'Total debit must be 100,000 (90k cash + 10k discount account 4104)');
 
   RAISE NOTICE 'PASS discounted bill journal balance verified: debit (%) == credit (%)', v_je_disc_sum.total_debit, v_je_disc_sum.total_credit;
 END $$;
 
+-- 8. Test Positive Bill Difference (Tax / Surcharge Component Journal Balance - Finding 5)
+DO $$
+DECLARE
+  v_tax_res jsonb;
+  v_je_tax record;
+  v_je_tax_sum record;
+  v_tax_line record;
+BEGIN
+  -- Create isolated pending receipt with tax: Item 100k, Tax 10k, Final Total 110k
+  INSERT INTO public.struk (
+    id, tenant_id, branch_id, id_struk, subtotal, pajak, total_tagihan, total_biaya, uang_diterima, kembalian,
+    metode_pembayaran, status_bayar, tanggal, created_at, kasir
+  ) VALUES (
+    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid,
+    'QA-TAX-BILL', 100000.00, 10000.00, 110000.00, 110000.00, 0.00, 0.00, 'Pending', 'Pending', CURRENT_DATE, now(), 'QA Tester'
+  );
+
+  INSERT INTO public.cafe (
+    id, tenant_id, branch_id, id_struk, tanggal, jam, nama_menu, qty, harga_satuan, subtotal, status, created_at
+  ) VALUES (
+    gen_random_uuid(), '22222222-2222-2222-2222-222222222222'::uuid, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid,
+    'QA-TAX-BILL', CURRENT_DATE, '12:00:00'::time, 'Coffee Pack', 1, 100000.00, 100000.00, 'Pending', now()
+  );
+
+  -- Execute Real RPC Call
+  PERFORM set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
+  v_tax_res := public.fn_settle_pending_bill(
+    '22222222-2222-2222-2222-222222222222'::uuid,
+    'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid,
+    jsonb_build_object(
+      'id_struk', 'QA-TAX-BILL',
+      'metode_bayar', 'CASH',
+      'uang_diterima', 110000.00,
+      'idempotency_key', 'QA-TAX-BILL:settle:tax-test'
+    )
+  );
+
+  PERFORM pg_temp.assert_true((v_tax_res->>'success')::boolean = true, 'Tax bill settlement must succeed');
+  PERFORM pg_temp.assert_true((v_tax_res->>'total_tagihan')::numeric = 110000.00, 'Final total must be 110,000');
+
+  -- Verify Journal Balance for Tax Bill
+  SELECT * INTO v_je_tax FROM public.journal_entries WHERE entry_no = 'JE-SETTLE-QA-TAX-BILL';
+  PERFORM pg_temp.assert_true(v_je_tax.status = 'POSTED', 'Journal entry must be POSTED');
+  SELECT SUM(debit) AS total_debit, SUM(credit) AS total_credit INTO v_je_tax_sum
+  FROM public.journal_entry_lines WHERE journal_entry_id = v_je_tax.id;
+  PERFORM pg_temp.assert_true(v_je_tax_sum.total_debit = v_je_tax_sum.total_credit, 'CRITICAL: Tax bill journal MUST strictly balance debit == credit');
+  PERFORM pg_temp.assert_true(v_je_tax_sum.total_debit = 110000.00, 'Total debit must be 110,000 (100k cafe + 10k tax)');
+
+  -- Verify Tax Credit Line
+  SELECT * INTO v_tax_line FROM public.journal_entry_lines
+  WHERE journal_entry_id = v_je_tax.id AND memo ILIKE '%Pajak%';
+  PERFORM pg_temp.assert_true(v_tax_line.credit = 10000.00, 'Tax credit line must be 10,000');
+
+  RAISE NOTICE 'PASS positive bill tax difference journal balance verified: debit (%) == credit (%) with 10k tax liability', v_je_tax_sum.total_debit, v_je_tax_sum.total_credit;
+END $$;
+
+-- 9. Test Digital Payment (QRIS) Fails Without Bank Account 1102 (Finding 4)
+DO $$
+DECLARE
+  v_digital_err text := '';
+  v_struk_qris record;
+BEGIN
+  -- Setup tenant 5555... with ONLY cash account 1101 (NO bank account 1102)
+  INSERT INTO public.tenants (id) VALUES ('55555555-5555-5555-5555-555555555555'::uuid) ON CONFLICT DO NOTHING;
+  INSERT INTO public.branches (id, tenant_id, is_active)
+  VALUES ('55555555-bbbb-5555-bbbb-555555555555'::uuid, '55555555-5555-5555-5555-555555555555'::uuid, true)
+  ON CONFLICT DO NOTHING;
+  INSERT INTO public.profiles (id, tenant_id, branch_id, role, is_active)
+  VALUES ('00000000-0000-0000-0000-000000000055', '55555555-5555-5555-5555-555555555555'::uuid, '55555555-bbbb-5555-bbbb-555555555555'::uuid, 'owner', true)
+  ON CONFLICT (id) DO UPDATE SET is_active = true, tenant_id = '55555555-5555-5555-5555-555555555555'::uuid;
+
+  -- Insert ONLY cash and cafe accounts (deliberately OMIT bank 1102)
+  INSERT INTO public.chart_of_accounts (tenant_id, kode_akun, nama_akun)
+  VALUES 
+    ('55555555-5555-5555-5555-555555555555'::uuid, '1101', 'Kas Tunai'),
+    ('55555555-5555-5555-5555-555555555555'::uuid, '4102', 'Pendapatan Cafe')
+  ON CONFLICT DO NOTHING;
+
+  -- Create pending bill QA-QRIS-NO-BANK
+  INSERT INTO public.struk (
+    id, tenant_id, branch_id, id_struk, total_tagihan, total_biaya, uang_diterima, kembalian,
+    metode_pembayaran, status_bayar, tanggal, created_at, kasir
+  ) VALUES (
+    gen_random_uuid(), '55555555-5555-5555-5555-555555555555'::uuid, '55555555-bbbb-5555-bbbb-555555555555'::uuid,
+    'QA-QRIS-NO-BANK', 50000.00, 50000.00, 0.00, 0.00, 'Pending', 'Pending', CURRENT_DATE, now(), 'QA Tester'
+  );
+
+  INSERT INTO public.cafe (
+    id, tenant_id, branch_id, id_struk, tanggal, jam, nama_menu, qty, harga_satuan, subtotal, status, created_at
+  ) VALUES (
+    gen_random_uuid(), '55555555-5555-5555-5555-555555555555'::uuid, '55555555-bbbb-5555-bbbb-555555555555'::uuid,
+    'QA-QRIS-NO-BANK', CURRENT_DATE, '12:00:00'::time, 'Coffee', 1, 50000.00, 50000.00, 'Pending', now()
+  );
+
+  PERFORM set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000055', true);
+  BEGIN
+    PERFORM public.fn_settle_pending_bill(
+      '55555555-5555-5555-5555-555555555555'::uuid,
+      '55555555-bbbb-5555-bbbb-555555555555'::uuid,
+      jsonb_build_object(
+        'id_struk', 'QA-QRIS-NO-BANK',
+        'metode_bayar', 'QRIS',
+        'uang_diterima', 50000.00,
+        'idempotency_key', 'QA-QRIS-NO-BANK:settle:fail-key'
+      )
+    );
+  EXCEPTION WHEN OTHERS THEN
+    v_digital_err := SQLERRM;
+  END;
+
+  -- Must fail with ACCOUNT_MAPPING_MISSING for bank 1102 (NO SILENT FALLBACK TO 1101 KAS)
+  PERFORM pg_temp.assert_true(
+    position('ACCOUNT_MAPPING_MISSING' IN v_digital_err) > 0 AND position('1102' IN v_digital_err) > 0,
+    'Digital settlement MUST fail when bank account 1102 is missing without falling back to cash'
+  );
+
+  -- Assert zero partial mutations
+  SELECT * INTO v_struk_qris FROM public.struk WHERE id_struk = 'QA-QRIS-NO-BANK';
+  PERFORM pg_temp.assert_true(v_struk_qris.status_bayar = 'Pending', 'Failed digital settlement must preserve Pending status');
+  PERFORM pg_temp.assert_true(
+    (SELECT count(*) FROM public.cashflow WHERE id_sumber LIKE '%QA-QRIS-NO-BANK%') = 0,
+    'Zero cashflow for failed digital settlement'
+  );
+
+  RAISE NOTICE 'PASS digital QRIS payment strictly requires bank account 1102 with zero fallback to cash: %', v_digital_err;
+END $$;
+
 ROLLBACK;
-RAISE NOTICE 'ALL PENDING SETTLEMENT SQL CHECKS PASSED';
+SELECT 'ALL PENDING SETTLEMENT SQL CHECKS PASSED' AS status;

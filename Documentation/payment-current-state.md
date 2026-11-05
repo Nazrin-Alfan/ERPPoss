@@ -350,3 +350,22 @@ Untuk mencegah klik ganda dan inkonsistensi jaringan, pelunasan menerapkan proto
 6. **Retensi Nilai NULL & Kolom Status Biaya Historis**:
    - Menambahkan kolom eksplisit `cogs_status VARCHAR(30)` pada tabel `struk`.
    - Data historis yang belum diketahui biayanya mempertahankan `total_cogs = NULL` (tidak ditimpa `0.00`) dengan status `HISTORICAL_UNKNOWN`.
+
+---
+
+## 11. Penyelesaian Tuntas 5 Penghambat P1 & Harness SQL PostgreSQL
+
+1. **Pencegahan Pemotongan Stok Ganda ("Simpan Meja")**:
+   - `handleSaveBill` di `CafePOSPage.jsx` diblokir ketika `settlingBill` aktif.
+   - Tombol UI "Simpan Meja" dinonaktifkan (`disabled={loading || !!settlingBill}`) saat tagihan pending dibuka.
+2. **Standardisasi Kontrak Field Struk Kasir**:
+   - `CafePOSPage.jsx` mengirim payload kanonikal (`id_struk`, `cafe`, `total_tagihan`, `metode_bayar`, `uang_diterima`, `kembalian`).
+   - `src/utils/receiptHelpers.js` mendukung alias fallback dan diuji via unit test otomatis.
+3. **Sinkronisasi Total Layar Tagihan Berdiskon**:
+   - `effectiveSubtotal`, `effectiveDiskon`, dan `effectiveGrandTotal` digunakan di seluruh tampilan layar, validasi pembayaran, dan perhitungan kembalian saat pelunasan aktif.
+4. **Penegakan Akun Bank (1102) Tanpa Fallback Kas**:
+   - Fallback `COALESCE(v_coa_bank, v_coa_kas)` dihapus. Pembayaran digital (QRIS/Transfer) wajib memiliki akun bank 1102 di COA; jika tidak ada, transaksi langsung gagal dengan `ACCOUNT_MAPPING_MISSING`.
+5. **Penjurnalan Komponen Tambahan / Pajak (Kewajiban 2102/2101)**:
+   - Selisih positif tagihan di atas subtotal item dikreditkan secara eksplisit ke akun kewajiban/utang pajak `v_coa_tax` (2102/2101). Jurnal terbukti seimbang (Debit == Kredit).
+6. **Eksekusi Harness PostgreSQL**:
+   - `scripts/test_pending_settlement_isolation.sh` dieksekusi pada kontainer PostgreSQL `erpposs-checkout-qa` lokal. Seluruh 9 skenario pengujian lulus dengan exit code 0.

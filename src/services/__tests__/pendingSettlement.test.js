@@ -296,7 +296,9 @@ describe('pending bill settlement (Tahap 1)', () => {
       ['TENANT_FORBIDDEN: lintas tenant', 'TENANT_FORBIDDEN', /lintas tenant/i],
       ['SURCHARGE_UNAUTHORIZED: di atas 500k', 'SURCHARGE_UNAUTHORIZED', /memerlukan otorisasi/i],
       ['INVALID_SURCHARGE: keterangan wajib', 'INVALID_SURCHARGE', /keterangan wajib/i],
-      ['ACCOUNT_MAPPING_MISSING: Akun kas (1101) belum dikonfigurasi', 'ACCOUNT_MAPPING_MISSING', /bagan akun|COA/i]
+      ['ACCOUNT_MAPPING_MISSING: Akun kas (1101) belum dikonfigurasi', 'ACCOUNT_MAPPING_MISSING', /bagan akun|COA/i],
+      ['ACCOUNT_MAPPING_MISSING: Akun bank (1102) belum dikonfigurasi pada bagan akun (COA) untuk pembayaran digital.', 'ACCOUNT_MAPPING_MISSING', /bagan akun|COA/i],
+      ['ACCOUNT_MAPPING_MISSING: Akun kewajiban/utang pajak (2102/2101) belum dikonfigurasi', 'ACCOUNT_MAPPING_MISSING', /bagan akun|COA/i]
     ])('maps server error %s to standardized code %s', async (rawError, expectedCode, expectedMsgRegex) => {
       vi.spyOn(api.transaksi, 'settlePendingBill').mockRejectedValue(new Error(rawError))
 

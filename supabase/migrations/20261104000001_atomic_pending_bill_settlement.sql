@@ -10,6 +10,11 @@
 ALTER TABLE public.struk ADD COLUMN IF NOT EXISTS total_biaya NUMERIC(15, 2);
 ALTER TABLE public.struk ADD COLUMN IF NOT EXISTS total_cogs NUMERIC(15, 2) DEFAULT NULL;
 ALTER TABLE public.struk ADD COLUMN IF NOT EXISTS cogs_status VARCHAR(30) DEFAULT NULL;
+ALTER TABLE public.struk ADD COLUMN IF NOT EXISTS nominal_cash NUMERIC(15, 2) DEFAULT 0.00;
+ALTER TABLE public.struk ADD COLUMN IF NOT EXISTS nominal_qris NUMERIC(15, 2) DEFAULT 0.00;
+ALTER TABLE public.struk ADD COLUMN IF NOT EXISTS nominal_transfer NUMERIC(15, 2) DEFAULT 0.00;
+ALTER TABLE public.struk ADD COLUMN IF NOT EXISTS uang_diterima NUMERIC(15, 2) DEFAULT 0.00;
+ALTER TABLE public.struk ADD COLUMN IF NOT EXISTS waktu_dibayar TIMESTAMPTZ;
 ALTER TABLE public.struk ADD COLUMN IF NOT EXISTS biaya_inap NUMERIC(15, 2) NOT NULL DEFAULT 0.00;
 ALTER TABLE public.struk ADD COLUMN IF NOT EXISTS catatan_inap TEXT;
 ALTER TABLE public.struk ADD COLUMN IF NOT EXISTS idempotency_key TEXT;
@@ -645,6 +650,8 @@ DECLARE
     v_coa_rev_inap UUID;
     v_coa_cogs UUID;
     v_coa_disc UUID;
+    v_coa_tax UUID;
+    v_tax_or_surcharge_diff NUMERIC(15, 2) := 0.00;
     v_pos TEXT;
     v_is_cash BOOLEAN;
 BEGIN
@@ -882,7 +889,7 @@ BEGIN
         v_total_cogs := v_struk.total_cogs;
     END IF;
 
-    -- 8B. Validasi Pra-Mutasi Konfigurasi Bagan Akun (COA) Terstruktur (Finding 2)
+    -- 8B. Validasi Pra-Mutasi Konfigurasi Bagan Akun (COA) Terstruktur (Finding 2 & Finding 4)
     -- Ambil seluruh akun COA yang berelasi dan total rincian layanan
     SELECT id INTO v_coa_kas FROM public.chart_of_accounts
     WHERE tenant_id = p_tenant_id AND kode_akun = '1101' LIMIT 1;
@@ -906,7 +913,15 @@ BEGIN
     WHERE tenant_id = p_tenant_id AND kode_akun = '5101' LIMIT 1;
 
     SELECT id INTO v_coa_disc FROM public.chart_of_accounts
-    WHERE tenant_id = p_tenant_id AND (kode_akun IN ('4104', '4201') OR LOWER(nama_akun) LIKE '%diskon%' OR LOWER(nama_akun) LIKE '%potongan%') LIMIT 1;
+    WHERE tenant_id = p_tenant_id AND kode_akun IN ('4104', '4201') LIMIT 1;
+
+    SELECT id INTO v_coa_tax FROM public.chart_of_accounts
+    WHERE tenant_id = p_tenant_id AND kode_akun IN ('2102', '2103') LIMIT 1;
+
+    IF v_coa_tax IS NULL THEN
+        SELECT id INTO v_coa_tax FROM public.chart_of_accounts
+        WHERE tenant_id = p_tenant_id AND kode_akun = '2101' LIMIT 1;
+    END IF;
 
     SELECT COALESCE(SUM(harga), 0.00) INTO v_total_carwash
     FROM public.carwash WHERE tenant_id = p_tenant_id AND id_struk = v_id_struk;
@@ -914,12 +929,12 @@ BEGIN
     SELECT COALESCE(SUM(subtotal), 0.00) INTO v_total_cafe
     FROM public.cafe WHERE tenant_id = p_tenant_id AND id_struk = v_id_struk;
 
-    -- Validasi 1: Akun Pembayaran (Kas / Bank)
-    IF v_nominal_cash > 0.00 AND v_coa_kas IS NULL THEN
+    -- Validasi 1: Akun Pembayaran (Kas / Bank) - Tanpa Fallback Kas untuk Pembayaran Digital
+    IF (v_nominal_cash > 0.00 OR v_is_cash) AND v_coa_kas IS NULL THEN
         RAISE EXCEPTION 'ACCOUNT_MAPPING_MISSING: Akun kas (1101) belum dikonfigurasi pada bagan akun (COA).' USING ERRCODE = '28000';
     END IF;
-    IF (v_nominal_qris + v_nominal_transfer) > 0.00 AND COALESCE(v_coa_bank, v_coa_kas) IS NULL THEN
-        RAISE EXCEPTION 'ACCOUNT_MAPPING_MISSING: Akun bank (1102) atau kas (1101) belum dikonfigurasi pada bagan akun (COA).' USING ERRCODE = '28000';
+    IF ((v_nominal_qris + v_nominal_transfer) > 0.00 OR (NOT v_is_cash AND v_metode_bayar <> 'SPLIT')) AND v_coa_bank IS NULL THEN
+        RAISE EXCEPTION 'ACCOUNT_MAPPING_MISSING: Akun bank (1102) belum dikonfigurasi pada bagan akun (COA) untuk pembayaran digital.' USING ERRCODE = '28000';
     END IF;
 
     -- Validasi 2: Akun Pendapatan
@@ -938,6 +953,15 @@ BEGIN
         IF v_coa_cogs IS NULL OR v_coa_inv IS NULL THEN
             RAISE EXCEPTION 'ACCOUNT_MAPPING_MISSING: Akun HPP (5101) atau Persediaan (1103) belum dikonfigurasi pada bagan akun (COA).' USING ERRCODE = '28000';
         END IF;
+    END IF;
+
+    -- Validasi 4: Akun Pajak / Komponen Tambahan Tagihan Positif (Finding 5)
+    v_item_subtotal := v_total_carwash + v_total_cafe;
+    v_discount := GREATEST(0.00, v_item_subtotal - v_base_total);
+    v_tax_or_surcharge_diff := GREATEST(0.00, v_base_total - (v_item_subtotal - v_discount));
+
+    IF v_tax_or_surcharge_diff > 0.00 AND v_coa_tax IS NULL THEN
+        RAISE EXCEPTION 'ACCOUNT_MAPPING_MISSING: Akun kewajiban/utang pajak (2102/2101) belum dikonfigurasi pada bagan akun (COA) untuk komponen tambahan tagihan.' USING ERRCODE = '28000';
     END IF;
 
     -- 9. Pembaruan Header Struk Lunas (Zero Double Stock Deduction)
@@ -1051,7 +1075,7 @@ BEGIN
             INSERT INTO public.journal_entry_lines (
                 id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
             ) VALUES (
-                gen_random_uuid(), p_tenant_id, v_journal_id, COALESCE(v_coa_bank, v_coa_kas),
+                gen_random_uuid(), p_tenant_id, v_journal_id, v_coa_bank,
                 (v_nominal_qris + v_nominal_transfer), 0.00, 'Penerimaan Digital Split POS ' || v_id_struk, NOW()
             );
         END IF;
@@ -1066,7 +1090,7 @@ BEGIN
         INSERT INTO public.journal_entry_lines (
             id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
         ) VALUES (
-            gen_random_uuid(), p_tenant_id, v_journal_id, COALESCE(v_coa_bank, v_coa_kas),
+            gen_random_uuid(), p_tenant_id, v_journal_id, v_coa_bank,
             v_final_total, 0.00, 'Penerimaan Digital POS ' || v_id_struk, NOW()
         );
     END IF;
@@ -1086,10 +1110,10 @@ BEGIN
     IF v_discount > 0.00 AND v_coa_disc IS NULL THEN
         IF v_item_subtotal > 0.00 THEN
             v_net_cw := ROUND(v_total_carwash - (v_discount * (v_total_carwash / v_item_subtotal)), 2);
-            v_net_cafe := v_base_total - v_net_cw;
+            v_net_cafe := (v_item_subtotal - v_discount) - v_net_cw;
         ELSE
             v_net_cw := 0.00;
-            v_net_cafe := v_base_total;
+            v_net_cafe := 0.00;
         END IF;
     ELSE
         v_net_cw := v_total_carwash;
@@ -1123,6 +1147,16 @@ BEGIN
         ) VALUES (
             gen_random_uuid(), p_tenant_id, v_journal_id, v_coa_rev_cafe,
             0.00, v_net_cafe, 'Pendapatan Cafe ' || v_id_struk, NOW()
+        );
+    END IF;
+
+    -- B2. Sisi Kredit Pajak & Kewajiban Komponen Tambahan (Jika tagihan melebihi subtotal item, Finding 5)
+    IF v_tax_or_surcharge_diff > 0.00 AND v_coa_tax IS NOT NULL THEN
+        INSERT INTO public.journal_entry_lines (
+            id, tenant_id, journal_entry_id, account_id, debit, credit, memo, created_at
+        ) VALUES (
+            gen_random_uuid(), p_tenant_id, v_journal_id, v_coa_tax,
+            0.00, v_tax_or_surcharge_diff, 'Pajak & Kewajiban Komponen Tambahan POS ' || v_id_struk, NOW()
         );
     END IF;
 

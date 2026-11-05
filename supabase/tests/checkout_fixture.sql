@@ -14,9 +14,10 @@ CREATE TABLE public.profiles(id uuid PRIMARY KEY, tenant_id uuid, branch_id uuid
 CREATE TABLE public.struk(
  id uuid PRIMARY KEY,tenant_id uuid,branch_id uuid,id_struk text,tanggal date,jam time,kasir text,
  nama_pelanggan text,catatan text,status_bayar text,status_pembayaran text,subtotal numeric,diskon numeric,
- diskon_cafe numeric,diskon_carwash numeric,pajak numeric,nominal_bayar numeric,bayar numeric,kembalian numeric,
+ diskon_cafe numeric,diskon_carwash numeric,pajak numeric,nominal_bayar numeric,bayar numeric,
+ nominal_cash numeric,nominal_qris numeric,nominal_transfer numeric,uang_diterima numeric,kembalian numeric,
  metode_bayar text,metode_pembayaran text,total_tagihan numeric,total numeric,total_biaya numeric,total_cogs numeric,cogs_status text,payload_hash text,
- created_at timestamptz,waktu_dibuat timestamptz,updated_at timestamptz,
+ created_at timestamptz,waktu_dibuat timestamptz,waktu_dibayar timestamptz,updated_at timestamptz,
  UNIQUE(tenant_id,id_struk)
 );
 CREATE TABLE public.daftar_harga_menu(id uuid DEFAULT gen_random_uuid(),tenant_id uuid,nama_menu text,daftar_menu text,harga numeric,updated_at timestamptz);
@@ -27,11 +28,20 @@ CREATE TABLE public.barang_keluar(id uuid PRIMARY KEY,tenant_id uuid,branch_id u
 CREATE TABLE public.cafe(id uuid PRIMARY KEY,tenant_id uuid,branch_id uuid,id_struk text,tanggal date,jam time,nama_menu text,qty numeric,harga_satuan numeric,subtotal numeric,status text,catatan text,created_at timestamptz);
 CREATE TABLE public.carwash(id uuid PRIMARY KEY,tenant_id uuid,branch_id uuid,id_struk text,tanggal date,jam time,plat text,model text,variant text,ukuran text,paket text,harga numeric,anggota_1 text,anggota_2 text,shift text,status text,gaji_anggota numeric,no_telepon text,keterangan text,created_at timestamptz);
 CREATE TABLE public.cashflow(id uuid PRIMARY KEY,tenant_id uuid,branch_id uuid,id_sumber text,tanggal date,keterangan_transaksi text,jenis text,kategori text,pemasukan numeric,pengeluaran numeric,pos text,apakah_stok boolean,created_at timestamptz);
-CREATE TABLE public.chart_of_accounts(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),tenant_id uuid,kode_akun text);
+CREATE TABLE public.chart_of_accounts(
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+ tenant_id uuid,
+ kode_akun text,
+ nama_akun text,
+ tipe text,
+ kategori text,
+ saldo_normal text,
+ is_active boolean DEFAULT true
+);
 CREATE TABLE public.journal_entries(id uuid PRIMARY KEY,tenant_id uuid,branch_id uuid,entry_no text,date date,memo text,total_amount numeric,status text,created_at timestamptz);
 CREATE TABLE public.journal_entry_lines(id uuid PRIMARY KEY,tenant_id uuid,journal_entry_id uuid,account_id uuid,debit numeric,credit numeric,memo text,created_at timestamptz);
 GRANT USAGE ON SCHEMA public,auth TO authenticated;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO authenticated;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
 
 INSERT INTO tenants VALUES ('11111111-1111-1111-1111-111111111111'),('22222222-2222-2222-2222-222222222222');
 INSERT INTO branches(id,tenant_id) VALUES
@@ -49,4 +59,19 @@ INSERT INTO profiles VALUES
 INSERT INTO daftar_harga_menu(tenant_id,nama_menu,harga) SELECT id,'QA Coffee',18000 FROM tenants;
 INSERT INTO stok_barang SELECT gen_random_uuid(),id,NULL,'QA Beans','QA Beans',100,100,50000,50000,NULL FROM tenants;
 INSERT INTO resep(tenant_id,nama_menu,nama_bahan,jumlah_dibutuhkan,satuan) SELECT id,'QA Coffee','QA Beans',0.02,'kg' FROM tenants;
-INSERT INTO chart_of_accounts(tenant_id,kode_akun) SELECT t.id,c FROM tenants t CROSS JOIN unnest(ARRAY['1101','1102','1103','4101','4102','5101']) c;
+INSERT INTO chart_of_accounts(tenant_id,kode_akun,nama_akun,tipe,saldo_normal) 
+SELECT t.id, c.code, c.name, c.tipe, c.saldo 
+FROM tenants t 
+CROSS JOIN (
+  VALUES 
+    ('1101','Kas Tunai Laci Kasir','ASET','DEBIT'),
+    ('1102','Bank Rekening Operasional','ASET','DEBIT'),
+    ('1103','Persediaan Bahan Baku','ASET','DEBIT'),
+    ('2101','Hutang Usaha & Operasional','KEWAJIBAN','KREDIT'),
+    ('2102','Utang Pajak / PPN','KEWAJIBAN','KREDIT'),
+    ('4101','Pendapatan Layanan Carwash','PENDAPATAN','KREDIT'),
+    ('4102','Pendapatan Cafe & F&B','PENDAPATAN','KREDIT'),
+    ('4103','Pendapatan Jasa Inap Kendaraan','PENDAPATAN','KREDIT'),
+    ('4104','Potongan Penjualan / Diskon','PENDAPATAN','DEBIT'),
+    ('5101','Beban Pokok Pendapatan (HPP)','BEBAN','DEBIT')
+) AS c(code, name, tipe, saldo);

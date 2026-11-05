@@ -4554,6 +4554,47 @@ Sebelum perbaikan ini, alur pelunasan tagihan tertunda (*pending bill*) di kasir
   - Linter (`oxlint`) & `vite build`: Clean (0 error).
 - **Status Deployment**: Terisolasi pada branch `fix/pending-settlement-atomicity`. Belum di-merge ke `main` dan belum di-deploy ke produksi.
 
+### 116. Penyelesaian Tuntas 5 Penghambat P1 & Harness SQL PostgreSQL (Commit Resolution) (05 November 2026)
+- **Konteks & Latar Belakang Masalah**:
+  - Peninjauan lanjutan menemukan 5 penghambat kritis pada alur pelunasan Cafe POS dan penjurnalan RPC:
+    1. **P1 — Simpan Meja Dapat Memotong Stok Dua Kali**: Tombol "Simpan Meja" masih aktif saat tagihan pending dibuka, memanggil ulang `executeCheckout` dengan ID struk yang sama sehingga memicu pemotongan bahan baku BOM berulang dan duplikasi baris cafe.
+    2. **P1 — Data Cetak Struk Cafe Memakai Nama Field Salah**: `CafePOSPage` mengirim properti `receiptNumber`, `items`, `total`, dan `paymentMethod`, sedangkan helper `buildPaymentReceiptData` membaca `id_struk`, `cafe`, `total_tagihan`, dan `metode_bayar`, menghasilkan struk kosong berstatus `ORD-00000000` dengan total 0.
+    3. **P1 — Tagihan Cafe Berdiskon Memakai Total Layar Salah**: Saat tagihan pending dibuka kembali, rincian item dipulihkan namun nilai diskon tersimpan tidak disinkronkan ke perhitungan layar, menyebabkan UI meminta subtotal kotor dan menolak pembayaran sesuai nominal tagihan tersimpan sebelum RPC dipanggil.
+    4. **P1 — Pembayaran Digital Dibukukan Sebagai Kas**: Adanya fallback `COALESCE(v_coa_bank, v_coa_kas)` di RPC menyebabkan transaksi QRIS/Transfer didebit ke akun Kas (1101) jika akun Bank (1102) belum ada di COA.
+    5. **P1 — Selisih Positif Tagihan vs Subtotal (Pajak/Komponen Tambahan) Belum Terjurnal**: Jika tagihan melebihi subtotal item (misal pajak/PPN), sisi kredit tidak mencatat akun kewajiban/utang pajak sehingga memicu ketidakseimbangan jurnal.
+
+- **Solusi Rekayasa & Implementasi**:
+  1. **Pencegahan Pemotongan Ganda & Penguncian Simpan Meja**:
+     - `handleSaveBill` di `CafePOSPage.jsx` secara eksplisit memeriksa `if (settlingBill) return setError(...)`.
+     - Tombol "Simpan Meja" di antarmuka dinonaktifkan (`disabled={loading || !!settlingBill}`) dengan indikator visual nonaktif ketika tagihan pending sedang dibuka.
+  2. **Standardisasi Kontrak Field Struk Kasir**:
+     - `CafePOSPage.jsx` diselaraskan untuk mengirim payload kanonikal (`id_struk`, `cafe`, `total_tagihan`, `metode_bayar`, `uang_diterima`, `kembalian`, `subtotal`, `diskon_cafe`).
+     - `src/utils/receiptHelpers.js` diperkuat agar mendukung pemetaan fleksibel fallback (`items` ke `cafe`, `receiptNumber` ke `id_struk`, `total` ke `total_tagihan`, `paymentMethod` ke `metode_bayar`).
+     - Menambahkan unit test otomatis `receiptHelpers.test.js` skenario 7 yang menguji pembentukan struk pelunasan Cafe POS.
+  3. **Sinkronisasi Total Layar Tagihan Berdiskon**:
+     - Mendefinisikan `effectiveSubtotal`, `effectiveDiskon`, `effectiveGrandTotal`, dan `effectiveKembalian` di `CafePOSPage.jsx`.
+     - Ketika `settlingBill` aktif, seluruh tampilan ringkasan biaya, validasi pembayaran tunai, pengisian tombol "Uang Pas", dan kalkulasi kembalian mengacu mutlak pada nilai tagihan tersimpan (`settlingBill.total_tagihan`).
+  4. **Penegakan Akun Bank (1102) untuk Pembayaran Digital**:
+     - Menghapus fallback `COALESCE(v_coa_bank, v_coa_kas)` pada RPC `fn_settle_pending_bill`.
+     - Memvalidasi secara ketat bahwa transaksi digital (QRIS/Transfer atau porsi non-tunai SPLIT) **WAJIB** memiliki pemetaan akun bank `1102`. Jika tidak ada, transaksi langsung dibatalkan dengan exception `ACCOUNT_MAPPING_MISSING`.
+     - Sisi debit jurnal untuk pembayaran digital didebit murni ke `v_coa_bank`.
+  5. **Penjurnalan Eksplisit Komponen Tambahan / Pajak (Kewajiban 2102/2101)**:
+     - Mengalkulasi selisih positif `v_tax_or_surcharge_diff := GREATEST(0.00, v_base_total - (v_item_subtotal - v_discount))`.
+     - Mencari akun kewajiban/utang pajak `2102` (atau fallback kewajiban operasional `2101`).
+     - Jika selisih positif ada dan akun belum dikonfigurasi, transaksi menolak pra-mutasi dengan `ACCOUNT_MAPPING_MISSING`.
+     - Pada posting jurnal, selisih positif dikreditkan ke `v_coa_tax` dengan memo `'Pajak & Kewajiban Komponen Tambahan POS ' || v_id_struk`. Total Debit dipastikan 100% sama dengan Total Kredit.
+  6. **Penyelarasan Fixture SQL & Eksekusi Harness PostgreSQL**:
+     - `supabase/tests/checkout_fixture.sql`: Melengkapi kolom `struk` (`nominal_cash`, `nominal_qris`, `nominal_transfer`, `uang_diterima`, `waktu_dibayar`) dan menyematkan akun COA (`2101`, `2102`, `4103`, `4104`).
+     - `supabase/tests/pending_settlement_isolation.sql`: Memperbarui seluruh pengujian (Test 1 s.d. 9) untuk memanggil RPC asli, menguji kegagalan akun bank QRIS, menguji pembukuan pajak, dan menguji keseimbangan debit-kredit jurnal.
+     - Eksekusi harness lokal `scripts/test_pending_settlement_isolation.sh` pada kontainer PostgreSQL `erpposs-checkout-qa`: **100% PASS dengan exit code 0**.
+
+- **Hasil Verifikasi Kualitas**:
+  - Test Suite Vitest: 63 test files, **391 tests passed (100% Green)**.
+  - Test Harness PostgreSQL (`test_pending_settlement_isolation.sh`): **GREEN (Exit Code 0)**.
+  - Linter (`oxlint`): **0 Error**.
+  - Production Build Vite: **Sukses** (2.45 detik).
+  - Skema dan branch kerja tetap terisolasi di `fix/pending-settlement-atomicity` tanpa merge atau deployment produksi.
+
 ### 115. Perbaikan Komprehensif 6 Temuan Review pada Pelunasan Tagihan Atomik (Commit 6305974 -> Resolution) (05 November 2026)
 - **Konteks & Latar Belakang**:
   - Peninjauan independen terhadap commit `6305974` mengidentifikasi 6 kelemahan sistemik kritis (P1 dan validasi akuntansi):
