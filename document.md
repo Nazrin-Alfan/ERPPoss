@@ -4729,6 +4729,52 @@ Sebelum perbaikan ini, alur pelunasan tagihan tertunda (*pending bill*) di kasir
   - Production Build Vite: **Sukses (2.35s)**.
   - Branch `fix/pending-settlement-atomicity` tetap terisolasi tanpa merge ke `main` dan tanpa perubahan pada database produksi.
 
+---
+
+### 118. PR-1: Kontrak Akses & Regression Test Harness (Baseline Audit 5 November 2026) (06 November 2026)
+
+- **Konteks & Tujuan**:
+  Mengeksekusi Fase 1 (PR-1) dari program pengerasan kontrol akses SaaS ERP RelayPOS berdasarkan dokumen panduan audit 5 November 2026 (baseline `a1de55e`). Menyusun kontrak akses resmi lintas 35 objek database publik, membangun test fixture positif 2 tenant dan 2 cabang tanpa data rahasia/token, serta merekayasa harness pengujian regresi SQL otomatis untuk membuktikan celah keamanan secara deterministik (RED baseline) sebelum perubahan skema atau kebijakan diterapkan.
+
+- **Aktivitas & Modifikasi**:
+  1. **Dokumen Kontrak Akses Resmi (`Documentation/access-control-matrix.md`)**:
+     - Memetakan matrix kemampuan operasional kanonikal: `table × operation × capability × tenant × branch × role`.
+     - Mendefinisikan 6 peran sistem: `Super Admin`, `Owner`, `Admin`, `Kasir`, `Staff Kantor`, `Karyawan Cuci`, serta penanganan `Inactive`.
+     - Mengelompokkan dan menetapkan aturan akses untuk 35 objek publik (31 tabel database + 4 views):
+       - *Katalog & Harga* (`daftar_harga_menu`, `carwash_packages`, `resep`, `diskon`, `metode_bayar`, `master_categories`, `kasir`): Kasir hanya membaca sesuai cabang tugas, DILARANG memutasi/menambah/menghapus.
+       - *Inventori* (`stok_barang`, `barang_masuk`, `barang_keluar`): Kasir membaca stok tersedia cabang tugas tanpa HPP; mutasi/opname hanya untuk Owner/Admin berizin.
+       - *Keuangan & Pembukuan* (`cashflow`, `pengeluaran`, `pos_balances`, `chart_of_accounts`, `journal_entries`, `journal_entry_lines`): Kasir diblokir mutlak dari general ledger dan COA; posted entries immutable kecuali via reversal.
+       - *SDM & Payroll* (`karyawan_cuci`, `karyawan_kantor`): Kasir hanya membaca nama operasional rekan kerja; nominal gaji/komisi dilindungi dari kasir dan kru.
+       - *CRM & Loyalty* (`crm_customers`, `crm_loyalty_programs`, `crm_loyalty_logs`, `customer_reward_claims`): Kasir mencari pelanggan by plat nomor; klaim reward dieksekusi via RPC dengan verifikasi ketat anti cross-tenant.
+       - *Identitas & Lisensi* (`tenants`, `branches`, `profiles`, `tenant_licenses`, `license_keys`): Profil mandiri hanya boleh mengubah `nama_lengkap`/`avatar_url`; modifikasi `role`, `tenant_id`, `branch_id`, dan `is_active` dikunci ketat; `license_keys` zero-access untuk non-platform.
+       - *Views*: `bahan_baku`, `transaksi`, `finance_summary`, `akun_keuangan` diwajibkan memiliki `security_invoker = true`.
+  2. **Test Fixtures Positif 2-Tenant 2-Cabang (`supabase/tests/access_control_fixture.sql`)**:
+     - Menyiapkan skema dan data awal positif deterministik untuk seluruh 35 objek publik:
+       - Tenant A: `11111111-1111-1111-1111-111111111111` (Cabang Pusat A1 & Cabang Timur A2).
+       - Tenant D: `22222222-2222-2222-2222-222222222222` (Cabang Delta D1).
+     - Menjamin pengujian negatif tidak menghasilkan *false pass* akibat tabel kosong; setiap objek terisi data valid pada kedua tenant.
+     - Bebas token, password, atau credential sensitif.
+  3. **Regression Test Harness SQL (`supabase/tests/access_control_harness.sql` & `scripts/test_access_control_harness.sh`)**:
+     - Menguji 18 skenario penerimaan utama (AC-01 s.d. AC-14) pada basis data disposable PostgreSQL di kontainer `erpposs-checkout-qa`.
+     - Memverifikasi hasil baseline yang mereproduksi temuan audit:
+       - `TENANT_ISOLATION` (4/4 `SECURE_PASS`): Pembacaan dan mutasi tabel langsung antar tenant terisolasi bersih (0 rows / 0 affected).
+       - `RBAC_CREEP` (4/4 `BASELINE_GAP_CONFIRMED`): Kasir saat ini masih dapat membaca payroll (`karyawan_cuci`), General Ledger (`journal_entries`), COA (`chart_of_accounts`), dan mengubah harga menu (`daftar_harga_menu`) akibat policy `ALL` tanpa pengecekan peran.
+       - `BRANCH_SCOPE` (2/2 `BASELINE_GAP_CONFIRMED`): Kasir Cabang A1 masih dapat membaca dan mengubah stok Cabang A2 karena belum ada predikat cabang.
+       - `PROFILE_ESCALATION` (2 `BASELINE_GAP_CONFIRMED`, 1 `SECURE_PASS`): Kasir dapat mengubah `branch_id` sendiri dan menonaktifkan Owner A via direct PATCH; eskalasi ke Super Admin berhasil ditolak trigger.
+       - `RPC_SECURITY` (2 `BASELINE_GAP_CONFIRMED`, 1 `SECURE_PASS`): Owner A berhasil mengeksekusi reward redemption untuk Tenant D (ketiadaan validasi caller auth); kunjungan antrean carwash belum lunas terhitung sebagai stamp eligible; pemanggilan RPC oleh pengguna nonaktif ditolak.
+       - `DATABASE_GRANTS` (1 `BASELINE_GAP_CONFIRMED`): Hak `TRUNCATE` masih melekat pada role `authenticated`.
+       - `VIEW_SECURITY` (1 `SECURE_PASS`): Seluruh 4 view publik terbukti memakai `security_invoker = true`.
+  4. **Frontend Contract Test Suite (`src/services/__tests__/accessControlContract.test.js`)**:
+     - Menambahkan verifikasi Vitest untuk konstanta `ROLES` dan fungsi klasifikasi peran (`isManagement`, `isCashier`, `isOwnerOrSuperAdmin`).
+
+- **Verifikasi Kualitas & Status**:
+  - Test Harness PostgreSQL (`scripts/test_access_control_harness.sh`): **18 Checks Executed — Baseline gaps confirmed cleanly without empty fixture failures (Exit code 0)**.
+  - Vitest Unit Suite: 65 test files, **399 tests passed (100% Green)**.
+  - Linter (`oxlint`): **0 Error**.
+  - Production Build Vite: **Sukses (2.18s)**.
+  - Git Branch Aktif: `feat/access-control-rbac-hardening`. Belum ada merge atau perubahan ke lingkungan produksi.
+
+
 
 
 
