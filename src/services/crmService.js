@@ -563,6 +563,17 @@ export async function redeemCustomerReward(db, {
   const normalizedPlate = normalizePlate(plat)
   if (!db || !normalizedPlate || !tenant_id) throw new Error('Database client, tenant and customer plate required.')
 
+  // AC-09 & AC-11 check for actor context
+  const actor = typeof db.getActiveActorContext === 'function' ? db.getActiveActorContext() : null
+  if (actor) {
+    if (actor.is_active === false) {
+      throw new Error('UNAUTHORIZED_OR_INACTIVE')
+    }
+    if (actor.role !== 'Super Admin' && actor.tenant_id && actor.tenant_id !== tenant_id) {
+      throw new Error('FORBIDDEN_CROSS_TENANT_REDEEM')
+    }
+  }
+
   if (!db.isLocal) {
     if (typeof db.rpc !== 'function') throw new Error('Endpoint klaim reward atomik belum tersedia di server.')
     const { data, error } = await db.rpc('redeem_customer_reward', {
@@ -582,10 +593,25 @@ export async function redeemCustomerReward(db, {
       readTenantRows(db, 'carwash', tenant_id), readTenantRows(db, 'struk', tenant_id),
       readTenantRows(db, 'crm_loyalty_programs', tenant_id), readTenantRows(db, 'crm_loyalty_logs', tenant_id)
     ])
-    const program = programs[0] || DEFAULT_LOYALTY_PROGRAM
+
+    if (id_struk) {
+      const existing = logs.find(l => l.tenant_id === tenant_id && l.id_struk === id_struk && l.tipe === 'REDEEM')
+      if (existing) {
+        return { success: true, redemptionId: existing.id, data: { ...existing, idempotent_replay: true } }
+      }
+    }
+
+    let program = null
+    if (programs.length > 0) {
+      program = programs.find(p => p.is_active !== false)
+      if (!program) throw new Error('LOYALTY_PROGRAM_UNAVAILABLE: Program reward tidak aktif.')
+    } else {
+      program = DEFAULT_LOYALTY_PROGRAM
+    }
+
     const target = Number(program.target_stamps ?? STAMP_TARGET_DEFAULT)
-    if (!Number.isInteger(target) || target <= 0) throw new Error('Target stamp program reward tidak valid.')
-    if (program.is_active === false) throw new Error('Program reward tidak aktif.')
+    if (!Number.isInteger(target) || target <= 0) throw new Error('LOYALTY_PROGRAM_UNAVAILABLE: Target stamp program reward tidak valid.')
+    if (program.is_active === false) throw new Error('LOYALTY_PROGRAM_UNAVAILABLE: Program reward tidak aktif.')
     const visitCount = visits.filter(visit => normalizePlate(visit.plat_nomor || visit.plat) === normalizedPlate
       && qualifyingVisit(visit, receipts)).length
     const available = Math.floor(visitCount / target) - redemptionCount(logs, normalizedPlate)

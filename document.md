@@ -4845,3 +4845,32 @@ Sebelum perbaikan ini, alur pelunasan tagihan tertunda (*pending bill*) di kasir
 - **Linter (`oxlint`)**: **0 Errors**.
 - **Production Build (`vite build`)**: **Sukses (2.50s)**.
 
+
+
+---
+
+### Audit Log — Entri 121: PR-4 Hardening RPC `redeem_customer_reward`
+**Tanggal**: 2026-11-07  
+**Branch**: `feat/access-control-rbac-hardening`  
+**Status**: `COMPLETED (100% GREEN)`  
+
+#### Perubahan yang Dilakukan
+1. **Migration `014_pr4_harden_customer_reward_rpc.sql`**:
+   - **AC-09 (Active Caller Enforcement)**: Memeriksa `public.current_user_role()` dan `public.current_tenant_id()`. Jika pemanggil nonaktif atau anonim, melempar exception `UNAUTHORIZED_OR_INACTIVE`.
+   - **AC-10 (Active Loyalty Program Gate)**: Memvalidasi ketersediaan program loyalitas aktif (`is_active = TRUE` dan `target_stamps > 0`) pada tenant pemanggil. Jika tidak ada, melempar exception `LOYALTY_PROGRAM_UNAVAILABLE`.
+   - **AC-11 (Cross-Tenant Execution Containment)**: Memvalidasi `p_tenant_id == public.current_tenant_id()`. Percobaan penukaran lintas-tenant oleh non-Super Admin ditolak seketika dengan exception `FORBIDDEN_CROSS_TENANT_REDEEM`.
+   - **AC-11b (Strict Paid Visits Filter)**: Menyaring stamp sah hanya dari transaksi yang tidak dibatalkan/void/pending dan nota kasir berstatus lunas (`status_bayar = 'Selesai'`). Transaksi belum lunas atau pending diabaikan dari saldo stamp.
+   - **AC-12 (Concurrency & Idempotency Locking)**: Menggunakan `pg_advisory_xact_lock(hashtext('reward_claim:' || p_tenant_id || ':' || v_clean_plate))` untuk serialisasi atomik per kendaraan dalam transaksi. Replay dengan `p_id_struk` yang sama mengembalikan record idempotent tanpa membuat baris log ganda.
+   - **Privilege Lockdown**: Mencabut hak eksekusi dari `PUBLIC` dan `anon`, hanya mengizinkan `authenticated` dan `service_role`.
+2. **Sinkronisasi Runtime Service & Simulator (`crmService.js` & `localDbEngine.js`)**:
+   - Memutakhirkan `crmService.js` untuk memvalidasi konteks akun pemanggil dan menangani penolakan program nonaktif (`LOYALTY_PROGRAM_UNAVAILABLE`).
+   - Mengimplementasikan handler RPC `redeem_customer_reward` di `localDbEngine.js` dengan replikasi identik terhadap guard AC-09, AC-10, AC-11, AC-11b, dan AC-12.
+3. **Test Suite TDD Vitest & PostgreSQL Harness**:
+   - Menambahkan `src/services/__tests__/rbacPr4RewardRpc.test.js` (5 test cases TDD, 100% Pass).
+   - Menambahkan `supabase/tests/pr4_reward_rpc_harness.sql` (5 skenario verifikasi SQL di database).
+   - Menambahkan runner `scripts/test_pr4_reward_rpc_harness.sh` untuk automated QA database pipeline.
+
+#### Hasil Verifikasi Kualitas
+- **Vitest Unit Suite**: 67 test files, **409 tests passed (100% Green)**.
+- **Linter (`oxlint`)**: **0 Errors**.
+- **Production Build (`vite build`)**: **Sukses (2.56s)**.

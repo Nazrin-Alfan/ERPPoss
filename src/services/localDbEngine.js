@@ -18,17 +18,19 @@ let inMemoryActiveTenantId = null
 let inMemoryActiveActorContext = {
   role: null,
   branchId: null,
-  userId: null
+  userId: null,
+  tenant_id: null,
+  is_active: true
 }
 
 export const getActiveActorContext = () => ({ ...inMemoryActiveActorContext })
 
-export const setActiveActorContext = ({ role = null, branchId = null, userId = null } = {}) => {
-  inMemoryActiveActorContext = { role, branchId, userId }
+export const setActiveActorContext = ({ role = null, branchId = null, userId = null, tenant_id = null, is_active = true } = {}) => {
+  inMemoryActiveActorContext = { role, branchId, userId, tenant_id, is_active }
 }
 
 export const resetActiveActorContext = () => {
-  inMemoryActiveActorContext = { role: null, branchId: null, userId: null }
+  inMemoryActiveActorContext = { role: null, branchId: null, userId: null, tenant_id: null, is_active: true }
 }
 
 export const DEFAULT_SALT = 'relaypos_salt_v1'
@@ -2248,6 +2250,137 @@ export const createLocalClient = () => {
         })
         return report
       },
+    },
+
+    getActiveActorContext() {
+      return getActiveActorContext()
+    },
+
+    async rpc(name, params = {}) {
+      if (name === 'redeem_customer_reward') {
+        const {
+          p_tenant_id,
+          p_plat,
+          p_reward_title = 'Free Wash',
+          p_notes = '',
+          p_nama_pelanggan = '',
+          p_reward_type = 'FREE_SERVICE',
+          p_id_struk = null
+        } = params
+
+        const actor = getActiveActorContext()
+        if (actor) {
+          if (actor.is_active === false) {
+            throw new Error('UNAUTHORIZED_OR_INACTIVE')
+          }
+          if (actor.role !== 'Super Admin' && actor.tenant_id && actor.tenant_id !== p_tenant_id) {
+            throw new Error('FORBIDDEN_CROSS_TENANT_REDEEM')
+          }
+        }
+
+        const cleanPlate = (p_plat || '').trim().toUpperCase().replace(/\s+/g, '')
+        if (!p_tenant_id || !cleanPlate) {
+          throw new Error('Tenant ID dan Plat nomor kendaraan wajib diisi')
+        }
+
+        // Check idempotency on id_struk
+        if (p_id_struk) {
+          const logsTable = localDbStore.getTable('crm_loyalty_logs') || []
+          const existing = logsTable.find(l => l.tenant_id === p_tenant_id && l.id_struk === p_id_struk && l.tipe === 'REDEEM')
+          if (existing) {
+            return {
+              data: {
+                redemption_id: existing.id,
+                tenant_id: p_tenant_id,
+                plat: (p_plat || '').trim().toUpperCase().replace(/\s+/g, ' '),
+                reward_title: p_reward_title,
+                idempotent_replay: true,
+                claimed_at: existing.claimed_at || new Date().toISOString()
+              },
+              error: null
+            }
+          }
+        }
+
+        // Active loyalty program gate
+        const programsTable = localDbStore.getTable('crm_loyalty_programs') || []
+        const tenantPrograms = programsTable.filter(p => p.tenant_id === p_tenant_id)
+        let activeProgram = null
+        if (tenantPrograms.length > 0) {
+          activeProgram = tenantPrograms.find(p => p.is_active !== false)
+          if (!activeProgram) {
+            throw new Error('LOYALTY_PROGRAM_UNAVAILABLE')
+          }
+        } else {
+          activeProgram = { is_active: true, target_stamps: 5 }
+        }
+
+        const targetStamps = Number(activeProgram.target_stamps || 5)
+        if (targetStamps <= 0) {
+          throw new Error('LOYALTY_PROGRAM_UNAVAILABLE')
+        }
+
+        // Qualifying visits filter
+        const cwTable = localDbStore.getTable('carwash') || []
+        const strukTable = localDbStore.getTable('struk') || []
+        const visits = cwTable.filter(cw => {
+          if (cw.tenant_id !== p_tenant_id) return false
+          const plateNorm = (cw.plat || '').trim().toUpperCase().replace(/\s+/g, '')
+          if (plateNorm !== cleanPlate) return false
+          const st = (cw.status || '').toLowerCase()
+          if (['batal', 'void', 'cancelled', 'pending'].includes(st)) return false
+          if (cw.status_bayar && cw.status_bayar !== 'Selesai') return false
+          if (cw.id_struk) {
+            const struk = strukTable.find(s => s.tenant_id === p_tenant_id && s.id_struk === cw.id_struk)
+            if (!struk || struk.status_bayar !== 'Selesai') return false
+          }
+          return true
+        })
+
+        const logsTable = localDbStore.getTable('crm_loyalty_logs') || []
+        const redemptions = logsTable.filter(l => {
+          if (l.tenant_id !== p_tenant_id) return false
+          const plateNorm = (l.plat || '').trim().toUpperCase().replace(/\s+/g, '')
+          if (plateNorm !== cleanPlate) return false
+          return l.tipe === 'REDEEM' || (!l.tipe && (l.claimed_at || l.reward_title))
+        })
+
+        const available = Math.floor(visits.length / targetStamps) - redemptions.length
+        if (available <= 0) {
+          throw new Error('Stamp kunjungan belum cukup atau reward sudah diklaim')
+        }
+
+        const redemptionId = `red_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+        const newRecord = {
+          id: redemptionId,
+          tenant_id: p_tenant_id,
+          plat: (p_plat || '').trim().toUpperCase().replace(/\s+/g, ' '),
+          tipe: 'REDEEM',
+          reward_title: p_reward_title,
+          reward_type: p_reward_type,
+          id_struk: p_id_struk,
+          keterangan: p_notes,
+          notes: p_notes,
+          nama_pelanggan: p_nama_pelanggan,
+          claimed_at: new Date().toISOString(),
+          created_at: new Date().toISOString()
+        }
+
+        const logsTarget = localDbStore.getTable('crm_loyalty_logs')
+        logsTarget.push(newRecord)
+        localDbStore.saveToStorage()
+        return {
+          data: {
+            redemption_id: redemptionId,
+            tenant_id: p_tenant_id,
+            plat: newRecord.plat,
+            reward_title: p_reward_title,
+            claimed_at: newRecord.claimed_at
+          },
+          error: null
+        }
+      }
+      throw new Error(`RPC ${name} not supported on local client`)
     },
 
     channel(name) {
