@@ -27,10 +27,14 @@ export const getActiveActorContext = () => ({ ...inMemoryActiveActorContext })
 
 export const setActiveActorContext = ({ role = null, branchId = null, userId = null, tenant_id = null, is_active = true } = {}) => {
   inMemoryActiveActorContext = { role, branchId, userId, tenant_id, is_active }
+  if (tenant_id) {
+    setActiveTenantId(tenant_id)
+  }
 }
 
 export const resetActiveActorContext = () => {
   inMemoryActiveActorContext = { role: null, branchId: null, userId: null, tenant_id: null, is_active: true }
+  setActiveTenantId(null)
 }
 
 export const DEFAULT_SALT = 'relaypos_salt_v1'
@@ -1165,9 +1169,21 @@ export class LocalQueryBuilder {
       }
     }
     table.forEach((row, idx) => {
-      const tenantMatch = (this.bypassTenantIsolation || this.explicitTenantFilter || this.hasSpecificIdFilter || !isMultiTenantTable(this.tableName))
-        ? true
-        : (row.tenant_id ? row.tenant_id === activeTenantId : activeTenantId === DEFAULT_TENANT_ID)
+      const hasActor = Boolean(actorUpdate && (actorUpdate.role || actorUpdate.tenant_id))
+      let tenantMatch = false
+      if (hasActor) {
+        if (actorUpdate.role === 'Super Admin' || this.bypassTenantIsolation) {
+          tenantMatch = true
+        } else if (isMultiTenantTable(this.tableName)) {
+          tenantMatch = row.tenant_id === (actorUpdate.tenant_id || activeTenantId)
+        } else {
+          tenantMatch = true
+        }
+      } else {
+        tenantMatch = (this.bypassTenantIsolation || this.explicitTenantFilter || this.hasSpecificIdFilter || !isMultiTenantTable(this.tableName))
+          ? true
+          : (row.tenant_id ? row.tenant_id === activeTenantId : activeTenantId === DEFAULT_TENANT_ID)
+      }
 
       if (tenantMatch && this.filters.every((f) => f(row))) {
         table[idx] = {
@@ -1244,9 +1260,21 @@ export class LocalQueryBuilder {
       }
     }
     table.forEach((row) => {
-      const tenantMatch = (this.bypassTenantIsolation || this.explicitTenantFilter || this.hasSpecificIdFilter || !isMultiTenantTable(this.tableName))
-        ? true
-        : (row.tenant_id ? row.tenant_id === activeTenantId : activeTenantId === DEFAULT_TENANT_ID)
+      const hasActor = Boolean(actorDelete && (actorDelete.role || actorDelete.tenant_id))
+      let tenantMatch = false
+      if (hasActor) {
+        if (actorDelete.role === 'Super Admin' || this.bypassTenantIsolation) {
+          tenantMatch = true
+        } else if (isMultiTenantTable(this.tableName)) {
+          tenantMatch = row.tenant_id === (actorDelete.tenant_id || activeTenantId)
+        } else {
+          tenantMatch = true
+        }
+      } else {
+        tenantMatch = (this.bypassTenantIsolation || this.explicitTenantFilter || this.hasSpecificIdFilter || !isMultiTenantTable(this.tableName))
+          ? true
+          : (row.tenant_id ? row.tenant_id === activeTenantId : activeTenantId === DEFAULT_TENANT_ID)
+      }
 
       if (tenantMatch && this.filters.every((f) => f(row))) {
         deleted.push(row)

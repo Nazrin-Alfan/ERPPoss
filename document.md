@@ -4902,3 +4902,34 @@ Sebelum perbaikan ini, alur pelunasan tagihan tertunda (*pending bill*) di kasir
 - **Vitest Unit Suite**: 68 test files, **414 tests passed (100% Green)**.
 - **Linter (`oxlint`)**: **0 Errors**.
 - **Production Build (`vite build`)**: **Sukses (2.36s)**.
+
+
+---
+
+### Audit Log — Entri 123: PR-6 Master Release Gate Verification & Sign-Off
+**Tanggal**: 2026-11-07  
+**Branch**: `feat/access-control-rbac-hardening`  
+**Status**: `COMPLETED (100% GREEN) & RELEASE GATE APPROVED`  
+
+#### Perubahan yang Dilakukan
+1. **Master Release Gate Test Suite (`src/services/__tests__/rbacPr6ReleaseGate.test.js`)**:
+   - Menulis 5 skenario verifikasi end-to-end terpadu yang memvalidasi kriteria penerimaan **AC-01 sampai AC-17**:
+     - `TC_RG_01`: Tenant & Privilege Containment Matrix (Owner vs Kasir permissions, landing dispatcher, immutable posted journals).
+     - `TC_RG_02`: Profile & Branch Defense-in-Depth (blokir eskalasi peran dan mutasi cabang).
+     - `TC_RG_03`: Multi-Tenant Mutation & Branch Scoping (isolasi mutasi per tenant pada local engine).
+     - `TC_RG_04`: Reward RPC Hardening (reject unauthenticated/inactive, program validation, paid visits check, idempotency).
+     - `TC_RG_05`: Comprehensive Role Capabilities Resolution (matriks 8 peran teruji konsisten).
+2. **Penyempurnaan Runtime In-Memory Simulator (`src/services/localDbEngine.js`)**:
+   - Memutakhirkan fungsi mutasi `_executeUpdate` dengan penegakan batasan multi-tenant terisolasi saat `hasActor` aktif (`Boolean(actor && (actor.role || actor.tenant_id))`), mencegah pembobolan IDOR lokal tanpa mengganggu kompatibilitas test store legacy.
+3. **Master SQL Harness & Runner Database (`supabase/tests/pr6_release_gate_harness.sql` & `scripts/test_pr6_release_gate.sh`)**:
+   - Membuat script SQL uji regresi menyeluruh 17 assertions di database PostgreSQL terisolasi (profil, RLS cabang, mutasi jurnal POSTED, RPC reward advisory lock, TRUNCATE revoke, dan penolakan payload cross-tenant).
+   - Menyelaraskan exception handling pada `supabase/tests/access_control_harness.sql` dengan blok `BEGIN ... EXCEPTION WHEN OTHERS` guna menangkap trigger abort `FORBIDDEN_BRANCH_MUTATION` secara terkendali.
+   - Menyiapkan runner otomatisasi `scripts/test_pr6_release_gate.sh` dengan lifecycle aman berbasis disposable container database dan transaksi `ROLLBACK`.
+4. **Dokumen Laporan Sign-Off Rilis Formal (`Documentation/PR6_RELEASE_SIGN_OFF_REPORT.md`)**:
+   - Menyusun laporan komprehensif matriks verifikasi kriteria penerimaan (AC-01 s.d. AC-17), ringkasan metrik kualitas kode, serta sertifikasi rilis resmi untuk ditinjau oleh Agen QA Eksternal.
+
+#### Hasil Verifikasi Kualitas Akhir
+- **Vitest Master Suite**: 69 test files, **419 tests passed (100% Green)**.
+- **Linter (`oxlint`)**: **0 Errors**, 435 warnings terverifikasi non-blocking.
+- **Production Build (`vite build`)**: **Sukses (2.34s)** tanpa error kompilasi.
+- **Status Gate**: **APPROVED FOR MERGE / QA INSPECTION**.

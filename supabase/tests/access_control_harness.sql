@@ -202,8 +202,14 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub', v_kasir_a1::text, true);
 
   -- 4.1 Kasir A1 attempts to change their own branch_id
-  UPDATE public.profiles SET branch_id = v_branch_a2 WHERE id = v_kasir_a1;
-  GET DIAGNOSTICS v_mutated = ROW_COUNT;
+  v_err := '';
+  v_mutated := 0;
+  BEGIN
+    UPDATE public.profiles SET branch_id = v_branch_a2 WHERE id = v_kasir_a1;
+    GET DIAGNOSTICS v_mutated = ROW_COUNT;
+  EXCEPTION WHEN OTHERS THEN
+    v_err := SQLERRM;
+  END;
 
   IF v_mutated > 0 THEN
     PERFORM pg_temp.record_result('AC-07-SELF-BRANCH', 'PROFILE_ESCALATION', 'profiles', 'BASELINE_GAP_CONFIRMED', 
@@ -213,8 +219,14 @@ BEGIN
   END IF;
 
   -- 4.2 Kasir A1 attempts to deactivate Owner A
-  UPDATE public.profiles SET is_active = false WHERE id = v_owner_a;
-  GET DIAGNOSTICS v_mutated = ROW_COUNT;
+  v_err := '';
+  v_mutated := 0;
+  BEGIN
+    UPDATE public.profiles SET is_active = false WHERE id = v_owner_a;
+    GET DIAGNOSTICS v_mutated = ROW_COUNT;
+  EXCEPTION WHEN OTHERS THEN
+    v_err := SQLERRM;
+  END;
 
   IF v_mutated > 0 THEN
     PERFORM pg_temp.record_result('AC-07-DEACT-OWNER', 'PROFILE_ESCALATION', 'profiles', 'BASELINE_GAP_CONFIRMED', 
