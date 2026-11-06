@@ -15,6 +15,21 @@ const STORAGE_KEY = 'relaypos_real_sandbox_v2'
 const AUTH_STORAGE_KEY = 'relaypos_real_auth_v2'
 export const ACTIVE_TENANT_STORAGE_KEY = 'relaypos_active_tenant_id'
 let inMemoryActiveTenantId = null
+let inMemoryActiveActorContext = {
+  role: null,
+  branchId: null,
+  userId: null
+}
+
+export const getActiveActorContext = () => ({ ...inMemoryActiveActorContext })
+
+export const setActiveActorContext = ({ role = null, branchId = null, userId = null } = {}) => {
+  inMemoryActiveActorContext = { role, branchId, userId }
+}
+
+export const resetActiveActorContext = () => {
+  inMemoryActiveActorContext = { role: null, branchId: null, userId: null }
+}
 
 export const DEFAULT_SALT = 'relaypos_salt_v1'
 // Precomputed SHA-256 for 'password123:relaypos_salt_v1'
@@ -919,6 +934,33 @@ export class LocalQueryBuilder {
     const totalCount = filteredResults.length
     let results = [...filteredResults]
 
+    // PR-3: RBAC & Granular Branch Scoping Parity
+    const actor = getActiveActorContext()
+    if (actor && actor.role === 'Kasir') {
+      const sensitiveTables = [
+        'journal_entries',
+        'journal_entry_lines',
+        'chart_of_accounts',
+        'karyawan_cuci',
+        'karyawan_kantor',
+        'pos_balances',
+        'cashflow',
+        'intelligence_daily_snapshots'
+      ]
+      if (sensitiveTables.includes(this.tableName)) {
+        return { data: [], error: null, count: 0 }
+      }
+
+      if (actor.branchId) {
+        results = results.filter((row) => {
+          if (row.branch_id !== undefined && row.branch_id !== null) {
+            return row.branch_id === actor.branchId
+          }
+          return true
+        })
+      }
+    }
+
     // Sorting
     if (this.sortFields.length > 0) {
       results.sort((a, b) => {
@@ -1024,6 +1066,26 @@ export class LocalQueryBuilder {
       this.store.ensureTenantMasterData(activeTenantId)
     }
 
+    const actorInsert = getActiveActorContext()
+    if (actorInsert && actorInsert.role === 'Kasir') {
+      const catalogTables = ['daftar_harga_menu', 'carwash_packages', 'resep', 'diskon', 'stok_barang']
+      if (catalogTables.includes(this.tableName)) {
+        return {
+          data: null,
+          error: new Error("[FORBIDDEN_ROLE_OPERATION] Role Kasir dilarang memodifikasi katalog/stok.")
+        }
+      }
+      if (this.tableName === 'struk' && actorInsert.branchId) {
+        for (const item of records) {
+          if (item.branch_id && item.branch_id !== actorInsert.branchId) {
+            return {
+              data: null,
+              error: new Error('[FORBIDDEN_BRANCH_OPERATION] Role Kasir dilarang mencatat transaksi untuk cabang lain.')
+            }
+          }
+        }
+      }
+    }
     for (const item of records) {
       const effectiveTenant = item.tenant_id || (isMultiTenantTable(this.tableName) ? activeTenantId : undefined)
       const effectiveBranch = item.branch_id || (effectiveTenant === DEFAULT_TENANT_ID ? DEFAULT_BRANCH_ID : `branch_${effectiveTenant || 'main'}_main`)
@@ -1081,6 +1143,25 @@ export class LocalQueryBuilder {
     const updated = []
     const activeTenantId = getActiveTenantId()
 
+    const actorUpdate = getActiveActorContext()
+    if (actorUpdate && actorUpdate.role === 'Kasir') {
+      const catalogTables = ['daftar_harga_menu', 'carwash_packages', 'resep', 'diskon', 'stok_barang']
+      if (catalogTables.includes(this.tableName)) {
+        return {
+          data: null,
+          error: new Error("[FORBIDDEN_ROLE_OPERATION] Role Kasir dilarang memodifikasi katalog/stok.")
+        }
+      }
+    }
+    if (this.tableName === 'journal_entries') {
+      const targetRows = table.filter((row) => this.filters.every((f) => f(row)))
+      if (targetRows.some((r) => r.status === 'POSTED')) {
+        return {
+          data: null,
+          error: new Error('[IMMUTABLE_POSTED_JOURNAL] Jurnal akuntansi berstatus POSTED bersifat immutable.')
+        }
+      }
+    }
     table.forEach((row, idx) => {
       const tenantMatch = (this.bypassTenantIsolation || this.explicitTenantFilter || this.hasSpecificIdFilter || !isMultiTenantTable(this.tableName))
         ? true
@@ -1141,6 +1222,25 @@ export class LocalQueryBuilder {
     const deleted = []
     const activeTenantId = getActiveTenantId()
 
+    const actorDelete = getActiveActorContext()
+    if (actorDelete && actorDelete.role === 'Kasir') {
+      const catalogTables = ['daftar_harga_menu', 'carwash_packages', 'resep', 'diskon', 'stok_barang']
+      if (catalogTables.includes(this.tableName)) {
+        return {
+          data: null,
+          error: new Error("[FORBIDDEN_ROLE_OPERATION] Role Kasir dilarang memodifikasi katalog/stok.")
+        }
+      }
+    }
+    if (this.tableName === 'journal_entries') {
+      const targetRows = table.filter((row) => this.filters.every((f) => f(row)))
+      if (targetRows.some((r) => r.status === 'POSTED')) {
+        return {
+          data: null,
+          error: new Error('[IMMUTABLE_POSTED_JOURNAL] Jurnal akuntansi berstatus POSTED bersifat immutable.')
+        }
+      }
+    }
     table.forEach((row) => {
       const tenantMatch = (this.bypassTenantIsolation || this.explicitTenantFilter || this.hasSpecificIdFilter || !isMultiTenantTable(this.tableName))
         ? true

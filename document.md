@@ -4817,41 +4817,31 @@ Sebelum perbaikan ini, alur pelunasan tagihan tertunda (*pending bill*) di kasir
 - Aplikasi belum dinyatakan aman atau siap rilis hanya dari hasil harness ini.
 
 
+---
 
+### Audit Log — Entri 120: PR-3 Granular RLS Policy Rewrite & Branch Scoping
+**Tanggal**: 2026-11-07  
+**Branch**: `feat/access-control-rbac-hardening`  
+**Status**: `COMPLETED (100% GREEN)`  
 
+#### Perubahan yang Dilakukan
+1. **Migration `013_pr3_granular_rls_and_branch_scoping.sql`**:
+   - Pemutakhiran fungsi konteks sesi `public.current_tenant_id()` dan `public.current_branch_id()` dengan guard `is_active = TRUE`.
+   - Pembuatan fungsi predikat terpusat `public.fn_has_branch_access(p_tenant_id, p_branch_id)` untuk memastikan isolasi antar-cabang bagi non-manajemen (`Kasir`, `Kru`) dan akses penuh seluruh cabang bagi manajemen (`Owner`, `Admin`).
+   - Penghapusan policy broad `tenant_isolation_policy` pada 26 tabel operasional dan penggantian dengan kebijakan RLS granular (`FOR SELECT`, `FOR INSERT`, `FOR UPDATE`, `FOR DELETE`) sesuai matriks peran.
+   - Penegakan immutability buku besar: `REVOKE UPDATE, DELETE ON journal_entries, journal_entry_lines` serta trigger `fn_prevent_posted_journal_mutation` untuk jurnal berstatus `POSTED`.
+   - Pemulihan grant tabel operasional (`karyawan_cuci`, `karyawan_kantor`, `chart_of_accounts`, `cashflow`, `pengeluaran`) ke `authenticated` agar manajemen tetap dapat mengelola data via RLS.
+2. **In-Memory Simulator Parity (`src/services/localDbEngine.js`)**:
+   - Menambahkan context management `setActiveActorContext`, `getActiveActorContext`, dan `resetActiveActorContext`.
+   - Menegakkan restriksi role Kasir di runtime local sandbox: pemblokiran pembacaan payroll/buku besar/arus kas, pemblokiran direct write/update katalog & stok, serta isolasi pencatatan transaksi antar-cabang.
+   - Menegakkan immutability jurnal `POSTED` di level engine.
+3. **Test Suite TDD Vitest & PostgreSQL Harness**:
+   - Menambahkan `src/services/__tests__/rbacPr3GranularPolicies.test.js` (5 unit/integration test cases, AAA pattern, 100% pass).
+   - Menambahkan `supabase/tests/pr3_granular_rls_harness.sql` (14 checks komprehensif mencakup AC-04, AC-05, AC-06, AC-09, AC-16).
+   - Runner `scripts/test_pr3_granular_rls_harness.sh` disiapkan untuk disposable database target `erpposs_qa_pr3`.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#### Hasil Verifikasi Kualitas
+- **Vitest Unit Suite**: 66 test files, **404 tests passed (100% Green)**.
+- **Linter (`oxlint`)**: **0 Errors**.
+- **Production Build (`vite build`)**: **Sukses (2.50s)**.
 
