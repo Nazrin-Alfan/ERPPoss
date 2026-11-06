@@ -1,6 +1,6 @@
 import { InventoryTable } from '../components/ui/tables'
 import React, { useState, useEffect, useMemo } from 'react'
-import { ROLES, isManagement } from '../constants/roles'
+import { ROLES, isManagement, hasPermission } from '../constants/roles'
 import { 
   Boxes, 
   Package, 
@@ -34,7 +34,11 @@ const DEFAULT_GUDANG_DATA = []
 
 export default function Gudang() {
   const { profile, activeTenant } = useAuth()
-  const isOwnerOrAdmin = isManagement(profile?.role)
+  const currentRole = profile?.role || ROLES.KASIR
+  const isOwnerOrAdmin = isManagement(currentRole)
+  const canViewCost = hasPermission(currentRole, 'CAN_VIEW_INVENTORY_COST')
+  const canRestock = hasPermission(currentRole, 'CAN_MANAGE_INVENTORY')
+  const canOpnameOrEdit = hasPermission(currentRole, 'CAN_OPNAME_INVENTORY')
   const features = getTenantFeatures(activeTenant?.business_type)
 
   // Tab Gudang Aktif: 'CAFE' | 'CARWASH' | 'MERCHANDISE'
@@ -202,6 +206,7 @@ export default function Gudang() {
 
   // Handler Buka Modal Tambah Barang
   const handleOpenAddModal = () => {
+    if (!canOpnameOrEdit) return setError('Akses ditolak: Hanya manajemen yang berhak menambah item master.')
     setEditingItem(null)
     const nextId = `${activeGudang.substring(0, 2)}-${String(gudangItems.length + 1).padStart(2, '0')}`
     setItemForm({
@@ -219,6 +224,7 @@ export default function Gudang() {
 
   // Handler Buka Modal Edit Barang
   const handleOpenEditModal = (item) => {
+    if (!canOpnameOrEdit) return setError('Akses ditolak: Hanya manajemen yang berhak mengedit data barang.')
     setEditingItem(item)
     setItemForm({
       id_barang: item.id_barang,
@@ -236,6 +242,7 @@ export default function Gudang() {
   // Simpan Barang Baru / Update
   const handleSaveItem = async (e) => {
     e.preventDefault()
+    if (!canOpnameOrEdit) return setError('Akses ditolak: Hanya manajemen yang berhak memodifikasi master barang.')
     if (!itemForm.nama_barang.trim()) {
       return setError('Nama barang tidak boleh kosong.')
     }
@@ -285,6 +292,7 @@ export default function Gudang() {
 
   // Handler Hapus Barang
   const handleDeleteItem = async (item) => {
+    if (!canOpnameOrEdit) return setError('Akses ditolak: Hanya manajemen yang berhak menghapus data barang.')
     if (!window.confirm(`Yakin ingin menghapus barang "${item.nama_barang}" dari gudang?`)) return
     try {
       const delQuery = item.id
@@ -304,6 +312,7 @@ export default function Gudang() {
 
   // Handler Restock Masuk Cepat
   const handleOpenRestock = (item) => {
+    if (!canRestock) return setError('Akses ditolak: Role Anda tidak diizinkan mencatat restock masuk.')
     setRestockTarget(item)
     setRestockQty('')
     setRestockCost(item.harga_beli || '')
@@ -312,6 +321,7 @@ export default function Gudang() {
 
   const handleConfirmRestock = async (e) => {
     e.preventDefault()
+    if (!canRestock) return setError('Akses ditolak: Role Anda tidak diizinkan mencatat restock masuk.')
     const qtyVal = parseFloat(restockQty)
     const costVal = parseFloat(restockCost) || 0
 
@@ -350,6 +360,7 @@ export default function Gudang() {
 
   // Handler Stock Opname (Penyesuaian Fisik)
   const handleOpenOpname = (item) => {
+    if (!canOpnameOrEdit) return setError('Akses ditolak: Role Anda tidak diizinkan melakukan stock opname.')
     setOpnameTarget(item)
     setOpnameRealQty(item.stok !== undefined ? item.stok : '')
     setOpnameCatatan('')
@@ -358,6 +369,7 @@ export default function Gudang() {
 
   const handleConfirmOpname = async (e) => {
     e.preventDefault()
+    if (!canOpnameOrEdit) return setError('Akses ditolak: Role Anda tidak diizinkan melakukan stock opname.')
     const realQtyNum = parseFloat(opnameRealQty)
     if (isNaN(realQtyNum) || realQtyNum < 0) {
       return setError('Stok fisik aktual harus berupa angka 0 atau lebih.')
@@ -502,17 +514,31 @@ export default function Gudang() {
         </div>
 
         {/* Total Nilai Aset */}
-        <div className="bg-[#121215] p-4 rounded-2xl border border-[#26272d] flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-bold text-[#bbcbb2] uppercase tracking-wider">Total Nilai Inventori</span>
-            <h3 className="text-xl md:text-2xl font-black text-[#00ffff] font-mono mt-1">
-              {formatRupiah(kpiStats.totalAssetValue)}
-            </h3>
+        {canViewCost ? (
+          <div className="bg-[#121215] p-4 rounded-2xl border border-[#26272d] flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-[#bbcbb2] uppercase tracking-wider">Total Nilai Inventori</span>
+              <h3 className="text-xl md:text-2xl font-black text-[#00ffff] font-mono mt-1">
+                {formatRupiah(kpiStats.totalAssetValue)}
+              </h3>
+            </div>
+            <div className="p-3 rounded-xl bg-[#00ffff]/15 text-[#00ffff]">
+              <DollarSign size={22} />
+            </div>
           </div>
-          <div className="p-3 rounded-xl bg-[#00ffff]/15 text-[#00ffff]">
-            <DollarSign size={22} />
+        ) : (
+          <div className="bg-[#121215] p-4 rounded-2xl border border-[#26272d] flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-[#bbcbb2] uppercase tracking-wider">Status Valuasi</span>
+              <h3 className="text-sm font-semibold text-[#bbcbb2] mt-1">
+                Akses Terbatas Kasir
+              </h3>
+            </div>
+            <div className="p-3 rounded-xl bg-[#18181c] text-[#bbcbb2] border border-[#26272d]">
+              <Boxes size={22} />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Stok Menipis */}
         <div className="bg-[#121215] p-4 rounded-2xl border border-[#26272d] flex items-center justify-between">
@@ -619,7 +645,7 @@ export default function Gudang() {
             <RefreshCw size={15} />
           </button>
 
-          {isOwnerOrAdmin && (
+          {canOpnameOrEdit && (
             <button
               onClick={handleOpenAddModal}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00ffff] hover:bg-[#00ffff]/90 text-[#0f0f0f] font-bold text-xs md:text-sm transition-all shadow-md active:scale-[0.98] cursor-pointer"
@@ -737,59 +763,69 @@ export default function Gudang() {
               )
             },
           },
-          {
-            key: 'harga_beli',
-            label: 'ESTIMASI HPP',
-            numeric: true,
-            render: (val, item) => (
-              <span className="font-mono text-xs text-muted font-medium">
-                {formatRupiah(val || item.harga_satuan || 0)}/{item.satuan || 'pcs'}
-              </span>
-            ),
-          },
-          {
-            key: 'nilai_aset',
-            label: 'TOTAL NILAI ASET',
-            numeric: true,
-            render: (_, item) => {
-              const qty = Math.max(0, parseFloat(item.stok) || 0)
-              const cost = parseFloat(item.harga_beli || item.harga_satuan) || 0
-              return (
-                <span className="font-mono text-xs font-bold text-foreground">
-                  {formatRupiah(qty * cost)}
+          ...(canViewCost ? [
+            {
+              key: 'harga_beli',
+              label: 'ESTIMASI HPP',
+              numeric: true,
+              render: (val, item) => (
+                <span className="font-mono text-xs text-muted font-medium">
+                  {formatRupiah(val || item.harga_satuan || 0)}/{item.satuan || 'pcs'}
                 </span>
-              )
+              ),
             },
-          },
-          {
-            key: 'actions',
-            label: 'AKSI',
-            align: 'center',
-            render: (_, item) => (
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  onClick={() => handleOpenRestock(item)}
-                  className="px-2.5 py-1 rounded bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-[11px] font-bold transition-colors"
-                  title="Restock Masuk"
-                >
-                  + Masuk
-                </button>
-                <button
-                  onClick={() => handleOpenOpname(item)}
-                  className="px-2.5 py-1 rounded bg-subsurface hover:bg-border text-muted-foreground hover:text-white border border-border text-[11px] font-medium transition-colors"
-                  title="Sesuaikan Stok Fisik (Opname)"
-                >
-                  Opname
-                </button>
-                <button
-                  onClick={() => handleOpenEditModal(item)}
-                  className="px-2.5 py-1 rounded bg-subsurface hover:bg-border text-muted-foreground hover:text-white border border-border text-[11px] font-medium transition-colors"
-                >
-                  Edit
-                </button>
-              </div>
-            ),
-          },
+            {
+              key: 'nilai_aset',
+              label: 'TOTAL NILAI ASET',
+              numeric: true,
+              render: (_, item) => {
+                const qty = Math.max(0, parseFloat(item.stok) || 0)
+                const cost = parseFloat(item.harga_beli || item.harga_satuan) || 0
+                return (
+                  <span className="font-mono text-xs font-bold text-foreground">
+                    {formatRupiah(qty * cost)}
+                  </span>
+                )
+              },
+            },
+          ] : []),
+          ...((canRestock || canOpnameOrEdit) ? [
+            {
+              key: 'actions',
+              label: 'AKSI',
+              align: 'center',
+              render: (_, item) => (
+                <div className="flex items-center justify-center gap-2">
+                  {canRestock && (
+                    <button
+                      onClick={() => handleOpenRestock(item)}
+                      className="px-2.5 py-1 rounded bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-[11px] font-bold transition-colors cursor-pointer active:scale-[0.98]"
+                      title="Restock Masuk"
+                    >
+                      + Masuk
+                    </button>
+                  )}
+                  {canOpnameOrEdit && (
+                    <>
+                      <button
+                        onClick={() => handleOpenOpname(item)}
+                        className="px-2.5 py-1 rounded bg-subsurface hover:bg-border text-muted-foreground hover:text-white border border-border text-[11px] font-medium transition-colors cursor-pointer active:scale-[0.98]"
+                        title="Sesuaikan Stok Fisik (Opname)"
+                      >
+                        Opname
+                      </button>
+                      <button
+                        onClick={() => handleOpenEditModal(item)}
+                        className="px-2.5 py-1 rounded bg-subsurface hover:bg-border text-muted-foreground hover:text-white border border-border text-[11px] font-medium transition-colors cursor-pointer active:scale-[0.98]"
+                      >
+                        Edit
+                      </button>
+                    </>
+                  )}
+                </div>
+              ),
+            },
+          ] : []),
         ]}
       />
 

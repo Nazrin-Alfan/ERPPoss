@@ -26,7 +26,7 @@ import {
 } from 'lucide-react'
 
 import { getTenantFeatures } from '../utils/businessCapabilities'
-import { ROLES } from '../constants/roles'
+import { ROLES, ROLE_PERMISSIONS } from '../constants/roles'
 import ChangePasswordModal from './auth/ChangePasswordModal'
 
 const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
@@ -85,7 +85,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           name: 'Dashboard',
           path: '/dashboard',
           icon: LayoutDashboard,
-          allowedRoles: [ROLES.OWNER]
+          allowedRoles: ROLE_PERMISSIONS.CAN_VIEW_EXECUTIVE_DASHBOARD
         }
       ]
     },
@@ -96,20 +96,20 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           name: 'Kasir POS',
           path: '/pos',
           icon: ShoppingCart,
-          allowedRoles: [ROLES.OWNER, ROLES.ADMIN, ROLES.KASIR]
+          allowedRoles: ROLE_PERMISSIONS.CAN_ACCESS_POS
         },
         {
           name: 'Antrean Carwash',
           path: '/queue',
           icon: Car,
-          allowedRoles: [ROLES.OWNER, ROLES.ADMIN, ROLES.KASIR],
+          allowedRoles: ROLE_PERMISSIONS.CAN_ACCESS_QUEUE,
           requiresFeature: 'hasQueue'
         },
         {
           name: 'Pelanggan & CRM',
           path: '/crm',
           icon: UserCheck,
-          allowedRoles: [ROLES.OWNER, ROLES.ADMIN],
+          allowedRoles: ROLE_PERMISSIONS.CAN_ACCESS_CRM,
           requiresFeature: 'hasCRM'
         }
       ]
@@ -121,13 +121,13 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           name: 'Buku Kas Keuangan',
           path: '/finance',
           icon: DollarSign,
-          allowedRoles: [ROLES.OWNER, ROLES.ADMIN]
+          allowedRoles: ROLE_PERMISSIONS.CAN_VIEW_FINANCE
         },
         {
           name: 'Laporan Akuntansi',
           path: '/reports',
           icon: FileText,
-          allowedRoles: [ROLES.OWNER]
+          allowedRoles: ROLE_PERMISSIONS.CAN_VIEW_REPORTS
         }
       ]
     },
@@ -138,13 +138,13 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           name: 'Multi-Gudang & Stok',
           path: '/gudang',
           icon: Boxes,
-          allowedRoles: [ROLES.OWNER, ROLES.ADMIN, ROLES.KASIR]
+          allowedRoles: ROLE_PERMISSIONS.CAN_VIEW_INVENTORY_STOCK
         },
         {
           name: 'Karyawan & Komisi',
           path: '/karyawan',
           icon: Users,
-          allowedRoles: [ROLES.OWNER, ROLES.ADMIN]
+          allowedRoles: ROLE_PERMISSIONS.CAN_MANAGE_STAFF
         }
       ]
     },
@@ -155,19 +155,19 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           name: 'Pengaturan Toko',
           path: '/admin',
           icon: Settings,
-          allowedRoles: [ROLES.OWNER, ROLES.SUPER_ADMIN]
+          allowedRoles: ROLE_PERMISSIONS.CAN_MANAGE_STORE_SETTINGS
         },
         {
           name: 'Console Founder',
           path: '/founder',
           icon: ShieldAlert,
-          allowedRoles: [ROLES.SUPER_ADMIN]
+          allowedRoles: ROLE_PERMISSIONS.CAN_MANAGE_TENANTS
         },
         {
           name: 'Database Master (Dev)',
           path: '/database',
           icon: Database,
-          allowedRoles: [ROLES.SUPER_ADMIN]
+          allowedRoles: ROLE_PERMISSIONS.CAN_MANAGE_TENANTS
         }
       ]
     }

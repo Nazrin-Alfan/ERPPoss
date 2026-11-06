@@ -4874,3 +4874,31 @@ Sebelum perbaikan ini, alur pelunasan tagihan tertunda (*pending bill*) di kasir
 - **Vitest Unit Suite**: 67 test files, **409 tests passed (100% Green)**.
 - **Linter (`oxlint`)**: **0 Errors**.
 - **Production Build (`vite build`)**: **Sukses (2.56s)**.
+
+
+---
+
+### Audit Log — Entri 122: PR-5 Frontend Synchronization & Role Matrix Resolution
+**Tanggal**: 2026-11-07  
+**Branch**: `feat/access-control-rbac-hardening`  
+**Status**: `COMPLETED (100% GREEN)`  
+
+#### Perubahan yang Dilakukan
+1. **Sentralisasi `ROLE_PERMISSIONS` & Resolver (`src/constants/roles.js`)**:
+   - Memperluas pemetaan kapabilitas peran: `CAN_VIEW_REPORTS`, `CAN_VIEW_INVENTORY_STOCK`, `CAN_VIEW_INVENTORY_COST`, `CAN_OPNAME_INVENTORY`, `CAN_ACCESS_QUEUE`, `CAN_ACCESS_CRM`, dan `CAN_MANAGE_STORE_SETTINGS`.
+   - Menambahkan fungsi helper `hasPermission(role, permissionKey)` untuk verifikasi akses berbasis kapabilitas.
+   - Menambahkan fungsi pendaratan aman `getRoleLandingRoute(role, options)` guna mencegah redirect-loop dan mengarahkan peran operasional langsung ke ruang kerjanya (`Staff Kantor` → `/gudang`, `Karyawan Cuci` → `/queue`, `Super Admin` → `/founder`, `Kasir` / `Admin` → `/pos`).
+2. **Sinkronisasi Rute & Navigasi Sidebar (`src/App.jsx` & `src/components/Sidebar.jsx`)**:
+   - Memutakhirkan `ProtectedRoute` dan `RootDispatcher` menggunakan `ROLE_PERMISSIONS` dan `getRoleLandingRoute`.
+   - Menyelaraskan seluruh visibilitas menu pada `Sidebar.jsx` dengan matriks peran terpusat.
+3. **Proteksi UI Halaman Gudang (`src/pages/Gudang.jsx`)**:
+   - Menyembunyikan kolom modal HPP (`harga_beli`) dan total nilai aset (`nilai_aset`) dari antarmuka `Kasir`.
+   - Mengganti kartu KPI valuasi nominal dengan status terbatas bagi pengguna `Kasir`.
+   - Mengunci tombol aksi mutasi (`+ Masuk`, `Opname`, `Edit`, dan `+ Tambah Barang`) dari peran non-manajemen serta menambahkan defense-in-depth guards pada seluruh event handlers form.
+4. **Test Suite TDD Vitest (`src/services/__tests__/rbacPr5FrontendSync.test.jsx`)**:
+   - Menambahkan 5 test cases TDD yang memverifikasi evaluasi kapabilitas peran, routing dispatcher, konsistensi navigasi, serta pengujian rendering DOM komponen `Gudang.jsx` untuk role `Owner` vs `Kasir`.
+
+#### Hasil Verifikasi Kualitas
+- **Vitest Unit Suite**: 68 test files, **414 tests passed (100% Green)**.
+- **Linter (`oxlint`)**: **0 Errors**.
+- **Production Build (`vite build`)**: **Sukses (2.36s)**.
