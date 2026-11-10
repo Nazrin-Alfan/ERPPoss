@@ -1,10 +1,12 @@
 # Release Readiness Report — RelayPOS Multi-Tenant SaaS ERP (`v2026.11-RBAC-Hardened`)
 
 - **Release Candidate / Branch:** `main` (synced with `origin/main`)
-- **Target Cloud Database:** Supabase PostgreSQL `jutidxobdedygmjngmcq` (7 migrations applied & synced: `20261103023738` through `20261107000005`)
-- **QA Orchestration Framework:** 50 QA Skills (`risk-based-testing`, `test-planning`, `database-testing`, `security-testing`, `api-testing`, `playwright-automation`, `accessibility-testing`, `performance-testing`, `release-readiness`, `supabase-postgres-best-practices`)
-- **Date & Time:** 2026-11-10T19:02:00+07:00
-- **Final Release Recommendation:** **GO FOR RELEASE** (`[QA_VERDICT: APPROVED]` & `[UIUX_VERDICT: APPROVED]`)
+- **Production Deployment:** Cloudflare Pages `erpposs` (`https://erpposs.pages.dev` / Deployment ID `5127ad0b-8a24-4720-af64-e920fb6cfefb` — Status: `SUCCESS`)
+- **Target Cloud Database:** Supabase PostgreSQL `jutidxobdedygmjngmcq` (8 migrations applied & synced: `20261103023738` through `20261107000006`)
+- **CI/CD Pipeline:** GitHub Actions [`.github/workflows/qa-release-gate.yml`](file:///c:/Users/msi/Project/SAAS%20ERP%20APP/.github/workflows/qa-release-gate.yml)
+- **QA Orchestration Framework:** 50 QA Skills (`risk-based-testing`, `test-planning`, `database-testing`, `security-testing`, `api-testing`, `playwright-automation`, `accessibility-testing`, `performance-testing`, `release-readiness`, `ci-cd-integration`, `synthetic-monitoring`, `supabase-postgres-best-practices`)
+- **Date & Time:** 2026-11-10T19:24:30+07:00
+- **Final Release Recommendation:** **DEPLOYED & VERIFIED IN PRODUCTION** (`[QA_VERDICT: APPROVED]` & `[UIUX_VERDICT: APPROVED]`)
 
 ---
 
@@ -14,7 +16,8 @@
 - [x] **All Unit & Integration Tests Passing (`100%`):** **71 test files, 429 passed, 0 failed** via `npx vitest run` (including [`qaTahap2And3Suite.test.js`](file:///c:/Users/msi/Project/SAAS%20ERP%20APP/src/services/__tests__/qaTahap2And3Suite.test.js), [`pr1ToPr6ReleaseGate.test.js`](file:///c:/Users/msi/Project/SAAS%20ERP%20APP/src/services/__tests__/pr1ToPr6ReleaseGate.test.js), [`accountingService.test.js`](file:///c:/Users/msi/Project/SAAS%20ERP%20APP/src/services/__tests__/accountingService.test.js)).
 - [x] **All E2E Journey & Smoke Tests Passing (`100%`):**
   - **Tahap 3 Playwright E2E Suite** ([`qa_tahap3_playwright_e2e.mjs`](file:///c:/Users/msi/Project/SAAS%20ERP%20APP/scripts/qa_tahap3_playwright_e2e.mjs)): **9/9 checks passed** (`E2E-01` to `E2E-09`, `PageErrors: 0, ConsoleErrors: 0`).
-  - **Tahap 4 Playwright A11y, Web Vitals & Deep RBAC Suite** ([`qa_tahap4_a11y_perf_and_rbac_e2e.mjs`](file:///c:/Users/msi/Project/SAAS%20ERP%20APP/scripts/qa_tahap4_a11y_perf_and_rbac_e2e.mjs)): **7/7 checks passed** (`T4-01` to `T4-07`, `PageErrors: 0, ConsoleErrors: 0`).
+  - **Tahap 4 Playwright A11y, Web Vitals & Deep RBAC Suite** ([`qa_tahap4_a11y_perf_and_rbac_e2e.mjs`](file:///c:/Users/msi/Project/SAAS%20ERP%20APP/scripts/qa_tahap4_a11y_perf_and_rbac_e2e.mjs)): **7/7 checks passed** (`T4-01` to `T4-07`, `Max Render Time = 349ms`, `PageErrors: 0, ConsoleErrors: 0`).
+  - **Post-Deploy Live Production Smoke Suite** ([`qa_prod_smoke_test.mjs`](file:///c:/Users/msi/Project/SAAS%20ERP%20APP/scripts/qa_prod_smoke_test.mjs)): **5/5 checks passed** against `https://erpposs.pages.dev` (`SMOKE-01` to `SMOKE-05`, entry bundle `/assets/index-BnkawIdF.js`, `PageErrors: 0, ConsoleErrors: 0`).
 - [x] **Static AST & Linter Verification (`0 errors`):**
   - [`verifyNoUndeclaredVars.js`](file:///c:/Users/msi/Project/SAAS%20ERP%20APP/scripts/verifyNoUndeclaredVars.js): **19/19 pages passed** with `0` undeclared identifiers.
   - `npm run lint` (`oxlint`): **0 errors** across 187 files.
@@ -28,8 +31,11 @@
 - [x] **Double-Entry Ledger & Referential Integrity:** `0` orphan foreign keys across all operational tables; `0` unbalanced `POSTED` journal entries (`SUM(debit) = SUM(credit)`).
 
 ### Performance & Accessibility Budgets
-- [x] **Database Foreign-Key Indexing:** Added `38` covering B-tree indexes in migration [`20261107000005_qa_performance_fk_indexes_and_rpc_acl.sql`](file:///c:/Users/msi/Project/SAAS%20ERP%20APP/supabase/migrations/20261107000005_qa_performance_fk_indexes_and_rpc_acl.sql), reducing Supabase Performance Advisor `unindexed_foreign_keys` from `38` to `0`.
-- [x] **Frontend Route Render Budget (`< 2000ms`):** All 6 core ERP routes rendered well under the 2000ms SLA in Chromium E2E testing (`/dashboard: 722ms`, `/pos: 570ms`, `/finance: 531ms`, `/karyawan: 395ms`, `/crm: 351ms`, `/gudang: 351ms`).
+- [x] **Database Foreign-Key Indexing & RLS Consolidation:**
+  - Added `38` covering B-tree indexes in migration [`20261107000005_qa_performance_fk_indexes_and_rpc_acl.sql`](file:///c:/Users/msi/Project/SAAS%20ERP%20APP/supabase/migrations/20261107000005_qa_performance_fk_indexes_and_rpc_acl.sql) (`unindexed_foreign_keys: 38 -> 0`).
+  - Consolidated overlapping permissive RLS policies on `17` tables in migration [`20261107000006_consolidate_permissive_rls_policies.sql`](file:///c:/Users/msi/Project/SAAS%20ERP%20APP/supabase/migrations/20261107000006_consolidate_permissive_rls_policies.sql) (`multiple_permissive_policies: 17 -> 0`).
+- [x] **Frontend Bundle Code-Splitting (`-76.8%` Initial Entry Bundle):** Converted all route modules in [`App.jsx`](file:///c:/Users/msi/Project/SAAS%20ERP%20APP/src/App.jsx) and [`POSDispatcher.jsx`](file:///c:/Users/msi/Project/SAAS%20ERP%20APP/src/pages/pos/POSDispatcher.jsx) to `React.lazy()`, reducing main entry bundle `dist/assets/index.js` from `1,404.90 kB` (`317.72 kB gzip`) to `326.10 kB` (`96.72 kB gzip`).
+- [x] **Frontend Route Render Budget (`< 2000ms`):** All 6 core ERP routes rendered well under the 2000ms SLA in Chromium E2E testing (`Max = 349ms`: `/dashboard: 349ms`, `/pos: 236ms`, `/finance: 302ms`, `/karyawan: 181ms`, `/crm: 212ms`, `/gudang: 224ms`).
 - [x] **WCAG 2.2 AA & Anti-AI Slop UI Compliance:** Semantic `<main>` landmarks, hierarchical headings (`h1-h3`), `0` unlabeled form controls (`unlabeledInputs = 0`), keyboard `Tab`/`Enter` login navigation, `font-mono tabular-nums` financial alignment, and tactile `active:scale-[0.98]` interactions verified.
 
 ---
