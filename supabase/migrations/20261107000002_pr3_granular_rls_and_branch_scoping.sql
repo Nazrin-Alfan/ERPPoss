@@ -70,9 +70,9 @@ WHERE sb.branch_id IS NULL
       WHERE branch_id IS NULL
       ORDER BY tenant_id, nama_produk, updated_at DESC
   )
-  AND NOT EXISTS (SELECT 1 FROM public.resep r WHERE r.id_bahan_baku = sb.id)
-  AND NOT EXISTS (SELECT 1 FROM public.barang_masuk bm WHERE bm.id_bahan_baku = sb.id)
-  AND NOT EXISTS (SELECT 1 FROM public.barang_keluar bk WHERE bk.id_bahan_baku = sb.id);
+  AND NOT EXISTS (SELECT 1 FROM public.resep r WHERE (r.id_bahan_baku::text = sb.id::text OR (sb.id_bahan_baku IS NOT NULL AND r.id_bahan_baku::text = sb.id_bahan_baku::text)))
+  AND NOT EXISTS (SELECT 1 FROM public.barang_masuk bm WHERE (bm.id_bahan_baku::text = sb.id::text OR (sb.id_bahan_baku IS NOT NULL AND bm.id_bahan_baku::text = sb.id_bahan_baku::text)))
+  AND NOT EXISTS (SELECT 1 FROM public.barang_keluar bk WHERE (bk.id_bahan_baku::text = sb.id::text OR (sb.id_bahan_baku IS NOT NULL AND bk.id_bahan_baku::text = sb.id_bahan_baku::text)));
 
 UPDATE public.stok_barang sb
 SET branch_id = b.id
