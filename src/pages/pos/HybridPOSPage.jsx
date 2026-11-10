@@ -185,7 +185,7 @@ const getMenuTheme = (menuName) => {
 }
 
 const CafePOS = () => {
-  const { profile, activeTenant } = useAuth()
+  const { user, profile, activeTenant } = useAuth()
   const effectiveTenantId = activeTenant?.id || profile?.tenant_id || DEFAULT_TENANT_ID
   const features = getTenantFeatures(activeTenant?.business_type)
   const defaultTab = features.isCarwashOnly ? 'carwash' : 'cafe'
@@ -518,11 +518,11 @@ const CafePOS = () => {
 
       if (profile && isCashier(profile.role)) {
         setSelectedCashier(profile.nama ? profile.nama.toUpperCase() : '')
-      } else if (defaultCashiers.length > 0) {
+      } else if (defaultCashiers && defaultCashiers.length > 0) {
         setSelectedCashier(defaultCashiers[0].nama ? defaultCashiers[0].nama.toUpperCase() : '')
       }
 
-      if (defaultPayments.length > 0) setSelectedPayment(defaultPayments[0].nama)
+      if (defaultPayments && defaultPayments.length > 0) setSelectedPayment(defaultPayments[0].nama)
 
       await Promise.all([
         fetchPendingBills(),
@@ -665,7 +665,7 @@ const CafePOS = () => {
     try {
       setInventoryLoading(true)
       let rawData = null
-      const currentRole = currentUser?.role || profile?.role || 'Kasir'
+      const currentRole = profile?.role || user?.role || 'Kasir'
       const canViewCost = currentRole === 'Super Admin' || currentRole === 'Owner' || currentRole === 'Admin' || currentRole === 'Staff Kantor'
 
       // P1-05 & Finding 1: Kasir/Kru reads inventory via safe projection fn_get_pos_inventory_stock to avoid RLS block

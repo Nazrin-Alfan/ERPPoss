@@ -92,11 +92,12 @@ export function Table({
   children,
   className = '',
   dense = false,
+  striped = false,
   ...props
 }) {
   return (
     <table
-      className={`w-full text-left text-xs border-collapse ${dense ? 'text-[11px]' : ''} ${className}`}
+      className={`w-full text-left text-xs border-collapse ${dense ? 'text-[11px]' : ''} ${striped ? '[&_tbody>tr:nth-child(even)]:bg-subsurface/30' : ''} ${className}`}
       {...props}
     >
       {children}
@@ -110,11 +111,12 @@ export function Table({
 export function TableHeader({
   children,
   className = '',
+  sticky = true,
   ...props
 }) {
   return (
     <thead
-      className={`bg-subsurface/80 border-b border-border text-muted text-[10px] sm:text-xs font-bold uppercase tracking-wider sticky top-0 z-10 backdrop-blur-xs ${className}`}
+      className={`bg-subsurface/80 border-b border-border text-muted text-[10px] sm:text-xs font-bold uppercase tracking-wider ${sticky ? 'sticky top-0 z-10' : ''} backdrop-blur-xs ${className}`}
       {...props}
     >
       {children}
@@ -128,11 +130,12 @@ export function TableHeader({
 export function TableBody({
   children,
   className = '',
+  striped = false,
   ...props
 }) {
   return (
     <tbody
-      className={`divide-y divide-border/60 font-medium ${className}`}
+      className={`divide-y divide-border/60 font-medium ${striped ? '[&>tr:nth-child(even)]:bg-subsurface/30' : ''} ${className}`}
       {...props}
     >
       {children}
