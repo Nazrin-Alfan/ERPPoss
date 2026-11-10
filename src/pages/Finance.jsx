@@ -1968,6 +1968,7 @@ const Finance = () => {
                 <span>Dari:</span>
                 <input
                   type="date"
+                  aria-label="Tanggal mulai filter"
                   value={customStartDate}
                   onChange={(e) => setCustomStartDate(e.target.value)}
                   className="bg-[#18181c] border border-[#26272d] rounded-lg px-2.5 py-1 text-white text-xs"
@@ -1977,6 +1978,7 @@ const Finance = () => {
                 <span>Sampai:</span>
                 <input
                   type="date"
+                  aria-label="Tanggal akhir filter"
                   value={customEndDate}
                   onChange={(e) => setCustomEndDate(e.target.value)}
                   className="bg-[#18181c] border border-[#26272d] rounded-lg px-2.5 py-1 text-white text-xs"
@@ -2291,6 +2293,7 @@ const Finance = () => {
               <div className="flex items-center gap-2">
                 <span>Baris per halaman:</span>
                 <select
+                  aria-label="Jumlah baris per halaman"
                   value={pageSize}
                   onChange={(e) => setPageSize(parseInt(e.target.value))}
                   className="bg-[#18181c] border border-[#26272d] rounded-lg px-2.5 py-1 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
@@ -2515,6 +2518,7 @@ const Finance = () => {
               <div className="flex items-center gap-2">
                 <span>Baris:</span>
                 <select
+                  aria-label="Jumlah baris per halaman"
                   value={pageSize}
                   onChange={(e) => setPageSize(parseInt(e.target.value))}
                   className="bg-[#18181c] border border-[#26272d] rounded-lg px-2.5 py-1 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
@@ -2708,6 +2712,7 @@ const Finance = () => {
               <div className="flex items-center gap-2">
                 <span>Baris:</span>
                 <select
+                  aria-label="Jumlah baris per halaman"
                   value={pageSize}
                   onChange={(e) => setPageSize(parseInt(e.target.value))}
                   className="bg-[#18181c] border border-[#26272d] rounded-lg px-2.5 py-1 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
@@ -2947,6 +2952,7 @@ const Finance = () => {
               <div className="flex items-center gap-2">
                 <span>Baris:</span>
                 <select
+                  aria-label="Jumlah baris per halaman"
                   value={pageSize}
                   onChange={(e) => setPageSize(parseInt(e.target.value))}
                   className="bg-[#18181c] border border-[#26272d] rounded-lg px-2.5 py-1 text-white text-xs font-semibold focus:outline-none focus:border-brand-emerald cursor-pointer"
