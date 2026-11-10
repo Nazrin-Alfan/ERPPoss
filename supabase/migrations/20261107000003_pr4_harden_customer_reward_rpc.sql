@@ -32,6 +32,9 @@ CREATE INDEX IF NOT EXISTS idx_loyalty_logs_struk_replay
 ON public.crm_loyalty_logs (tenant_id, id_struk)
 WHERE tipe = 'REDEEM' AND id_struk IS NOT NULL;
 
+-- Prevent PGRST203 overload conflict by dropping the legacy 7-parameter function signature
+DROP FUNCTION IF EXISTS public.redeem_customer_reward(UUID, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT);
+
 CREATE OR REPLACE FUNCTION public.redeem_customer_reward(
     p_tenant_id UUID,
     p_plat TEXT,

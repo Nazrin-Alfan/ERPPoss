@@ -664,13 +664,33 @@ const CafePOS = () => {
   const fetchInventory = async () => {
     try {
       setInventoryLoading(true)
-      const { data, error } = await supabase
-        .from('stok_barang')
-        .select('*')
-        .order('nama_produk', { ascending: true })
+      let rawData = null
+      const currentRole = currentUser?.role || profile?.role || 'Kasir'
+      const canViewCost = currentRole === 'Super Admin' || currentRole === 'Owner' || currentRole === 'Admin' || currentRole === 'Staff Kantor'
 
-      if (error) throw error
-      const fetched = data || []
+      // P1-05 & Finding 1: Kasir/Kru reads inventory via safe projection fn_get_pos_inventory_stock to avoid RLS block
+      if (!canViewCost && typeof supabase.rpc === 'function') {
+        try {
+          const { data: rpcData, error: rpcErr } = await supabase.rpc('fn_get_pos_inventory_stock')
+          if (!rpcErr && rpcData) {
+            rawData = rpcData
+          }
+        } catch {
+          // Fallback to table query if RPC is temporarily unavailable
+        }
+      }
+
+      if (!rawData) {
+        const { data, error } = await supabase
+          .from('stok_barang')
+          .select('*')
+          .order('nama_produk', { ascending: true })
+
+        if (error) throw error
+        rawData = data
+      }
+
+      const fetched = rawData || []
       setInventoryList(fetched)
       const merch = fetched.filter(i => 
         (

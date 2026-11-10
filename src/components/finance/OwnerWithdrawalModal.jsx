@@ -5,6 +5,7 @@ import { formatRupiah } from '../../utils/helpers'
 import { formatCurrencyInput, parseCurrencyInput } from '../../utils/financeHelpers'
 import { useAuth } from '../../context/AuthContext'
 import { DEFAULT_TENANT_ID, DEFAULT_BRANCH_ID } from '../../constants/erpConfig'
+import { isValidUUID } from '../../utils/staffHelpers'
 
 export default function OwnerWithdrawalModal({ isOpen, onClose, onSuccess, currentBalances = [] }) {
   const { profile, activeTenant } = useAuth()
@@ -38,15 +39,17 @@ export default function OwnerWithdrawalModal({ isOpen, onClose, onSuccess, curre
     setLoading(true)
     try {
       const todayDate = new Date().toLocaleDateString('en-CA')
-      const tenantId = activeTenant?.id || profile?.tenant_id || DEFAULT_TENANT_ID
-      const branchId = profile?.branch_id || DEFAULT_BRANCH_ID
+      const rawTenantId = activeTenant?.id || profile?.tenant_id || DEFAULT_TENANT_ID
+      const rawBranchId = profile?.branch_id || DEFAULT_BRANCH_ID
+
+      // On Cloud Supabase, avoid sending mock string IDs (like 'branch_medan_main') to UUID columns
+      const tenantId = (!supabase.isLocal && !isValidUUID(rawTenantId)) ? null : rawTenantId
+      const branchId = (!supabase.isLocal && !isValidUUID(rawBranchId)) ? null : rawBranchId
       const creditAccount = sumberDana === 'SALDO CASH' ? 'acc_1001' : 'acc_1002'
 
       // 1. Catat ke Cashflow
       const cashflowEntry = {
         id_cashflow: `cf_prive_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-        tenant_id: tenantId,
-        branch_id: branchId,
         tanggal: todayDate,
         keterangan_transaksi: `Prive Pemilik (${profile?.nama || 'Owner'}): ${keterangan.trim()}`,
         jenis: 'Mutasi Internal',
@@ -56,6 +59,8 @@ export default function OwnerWithdrawalModal({ isOpen, onClose, onSuccess, curre
         pos: sumberDana,
         created_at: new Date().toISOString()
       }
+      if (tenantId) cashflowEntry.tenant_id = tenantId
+      if (branchId) cashflowEntry.branch_id = branchId
 
       const { error: cfErr } = await supabase.from('cashflow').insert(cashflowEntry)
       if (cfErr) throw cfErr

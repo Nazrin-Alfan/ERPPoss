@@ -14,6 +14,176 @@
 BEGIN;
 
 -- ==============================================================================
+-- 0. SAFE BACKFILL FOR EXISTING DATA (Anti-Lockout on Branch Scoping)
+-- Backfills operational rows and profiles where branch_id IS NULL to the tenant's MAIN branch
+-- ==============================================================================
+-- Ensure is_main column exists on branches
+ALTER TABLE public.branches ADD COLUMN IF NOT EXISTS is_main BOOLEAN DEFAULT FALSE;
+
+-- Ensure all tenants have at least one main branch
+INSERT INTO public.branches (id, tenant_id, nama, kode, is_main, is_active)
+SELECT 
+    gen_random_uuid(),
+    t.id,
+    'Cabang Utama',
+    'MAIN',
+    TRUE,
+    TRUE
+FROM public.tenants t
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.branches b WHERE b.tenant_id = t.id
+);
+
+UPDATE public.struk s
+SET branch_id = b.id
+FROM (
+    SELECT DISTINCT ON (tenant_id) tenant_id, id 
+    FROM public.branches 
+    ORDER BY tenant_id, (is_main = TRUE) DESC, (kode = 'MAIN') DESC, created_at ASC
+) b
+WHERE s.tenant_id = b.tenant_id AND s.branch_id IS NULL;
+
+UPDATE public.cafe c
+SET branch_id = b.id
+FROM (
+    SELECT DISTINCT ON (tenant_id) tenant_id, id 
+    FROM public.branches 
+    ORDER BY tenant_id, (is_main = TRUE) DESC, (kode = 'MAIN') DESC, created_at ASC
+) b
+WHERE c.tenant_id = b.tenant_id AND c.branch_id IS NULL;
+
+UPDATE public.carwash cw
+SET branch_id = b.id
+FROM (
+    SELECT DISTINCT ON (tenant_id) tenant_id, id 
+    FROM public.branches 
+    ORDER BY tenant_id, (is_main = TRUE) DESC, (kode = 'MAIN') DESC, created_at ASC
+) b
+WHERE cw.tenant_id = b.tenant_id AND cw.branch_id IS NULL;
+
+-- Deduplicate any duplicate unassigned stock rows before backfill to prevent unique constraint violations
+DELETE FROM public.stok_barang sb
+WHERE sb.branch_id IS NULL
+  AND sb.id NOT IN (
+      SELECT DISTINCT ON (tenant_id, nama_produk) id
+      FROM public.stok_barang
+      WHERE branch_id IS NULL
+      ORDER BY tenant_id, nama_produk, updated_at DESC
+  )
+  AND NOT EXISTS (SELECT 1 FROM public.resep r WHERE r.id_bahan_baku = sb.id)
+  AND NOT EXISTS (SELECT 1 FROM public.barang_masuk bm WHERE bm.id_bahan_baku = sb.id)
+  AND NOT EXISTS (SELECT 1 FROM public.barang_keluar bk WHERE bk.id_bahan_baku = sb.id);
+
+UPDATE public.stok_barang sb
+SET branch_id = b.id
+FROM (
+    SELECT DISTINCT ON (tenant_id) tenant_id, id 
+    FROM public.branches 
+    ORDER BY tenant_id, (is_main = TRUE) DESC, (kode = 'MAIN') DESC, created_at ASC
+) b
+WHERE sb.tenant_id = b.tenant_id AND sb.branch_id IS NULL;
+
+UPDATE public.profiles p
+SET branch_id = b.id
+FROM (
+    SELECT DISTINCT ON (tenant_id) tenant_id, id 
+    FROM public.branches 
+    ORDER BY tenant_id, (is_main = TRUE) DESC, (kode = 'MAIN') DESC, created_at ASC
+) b
+WHERE p.tenant_id = b.tenant_id AND p.branch_id IS NULL AND p.role NOT IN ('Super Admin', 'Owner');
+
+-- Harmonize legacy automatic tenant/branch population triggers
+CREATE OR REPLACE FUNCTION public.fn_auto_set_tenant_and_branch()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+    v_tid UUID;
+    v_bid UUID;
+    v_role TEXT;
+BEGIN
+    IF NEW.tenant_id IS NULL THEN
+        v_tid := public.current_tenant_id();
+        IF v_tid IS NOT NULL THEN
+            NEW.tenant_id := v_tid;
+        END IF;
+    END IF;
+
+    IF NEW.branch_id IS NULL AND NEW.tenant_id IS NOT NULL THEN
+        -- Prioritaskan branch aktif milik caller yang sedang login
+        v_bid := public.current_branch_id();
+        
+        -- Fallback ke cabang MAIN hanya untuk peran manajemen (Super Admin / Owner)
+        IF v_bid IS NULL THEN
+            v_role := public.current_user_role();
+            IF v_role IN ('Super Admin', 'Owner') THEN
+                SELECT id INTO v_bid
+                FROM public.branches
+                WHERE tenant_id = NEW.tenant_id
+                ORDER BY (kode = 'MAIN') DESC, created_at ASC
+                LIMIT 1;
+            END IF;
+        END IF;
+
+        IF v_bid IS NOT NULL THEN
+            NEW.branch_id := v_bid;
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.fn_auto_populate_tenant_and_branch()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+    v_user_tenant_id UUID;
+    v_user_branch_id UUID;
+BEGIN
+    IF NEW.tenant_id IS NULL THEN
+        NEW.tenant_id := public.current_tenant_id();
+    END IF;
+
+    IF NEW.tenant_id IS NULL THEN
+        SELECT tenant_id INTO v_user_tenant_id 
+        FROM public.profiles 
+        WHERE id = auth.uid() AND is_active = TRUE
+        LIMIT 1;
+        NEW.tenant_id := v_user_tenant_id;
+    END IF;
+
+    BEGIN
+        IF NEW.branch_id IS NULL AND NEW.tenant_id IS NOT NULL THEN
+            NEW.branch_id := public.current_branch_id();
+            IF NEW.branch_id IS NULL THEN
+                SELECT id INTO v_user_branch_id 
+                FROM public.branches 
+                WHERE tenant_id = NEW.tenant_id AND is_active = TRUE 
+                ORDER BY (kode = 'MAIN') DESC, created_at ASC 
+                LIMIT 1;
+                NEW.branch_id := v_user_branch_id;
+            END IF;
+        END IF;
+    EXCEPTION WHEN undefined_column THEN
+        NULL;
+    END;
+
+    RETURN NEW;
+END;
+$$;
+
+-- Drop legacy redundant triggers and functions if present
+DROP TRIGGER IF EXISTS trg_enforce_journal_immutability ON public.journal_entries;
+DROP TRIGGER IF EXISTS trg_enforce_lines_immutability ON public.journal_entry_lines;
+DROP FUNCTION IF EXISTS public.fn_enforce_journal_immutability();
+
+-- ==============================================================================
 -- A. CONTEXT FUNCTIONS WITH ACTIVE PROFILE GUARD
 -- ==============================================================================
 CREATE OR REPLACE FUNCTION public.current_tenant_id()
@@ -342,16 +512,28 @@ FOR EACH ROW EXECUTE FUNCTION public.fn_prevent_posted_journal_line_mutation();
 -- D. SAFE SERVER-SIDE PROJECTIONS
 -- ==============================================================================
 
--- 1. POS Inventory Stock Projection (Hides HPP / cost from Cashier)
+-- 1. POS Inventory Stock Projection (Hides HPP / cost from Cashier, exposes all operational POS attributes)
 CREATE OR REPLACE FUNCTION public.fn_get_pos_inventory_stock(p_branch_id UUID DEFAULT NULL)
 RETURNS TABLE (
     id UUID,
     tenant_id UUID,
     branch_id UUID,
+    id_barang VARCHAR(50),
+    id_bahan_baku VARCHAR(50),
+    nama_barang VARCHAR(255),
     nama_produk VARCHAR(255),
+    kategori VARCHAR(100),
+    sub_kategori VARCHAR(100),
     satuan VARCHAR(50),
     stok NUMERIC(18, 4),
+    stok_akhir NUMERIC(18, 4),
     min_stok NUMERIC(18, 4),
+    gudang VARCHAR(50),
+    harga_jual NUMERIC(18, 4),
+    foto_url TEXT,
+    icon VARCHAR(100),
+    emoji VARCHAR(50),
+    keterangan TEXT,
     is_active BOOLEAN,
     updated_at TIMESTAMPTZ
 )
@@ -384,10 +566,22 @@ BEGIN
         sb.id,
         sb.tenant_id,
         sb.branch_id,
+        sb.id_barang,
+        sb.id_bahan_baku,
+        COALESCE(sb.nama_barang, sb.nama_produk),
         sb.nama_produk,
+        sb.kategori,
+        sb.sub_kategori,
         sb.satuan,
         sb.stok,
+        COALESCE(sb.stok_akhir, sb.stok),
         sb.min_stok,
+        sb.gudang,
+        COALESCE(sb.harga_jual, 0.0000),
+        sb.foto_url,
+        sb.icon,
+        sb.emoji,
+        sb.keterangan,
         COALESCE(sb.is_active, TRUE),
         sb.updated_at
     FROM public.stok_barang sb

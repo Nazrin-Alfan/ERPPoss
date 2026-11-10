@@ -169,8 +169,15 @@ const Karyawan = () => {
       // Simpan record baru ke tabel karyawan_kantor agar tersimpan permanen
       if (newRecordsToInsert.length > 0) {
         try {
+          const isValidUUID = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val)
           for (const newRec of newRecordsToInsert) {
-            await supabase.from('karyawan_kantor').insert(newRec)
+            const recToSave = { ...newRec }
+            // Cegah error 22P02 pada cloud database jika branch_id / tenant_id berupa string mock
+            if (!supabase.isLocal) {
+              if (!isValidUUID(recToSave.branch_id)) delete recToSave.branch_id
+              if (!isValidUUID(recToSave.tenant_id)) delete recToSave.tenant_id
+            }
+            await supabase.from('karyawan_kantor').insert(recToSave)
           }
         } catch (syncErr) {
           console.warn('Auto-sync insert into karyawan_kantor notice:', syncErr)

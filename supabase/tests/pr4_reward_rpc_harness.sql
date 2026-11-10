@@ -24,8 +24,12 @@ DECLARE
     v_err TEXT;
     v_count INT;
 BEGIN
+    -- Disable row security during test fixture cleanup to ensure child records are removed
+    PERFORM set_config('role', 'postgres', true);
+    PERFORM set_config('row_security', 'off', true);
+
     -- Setup Clean Test Environment for Tenant A (Clean child tables first to respect FK)
-    DELETE FROM public.customer_reward_claims WHERE tenant_id = v_tenant_a;
+    DELETE FROM public.customer_reward_claims WHERE tenant_id = v_tenant_a OR reward_id IN (SELECT id FROM public.crm_loyalty_programs WHERE tenant_id = v_tenant_a);
     DELETE FROM public.crm_loyalty_logs WHERE tenant_id = v_tenant_a;
     DELETE FROM public.crm_loyalty_programs WHERE tenant_id = v_tenant_a;
     DELETE FROM public.carwash WHERE tenant_id = v_tenant_a;
