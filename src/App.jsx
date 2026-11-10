@@ -13,18 +13,18 @@ import { BUSINESS_TYPES, getTenantFeatures } from './utils/businessCapabilities'
 import { ROLES, ROLE_PERMISSIONS, getRoleLandingRoute } from './constants/roles'
 
 import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
-import CafePOS from './pages/CafePOS'
-import CarwashQueue from './pages/CarwashQueue'
-import Finance from './pages/Finance'
-import Admin from './pages/Admin'
-import Karyawan from './pages/Karyawan'
-import Reports from './pages/Reports'
-import CRM from './pages/CRM'
-import Gudang from './pages/Gudang'
-import Konsolidasi from './pages/Konsolidasi'
 
-// Lazy load untuk modul super-admin/setup khusus
+// Lazy load seluruh modul halaman ERP agar initial bundle ringan & cepat dimuat
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const CafePOS = lazy(() => import('./pages/CafePOS'))
+const CarwashQueue = lazy(() => import('./pages/CarwashQueue'))
+const Finance = lazy(() => import('./pages/Finance'))
+const Admin = lazy(() => import('./pages/Admin'))
+const Karyawan = lazy(() => import('./pages/Karyawan'))
+const Reports = lazy(() => import('./pages/Reports'))
+const CRM = lazy(() => import('./pages/CRM'))
+const Gudang = lazy(() => import('./pages/Gudang'))
+const Konsolidasi = lazy(() => import('./pages/Konsolidasi'))
 const SuperAdmin = lazy(() => import('./pages/SuperAdmin'))
 const Founder = lazy(() => import('./pages/Founder'))
 const Database = lazy(() => import('./pages/Database'))

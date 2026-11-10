@@ -1,0 +1,102 @@
+name: QA Release Gate & Multi-Stage Verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  # ===========================================================================
+  # STAGE 1: Static AST Scope Audit, Oxlint & Production Bundle Verification
+  # ===========================================================================
+  static-and-build-gate:
+    name: Static AST Scope, Lint & Build Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Zero Undeclared Identifiers across All ERP Pages (AST Audit)
+        run: node scripts/verifyNoUndeclaredVars.js
+
+      - name: Run Oxlint Static Analysis (Zero Errors Gate)
+        run: npm run lint
+
+      - name: Build Production Bundle (Vite Code-Split Verification)
+        run: npm run build
+
+      - name: Upload Production Dist Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-dist
+          path: dist/
+          retention-days: 7
+
+  # ===========================================================================
+  # STAGE 2: Vitest Unit, Integration, Double-Entry Ledger & Multi-Tenant RBAC
+  # ===========================================================================
+  unit-and-integration-suite:
+    name: Vitest Unit & Integration Suite (429+ Tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Full Vitest Unit & Contract Suite
+        run: npx vitest run
+
+  # ===========================================================================
+  # STAGE 3: Playwright E2E Journeys, WCAG 2.2 AA A11y, Web Vitals & Deep RBAC
+  # ===========================================================================
+  playwright-e2e-and-a11y-gate:
+    name: Playwright E2E, WCAG 2.2 AA, Web Vitals & RBAC Gate
+    runs-on: ubuntu-latest
+    needs: [static-and-build-gate, unit-and-integration-suite]
+    timeout-minutes: 12
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium Browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Tahap 3 Playwright E2E Functional Journeys (9 Checks)
+        run: node scripts/qa_tahap3_playwright_e2e.mjs
+
+      - name: Run Tahap 4 Playwright WCAG 2.2 AA, Web Vitals & Deep RBAC Suite (7 Checks)
+        run: node scripts/qa_tahap4_a11y_perf_and_rbac_e2e.mjs
