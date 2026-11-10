@@ -10,7 +10,7 @@ import LicenseExpiredLockout from './components/auth/LicenseExpiredLockout'
 import ActivateLicenseModal from './components/auth/ActivateLicenseModal'
 import { ShieldAlert } from 'lucide-react'
 import { BUSINESS_TYPES, getTenantFeatures } from './utils/businessCapabilities'
-import { ROLES } from './constants/roles'
+import { ROLES, ROLE_PERMISSIONS, getRoleLandingRoute } from './constants/roles'
 
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -38,7 +38,7 @@ const PageLoader = () => (
 
 // Komponen Proteksi Rute berdasarkan Login, Peran, Lisensi Tenant & Kapabilitas Fitur
 const ProtectedRoute = ({ children, allowedRoles = null, ownerOnly = false, requiredFeature = null, allowedBusinessTypes = null }) => {
-  const { user, profile, activeTenant, loading, licenseStatus } = useAuth()
+  const { user, profile, activeTenant, loading, licenseStatus, userTenants } = useAuth()
 
   if (loading) {
     return (
@@ -57,6 +57,11 @@ const ProtectedRoute = ({ children, allowedRoles = null, ownerOnly = false, requ
   // Selesaikan role pengguna dari profile atau user metadata dengan fallback aman
   const role = profile?.role || user?.role || user?.user_metadata?.role || ROLES.KASIR
   const isSuperAdmin = role === ROLES.SUPER_ADMIN || profile?.is_super_admin
+  const features = getTenantFeatures(activeTenant?.business_type)
+  const defaultLanding = getRoleLandingRoute(role, {
+    tenantCount: userTenants?.length || 1,
+    hasQueue: Boolean(features.hasQueue)
+  })
 
   // GLOBAL LICENSE GUARD / PAYWALL LOCKOUT
   // Jika lisensi telah habis/expired dan bukan Super Admin, kunci akses operasional!
@@ -66,29 +71,25 @@ const ProtectedRoute = ({ children, allowedRoles = null, ownerOnly = false, requ
 
   // Jika rute menetapkan allowedRoles, verifikasi apakah user memiliki salah satu peran tersebut
   if (allowedRoles && Array.isArray(allowedRoles) && !allowedRoles.includes(role)) {
-    if (role === ROLES.SUPER_ADMIN) return <Navigate to="/founder" replace />
-    if (role === ROLES.OWNER) return <Navigate to="/konsolidasi" replace />
-    return <Navigate to="/pos" replace />
+    return <Navigate to={defaultLanding} replace />
   }
 
   // Kompatibilitas mundur untuk properti ownerOnly
   if (ownerOnly && role !== ROLES.OWNER) {
-    if (role === ROLES.SUPER_ADMIN) return <Navigate to="/founder" replace />
-    return <Navigate to="/pos" replace />
+    return <Navigate to={defaultLanding} replace />
   }
 
   // Verifikasi kapabilitas model bisnis tenant (misal: antrean & CRM hanya untuk Carwash/Hybrid)
   if (requiredFeature) {
-    const features = getTenantFeatures(activeTenant?.business_type)
     if (!features[requiredFeature]) {
-      return <Navigate to="/pos" replace />
+      return <Navigate to={defaultLanding} replace />
     }
   }
 
   if (allowedBusinessTypes && Array.isArray(allowedBusinessTypes)) {
     const currentType = String(activeTenant?.business_type || 'HYBRID').toUpperCase()
     if (!allowedBusinessTypes.includes(currentType)) {
-      return <Navigate to="/pos" replace />
+      return <Navigate to={defaultLanding} replace />
     }
   }
 
@@ -97,7 +98,7 @@ const ProtectedRoute = ({ children, allowedRoles = null, ownerOnly = false, requ
 
 // Komponen Smart Landing Dispatcher di Rute Root (/)
 const RootDispatcher = () => {
-  const { user, profile, loading, userTenants } = useAuth()
+  const { user, profile, loading, userTenants, activeTenant } = useAuth()
 
   if (loading) {
     return (
@@ -113,18 +114,13 @@ const RootDispatcher = () => {
   }
 
   const role = profile?.role || user?.role || user?.user_metadata?.role || ROLES.OWNER
+  const features = getTenantFeatures(activeTenant?.business_type)
+  const landingRoute = getRoleLandingRoute(role, {
+    tenantCount: userTenants?.length || 1,
+    hasQueue: Boolean(features.hasQueue)
+  })
 
-  if (role === ROLES.SUPER_ADMIN) {
-    return <Navigate to="/founder" replace />
-  }
-  if (role === ROLES.OWNER) {
-    // Jika Owner hanya mengelola 1 outlet, langsung masuk ke /dashboard operasional tokonya
-    if (userTenants && userTenants.length > 1) {
-      return <Navigate to="/konsolidasi" replace />
-    }
-    return <Navigate to="/dashboard" replace />
-  }
-  return <Navigate to="/pos" replace />
+  return <Navigate to={landingRoute} replace />
 }
 
 export const AppContent = () => {
@@ -261,7 +257,7 @@ export const AppContent = () => {
               <Route 
                 path="/dashboard" 
                 element={
-                  <ProtectedRoute allowedRoles={['Owner', 'Super Admin']}>
+                  <ProtectedRoute allowedRoles={ROLE_PERMISSIONS.CAN_VIEW_EXECUTIVE_DASHBOARD}>
                     <Dashboard />
                   </ProtectedRoute>
                 } 
@@ -271,7 +267,7 @@ export const AppContent = () => {
               <Route 
                 path="/konsolidasi" 
                 element={
-                  <ProtectedRoute allowedRoles={['Owner', 'Super Admin']}>
+                  <ProtectedRoute allowedRoles={ROLE_PERMISSIONS.CAN_VIEW_CONSOLIDATION}>
                     <ExecutiveLayout>
                       <Konsolidasi />
                     </ExecutiveLayout>
@@ -283,7 +279,7 @@ export const AppContent = () => {
               <Route 
                 path="/pos" 
                 element={
-                  <ProtectedRoute allowedRoles={['Owner', 'Admin', 'Kasir']}>
+                  <ProtectedRoute allowedRoles={ROLE_PERMISSIONS.CAN_ACCESS_POS}>
                     <CafePOS />
                   </ProtectedRoute>
                 } 
@@ -293,7 +289,7 @@ export const AppContent = () => {
               <Route 
                 path="/queue" 
                 element={
-                  <ProtectedRoute allowedRoles={['Owner', 'Admin', 'Kasir']} requiredFeature="hasQueue">
+                  <ProtectedRoute allowedRoles={ROLE_PERMISSIONS.CAN_ACCESS_QUEUE} requiredFeature="hasQueue">
                     <CarwashQueue />
                   </ProtectedRoute>
                 } 
@@ -303,7 +299,7 @@ export const AppContent = () => {
               <Route 
                 path="/finance" 
                 element={
-                  <ProtectedRoute allowedRoles={['Owner', 'Admin']}>
+                  <ProtectedRoute allowedRoles={ROLE_PERMISSIONS.CAN_VIEW_FINANCE}>
                     <Finance />
                   </ProtectedRoute>
                 } 
@@ -313,7 +309,7 @@ export const AppContent = () => {
               <Route 
                 path="/reports" 
                 element={
-                  <ProtectedRoute allowedRoles={['Owner']}>
+                  <ProtectedRoute allowedRoles={ROLE_PERMISSIONS.CAN_VIEW_REPORTS}>
                     <Reports />
                   </ProtectedRoute>
                 } 
@@ -323,7 +319,7 @@ export const AppContent = () => {
               <Route 
                 path="/crm" 
                 element={
-                  <ProtectedRoute allowedRoles={['Owner', 'Admin']} requiredFeature="hasCRM">
+                  <ProtectedRoute allowedRoles={ROLE_PERMISSIONS.CAN_ACCESS_CRM} requiredFeature="hasCRM">
                     <CRM />
                   </ProtectedRoute>
                 } 
@@ -333,7 +329,7 @@ export const AppContent = () => {
               <Route 
                 path="/karyawan" 
                 element={
-                  <ProtectedRoute allowedRoles={['Owner', 'Admin']}>
+                  <ProtectedRoute allowedRoles={ROLE_PERMISSIONS.CAN_MANAGE_STAFF}>
                     <Karyawan />
                   </ProtectedRoute>
                 } 
@@ -343,7 +339,7 @@ export const AppContent = () => {
               <Route 
                 path="/admin" 
                 element={
-                  <ProtectedRoute allowedRoles={['Owner', 'Super Admin']}>
+                  <ProtectedRoute allowedRoles={ROLE_PERMISSIONS.CAN_MANAGE_STORE_SETTINGS}>
                     <Admin />
                   </ProtectedRoute>
                 } 
@@ -353,7 +349,7 @@ export const AppContent = () => {
               <Route 
                 path="/founder" 
                 element={
-                  <ProtectedRoute allowedRoles={['Super Admin']}>
+                  <ProtectedRoute allowedRoles={ROLE_PERMISSIONS.CAN_MANAGE_TENANTS}>
                     <FounderLayout>
                       <Founder />
                     </FounderLayout>
@@ -365,7 +361,7 @@ export const AppContent = () => {
               <Route 
                 path="/super-admin" 
                 element={
-                  <ProtectedRoute allowedRoles={['Super Admin']}>
+                  <ProtectedRoute allowedRoles={ROLE_PERMISSIONS.CAN_MANAGE_TENANTS}>
                     <Navigate to="/founder" replace />
                   </ProtectedRoute>
                 } 
@@ -375,7 +371,7 @@ export const AppContent = () => {
               <Route 
                 path="/gudang" 
                 element={
-                  <ProtectedRoute allowedRoles={['Owner', 'Admin', 'Kasir']}>
+                  <ProtectedRoute allowedRoles={ROLE_PERMISSIONS.CAN_VIEW_INVENTORY_STOCK}>
                     <Gudang />
                   </ProtectedRoute>
                 } 

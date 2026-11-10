@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient'
 import { api } from '../services/apiAdapter'
 import { DEFAULT_TENANT_ID, DEFAULT_BRANCH_ID } from '../constants/erpConfig'
 import { ROLES } from '../constants/roles'
-import { setActiveTenantId } from '../services/localDbEngine'
+import { setActiveTenantId, setActiveActorContext, resetActiveActorContext } from '../services/localDbEngine'
 import { evaluateLicenseStatus } from '../utils/licenseHelpers'
 
 const ACTIVE_TENANT_STORAGE_KEY = 'relaypos_active_tenant_id'
@@ -46,6 +46,21 @@ export const AuthProvider = ({ children }) => {
   userRef.current = user
   const activeTenantRef = useRef(activeTenant)
   activeTenantRef.current = activeTenant
+
+  // Synchronize runtime actor context with localDbEngine for RBAC & multi-tenant containment
+  useEffect(() => {
+    if (profile) {
+      setActiveActorContext({
+        role: profile.role || null,
+        branchId: profile.branch_id || null,
+        userId: profile.id || null,
+        tenant_id: profile.tenant_id || activeTenant?.id || null,
+        is_active: profile.is_active !== false
+      })
+    } else {
+      resetActiveActorContext()
+    }
+  }, [profile, activeTenant])
 
   // Helper untuk memuat lisensi tenant aktif (Stabil dengan timeout proteksi)
   const loadTenantLicense = useCallback(async (tenantId, currentProfile = null) => {

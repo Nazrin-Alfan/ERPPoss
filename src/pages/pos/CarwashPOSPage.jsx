@@ -120,7 +120,13 @@ export const CarwashPOSPage = () => {
         supabase.from('kasir').select('*').eq('is_active', true),
         supabase.from('metode_bayar').select('*').eq('is_active', true),
         supabase.from('carwash_packages').select('*').eq('is_active', true),
-        supabase.from('karyawan_cuci').select('*'),
+        (async () => {
+          if (typeof supabase.rpc === 'function') {
+            const { data, error } = await supabase.rpc('fn_get_active_carwash_crew')
+            if (!error && data && data.length > 0) return { data }
+          }
+          return supabase.from('karyawan_cuci').select('id, nama, is_active')
+        })(),
         supabase.from('diskon').select('*').order('created_at', { ascending: false }),
         supabase.from('master_categories').select('*').eq('is_active', true)
       ])

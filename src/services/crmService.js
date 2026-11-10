@@ -26,10 +26,14 @@ async function serializeLocalRedemption(key, work) {
 
 function qualifyingVisit(visit, receipts) {
   if (['batal', 'void', 'cancelled', 'pending'].includes(String(visit.status || '').toLowerCase())) return false
-  if (visit.status_bayar && visit.status_bayar !== 'Selesai') return false
-  if (!visit.id_struk) return true // Historical imports without receipt links.
+  if (visit.status_bayar && !['selesai', 'lunas'].includes(String(visit.status_bayar).toLowerCase())) return false
+  if (!visit.id_struk) return true // Test fixtures or historical records without receipt links
   const receipt = receipts.find(row => row.id_struk === visit.id_struk)
-  return Boolean(receipt && receipt.status_bayar === 'Selesai')
+  if (!receipt) return false
+  const sBayar = (receipt.status_bayar || '').toLowerCase()
+  if (sBayar !== 'selesai' && sBayar !== 'lunas') return false
+  if (receipt.total_tagihan !== undefined && receipt.total_tagihan !== null && Number(receipt.total_tagihan) <= 0) return false
+  return true
 }
 
 function redemptionCount(logs, plate) {
@@ -284,6 +288,7 @@ export async function getLoyaltyProgramSettings(db, tenantId = DEFAULT_TENANT_ID
  */
 export async function saveLoyaltyProgramSettings(db, {
   tenant_id = DEFAULT_TENANT_ID,
+  branch_id = null,
   target_stamps = 5,
   reward_type = 'FREE_SERVICE',
   reward_title = 'Gratis 1x Cuci Mobil Salju',
@@ -293,11 +298,13 @@ export async function saveLoyaltyProgramSettings(db, {
   loyal_min_visits = 3,
   active_days_threshold = 14,
   churn_days_threshold = 30,
-  vip_retention_mode = 'DYNAMIC'
+  vip_retention_mode = 'DYNAMIC',
+  is_active = true
 }) {
   if (!db) throw new Error('Database client required.')
 
-  const payload = {
+  const programPayload = {
+    tenant_id,
     target_stamps: Math.max(1, parseInt(target_stamps, 10) || 5),
     reward_type,
     reward_title,
@@ -308,29 +315,40 @@ export async function saveLoyaltyProgramSettings(db, {
     active_days_threshold: Math.max(1, parseInt(active_days_threshold, 10) || 14),
     churn_days_threshold: Math.max(1, parseInt(churn_days_threshold, 10) || 30),
     vip_retention_mode: vip_retention_mode || 'DYNAMIC',
-    updated_at: new Date().toISOString()
+    is_active: is_active !== false
+  }
+  if (branch_id) {
+    programPayload.branch_id = branch_id
   }
 
-  const { data: existing } = await db
+  let query = db
     .from('crm_loyalty_programs')
     .select('*')
     .eq('tenant_id', tenant_id)
 
+  if (branch_id) {
+    query = query.eq('branch_id', branch_id)
+  }
+
+  const { data: existing } = await query
+
   if (existing && existing.length > 0) {
     const { error } = await db
       .from('crm_loyalty_programs')
-      .update(payload)
+      .update(programPayload)
       .eq('id', existing[0].id)
 
     if (error) throw error
   } else {
+    const newId = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : '00000000-0000-4000-8000-' + Math.random().toString(16).substring(2, 14).padEnd(12, '0')
+
     const { error } = await db
       .from('crm_loyalty_programs')
       .insert({
-        id: `prog_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-        tenant_id,
-        ...payload,
-        is_active: true,
+        id: newId,
+        ...programPayload,
         created_at: new Date().toISOString()
       })
 
@@ -558,17 +576,32 @@ export async function redeemCustomerReward(db, {
   notes = 'Free Cuci Diklaim',
   nama_pelanggan = '',
   reward_type = 'FREE_SERVICE',
-  id_struk = null
+  id_struk = null,
+  request_key = null
 }) {
   const normalizedPlate = normalizePlate(plat)
   if (!db || !normalizedPlate || !tenant_id) throw new Error('Database client, tenant and customer plate required.')
+
+  // AC-09 & AC-11 check for actor context
+  const actor = typeof db.getActiveActorContext === 'function' ? db.getActiveActorContext() : null
+  if (actor) {
+    if (actor.is_active === false) {
+      throw new Error('UNAUTHORIZED_OR_INACTIVE')
+    }
+    if (actor.role !== 'Super Admin' && actor.tenant_id && actor.tenant_id !== tenant_id) {
+      throw new Error('FORBIDDEN_CROSS_TENANT_REDEEM')
+    }
+  }
+
+  const effectiveRequestKey = request_key || id_struk || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `req_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`)
 
   if (!db.isLocal) {
     if (typeof db.rpc !== 'function') throw new Error('Endpoint klaim reward atomik belum tersedia di server.')
     const { data, error } = await db.rpc('redeem_customer_reward', {
       p_tenant_id: tenant_id, p_plat: normalizedPlate,
       p_reward_title: reward_title, p_notes: notes,
-      p_nama_pelanggan: nama_pelanggan, p_reward_type: reward_type, p_id_struk: id_struk
+      p_nama_pelanggan: nama_pelanggan, p_reward_type: reward_type, 
+      p_id_struk: id_struk, p_request_key: effectiveRequestKey
     })
     if (error) throw new Error(`Klaim reward server gagal: ${error.message || 'RPC belum tersedia'}`)
     const committed = Array.isArray(data) ? data[0] : data
@@ -582,12 +615,33 @@ export async function redeemCustomerReward(db, {
       readTenantRows(db, 'carwash', tenant_id), readTenantRows(db, 'struk', tenant_id),
       readTenantRows(db, 'crm_loyalty_programs', tenant_id), readTenantRows(db, 'crm_loyalty_logs', tenant_id)
     ])
-    const program = programs[0] || DEFAULT_LOYALTY_PROGRAM
+
+    if (id_struk || effectiveRequestKey) {
+      const existing = logs.find(l => l.tenant_id === tenant_id && l.tipe === 'REDEEM' && (
+        (id_struk && l.id_struk === id_struk) ||
+        (effectiveRequestKey && (l.request_key === effectiveRequestKey || l.id_struk === effectiveRequestKey))
+      ))
+      if (existing) {
+        return { success: true, redemptionId: existing.id, data: { ...existing, idempotent_replay: true } }
+      }
+    }
+
+    let program = null
+    if (programs.length > 0) {
+      program = programs.find(p => p.is_active !== false)
+      if (!program) throw new Error('LOYALTY_PROGRAM_UNAVAILABLE: Program reward tidak aktif.')
+    } else {
+      program = DEFAULT_LOYALTY_PROGRAM
+    }
+
     const target = Number(program.target_stamps ?? STAMP_TARGET_DEFAULT)
-    if (!Number.isInteger(target) || target <= 0) throw new Error('Target stamp program reward tidak valid.')
-    if (program.is_active === false) throw new Error('Program reward tidak aktif.')
-    const visitCount = visits.filter(visit => normalizePlate(visit.plat_nomor || visit.plat) === normalizedPlate
-      && qualifyingVisit(visit, receipts)).length
+    if (!Number.isInteger(target) || target <= 0) throw new Error('LOYALTY_PROGRAM_UNAVAILABLE: Target stamp program reward tidak valid.')
+    if (program.is_active === false) throw new Error('LOYALTY_PROGRAM_UNAVAILABLE: Program reward tidak aktif.')
+    
+    const qualifyingVisits = visits.filter(visit => normalizePlate(visit.plat_nomor || visit.plat) === normalizedPlate && qualifyingVisit(visit, receipts))
+    const distinctReceipts = new Set(qualifyingVisits.map(v => v.id_struk).filter(Boolean))
+    const visitsWithoutReceipt = qualifyingVisits.filter(v => !v.id_struk).length
+    const visitCount = distinctReceipts.size + visitsWithoutReceipt
     const available = Math.floor(visitCount / target) - redemptionCount(logs, normalizedPlate)
     if (available <= 0) throw new Error('Stamp kunjungan belum cukup atau reward sudah diklaim.')
 
@@ -596,6 +650,8 @@ export async function redeemCustomerReward(db, {
       id: redemptionId, tenant_id, plat: String(plat).trim().toUpperCase().replace(/\s+/g, ' '), tipe: 'REDEEM',
       reward_title: reward_title || program.reward_title || DEFAULT_LOYALTY_PROGRAM.reward_title,
       keterangan: notes, notes, nama_pelanggan, reward_type, id_struk,
+      request_key: effectiveRequestKey,
+      entitlement_seq: redemptionCount(logs, normalizedPlate) + 1,
       claimed_at: new Date().toISOString(), created_at: new Date().toISOString()
     }
     const { error } = await db.from('crm_loyalty_logs').insert(record)

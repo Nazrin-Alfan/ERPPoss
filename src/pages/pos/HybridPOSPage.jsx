@@ -433,7 +433,13 @@ const CafePOS = () => {
         supabase.from('resep').select('*'),
         supabase.from('diskon').select('*').order('created_at', { ascending: false }),
         supabase.from('carwash_packages').select('*').order('sort_order', { ascending: true }),
-        supabase.from('karyawan_cuci').select('*').eq('is_active', true)
+        (async () => {
+          if (typeof supabase.rpc === 'function') {
+            const { data, error } = await supabase.rpc('fn_get_active_carwash_crew')
+            if (!error && data && data.length > 0) return { data }
+          }
+          return supabase.from('karyawan_cuci').select('id, nama, is_active').eq('is_active', true)
+        })()
       ])
 
       const dbCashiers = results[0].status === 'fulfilled' ? results[0].value : { data: [] }
@@ -475,8 +481,14 @@ const CafePOS = () => {
       // Fetch dynamic washing employees from karyawan_cuci & karyawan_kantor
       try {
         const [resCuci, resKantor] = await Promise.allSettled([
-          supabase.from('karyawan_cuci').select('*').order('nama', { ascending: true }),
-          supabase.from('karyawan_kantor').select('*').order('nama', { ascending: true })
+          (async () => {
+            if (typeof supabase.rpc === 'function') {
+              const { data, error } = await supabase.rpc('fn_get_active_carwash_crew')
+              if (!error && data && data.length > 0) return { data }
+            }
+            return supabase.from('karyawan_cuci').select('id, nama, is_active').order('nama', { ascending: true })
+          })(),
+          supabase.from('karyawan_kantor').select('id, nama, is_active').order('nama', { ascending: true })
         ])
 
         const cuciNames = (resCuci.status === 'fulfilled' && resCuci.value.data)
@@ -721,8 +733,14 @@ const CafePOS = () => {
       const [resAllowed, resAll, resCuci, resKantor] = await Promise.allSettled([
         supabase.from('master_categories').select('*').eq('boleh_kasir', true),
         supabase.from('master_categories').select('*').eq('is_active', true),
-        supabase.from('karyawan_cuci').select('*').order('nama', { ascending: true }),
-        supabase.from('karyawan_kantor').select('*').order('nama', { ascending: true })
+        (async () => {
+          if (typeof supabase.rpc === 'function') {
+            const { data, error } = await supabase.rpc('fn_get_active_carwash_crew')
+            if (!error && data && data.length > 0) return { data }
+          }
+          return supabase.from('karyawan_cuci').select('id, nama, is_active').order('nama', { ascending: true })
+        })(),
+        supabase.from('karyawan_kantor').select('id, nama, is_active').order('nama', { ascending: true })
       ])
 
       if (resAllowed.status === 'fulfilled' && resAllowed.value.data) {

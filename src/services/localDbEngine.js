@@ -15,6 +15,27 @@ const STORAGE_KEY = 'relaypos_real_sandbox_v2'
 const AUTH_STORAGE_KEY = 'relaypos_real_auth_v2'
 export const ACTIVE_TENANT_STORAGE_KEY = 'relaypos_active_tenant_id'
 let inMemoryActiveTenantId = null
+let inMemoryActiveActorContext = {
+  role: null,
+  branchId: null,
+  userId: null,
+  tenant_id: null,
+  is_active: true
+}
+
+export const getActiveActorContext = () => ({ ...inMemoryActiveActorContext })
+
+export const setActiveActorContext = ({ role = null, branchId = null, userId = null, tenant_id = null, is_active = true } = {}) => {
+  inMemoryActiveActorContext = { role, branchId, userId, tenant_id, is_active }
+  if (tenant_id) {
+    setActiveTenantId(tenant_id)
+  }
+}
+
+export const resetActiveActorContext = () => {
+  inMemoryActiveActorContext = { role: null, branchId: null, userId: null, tenant_id: null, is_active: true }
+  setActiveTenantId(null)
+}
 
 export const DEFAULT_SALT = 'relaypos_salt_v1'
 // Precomputed SHA-256 for 'password123:relaypos_salt_v1'
@@ -902,12 +923,18 @@ export class LocalQueryBuilder {
     const table = this.store.getTable(this.tableName)
     let filteredResults = table.filter((row) => this.filters.every((f) => f(row)))
 
+    const actor = getActiveActorContext()
+    const hasActor = Boolean(actor && (actor.role || actor.tenant_id))
+
     // Automatic Row-Level Security (RLS) Isolation untuk Multi-Tenant Table
-    if (isMultiTenantTable(this.tableName) && !this.explicitTenantFilter && !this.bypassTenantIsolation) {
+    if (isMultiTenantTable(this.tableName) && !this.bypassTenantIsolation) {
       // Lookup profil pengguna spesifik berbasis ID (autentikasi & session) tidak boleh terblokir tenant isolation
       if (this.tableName === 'profiles' && this.hasSpecificIdFilter) {
         // Izinkan identity lookup
-      } else {
+      } else if (hasActor && actor.role !== 'Super Admin' && actor.tenant_id) {
+        // Strict multi-tenant isolation under active actor context
+        filteredResults = filteredResults.filter((row) => row.tenant_id === actor.tenant_id)
+      } else if (!this.explicitTenantFilter) {
         filteredResults = filteredResults.filter((row) => {
           if (row.tenant_id) return row.tenant_id === activeTenantId
           // Data bawaan awal tanpa tenant_id hanya boleh terlihat oleh DEFAULT_TENANT_ID
@@ -918,6 +945,46 @@ export class LocalQueryBuilder {
 
     const totalCount = filteredResults.length
     let results = [...filteredResults]
+
+    // PR-3: RBAC & Granular Branch Scoping Parity
+    if (actor && actor.role === 'Kasir') {
+      const sensitiveTables = [
+        'journal_entries',
+        'journal_entry_lines',
+        'chart_of_accounts',
+        'karyawan_cuci',
+        'karyawan_kantor',
+        'pos_balances',
+        'cashflow',
+        'intelligence_daily_snapshots'
+      ]
+      if (sensitiveTables.includes(this.tableName)) {
+        return { data: [], error: null, count: 0 }
+      }
+
+      // P1-05: Server-side cost/HPP protection for Kasir on stok_barang
+      if (this.tableName === 'stok_barang') {
+        results = results.map((row) => {
+          const copy = { ...row }
+          delete copy.harga_beli
+          delete copy.harga_satuan
+          return copy
+        })
+      }
+
+      const operationalTables = ['struk', 'cafe', 'carwash', 'pengeluaran', 'barang_masuk', 'barang_keluar', 'crm_loyalty_logs']
+      if (actor.branchId && operationalTables.includes(this.tableName)) {
+        // Operational tables do NOT allow NULL branch bypass
+        results = results.filter((row) => row.branch_id === actor.branchId)
+      } else if (actor.branchId) {
+        results = results.filter((row) => {
+          if (row.branch_id !== undefined && row.branch_id !== null) {
+            return row.branch_id === actor.branchId
+          }
+          return true
+        })
+      }
+    }
 
     // Sorting
     if (this.sortFields.length > 0) {
@@ -1024,6 +1091,26 @@ export class LocalQueryBuilder {
       this.store.ensureTenantMasterData(activeTenantId)
     }
 
+    const actorInsert = getActiveActorContext()
+    if (actorInsert && actorInsert.role === 'Kasir') {
+      const catalogTables = ['daftar_harga_menu', 'carwash_packages', 'resep', 'diskon', 'stok_barang']
+      if (catalogTables.includes(this.tableName)) {
+        return {
+          data: null,
+          error: new Error("[FORBIDDEN_ROLE_OPERATION] Role Kasir dilarang memodifikasi katalog/stok.")
+        }
+      }
+      if (this.tableName === 'struk' && actorInsert.branchId) {
+        for (const item of records) {
+          if (item.branch_id && item.branch_id !== actorInsert.branchId) {
+            return {
+              data: null,
+              error: new Error('[FORBIDDEN_BRANCH_OPERATION] Role Kasir dilarang mencatat transaksi untuk cabang lain.')
+            }
+          }
+        }
+      }
+    }
     for (const item of records) {
       const effectiveTenant = item.tenant_id || (isMultiTenantTable(this.tableName) ? activeTenantId : undefined)
       const effectiveBranch = item.branch_id || (effectiveTenant === DEFAULT_TENANT_ID ? DEFAULT_BRANCH_ID : `branch_${effectiveTenant || 'main'}_main`)
@@ -1081,10 +1168,41 @@ export class LocalQueryBuilder {
     const updated = []
     const activeTenantId = getActiveTenantId()
 
+    const actorUpdate = getActiveActorContext()
+    if (actorUpdate && actorUpdate.role === 'Kasir') {
+      const catalogTables = ['daftar_harga_menu', 'carwash_packages', 'resep', 'diskon', 'stok_barang']
+      if (catalogTables.includes(this.tableName)) {
+        return {
+          data: null,
+          error: new Error("[FORBIDDEN_ROLE_OPERATION] Role Kasir dilarang memodifikasi katalog/stok.")
+        }
+      }
+    }
+    if (this.tableName === 'journal_entries') {
+      const targetRows = table.filter((row) => this.filters.every((f) => f(row)))
+      if (targetRows.some((r) => r.status === 'POSTED')) {
+        return {
+          data: null,
+          error: new Error('[IMMUTABLE_POSTED_JOURNAL] Jurnal akuntansi berstatus POSTED bersifat immutable.')
+        }
+      }
+    }
     table.forEach((row, idx) => {
-      const tenantMatch = (this.bypassTenantIsolation || this.explicitTenantFilter || this.hasSpecificIdFilter || !isMultiTenantTable(this.tableName))
-        ? true
-        : (row.tenant_id ? row.tenant_id === activeTenantId : activeTenantId === DEFAULT_TENANT_ID)
+      const hasActor = Boolean(actorUpdate && (actorUpdate.role || actorUpdate.tenant_id))
+      let tenantMatch = false
+      if (hasActor) {
+        if (actorUpdate.role === 'Super Admin' || this.bypassTenantIsolation) {
+          tenantMatch = true
+        } else if (isMultiTenantTable(this.tableName)) {
+          tenantMatch = row.tenant_id === (actorUpdate.tenant_id || activeTenantId)
+        } else {
+          tenantMatch = true
+        }
+      } else {
+        tenantMatch = (this.bypassTenantIsolation || this.explicitTenantFilter || this.hasSpecificIdFilter || !isMultiTenantTable(this.tableName))
+          ? true
+          : (row.tenant_id ? row.tenant_id === activeTenantId : activeTenantId === DEFAULT_TENANT_ID)
+      }
 
       if (tenantMatch && this.filters.every((f) => f(row))) {
         table[idx] = {
@@ -1106,6 +1224,28 @@ export class LocalQueryBuilder {
     const table = this.store.getTable(this.tableName)
     const records = Array.isArray(this.payload) ? this.payload : [this.payload]
     const upserted = []
+
+    const actorUpsert = getActiveActorContext()
+    if (actorUpsert && actorUpsert.role === 'Kasir') {
+      const catalogTables = ['daftar_harga_menu', 'carwash_packages', 'resep', 'diskon', 'stok_barang']
+      if (catalogTables.includes(this.tableName)) {
+        return {
+          data: null,
+          error: new Error("[FORBIDDEN_ROLE_OPERATION] Role Kasir dilarang memodifikasi katalog/stok.")
+        }
+      }
+    }
+
+    if (actorUpsert && actorUpsert.role !== 'Super Admin' && actorUpsert.tenant_id) {
+      for (const item of records) {
+        if (item.tenant_id && item.tenant_id !== actorUpsert.tenant_id) {
+          return {
+            data: null,
+            error: new Error("[FORBIDDEN_CROSS_TENANT_MUTATION] Mutasi lintas tenant dilarang.")
+          }
+        }
+      }
+    }
 
     for (const item of records) {
       const keyField = item.id ? 'id' : (item.id_struk ? 'id_struk' : (item.id_transaksi ? 'id_transaksi' : 'id'))
@@ -1141,10 +1281,41 @@ export class LocalQueryBuilder {
     const deleted = []
     const activeTenantId = getActiveTenantId()
 
+    const actorDelete = getActiveActorContext()
+    if (actorDelete && actorDelete.role === 'Kasir') {
+      const catalogTables = ['daftar_harga_menu', 'carwash_packages', 'resep', 'diskon', 'stok_barang']
+      if (catalogTables.includes(this.tableName)) {
+        return {
+          data: null,
+          error: new Error("[FORBIDDEN_ROLE_OPERATION] Role Kasir dilarang memodifikasi katalog/stok.")
+        }
+      }
+    }
+    if (this.tableName === 'journal_entries') {
+      const targetRows = table.filter((row) => this.filters.every((f) => f(row)))
+      if (targetRows.some((r) => r.status === 'POSTED')) {
+        return {
+          data: null,
+          error: new Error('[IMMUTABLE_POSTED_JOURNAL] Jurnal akuntansi berstatus POSTED bersifat immutable.')
+        }
+      }
+    }
     table.forEach((row) => {
-      const tenantMatch = (this.bypassTenantIsolation || this.explicitTenantFilter || this.hasSpecificIdFilter || !isMultiTenantTable(this.tableName))
-        ? true
-        : (row.tenant_id ? row.tenant_id === activeTenantId : activeTenantId === DEFAULT_TENANT_ID)
+      const hasActor = Boolean(actorDelete && (actorDelete.role || actorDelete.tenant_id))
+      let tenantMatch = false
+      if (hasActor) {
+        if (actorDelete.role === 'Super Admin' || this.bypassTenantIsolation) {
+          tenantMatch = true
+        } else if (isMultiTenantTable(this.tableName)) {
+          tenantMatch = row.tenant_id === (actorDelete.tenant_id || activeTenantId)
+        } else {
+          tenantMatch = true
+        }
+      } else {
+        tenantMatch = (this.bypassTenantIsolation || this.explicitTenantFilter || this.hasSpecificIdFilter || !isMultiTenantTable(this.tableName))
+          ? true
+          : (row.tenant_id ? row.tenant_id === activeTenantId : activeTenantId === DEFAULT_TENANT_ID)
+      }
 
       if (tenantMatch && this.filters.every((f) => f(row))) {
         deleted.push(row)
@@ -2148,6 +2319,223 @@ export const createLocalClient = () => {
         })
         return report
       },
+    },
+
+    getActiveActorContext() {
+      return getActiveActorContext()
+    },
+
+    async rpc(name, params = {}) {
+      if (name === 'fn_get_pos_inventory_stock') {
+        const actor = getActiveActorContext()
+        const activeTenantId = (actor && actor.tenant_id) || getActiveTenantId()
+        const targetBranch = params.p_branch_id || (actor && actor.branchId) || null
+        const table = localDbStore.getTable('stok_barang') || []
+        const tenantStocks = table.filter(row => {
+          const matchTenant = row.tenant_id ? row.tenant_id === activeTenantId : activeTenantId === DEFAULT_TENANT_ID
+          if (!matchTenant) return false
+          if (targetBranch && row.branch_id) return row.branch_id === targetBranch
+          return true
+        })
+        const safeRows = tenantStocks.map(row => {
+          const copy = { ...row }
+          delete copy.harga_beli
+          delete copy.harga_satuan
+          return {
+            id: copy.id,
+            tenant_id: copy.tenant_id,
+            branch_id: copy.branch_id,
+            nama_produk: copy.nama_produk || copy.nama_barang,
+            satuan: copy.satuan || 'Pcs',
+            stok: Number(copy.stok || copy.stok_tersedia || 0),
+            min_stok: Number(copy.min_stok || copy.minimal_stok || 0),
+            is_active: copy.is_active !== false,
+            updated_at: copy.updated_at || new Date().toISOString()
+          }
+        })
+        return { data: safeRows, error: null }
+      }
+
+      if (name === 'fn_get_active_carwash_crew') {
+        const actor = getActiveActorContext()
+        const activeTenantId = (actor && actor.tenant_id) || getActiveTenantId()
+        const targetBranch = params.p_branch_id || (actor && actor.branchId) || null
+        const table = localDbStore.getTable('karyawan_cuci') || []
+        const activeCrew = table.filter(row => {
+          const matchTenant = row.tenant_id ? row.tenant_id === activeTenantId : activeTenantId === DEFAULT_TENANT_ID
+          if (!matchTenant) return false
+          if (targetBranch && row.branch_id) return row.branch_id === targetBranch
+          const isActive = row.is_active !== false && (row.status || '').toLowerCase() !== 'nonaktif'
+          return isActive
+        })
+        const safeRows = activeCrew.map(c => ({
+          id: c.id,
+          tenant_id: c.tenant_id,
+          branch_id: c.branch_id,
+          nama: c.nama,
+          is_active: c.is_active !== false
+        }))
+        return { data: safeRows, error: null }
+      }
+
+      if (name === 'redeem_customer_reward') {
+        const {
+          p_tenant_id,
+          p_plat,
+          p_reward_title = 'Free Wash',
+          p_notes = '',
+          p_nama_pelanggan = '',
+          p_reward_type = 'FREE_SERVICE',
+          p_id_struk = null,
+          p_request_key = null
+        } = params
+
+        const actor = getActiveActorContext()
+        if (actor) {
+          if (actor.is_active === false) {
+            throw new Error('UNAUTHORIZED_OR_INACTIVE')
+          }
+          const allowedRoles = ['Super Admin', 'Owner', 'Admin', 'Kasir']
+          if (actor.role && !allowedRoles.includes(actor.role)) {
+            throw new Error('FORBIDDEN_CALLER_ROLE')
+          }
+          if (actor.role !== 'Super Admin' && actor.tenant_id && actor.tenant_id !== p_tenant_id) {
+            throw new Error('FORBIDDEN_CROSS_TENANT_REDEEM')
+          }
+        }
+
+        const cleanPlate = (p_plat || '').trim().toUpperCase().replace(/\s+/g, '')
+        if (!p_tenant_id || !cleanPlate) {
+          throw new Error('Tenant ID dan Plat nomor kendaraan wajib diisi')
+        }
+
+        // Check idempotency on id_struk or request_key
+        const logsTable = localDbStore.getTable('crm_loyalty_logs') || []
+        if (p_id_struk || p_request_key) {
+          const existing = logsTable.find(l => l.tenant_id === p_tenant_id && l.tipe === 'REDEEM' && (
+            (p_id_struk && l.id_struk === p_id_struk) ||
+            (p_request_key && (l.request_key === p_request_key || l.id_struk === p_request_key))
+          ))
+          if (existing) {
+            return {
+              data: {
+                redemption_id: existing.id,
+                tenant_id: p_tenant_id,
+                plat: (p_plat || '').trim().toUpperCase().replace(/\s+/g, ' '),
+                reward_title: existing.reward_title || p_reward_title,
+                idempotent_replay: true,
+                claimed_at: existing.claimed_at || new Date().toISOString()
+              },
+              error: null
+            }
+          }
+        }
+
+        // Active loyalty program gate
+        const programsTable = localDbStore.getTable('crm_loyalty_programs') || []
+        const tenantPrograms = programsTable.filter(p => p.tenant_id === p_tenant_id)
+        let activeProgram = null
+        if (tenantPrograms.length > 0) {
+          activeProgram = tenantPrograms.find(p => p.is_active !== false)
+          if (!activeProgram) {
+            throw new Error('LOYALTY_PROGRAM_UNAVAILABLE')
+          }
+        } else {
+          activeProgram = { is_active: true, target_stamps: 5, reward_title: p_reward_title }
+        }
+
+        const targetStamps = Number(activeProgram.target_stamps || 5)
+        if (targetStamps <= 0) {
+          throw new Error('LOYALTY_PROGRAM_UNAVAILABLE')
+        }
+
+        // Qualifying visits filter: distinct paid receipts or non-receipt visits
+        const cwTable = localDbStore.getTable('carwash') || []
+        const strukTable = localDbStore.getTable('struk') || []
+        const qualifyingCw = cwTable.filter(cw => {
+          if (cw.tenant_id !== p_tenant_id) return false
+          const plateNorm = (cw.plat || '').trim().toUpperCase().replace(/\s+/g, '')
+          if (plateNorm !== cleanPlate) return false
+          const st = (cw.status || '').toLowerCase()
+          if (['batal', 'void', 'cancelled', 'pending'].includes(st)) return false
+          if (cw.id_struk) {
+            const struk = strukTable.find(s => s.tenant_id === p_tenant_id && s.id_struk === cw.id_struk)
+            if (!struk) return false
+            const sBayar = (struk.status_bayar || '').toLowerCase()
+            if (sBayar !== 'selesai' && sBayar !== 'lunas') return false
+            if (struk.total_tagihan !== undefined && struk.total_tagihan !== null && Number(struk.total_tagihan) <= 0) return false
+          }
+          return true
+        })
+
+        const distinctReceipts = new Set(qualifyingCw.map(cw => cw.id_struk).filter(Boolean))
+        const visitsWithoutReceipt = qualifyingCw.filter(cw => !cw.id_struk).length
+        const totalEligibleVisits = distinctReceipts.size + visitsWithoutReceipt
+
+        const redemptions = logsTable.filter(l => {
+          if (l.tenant_id !== p_tenant_id) return false
+          const plateNorm = (l.plat || '').trim().toUpperCase().replace(/\s+/g, '')
+          if (plateNorm !== cleanPlate) return false
+          return l.tipe === 'REDEEM' || (!l.tipe && (l.claimed_at || l.reward_title))
+        })
+
+        const available = Math.floor(totalEligibleVisits / targetStamps) - redemptions.length
+        if (available <= 0) {
+          throw new Error('Stamp kunjungan belum cukup atau reward sudah diklaim')
+        }
+
+        const redemptionId = `red_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+        const finalRewardTitle = activeProgram.reward_title || p_reward_title
+        const finalRewardType = activeProgram.reward_type || p_reward_type
+        const newRecord = {
+          id: redemptionId,
+          tenant_id: p_tenant_id,
+          plat: (p_plat || '').trim().toUpperCase().replace(/\s+/g, ' '),
+          tipe: 'REDEEM',
+          reward_title: finalRewardTitle,
+          reward_type: finalRewardType,
+          id_struk: p_id_struk,
+          request_key: p_request_key,
+          entitlement_seq: redemptions.length + 1,
+          keterangan: p_notes,
+          notes: p_notes,
+          nama_pelanggan: p_nama_pelanggan,
+          claimed_at: new Date().toISOString(),
+          created_at: new Date().toISOString()
+        }
+
+        logsTable.push(newRecord)
+
+        const claimsTable = localDbStore.getTable('customer_reward_claims')
+        if (claimsTable) {
+          claimsTable.push({
+            id: `claim_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            tenant_id: p_tenant_id,
+            plat: newRecord.plat,
+            customer_name: p_nama_pelanggan,
+            reward_id: activeProgram.id || null,
+            reward_title: finalRewardTitle,
+            id_struk: p_id_struk,
+            request_key: p_request_key,
+            status: 'COMPLETED',
+            claimed_at: newRecord.claimed_at,
+            created_at: newRecord.created_at
+          })
+        }
+
+        localDbStore.saveToStorage()
+        return {
+          data: {
+            redemption_id: redemptionId,
+            tenant_id: p_tenant_id,
+            plat: newRecord.plat,
+            reward_title: finalRewardTitle,
+            claimed_at: newRecord.claimed_at
+          },
+          error: null
+        }
+      }
+      throw new Error(`RPC ${name} not supported on local client`)
     },
 
     channel(name) {

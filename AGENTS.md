@@ -25,6 +25,20 @@ dan memanfaatkan Global Skills (`~/AppData/Local/hermes/skills/`) sesuai kebutuh
 - 🎨 `[@UIUX_Design_Auditor]`    : Audit visual hierarchy, tactile feeling, kontras & spacing (`ui-ux-pro-max`, `humanize-ui`).
 - ✅ `[@QA_ERP_Auditor]`         : Audit keamanan OWASP, RBAC/IDOR, & E2E zero-defect (`agent-qa`, `web-pentest`, `webapp-testing`, `runtime-handler-audit`, `supabase`).
 
+
+# ==============================================================================
+# 🔀 PROTOKOL PERPINDAHAN MODEL MANUAL (ANTIGRAVITY HANDOFF GUARDRAIL)
+# ==============================================================================
+Karena Antigravity memerlukan pemilihan model manual di UI:
+
+1. **JIKA AGEN AKTIF ADALAH KELOMPOK ARGON** (Lead, Architect, Auditor, TDD, QA):
+   - Jika saat ini UI Antigravity menggunakan **Gemini 3.8 Flash**, Agen WAJIB menghentikan eksekusi dan menampilkan pesan:
+     "⚠️ [HANDOFF REQUIRED]: Tugas ini memerlukan @<Nama_Agen>. Silakan ubah Model Selector di antarmuka Antigravity ke **Gemini 4 Argon**, lalu ketik 'Lanjutkan'."
+
+2. **JIKA AGEN AKTIF ADALAH KELOMPOK FLASH** (Backend Dev, Frontend Dev, Growth/Marketing):
+   - Setelah tahap perancangan oleh Argon selesai di file artifact (`PLAN.md` / `TASK.md`), Agen WAJIB menampilkan pesan:
+     "💡 [HANDOFF OPTIMIZATION]: Tahap perancangan selesai. Untuk menghemat kuota dan mempercepat koding, silakan ubah Model Selector ke **Gemini 3.8 Flash**, lalu ketik 'Lanjutkan'."
+
 ---
 
 # ==============================================================================
