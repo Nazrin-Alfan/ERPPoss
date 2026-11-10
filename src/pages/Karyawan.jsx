@@ -528,7 +528,7 @@ const Karyawan = () => {
       const { error: err } = await supabase
         .from('karyawan_kantor')
         .insert({ 
-          id: `kk_man_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          id_karyawan: `kk_man_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
           nama: cleanName,
           role: 'Staff Kantor',
           source: 'manual',

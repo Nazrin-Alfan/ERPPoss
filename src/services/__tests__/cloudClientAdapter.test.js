@@ -31,4 +31,26 @@ describe('Dual-Mode Supabase Client & API Adapter Architecture', () => {
     expect(Array.isArray(data)).toBe(true)
     expect(data.length).toBeGreaterThan(0)
   })
+
+  it('4. should register multiple Kasir accounts in the same tenant without overwriting or escalating role to Owner', async () => {
+    const suffix = Date.now()
+    const res1 = await api.auth.registerKasir(`kasir_a_${suffix}`, 'password123', 'KASIR A', 'Kasir')
+    const res2 = await api.auth.registerKasir(`kasir_b_${suffix}`, 'password123', 'KASIR B', 'Kasir')
+
+    expect(res1.success).toBe(true)
+    expect(res2.success).toBe(true)
+    expect(res1.user.role).toBe('Kasir')
+    expect(res2.user.role).toBe('Kasir')
+    expect(res1.user.tenant_id).toBe(res2.user.tenant_id)
+
+    const { data: profiles } = await supabase.from('profiles').select('*')
+    const foundA = profiles.find((p) => p.email === `kasir_a_${suffix}@jb.local`)
+    const foundB = profiles.find((p) => p.email === `kasir_b_${suffix}@jb.local`)
+
+    expect(foundA).toBeDefined()
+    expect(foundB).toBeDefined()
+    expect(foundA.role).toBe('Kasir')
+    expect(foundB.role).toBe('Kasir')
+    expect(foundA.tenant_id).toBe(foundB.tenant_id)
+  })
 })

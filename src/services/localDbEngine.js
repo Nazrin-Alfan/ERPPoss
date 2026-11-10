@@ -1959,8 +1959,8 @@ export const createLocalClient = () => {
 
         const newUserId = `usr_${Date.now()}`
         const nama = options.data?.nama || email.split('@')[0]
-        // M3 Fix: paksa role 'Kasir' jika didaftarkan via client registrasi kasir
-        const role = options.data?.role === 'Admin' ? 'Admin' : 'Kasir'
+        const allowedStaffRoles = ['Kasir', 'Admin', 'Owner', 'Staff Kantor', 'Karyawan Cuci']
+        const role = allowedStaffRoles.includes(options.data?.role) ? options.data.role : 'Kasir'
         const currentActiveTenant = getActiveTenantId() || DEFAULT_TENANT_ID
 
         const salt = DEFAULT_SALT

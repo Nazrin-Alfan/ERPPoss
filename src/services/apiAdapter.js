@@ -95,7 +95,22 @@ export const api = {
       const email = emailOrUsername.includes('@')
         ? emailOrUsername.trim()
         : `${emailOrUsername.trim().toLowerCase()}@jb.local`
-      const safeRole = role === 'Admin' ? 'Admin' : 'Kasir'
+      const allowedRoles = ['Kasir', 'Admin', 'Owner', 'Staff Kantor', 'Karyawan Cuci']
+      const safeRole = allowedRoles.includes(role) ? role : 'Kasir'
+
+      if (isCloudBackend) {
+        const { data: rpcRes, error: rpcErr } = await supabase.rpc('fn_register_tenant_staff', {
+          p_email: email,
+          p_password: password,
+          p_nama: nama,
+          p_role: safeRole,
+          p_tenant_id: tenantId || null,
+          p_branch_id: null,
+        })
+        if (rpcErr) throw rpcErr
+        return { success: true, user: rpcRes?.user || null }
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
