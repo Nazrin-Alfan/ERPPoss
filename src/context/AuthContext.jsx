@@ -495,6 +495,17 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  // Fungsi Kelola Siklus Hidup Staf (Ubah Role, Nonaktifkan / Soft Delete Opsi A, Aktifkan)
+  const manageStaff = async ({ staffId, action, newRole = null }) => {
+    try {
+      const res = await api.auth.manageStaff({ staffId, action, newRole })
+      return { success: true, data: res }
+    } catch (err) {
+      console.error('Manage staff error:', err)
+      return { success: false, error: err.message || 'Gagal memperbarui akun staf.' }
+    }
+  }
+
   // Fungsi Ganti Password Pengguna Aktif
   const changePassword = async ({ currentPassword, newPassword }) => {
     try {
@@ -587,6 +598,7 @@ export const AuthProvider = ({ children }) => {
       registerTenantOwner, 
       logout, 
       registerKasir,
+      manageStaff,
       changePassword
     }}>
       {children}

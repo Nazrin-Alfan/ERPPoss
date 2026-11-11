@@ -44,8 +44,8 @@ describe('Dual-Mode Supabase Client & API Adapter Architecture', () => {
     expect(res1.user.tenant_id).toBe(res2.user.tenant_id)
 
     const { data: profiles } = await supabase.from('profiles').select('*')
-    const foundA = profiles.find((p) => p.email === `kasir_a_${suffix}@jb.local`)
-    const foundB = profiles.find((p) => p.email === `kasir_b_${suffix}@jb.local`)
+    const foundA = profiles.find((p) => p.email?.startsWith(`kasir_a_${suffix}.`) && p.email?.endsWith('@pos.internal'))
+    const foundB = profiles.find((p) => p.email?.startsWith(`kasir_b_${suffix}.`) && p.email?.endsWith('@pos.internal'))
 
     expect(foundA).toBeDefined()
     expect(foundB).toBeDefined()

@@ -23,10 +23,17 @@ import {
   Briefcase,
   Shield,
   UserCheck,
-  Sparkles
+  Sparkles,
+  Lock
 } from 'lucide-react'
 import { formatRupiah } from '../utils/helpers'
-import { syncStaffToKaryawanKantor, getRoleBadgeConfig, calculateCarwashWorkerWage, getPayrollPeriod } from '../utils/staffHelpers'
+import {
+  syncStaffToKaryawanKantor,
+  getRoleBadgeConfig,
+  calculateCarwashWorkerWage,
+  getPayrollPeriod,
+  formatStaffLoginHandle
+} from '../utils/staffHelpers'
 import { getTenantFeatures } from '../utils/businessCapabilities'
 import { ROLES } from '../constants/roles'
 import InteractiveCalendar from '../components/InteractiveCalendar'
@@ -35,7 +42,7 @@ import { useSearchParams } from 'react-router-dom'
 const Karyawan = () => {
   const [searchParams] = useSearchParams()
   const tabParam = searchParams.get('tab')
-  const { registerKasir, activeTenant } = useAuth()
+  const { registerKasir, manageStaff, activeTenant, profile } = useAuth()
   const features = getTenantFeatures(activeTenant?.business_type)
   const defaultTab = tabParam || (features.isCafeOnly ? 'office' : 'wages')
   const [activeTab, setActiveTab] = useState(defaultTab)
@@ -548,29 +555,125 @@ const Karyawan = () => {
     }
   }
 
-  const handleDeleteKaryawanKantor = async (id, name) => {
-    const confirmed = await showConfirm(`Apakah Anda yakin ingin menghapus karyawan kantor "${name}" dari daftar?`, 'Hapus Karyawan Kantor')
+  const handleDeleteKaryawanKantor = async (id, name, item = null) => {
+    const cleanName = (name || '').trim().toUpperCase()
+    const matchedStaff = staffList.find(
+      (s) =>
+        (item?.email && s.email && s.email.toLowerCase() === item.email.toLowerCase()) ||
+        (s.nama || '').trim().toUpperCase() === cleanName
+    )
+    const effectiveRole = item?.role || matchedStaff?.role || ''
+    const isCallerSuperAdmin = profile?.role === ROLES.SUPER_ADMIN
+
+    if (effectiveRole === ROLES.OWNER && !isCallerSuperAdmin) {
+      return setError('Akun dengan peran Owner dilindungi dan tidak dapat dihapus atau dinonaktifkan oleh sesama Owner.')
+    }
+
+    const confirmMessage = matchedStaff
+      ? `Menonaktifkan "${name}" akan menonaktifkan akun login staf (${effectiveRole || 'Kasir'}), menghapusnya dari daftar aktif Karyawan Kantor & Kasir POS, serta menjaga histori struk transaksi lama tetap utuh (Opsi A). Lanjutkan?`
+      : `Apakah Anda yakin ingin menghapus karyawan kantor "${name}" dari daftar aktif?`
+
+    const confirmed = await showConfirm(confirmMessage, 'Nonaktifkan / Hapus Karyawan Kantor')
     if (!confirmed) return
     setLoading(true)
     setError('')
     setSuccess('')
     try {
-      let err = null
-      if (id) {
-        const res = await supabase.from('karyawan_kantor').delete().eq('id', id)
-        err = res.error
+      if (matchedStaff?.id) {
+        const res = await manageStaff({
+          staffId: matchedStaff.id,
+          action: 'DEACTIVATE'
+        })
+        if (!res.success) throw new Error(res.error)
+        setSuccess(`Akun staf & karyawan kantor "${name}" berhasil dinonaktifkan secara terpadu (Opsi A)!`)
       } else {
-        const res = await supabase.from('karyawan_kantor').delete().eq('nama', name)
-        err = res.error
+        let err = null
+        if (id) {
+          const res = await supabase.from('karyawan_kantor').delete().eq('id', id)
+          err = res.error
+        } else {
+          const res = await supabase.from('karyawan_kantor').delete().eq('nama', name)
+          err = res.error
+        }
+        if (err) throw err
+        setSuccess(`Karyawan kantor "${name}" berhasil dihapus dari daftar!`)
       }
 
-      if (err) throw err
-
-      setSuccess(`Karyawan kantor "${name}" berhasil dihapus dari daftar!`)
       await loadKaryawanData()
     } catch (err) {
       console.error('Error deleting karyawan kantor:', err)
       setError(err.message || 'Gagal menghapus karyawan kantor.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleChangeStaffRole = async (staf, newRole) => {
+    if (!staf?.id || newRole === staf.role) return
+    const isCallerSuperAdmin = profile?.role === ROLES.SUPER_ADMIN
+    if (staf.role === ROLES.OWNER && !isCallerSuperAdmin) {
+      return setError('Peran akun Owner dilindungi dan tidak dapat diubah oleh sesama Owner.')
+    }
+
+    const confirmed = await showConfirm(
+      `Ubah peran hak akses "${staf.nama}" dari "${staf.role}" menjadi "${newRole}"? Perubahan akan disinkronkan ke Akun Staf, Kasir POS, dan Karyawan Kantor.`,
+      'Ubah Peran Staf'
+    )
+    if (!confirmed) return
+
+    setLoading(true)
+    setError('')
+    setSuccess('')
+    try {
+      const res = await manageStaff({
+        staffId: staf.id,
+        action: 'UPDATE_ROLE',
+        newRole
+      })
+      if (!res.success) throw new Error(res.error)
+      setSuccess(`Peran "${staf.nama}" berhasil diubah menjadi ${newRole}!`)
+      await loadKaryawanData()
+    } catch (err) {
+      setError(err.message || 'Gagal mengubah peran staf.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleToggleStaffStatus = async (staf) => {
+    if (!staf?.id) return
+    const isCallerSuperAdmin = profile?.role === ROLES.SUPER_ADMIN
+    if (staf.role === ROLES.OWNER && !isCallerSuperAdmin) {
+      return setError('Akun Owner dilindungi dan tidak dapat dinonaktifkan oleh sesama Owner.')
+    }
+
+    const isCurrentlyActive = staf.is_active !== false
+    const nextAction = isCurrentlyActive ? 'DEACTIVATE' : 'ACTIVATE'
+    const confirmed = await showConfirm(
+      isCurrentlyActive
+        ? `Nonaktifkan akun staf "${staf.nama}"? Staf ini tidak akan bisa login dan akan dinonaktifkan dari daftar Kasir POS serta Karyawan Kantor (histori struk lama tetap aman).`
+        : `Aktifkan kembali akun staf "${staf.nama}"? Akses login, Kasir POS, dan Karyawan Kantor akan dipulihkan.`,
+      isCurrentlyActive ? 'Nonaktifkan Akun Staf (Opsi A)' : 'Aktifkan Kembali Akun Staf'
+    )
+    if (!confirmed) return
+
+    setLoading(true)
+    setError('')
+    setSuccess('')
+    try {
+      const res = await manageStaff({
+        staffId: staf.id,
+        action: nextAction
+      })
+      if (!res.success) throw new Error(res.error)
+      setSuccess(
+        isCurrentlyActive
+          ? `Akun staf "${staf.nama}" berhasil dinonaktifkan di seluruh modul!`
+          : `Akun staf "${staf.nama}" berhasil diaktifkan kembali!`
+      )
+      await loadKaryawanData()
+    } catch (err) {
+      setError(err.message || 'Gagal mengubah status akun staf.')
     } finally {
       setLoading(false)
     }
@@ -1165,12 +1268,15 @@ const Karyawan = () => {
                     karyawanKantorList.map((k, idx) => {
                       const roleBadge = getRoleBadgeConfig(k.role)
                       const isAutoSync = k.source === 'staff_registration' || k.email
+                      const isOwnerProtected = k.role === ROLES.OWNER && profile?.role !== ROLES.SUPER_ADMIN
                       return (
                         <tr key={k.id || idx} className="hover:bg-[#26272d]/10 transition-colors">
                           <td className="p-3.5">
                             <div className="font-bold text-white text-sm">{k.nama}</div>
                             {k.email && (
-                              <div className="text-[11px] text-[#6b7367] font-mono mt-0.5">{k.email}</div>
+                              <div className="text-[11px] text-[#6b7367] font-mono mt-0.5">
+                                {formatStaffLoginHandle(k.email)}
+                              </div>
                             )}
                           </td>
                           <td className="p-3.5">
@@ -1199,12 +1305,19 @@ const Karyawan = () => {
                             }) : '-'}
                           </td>
                           <td className="p-3.5 text-right">
-                            <button
-                              onClick={() => handleDeleteKaryawanKantor(k.id, k.nama)}
-                              className="px-2.5 py-1 bg-[#18181c] hover:bg-rose-500/10 text-brand-rose border border-[#26272d] hover:border-brand-rose/20 rounded-lg text-[10px] font-bold transition-all active:scale-[0.98]"
-                            >
-                              Hapus
-                            </button>
+                            {isOwnerProtected ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#18181c] border border-[#26272d] text-[#6b7367] text-[10px] font-semibold">
+                                <Lock size={11} />
+                                <span>Owner Terlindungi</span>
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => handleDeleteKaryawanKantor(k.id, k.nama, k)}
+                                className="px-2.5 py-1 bg-[#18181c] hover:bg-rose-500/10 text-brand-rose border border-[#26272d] hover:border-brand-rose/20 rounded-lg text-[10px] font-bold transition-all active:scale-[0.98]"
+                              >
+                                {isAutoSync ? 'Nonaktifkan' : 'Hapus'}
+                              </button>
+                            )}
                           </td>
                         </tr>
                       )
@@ -1350,39 +1463,96 @@ const Karyawan = () => {
                 <Table dense>
                   <thead>
                     <tr className="border-b border-[#26272d] text-[#6b7367] font-semibold text-[10px] uppercase tracking-wider bg-[#18181c]/50">
-                      <th className="p-3.5">Nama Staf</th>
-                      <th className="p-3.5">Peran</th>
-                      <th className="p-3.5 text-center">Terdaftar</th>
+                      <th className="p-3.5">Nama & Username Login</th>
+                      <th className="p-3.5">Peran Hak Akses</th>
+                      <th className="p-3.5 text-center">Status</th>
+                      <th className="p-3.5 text-right">Aksi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#26272d]">
                     {staffList.length === 0 ? (
                       <tr>
-                        <td colSpan="3" className="p-8 text-center text-xs text-slate-600 font-medium italic">
+                        <td colSpan="4" className="p-8 text-center text-xs text-slate-600 font-medium italic">
                           Belum ada staf terdaftar di sistem.
                         </td>
                       </tr>
                     ) : (
                       staffList.map((staf, idx) => {
                         const badge = getRoleBadgeConfig(staf.role)
+                        const isActive = staf.is_active !== false
+                        const isOwnerRow = staf.role === ROLES.OWNER || staf.role === ROLES.SUPER_ADMIN
+                        const canManageRole =
+                          (profile?.role === ROLES.OWNER || profile?.role === ROLES.SUPER_ADMIN) &&
+                          (!isOwnerRow || profile?.role === ROLES.SUPER_ADMIN)
+                        const canToggleStatus =
+                          (profile?.role === ROLES.OWNER || profile?.role === ROLES.SUPER_ADMIN || profile?.role === ROLES.ADMIN) &&
+                          (!isOwnerRow || profile?.role === ROLES.SUPER_ADMIN)
+
                         return (
-                          <tr key={staf.id || idx} className="hover:bg-[#26272d]/10 transition-colors">
+                          <tr
+                            key={staf.id || idx}
+                            className={`hover:bg-[#26272d]/10 transition-colors ${!isActive ? 'opacity-60' : ''}`}
+                          >
                             <td className="p-3.5">
                               <div className="font-bold text-white text-sm">{staf.nama}</div>
-                              <div className="text-[11px] text-[#6b7367] font-mono">{staf.email || '-'}</div>
+                              <div className="text-[11px] text-[#6b7367] font-mono">
+                                {formatStaffLoginHandle(staf.email)}
+                              </div>
                             </td>
                             <td className="p-3.5">
-                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${badge.bgClass}`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${badge.dotClass}`} />
-                                <span>{badge.label}</span>
+                              {canManageRole ? (
+                                <select
+                                  value={staf.role || 'Kasir'}
+                                  onChange={(e) => handleChangeStaffRole(staf, e.target.value)}
+                                  disabled={loading}
+                                  aria-label={`Ubah peran ${staf.nama}`}
+                                  className="bg-[#18181c] border border-[#26272d] hover:border-brand-blue/40 rounded-lg py-1 px-2 text-xs font-semibold text-white focus:outline-none focus:border-brand-blue"
+                                >
+                                  <option value="Kasir">Kasir</option>
+                                  <option value="Admin">Admin</option>
+                                  <option value="Staff Kantor">Staff Kantor</option>
+                                </select>
+                              ) : (
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${badge.bgClass}`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${badge.dotClass}`} />
+                                  <span>{badge.label}</span>
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3.5 text-center">
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                                  isActive
+                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                                    : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                                }`}
+                              >
+                                <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                                <span>{isActive ? 'Aktif' : 'Nonaktif'}</span>
                               </span>
                             </td>
-                            <td className="p-3.5 text-center text-xs text-[#bbcbb2] font-mono">
-                              {staf.created_at ? new Date(staf.created_at).toLocaleDateString('id-ID', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric'
-                              }) : '-'}
+                            <td className="p-3.5 text-right">
+                              {isOwnerRow && profile?.role !== ROLES.SUPER_ADMIN ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#18181c] border border-[#26272d] text-[#6b7367] text-[10px] font-semibold">
+                                  <Lock size={11} />
+                                  <span>Owner Terlindungi</span>
+                                </span>
+                              ) : canToggleStatus ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleStaffStatus(staf)}
+                                  disabled={loading}
+                                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all active:scale-[0.98] ${
+                                    isActive
+                                      ? 'bg-[#18181c] hover:bg-rose-500/10 text-brand-rose border-[#26272d] hover:border-brand-rose/20'
+                                      : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                  }`}
+                                >
+                                  {isActive ? 'Nonaktifkan' : 'Aktifkan'}
+                                </button>
+                              ) : (
+                                <span className="text-[10px] text-[#6b7367] font-mono">-</span>
+                              )}
                             </td>
                           </tr>
                         )

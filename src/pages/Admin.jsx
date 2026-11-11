@@ -10,6 +10,7 @@ import {
 } from '../components/ui/Table'
 import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
+import { api } from '../services/apiAdapter'
 import { useAuth } from '../context/AuthContext'
 import { isMerchandiseCategory } from '../constants/transactionConstants'
 import { 
@@ -64,7 +65,7 @@ const Admin = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const tabParam = searchParams.get('tab')
-  const { registerKasir, activeTenant, profile } = useAuth()
+  const { registerKasir, manageStaff, activeTenant, profile } = useAuth()
   const features = getTenantFeatures(activeTenant?.business_type)
   const defaultTab = tabParam || (features.isCarwashOnly ? 'carwash-packages' : 'menu')
   const [activeTab, setActiveTab] = useState(defaultTab)
@@ -433,10 +434,23 @@ const Admin = () => {
   const toggleCashierActive = async (nama, currentVal) => {
     try {
       const targetTenantId = activeTenant?.id || profile?.tenant_id
+      const cleanNama = (nama || '').trim().toUpperCase()
       let query = supabase.from('kasir').update({ is_active: !currentVal }).eq('nama', nama)
       if (targetTenantId) query = query.eq('tenant_id', targetTenantId)
       const { error } = await query
       if (error) throw error
+
+      // Sinkronkan juga ke profiles & karyawan_kantor jika kasir memiliki akun login staf
+      const matchedStaff = (staffList || []).find(
+        (s) => (s.nama || '').trim().toUpperCase() === cleanNama && s.role === 'Kasir'
+      )
+      if (matchedStaff?.id && typeof manageStaff === 'function') {
+        await manageStaff({
+          staffId: matchedStaff.id,
+          action: currentVal ? 'DEACTIVATE' : 'ACTIVATE'
+        })
+      }
+
       await loadAdminData()
     } catch (err) {
       setError(err.message || 'Gagal mengupdate kasir.')
@@ -1129,13 +1143,8 @@ const Admin = () => {
     const confirmed = await showConfirm(`Apakah Anda yakin ingin menghapus menu "${menuName}"? Tindakan ini akan menghapus data resep yang melekat.`, 'Hapus Menu')
     if (!confirmed) return
     try {
-      const { error } = await supabase
-        .from('daftar_harga_menu')
-        .delete()
-        .eq('daftar_menu', menuName)
-
-      if (error) throw error
-      setSuccess('Menu berhasil dihapus!')
+      await api.master.deleteMenuWithRecipe(menuName)
+      setSuccess('Menu dan komposisi resep berhasil dihapus!')
       await loadAdminData()
     } catch (err) {
       setError(err.message || 'Gagal menghapus menu.')

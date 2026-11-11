@@ -20,7 +20,30 @@ export const api = {
         if (knownRelayAccounts.includes(cleanUser.toLowerCase())) {
           email = `${cleanUser.toLowerCase()}@relaypos.com`
         } else {
-          email = `${cleanUser.toLowerCase()}@jb.local`
+          try {
+            const { data: resolved, error: resolveErr } = await supabase.rpc('fn_resolve_login_email', {
+              p_identifier: cleanUser,
+              p_tenant_slug: null,
+            })
+            if (resolveErr) {
+              if (
+                resolveErr.message?.includes('ACCOUNT_INACTIVE') ||
+                resolveErr.message?.includes('dinonaktifkan')
+              ) {
+                throw resolveErr
+              }
+              email = `${cleanUser.toLowerCase()}@jb.local`
+            } else if (resolved?.email) {
+              email = resolved.email
+            } else {
+              email = `${cleanUser.toLowerCase()}@jb.local`
+            }
+          } catch (err) {
+            if (err.message?.includes('ACCOUNT_INACTIVE') || err.message?.includes('dinonaktifkan')) {
+              throw err
+            }
+            email = `${cleanUser.toLowerCase()}@jb.local`
+          }
         }
       }
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
@@ -30,6 +53,10 @@ export const api = {
         nama: data.user.user_metadata?.nama || data.user.email,
         role: data.user.role || data.user.user_metadata?.role || 'Kasir',
         tenant_id: data.user.tenant_id,
+      }
+      if (profile?.is_active === false) {
+        await supabase.auth.signOut()
+        throw new Error('ACCOUNT_INACTIVE: Akun staf ini telah dinonaktifkan oleh Owner.')
       }
       return { success: true, user: data.user, profile }
     },
@@ -92,15 +119,13 @@ export const api = {
     },
 
     async registerKasir(emailOrUsername, password, nama, role = 'Kasir', tenantId = null) {
-      const email = emailOrUsername.includes('@')
-        ? emailOrUsername.trim()
-        : `${emailOrUsername.trim().toLowerCase()}@jb.local`
+      const cleanInput = String(emailOrUsername || '').trim()
       const allowedRoles = ['Kasir', 'Admin', 'Owner', 'Staff Kantor', 'Karyawan Cuci']
       const safeRole = allowedRoles.includes(role) ? role : 'Kasir'
 
       if (isCloudBackend) {
         const { data: rpcRes, error: rpcErr } = await supabase.rpc('fn_register_tenant_staff', {
-          p_email: email,
+          p_email: cleanInput,
           p_password: password,
           p_nama: nama,
           p_role: safeRole,
@@ -112,12 +137,22 @@ export const api = {
       }
 
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: cleanInput,
         password,
         options: { data: { nama, role: safeRole, ...(tenantId ? { tenant_id: tenantId } : {}) } },
       })
       if (error) throw error
       return { success: true, user: data.user }
+    },
+
+    async manageStaff({ staffId, action, newRole = null }) {
+      const { data, error } = await supabase.rpc('fn_manage_tenant_staff', {
+        p_staff_id: staffId,
+        p_action: action,
+        p_new_role: newRole,
+      })
+      if (error) throw error
+      return data || { success: true }
     },
 
     async registerOwner({ email, password, nama, tenantName, businessType }) {
@@ -222,6 +257,28 @@ export const api = {
       const { data, error } = await supabase.from('karyawan_cuci').select('*').order('nama', { ascending: true })
       if (error) throw error
       return data || []
+    },
+
+    async deleteMenuWithRecipe(menuName) {
+      const cleanMenuName = String(menuName || '').trim()
+      if (!cleanMenuName) {
+        throw new Error('Nama menu wajib diisi.')
+      }
+      // 1. Hapus komposisi resep yang melekat terlebih dahulu agar tidak terjadi orphan rows
+      const { error: resepErr } = await supabase
+        .from('resep')
+        .delete()
+        .eq('nama_menu', cleanMenuName)
+      if (resepErr) throw resepErr
+
+      // 2. Hapus item menu dari daftar_harga_menu
+      const { error: menuErr } = await supabase
+        .from('daftar_harga_menu')
+        .delete()
+        .eq('daftar_menu', cleanMenuName)
+      if (menuErr) throw menuErr
+
+      return { success: true, deleted_menu: cleanMenuName }
     },
   },
 

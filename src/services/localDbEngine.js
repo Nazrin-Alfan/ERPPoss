@@ -1843,24 +1843,34 @@ export const createLocalClient = () => {
         const cleanInput = (email || '').trim().toLowerCase()
         const cleanPassword = (password || '').trim()
         const usernamePart = cleanInput.includes('@') ? cleanInput.split('@')[0] : cleanInput
+        const baseUsername = usernamePart.split('.')[0]
         const normalizedEmail = cleanInput.includes('@') ? cleanInput : `${cleanInput}@jb.local`
+        const currentTenantId = getActiveTenantId()
 
         // Hierarki pencarian profil presisi:
         // 1. Prioritas utama: Kecocokan eksak email
         let profile = profiles.find((p) => (p.email || '').toLowerCase() === cleanInput)
 
-        // 2. Prioritas kedua: Kecocokan username part terhadap email (misal: "superadmin" atau "superadmin@jb.local" -> "superadmin@relaypos.com")
+        // 2. Prioritas kedua: Kecocokan username part terhadap email (termasuk @pos.internal, @jb.local, @relaypos.com)
         if (!profile) {
-          profile = profiles.find((p) => {
+          const candidates = profiles.filter((p) => {
             const pEmail = (p.email || '').toLowerCase()
             const pUserPart = pEmail.includes('@') ? pEmail.split('@')[0] : pEmail
+            const pBaseUser = pUserPart.split('.')[0]
             return (
               pUserPart === usernamePart ||
+              pBaseUser === baseUsername ||
               pEmail === `${usernamePart}@relaypos.com` ||
               pEmail === `${usernamePart}@jb.local` ||
               pEmail === normalizedEmail
             )
           })
+          profile =
+            candidates.find((p) => currentTenantId && p.tenant_id === currentTenantId && p.is_active !== false) ||
+            candidates.find((p) => currentTenantId && p.tenant_id === currentTenantId) ||
+            candidates.find((p) => p.is_active !== false) ||
+            candidates[0] ||
+            null
         }
 
         // 3. Prioritas ketiga: Nama pengguna eksak
@@ -1874,6 +1884,14 @@ export const createLocalClient = () => {
         // C1 Fix: Reject unknown users immediately - NO arbitrary role guessing!
         if (!profile) {
           return { data: { user: null, session: null }, error: new Error('Pengguna tidak ditemukan.') }
+        }
+
+        // Reject deactivated accounts (Soft Delete Opsi A)
+        if (profile.is_active === false) {
+          return {
+            data: { user: null, session: null },
+            error: new Error('ACCOUNT_INACTIVE: Akun staf ini telah dinonaktifkan oleh Owner.'),
+          }
         }
 
         // C1 Fix: Verify password hash securely with universal demo fallback
@@ -1948,45 +1966,132 @@ export const createLocalClient = () => {
           return { data: { user: null }, error: new Error('Password wajib diisi.') }
         }
 
+        const currentActiveTenant = getActiveTenantId() || DEFAULT_TENANT_ID
+        const targetTenantId = options.data?.tenant_id || currentActiveTenant
+        const targetBranchId = options.data?.branch_id || `branch_${targetTenantId}_main`
+        const tenants = localDbStore.getTable('tenants') || []
+        const tenantObj = tenants.find((t) => t.id === targetTenantId)
+        const tenantSlug = (
+          tenantObj?.slug ||
+          String(targetTenantId)
+            .toLowerCase()
+            .replace(/[^a-z0-9-]+/g, '-')
+            .replace(/(^-|-$)/g, '')
+            .slice(0, 16) ||
+          'default'
+        )
+
         const cleanEmail = email.trim().toLowerCase()
-        const normalizedEmail = cleanEmail.includes('@') ? cleanEmail : `${cleanEmail}@jb.local`
         const profiles = localDbStore.getTable('profiles')
+
+        let normalizedEmail = cleanEmail
+        let username = cleanEmail.split('@')[0]
+        if (!cleanEmail.includes('@') || cleanEmail.endsWith('@jb.local')) {
+          username = cleanEmail.split('@')[0].replace(/[^a-z0-9._-]/g, '')
+          const duplicateInTenant = profiles.find((p) => {
+            if (p.tenant_id !== targetTenantId) return false
+            const pEmail = (p.email || '').toLowerCase()
+            const pBaseUser = pEmail.split('@')[0].split('.')[0]
+            return (
+              pEmail === `${username}@jb.local` ||
+              pEmail === `${username}.${tenantSlug}@pos.internal` ||
+              pBaseUser === username
+            )
+          })
+          if (duplicateInTenant) {
+            return {
+              data: { user: null },
+              error: new Error(`DUPLICATE_USER: Username "${username}" sudah digunakan oleh staf lain di toko Anda.`),
+            }
+          }
+          normalizedEmail = `${username}.${tenantSlug}@pos.internal`
+        }
 
         const existing = profiles.find((p) => p.email?.toLowerCase() === normalizedEmail)
         if (existing) {
           return { data: { user: null }, error: new Error('Email/Username sudah terdaftar.') }
         }
 
-        const newUserId = `usr_${Date.now()}`
-        const nama = options.data?.nama || email.split('@')[0]
+        const newUserId = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+        const cleanNama = (options.data?.nama || username).trim().toUpperCase()
         const allowedStaffRoles = ['Kasir', 'Admin', 'Owner', 'Staff Kantor', 'Karyawan Cuci']
         const role = allowedStaffRoles.includes(options.data?.role) ? options.data.role : 'Kasir'
-        const currentActiveTenant = getActiveTenantId() || DEFAULT_TENANT_ID
 
         const salt = DEFAULT_SALT
         const password_hash = await hashPassword(password, salt)
 
         const profileRecord = {
           id: newUserId,
-          tenant_id: options.data?.tenant_id || currentActiveTenant,
-          branch_id: options.data?.branch_id || `branch_${currentActiveTenant}_main`,
-          nama,
+          tenant_id: targetTenantId,
+          branch_id: targetBranchId,
+          nama: cleanNama,
           email: normalizedEmail,
           role,
+          is_active: true,
           password_hash,
           salt,
           created_at: new Date().toISOString(),
         }
 
-        localDbStore.getTable('profiles').push(profileRecord)
+        profiles.push(profileRecord)
+
+        // Atomic sync to kasir table (when role === 'Kasir')
+        if (role === 'Kasir') {
+          const kasirTable = localDbStore.getTable('kasir')
+          const existingKasir = kasirTable.find(
+            (k) => k.tenant_id === targetTenantId && (k.nama || '').trim().toUpperCase() === cleanNama
+          )
+          if (existingKasir) {
+            existingKasir.is_active = true
+          } else {
+            kasirTable.push({
+              nama: cleanNama,
+              tenant_id: targetTenantId,
+              branch_id: targetBranchId,
+              is_active: true,
+              created_at: new Date().toISOString(),
+            })
+          }
+        }
+
+        // Atomic sync to karyawan_kantor table
+        const kkTable = localDbStore.getTable('karyawan_kantor')
+        const existingKk = kkTable.find(
+          (k) => k.tenant_id === targetTenantId && (k.nama || '').trim().toUpperCase() === cleanNama
+        )
+        if (existingKk) {
+          existingKk.role = role
+          existingKk.email = normalizedEmail
+          existingKk.source = 'staff_registration'
+          existingKk.is_active = true
+          existingKk.status = 'Aktif'
+        } else {
+          kkTable.push({
+            id: `kk_${newUserId}`,
+            id_karyawan: `kk_auto_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            nama: cleanNama,
+            role,
+            email: normalizedEmail,
+            source: 'staff_registration',
+            is_active: true,
+            status: 'Aktif',
+            tenant_id: targetTenantId,
+            branch_id: targetBranchId,
+            created_at: new Date().toISOString(),
+          })
+        }
+
         localDbStore.saveToStorage()
 
         const userObj = {
           id: newUserId,
           email: normalizedEmail,
+          username,
+          nama: cleanNama,
           role,
           tenant_id: profileRecord.tenant_id,
-          user_metadata: { nama, role, tenant_id: profileRecord.tenant_id },
+          branch_id: profileRecord.branch_id,
+          user_metadata: { nama: cleanNama, username, role, tenant_id: profileRecord.tenant_id },
         }
 
         return { data: { user: userObj }, error: null }
@@ -2547,6 +2652,219 @@ export const createLocalClient = () => {
           error: null
         }
       }
+
+      if (name === 'fn_manage_tenant_staff') {
+        const { p_staff_id, p_action, p_new_role = null } = params
+        const actor = getActiveActorContext()
+        const callerRole = actor?.role || 'Owner'
+        const callerTenant = actor?.tenant_id || getActiveTenantId() || DEFAULT_TENANT_ID
+
+        if (!['Super Admin', 'Owner', 'Admin'].includes(callerRole)) {
+          return {
+            data: null,
+            error: new Error(`FORBIDDEN: Role "${callerRole}" tidak memiliki izin untuk mengelola akun staf.`),
+          }
+        }
+
+        const profiles = localDbStore.getTable('profiles') || []
+        const target = profiles.find((p) => p.id === p_staff_id)
+        if (!target) {
+          return { data: null, error: new Error('NOT_FOUND: Profil staf tidak ditemukan.') }
+        }
+
+        if (callerRole !== 'Super Admin' && target.tenant_id && target.tenant_id !== callerTenant) {
+          return {
+            data: null,
+            error: new Error('FORBIDDEN_CROSS_TENANT: Tidak dapat memodifikasi staf dari tenant lain.'),
+          }
+        }
+
+        // Co-Owner Protection: Owner / Admin cannot mutate another Owner or Super Admin
+        if (['Owner', 'Super Admin'].includes(target.role) && callerRole !== 'Super Admin') {
+          return {
+            data: null,
+            error: new Error(
+              `FORBIDDEN_MUTATE_CO_OWNER: Akun dengan role "${target.role}" dilindungi dan tidak dapat diubah atau dinonaktifkan oleh sesama Owner/Admin.`
+            ),
+          }
+        }
+
+        const cleanAction = String(p_action || '').trim().toUpperCase()
+        const targetNamaUpper = (target.nama || '').trim().toUpperCase()
+        const targetEmailLower = (target.email || '').trim().toLowerCase()
+        const kasirTable = localDbStore.getTable('kasir') || []
+        const kkTable = localDbStore.getTable('karyawan_kantor') || []
+
+        if (cleanAction === 'UPDATE_ROLE') {
+          if (!['Super Admin', 'Owner'].includes(callerRole)) {
+            return {
+              data: null,
+              error: new Error('FORBIDDEN_ROLE_ESCALATION: Hanya Owner yang dapat mengubah role akun staf.'),
+            }
+          }
+          const allowedRoles = ['Kasir', 'Admin', 'Staff Kantor', 'Karyawan Cuci', 'Owner']
+          const cleanRole = String(p_new_role || '').trim()
+          if (!allowedRoles.includes(cleanRole)) {
+            return { data: null, error: new Error(`INVALID_ROLE: Peran baru "${cleanRole}" tidak valid.`) }
+          }
+
+          target.role = cleanRole
+          target.updated_at = new Date().toISOString()
+
+          kkTable.forEach((kk) => {
+            if (
+              kk.tenant_id === target.tenant_id &&
+              ((kk.email && kk.email.toLowerCase() === targetEmailLower) ||
+                (kk.nama || '').trim().toUpperCase() === targetNamaUpper)
+            ) {
+              kk.role = cleanRole
+            }
+          })
+
+          const existingKasir = kasirTable.find(
+            (k) => k.tenant_id === target.tenant_id && (k.nama || '').trim().toUpperCase() === targetNamaUpper
+          )
+          if (cleanRole === 'Kasir' && target.is_active !== false) {
+            if (existingKasir) {
+              existingKasir.is_active = true
+            } else {
+              kasirTable.push({
+                nama: targetNamaUpper,
+                tenant_id: target.tenant_id,
+                branch_id: target.branch_id,
+                is_active: true,
+                created_at: new Date().toISOString(),
+              })
+            }
+          } else if (existingKasir) {
+            existingKasir.is_active = false
+          }
+
+          localDbStore.saveToStorage()
+          return {
+            data: {
+              success: true,
+              action: 'UPDATE_ROLE',
+              staff_id: target.id,
+              nama: target.nama,
+              new_role: cleanRole,
+              is_active: target.is_active !== false,
+            },
+            error: null,
+          }
+        }
+
+        if (cleanAction === 'DEACTIVATE') {
+          target.is_active = false
+          target.updated_at = new Date().toISOString()
+
+          kasirTable.forEach((k) => {
+            if (k.tenant_id === target.tenant_id && (k.nama || '').trim().toUpperCase() === targetNamaUpper) {
+              k.is_active = false
+            }
+          })
+
+          kkTable.forEach((kk) => {
+            if (
+              kk.tenant_id === target.tenant_id &&
+              ((kk.email && kk.email.toLowerCase() === targetEmailLower) ||
+                (kk.nama || '').trim().toUpperCase() === targetNamaUpper)
+            ) {
+              kk.is_active = false
+              kk.status = 'Nonaktif'
+            }
+          })
+
+          localDbStore.saveToStorage()
+          return {
+            data: {
+              success: true,
+              action: 'DEACTIVATE',
+              staff_id: target.id,
+              nama: target.nama,
+              role: target.role,
+              is_active: false,
+            },
+            error: null,
+          }
+        }
+
+        if (cleanAction === 'ACTIVATE') {
+          target.is_active = true
+          target.updated_at = new Date().toISOString()
+
+          if (target.role === 'Kasir') {
+            const existingKasir = kasirTable.find(
+              (k) => k.tenant_id === target.tenant_id && (k.nama || '').trim().toUpperCase() === targetNamaUpper
+            )
+            if (existingKasir) {
+              existingKasir.is_active = true
+            } else {
+              kasirTable.push({
+                nama: targetNamaUpper,
+                tenant_id: target.tenant_id,
+                branch_id: target.branch_id,
+                is_active: true,
+                created_at: new Date().toISOString(),
+              })
+            }
+          }
+
+          kkTable.forEach((kk) => {
+            if (
+              kk.tenant_id === target.tenant_id &&
+              ((kk.email && kk.email.toLowerCase() === targetEmailLower) ||
+                (kk.nama || '').trim().toUpperCase() === targetNamaUpper)
+            ) {
+              kk.is_active = true
+              kk.status = 'Aktif'
+            }
+          })
+
+          localDbStore.saveToStorage()
+          return {
+            data: {
+              success: true,
+              action: 'ACTIVATE',
+              staff_id: target.id,
+              nama: target.nama,
+              role: target.role,
+              is_active: true,
+            },
+            error: null,
+          }
+        }
+
+        return { data: null, error: new Error(`INVALID_ACTION: Aksi "${cleanAction}" tidak dikenali.`) }
+      }
+
+      if (name === 'fn_resolve_login_email') {
+        const cleanId = String(params.p_identifier || '').trim().toLowerCase()
+        const profiles = localDbStore.getTable('profiles') || []
+        const currentTenantId = getActiveTenantId()
+        const candidates = profiles.filter((p) => {
+          const pEmail = (p.email || '').toLowerCase()
+          const pLocal = pEmail.split('@')[0]
+          const pBase = pLocal.split('.')[0]
+          return pEmail === cleanId || pLocal === cleanId || pBase === cleanId || (p.nama || '').toLowerCase() === cleanId
+        })
+        const match =
+          candidates.find((p) => currentTenantId && p.tenant_id === currentTenantId && p.is_active !== false) ||
+          candidates.find((p) => currentTenantId && p.tenant_id === currentTenantId) ||
+          candidates.find((p) => p.is_active !== false) ||
+          candidates[0]
+        if (match) {
+          if (match.is_active === false) {
+            return {
+              data: null,
+              error: new Error('ACCOUNT_INACTIVE: Akun staf ini telah dinonaktifkan oleh Owner.'),
+            }
+          }
+          return { data: { email: match.email, is_active: true }, error: null }
+        }
+        return { data: { email: cleanId.includes('@') ? cleanId : `${cleanId}@jb.local`, is_active: true }, error: null }
+      }
+
       throw new Error(`RPC ${name} not supported on local client`)
     },
 

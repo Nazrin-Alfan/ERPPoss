@@ -55,6 +55,23 @@ export function calculateCarwashWorkerWage({
 
 export const isValidUUID = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val)
 
+/**
+ * Menampilkan username login staf secara bersih tanpa domain internal (@pos.internal / @jb.local)
+ */
+export const formatStaffLoginHandle = (email = '') => {
+  const clean = String(email || '').trim()
+  if (!clean) return '-'
+  const lower = clean.toLowerCase()
+  if (lower.endsWith('@pos.internal')) {
+    const localPart = clean.split('@')[0]
+    return localPart.split('.')[0] || localPart
+  }
+  if (lower.endsWith('@jb.local')) {
+    return clean.split('@')[0]
+  }
+  return clean
+}
+
 export const syncStaffToKaryawanKantor = ({
   staffProfiles = [],
   existingKaryawanKantor = [],
@@ -62,22 +79,30 @@ export const syncStaffToKaryawanKantor = ({
   defaultBranchId = DEFAULT_BRANCH_ID
 }) => {
   const existingMap = new Map()
+  const deactivatedNames = new Set()
 
   // Indeks karyawan kantor eksisting berdasarkan nama uppercase yang bersih
   existingKaryawanKantor.forEach((item) => {
     const key = (item.nama || '').trim().toUpperCase()
-    if (key) {
-      existingMap.set(key, item)
+    if (!key) return
+    const isInactive = item.is_active === false || String(item.status || '').toLowerCase() === 'nonaktif'
+    if (isInactive) {
+      deactivatedNames.add(key)
+      return
     }
+    existingMap.set(key, item)
   })
 
   const newRecordsToInsert = []
-  const mergedList = [...existingKaryawanKantor]
+  const mergedList = existingKaryawanKantor.filter(
+    (item) => item.is_active !== false && String(item.status || '').toLowerCase() !== 'nonaktif'
+  )
 
-  // Cek setiap profil staf yang terdaftar
+  // Cek setiap profil staf yang terdaftar (hanya yang aktif)
   staffProfiles.forEach((profile) => {
+    if (profile.is_active === false) return
     const pName = (profile.nama || '').trim().toUpperCase()
-    if (!pName) return
+    if (!pName || deactivatedNames.has(pName)) return
 
     if (!existingMap.has(pName)) {
       const generatedId = (typeof crypto !== 'undefined' && crypto.randomUUID)
@@ -90,6 +115,8 @@ export const syncStaffToKaryawanKantor = ({
         role: profile.role || 'Kasir',
         email: profile.email || '',
         source: 'staff_registration',
+        is_active: true,
+        status: 'Aktif',
         tenant_id: profile.tenant_id || defaultTenantId,
         branch_id: profile.branch_id || defaultBranchId,
         created_at: profile.created_at || new Date().toISOString()
@@ -99,9 +126,9 @@ export const syncStaffToKaryawanKantor = ({
       mergedList.push(newRecord)
       newRecordsToInsert.push(newRecord)
     } else {
-      // Jika sudah ada tapi belum memiliki metadata role/email/source, perkaya data tampilan
+      // Sinkronkan role & email tampilan dengan profil terbaru
       const existing = existingMap.get(pName)
-      if (!existing.role && profile.role) {
+      if (profile.role) {
         existing.role = profile.role
       }
       if (!existing.email && profile.email) {
