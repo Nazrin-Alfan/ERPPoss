@@ -1,5 +1,6 @@
 import { InventoryTable } from '../components/ui/tables'
 import React, { useState, useEffect, useMemo } from 'react'
+import CustomSelect from '../components/common/CustomSelect'
 import { ROLES, isManagement, hasPermission } from '../constants/roles'
 import { 
   Boxes, 
@@ -167,6 +168,31 @@ export default function Gudang() {
     const cats = new Set(gudangItems.map(i => i.kategori).filter(Boolean))
     return ['ALL', ...Array.from(cats)]
   }, [gudangItems])
+
+  // Opsi Dropdown Kategori untuk Form Tambah / Edit Barang (Dinamis dari item tersimpan + preset standar)
+  const formKategoriOptions = useMemo(() => {
+    const defaultCatsPerGudang = {
+      CAFE: ['Bahan Baku', 'Biji Kopi', 'Susu & Diary', 'Syrup & Powder', 'Topping & Addon', 'Packaging & Cup', 'Snack & Makanan'],
+      CARWASH: ['Chemical Cuci', 'Shampoo Snow', 'Semir Ban', 'Degreaser & Engine', 'Lap Microfiber', 'Spons & Kuas', 'Perlengkapan Cuci'],
+      MERCHANDISE: ['Parfum Mobil', 'Lap & Perawatan', 'Aksesoris & Detailing', 'Chemical Retail', 'Snack & Minuman Ringan']
+    }
+
+    const setCats = new Set(defaultCatsPerGudang[activeGudang] || ['Bahan Baku', 'Lainnya'])
+    
+    // Sertakan juga kategori yang sudah pernah ada di database/inventory pada gudang aktif
+    gudangItems.forEach(item => {
+      if (item.kategori && item.kategori.trim()) {
+        setCats.add(item.kategori.trim())
+      }
+    })
+
+    // Pastikan kategori yang sedang terpilih di itemForm juga masuk jika bukan preset
+    if (itemForm.kategori && itemForm.kategori.trim()) {
+      setCats.add(itemForm.kategori.trim())
+    }
+
+    return Array.from(setCats).map(cat => ({ value: cat, label: cat }))
+  }, [activeGudang, gudangItems, itemForm.kategori])
 
   // Filtered Items berdasarkan Search, Kategori & Status Stok
   const filteredItems = useMemo(() => {
@@ -602,17 +628,17 @@ export default function Gudang() {
           </div>
 
           {/* Kategori Filter */}
-          <select
+          <CustomSelect
             value={selectedKategori}
-            onChange={(e) => setSelectedKategori(e.target.value)}
-            className="px-3 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-xs text-white focus:outline-none focus:border-[#00ffff] cursor-pointer"
-          >
-            {kategoriList.map(cat => (
-              <option key={cat} value={cat}>
-                {cat === 'ALL' ? 'Semua Kategori' : cat}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setSelectedKategori(val)}
+            options={kategoriList.map(cat => ({
+              value: cat,
+              label: cat === 'ALL' ? 'Semua Kategori' : cat
+            }))}
+            variant="cyan"
+            size="sm"
+            className="min-w-[150px]"
+          />
 
           {/* Status Stok Filter */}
           <div className="flex items-center gap-1 bg-[#18181c] p-1 rounded-xl border border-[#26272d]">
@@ -893,31 +919,34 @@ export default function Gudang() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[#bbcbb2] font-semibold mb-1">Kategori</label>
-                  <input
-                    type="text"
+                  <CustomSelect
                     value={itemForm.kategori}
-                    onChange={(e) => setItemForm({ ...itemForm, kategori: e.target.value })}
-                    placeholder="Kategori..."
-                    required
-                    className="w-full px-3 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-white focus:outline-none focus:border-[#00ffff]"
+                    onChange={(val) => setItemForm({ ...itemForm, kategori: val })}
+                    options={formKategoriOptions}
+                    placeholder="Pilih Kategori..."
+                    variant="cyan"
+                    className="w-full"
                   />
                 </div>
                 <div>
                   <label className="block text-[#bbcbb2] font-semibold mb-1">Satuan</label>
-                  <select
+                  <CustomSelect
                     value={itemForm.satuan}
-                    onChange={(e) => setItemForm({ ...itemForm, satuan: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-white focus:outline-none focus:border-[#00ffff]"
-                  >
-                    <option value="Gram">Gram</option>
-                    <option value="Kg">Kg</option>
-                    <option value="Ml">Ml</option>
-                    <option value="Liter">Liter</option>
-                    <option value="Pcs">Pcs</option>
-                    <option value="Botol">Botol</option>
-                    <option value="Set">Set</option>
-                    <option value="Galon">Galon</option>
-                  </select>
+                    onChange={(val) => setItemForm({ ...itemForm, satuan: val })}
+                    options={[
+                      { value: 'Gram', label: 'Gram' },
+                      { value: 'Kg', label: 'Kg' },
+                      { value: 'Ml', label: 'Ml' },
+                      { value: 'Liter', label: 'Liter' },
+                      { value: 'Pcs', label: 'Pcs' },
+                      { value: 'Botol', label: 'Botol' },
+                      { value: 'Set', label: 'Set' },
+                      { value: 'Galon', label: 'Galon' }
+                    ]}
+                    placeholder="Pilih Satuan..."
+                    variant="cyan"
+                    className="w-full"
+                  />
                 </div>
               </div>
 
