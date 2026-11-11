@@ -69,6 +69,7 @@ export default function Gudang() {
   // Modals
   const [showItemModal, setShowItemModal] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
+  const [isSubmittingItem, setIsSubmittingItem] = useState(false)
   const [showRestockModal, setShowRestockModal] = useState(false)
   const [restockTarget, setRestockTarget] = useState(null)
   const [restockQty, setRestockQty] = useState('')
@@ -295,9 +296,10 @@ export default function Gudang() {
       isiPerKemasan: '',
       satuanPemakaian: ''
     })
+    const defaultSku = item.id_barang || item.id_bahan_baku || `${(item.gudang || activeGudang).substring(0, 2)}-${String(Date.now()).slice(-4)}`
     setItemForm({
-      id_barang: item.id_barang,
-      nama_barang: item.nama_barang,
+      id_barang: defaultSku,
+      nama_barang: item.nama_barang || item.nama_produk || '',
       kategori: item.kategori || '',
       satuan: item.satuan || 'Pcs',
       harga_beli: item.harga_beli || '',
@@ -316,14 +318,20 @@ export default function Gudang() {
       return setError('Nama barang tidak boleh kosong.')
     }
 
+    setIsSubmittingItem(true)
+    setError('')
     try {
+      const trimmedSku = (itemForm.id_barang || '').trim().toUpperCase()
+      const fallbackSku = editingItem?.id_barang || `${activeGudang.substring(0, 2)}-${String(Date.now()).slice(-4)}`
+      const resolvedSku = trimmedSku || fallbackSku
+
       const payload = {
-        id_barang: itemForm.id_barang.trim().toUpperCase(),
-        id_bahan_baku: itemForm.id_barang.trim().toUpperCase(),
+        id_barang: resolvedSku,
+        id_bahan_baku: resolvedSku,
         nama_produk: itemForm.nama_barang.trim(),
         nama_barang: itemForm.nama_barang.trim(),
-        kategori: itemForm.kategori.trim(),
-        satuan: itemForm.satuan.trim(),
+        kategori: (itemForm.kategori || '').trim() || (activeGudang === 'MERCHANDISE' ? 'Parfum Mobil' : activeGudang === 'CARWASH' ? 'Chemical Cuci' : 'Bahan Baku'),
+        satuan: (itemForm.satuan || '').trim() || 'Pcs',
         harga_beli: parseFloat(itemForm.harga_beli) || 0,
         harga_satuan: parseFloat(itemForm.harga_beli) || 0,
         harga_jual: parseFloat(itemForm.harga_jual) || 0,
@@ -331,11 +339,22 @@ export default function Gudang() {
         gudang: activeGudang
       }
 
+      if (activeTenant?.id) {
+        payload.tenant_id = activeTenant.id
+      }
+
       if (editingItem) {
-        // Update
-        const updQuery = editingItem.id
-          ? supabase.from('stok_barang').update(payload).eq('id', editingItem.id)
-          : supabase.from('stok_barang').update(payload).eq('id_bahan_baku', editingItem.id_barang)
+        // Update: prioritize match by UUID primary key (id) if present, then fallback to id_barang/id_bahan_baku or nama_barang
+        let updQuery
+        if (editingItem.id) {
+          updQuery = supabase.from('stok_barang').update(payload).eq('id', editingItem.id)
+        } else if (editingItem.id_barang) {
+          updQuery = supabase.from('stok_barang').update(payload).eq('id_barang', editingItem.id_barang)
+        } else if (editingItem.id_bahan_baku) {
+          updQuery = supabase.from('stok_barang').update(payload).eq('id_bahan_baku', editingItem.id_bahan_baku)
+        } else {
+          updQuery = supabase.from('stok_barang').update(payload).eq('nama_barang', editingItem.nama_barang)
+        }
 
         const { error: updErr } = await updQuery
         if (updErr) throw updErr
@@ -355,7 +374,10 @@ export default function Gudang() {
       await loadInventory()
       setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
+      console.error('Error saving item:', err)
       setError(err.message || 'Gagal menyimpan barang gudang.')
+    } finally {
+      setIsSubmittingItem(false)
     }
   }
 
@@ -918,15 +940,19 @@ export default function Gudang() {
             </div>
 
             <form onSubmit={handleSaveItem} className="space-y-3.5 text-xs">
+              {error && (
+                <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
               <div>
                 <label className="block text-[#bbcbb2] font-semibold mb-1">ID / Kode Barang (SKU)</label>
                 <input
                   type="text"
-                  value={itemForm.id_barang}
+                  value={itemForm.id_barang || ''}
                   onChange={(e) => setItemForm({ ...itemForm, id_barang: e.target.value })}
-                  disabled={!!editingItem}
                   placeholder="Contoh: CF-01, CW-01, MCH-01"
-                  required
                   className="w-full px-3 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-white font-mono uppercase focus:outline-none focus:border-[#00ffff] disabled:opacity-50"
                 />
               </div>
@@ -1104,15 +1130,24 @@ export default function Gudang() {
                 <button
                   type="button"
                   onClick={() => setShowItemModal(false)}
-                  className="px-4 py-2 rounded-xl bg-[#18181c] hover:bg-[#26272d] text-white font-semibold border border-[#26272d]"
+                  disabled={isSubmittingItem}
+                  className="px-4 py-2 rounded-xl bg-[#18181c] hover:bg-[#26272d] text-white font-semibold border border-[#26272d] disabled:opacity-50"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-[#00ffff] hover:bg-[#00ffff]/90 text-[#0f0f0f] font-bold active:scale-[0.98] shadow-md"
+                  disabled={isSubmittingItem}
+                  className="px-4 py-2 rounded-xl bg-[#00ffff] hover:bg-[#00ffff]/90 text-[#0f0f0f] font-bold active:scale-[0.98] shadow-md disabled:opacity-50 flex items-center gap-2 cursor-pointer"
                 >
-                  Simpan Barang
+                  {isSubmittingItem ? (
+                    <>
+                      <RefreshCw size={14} className="animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <span>Simpan Barang</span>
+                  )}
                 </button>
               </div>
             </form>
