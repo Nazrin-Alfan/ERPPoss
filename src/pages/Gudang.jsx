@@ -23,7 +23,8 @@ import {
   DollarSign,
   TrendingUp,
   FileSpreadsheet,
-  Barcode
+  Barcode,
+  Calculator
 } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
@@ -87,6 +88,16 @@ export default function Gudang() {
     harga_jual: '',
     min_stok: 5,
     gudang: 'CAFE'
+  })
+
+  // State Kalkulator HPP Cerdas
+  const [showHppCalculator, setShowHppCalculator] = useState(false)
+  const [hppCalcInput, setHppCalcInput] = useState({
+    totalBeli: '',
+    jumlahQty: '',
+    satuanBeli: 'Kotak / Pack',
+    isiPerKemasan: '',
+    satuanPemakaian: ''
   })
 
   // Load Inventory Data
@@ -172,8 +183,8 @@ export default function Gudang() {
   // Opsi Dropdown Kategori untuk Form Tambah / Edit Barang (Dinamis dari item tersimpan + preset standar)
   const formKategoriOptions = useMemo(() => {
     const defaultCatsPerGudang = {
-      CAFE: ['Bahan Baku', 'Biji Kopi', 'Susu & Diary', 'Syrup & Powder', 'Topping & Addon', 'Packaging & Cup', 'Snack & Makanan'],
-      CARWASH: ['Chemical Cuci', 'Shampoo Snow', 'Semir Ban', 'Degreaser & Engine', 'Lap Microfiber', 'Spons & Kuas', 'Perlengkapan Cuci'],
+      CAFE: ['Bahan Baku', 'Packaging & Cup', 'Snack & Makanan'],
+      CARWASH: ['Chemical Cuci', 'Perlengkapan Cuci'],
       MERCHANDISE: ['Parfum Mobil', 'Lap & Perawatan', 'Aksesoris & Detailing', 'Chemical Retail', 'Snack & Minuman Ringan']
     }
 
@@ -250,12 +261,20 @@ export default function Gudang() {
   const handleOpenAddModal = () => {
     if (!canOpnameOrEdit) return setError('Akses ditolak: Hanya manajemen yang berhak menambah item master.')
     setEditingItem(null)
+    setShowHppCalculator(false)
+    setHppCalcInput({
+      totalBeli: '',
+      jumlahQty: '',
+      satuanBeli: 'Kotak / Pack',
+      isiPerKemasan: '',
+      satuanPemakaian: ''
+    })
     const nextId = `${activeGudang.substring(0, 2)}-${String(gudangItems.length + 1).padStart(2, '0')}`
     setItemForm({
       id_barang: nextId,
       nama_barang: '',
-      kategori: activeGudang === 'MERCHANDISE' ? 'Parfum Mobil' : activeGudang === 'CARWASH' ? 'Chemical Cuci' : 'Biji Kopi',
-      satuan: activeGudang === 'CAFE' ? 'Gram' : activeGudang === 'CARWASH' ? 'Liter' : 'Pcs',
+      kategori: activeGudang === 'MERCHANDISE' ? 'Parfum Mobil' : activeGudang === 'CARWASH' ? 'Chemical Cuci' : 'Bahan Baku',
+      satuan: activeGudang === 'CAFE' ? 'Liter' : activeGudang === 'CARWASH' ? 'Liter' : 'Pcs',
       harga_beli: '',
       harga_jual: activeGudang === 'MERCHANDISE' ? '' : 0,
       min_stok: 5,
@@ -268,6 +287,14 @@ export default function Gudang() {
   const handleOpenEditModal = (item) => {
     if (!canOpnameOrEdit) return setError('Akses ditolak: Hanya manajemen yang berhak mengedit data barang.')
     setEditingItem(item)
+    setShowHppCalculator(false)
+    setHppCalcInput({
+      totalBeli: '',
+      jumlahQty: '',
+      satuanBeli: 'Kotak / Pack',
+      isiPerKemasan: '',
+      satuanPemakaian: ''
+    })
     setItemForm({
       id_barang: item.id_barang,
       nama_barang: item.nama_barang,
@@ -950,9 +977,89 @@ export default function Gudang() {
                 </div>
               </div>
 
+              {/* KALKULATOR HPP PEMBELIAN OTOMATIS */}
+              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Calculator className="w-4 h-4 text-[#00ffff]" />
+                    <span className="font-bold text-xs text-white">Bantu Hitung HPP Otomatis</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowHppCalculator(!showHppCalculator)}
+                    className="text-[11px] text-[#00ffff] hover:underline font-semibold"
+                  >
+                    {showHppCalculator ? 'Tutup Kalkulator' : '+ Buka Kalkulator'}
+                  </button>
+                </div>
+
+                {showHppCalculator && (
+                  <div className="space-y-3 pt-2 border-t border-[#26272d] animate-in fade-in duration-150">
+                    <p className="text-[11px] text-[#bbcbb2] leading-relaxed">
+                      Masukkan total biaya beli faktur dan jumlah kuantitas yang dibeli. Sistem akan otomatis membagi biaya menjadi harga satuan (HPP).
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[#bbcbb2] font-semibold mb-1 text-[11px]">
+                          Total Harga Beli (Rp)
+                        </label>
+                        <input
+                          type="number"
+                          value={hppCalcInput.totalBeli}
+                          onChange={(e) => {
+                            const val = e.target.value
+                            setHppCalcInput(prev => ({ ...prev, totalBeli: val }))
+                            const total = parseFloat(val) || 0
+                            const qty = parseFloat(hppCalcInput.jumlahQty) || 0
+                            if (total > 0 && qty > 0) {
+                              const calculatedHpp = Math.round(total / qty)
+                              setItemForm(prev => ({ ...prev, harga_beli: calculatedHpp }))
+                            }
+                          }}
+                          placeholder="Misal: 240000"
+                          className="w-full px-3 py-1.5 bg-[#18181c] border border-[#26272d] rounded-xl text-white font-mono focus:outline-none focus:border-[#00ffff]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[#bbcbb2] font-semibold mb-1 text-[11px]">
+                          Jumlah / Qty Beli ({itemForm.satuan || 'Pcs'})
+                        </label>
+                        <input
+                          type="number"
+                          value={hppCalcInput.jumlahQty}
+                          onChange={(e) => {
+                            const val = e.target.value
+                            setHppCalcInput(prev => ({ ...prev, jumlahQty: val }))
+                            const qty = parseFloat(val) || 0
+                            const total = parseFloat(hppCalcInput.totalBeli) || 0
+                            if (total > 0 && qty > 0) {
+                              const calculatedHpp = Math.round(total / qty)
+                              setItemForm(prev => ({ ...prev, harga_beli: calculatedHpp }))
+                            }
+                          }}
+                          placeholder="Misal: 12"
+                          className="w-full px-3 py-1.5 bg-[#18181c] border border-[#26272d] rounded-xl text-white font-mono focus:outline-none focus:border-[#00ffff]"
+                        />
+                      </div>
+                    </div>
+
+                    {parseFloat(hppCalcInput.totalBeli) > 0 && parseFloat(hppCalcInput.jumlahQty) > 0 && (
+                      <div className="p-2.5 rounded-lg bg-[#00ffff]/10 border border-[#00ffff]/20 flex items-center justify-between">
+                        <span className="text-[11px] text-[#bbcbb2]">Hasil HPP per {itemForm.satuan || 'Satuan'}:</span>
+                        <span className="text-sm font-bold text-[#00ffff] font-mono tabular-nums">
+                          {formatRupiah(Math.round(parseFloat(hppCalcInput.totalBeli) / parseFloat(hppCalcInput.jumlahQty)))}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#bbcbb2] font-semibold mb-1">Harga Beli / HPP (Rp)</label>
+                  <label className="block text-[#bbcbb2] font-semibold mb-1">Harga Beli / HPP per {itemForm.satuan || 'Satuan'} (Rp)</label>
                   <input
                     type="number"
                     value={itemForm.harga_beli}
@@ -961,6 +1068,11 @@ export default function Gudang() {
                     required
                     className="w-full px-3 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-white font-mono focus:outline-none focus:border-[#00ffff]"
                   />
+                  {parseFloat(itemForm.harga_beli) > 0 && (
+                    <span className="block mt-1 text-[10px] text-[#bbcbb2] font-mono">
+                      {formatRupiah(parseFloat(itemForm.harga_beli) || 0)} / {itemForm.satuan || 'satuan'}
+                    </span>
+                  )}
                 </div>
                 <div>
                   <label className="block text-[#bbcbb2] font-semibold mb-1">Batas Min. Stok</label>
