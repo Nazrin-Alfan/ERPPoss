@@ -168,15 +168,15 @@ export default function Founder() {
 
   // Aksi Kill-Switch: Bekukan atau Aktifkan Tenant
   const handleToggleSubscription = async (tenant) => {
-    const isCurrentlyActive = tenant.is_active !== false && tenant.subscription_status !== 'SUSPENDED'
+    const isCurrentlyActive = String(tenant.status || '').toUpperCase() !== 'SUSPENDED' && tenant.is_active !== false && tenant.subscription_status !== 'SUSPENDED'
     const updated = toggleTenantSubscriptionStatus(tenant, !isCurrentlyActive)
 
     try {
+      const nextStatus = !isCurrentlyActive ? 'active' : 'suspended'
       const { error: tErr } = await supabase
         .from('tenants')
         .update({
-          is_active: updated.is_active,
-          subscription_status: updated.subscription_status,
+          status: nextStatus,
           updated_at: updated.updated_at
         })
         .eq('id', tenant.id)
@@ -191,7 +191,7 @@ export default function Founder() {
         .eq('tenant_id', tenant.id)
       if (lErr) console.warn('Warning updating tenant_licenses status:', lErr)
 
-      setTenants(prev => prev.map(t => t.id === tenant.id ? updated : t))
+      setTenants(prev => prev.map(t => t.id === tenant.id ? { ...updated, status: nextStatus } : t))
       showNotification(
         !isCurrentlyActive 
           ? `✅ Tenant "${tenant.nama}" berhasil diaktifkan kembali.` 
@@ -212,8 +212,7 @@ export default function Founder() {
       const { error: tErr } = await supabase
         .from('tenants')
         .update({
-          is_active: updated.is_active,
-          subscription_status: updated.subscription_status,
+          status: 'active',
           updated_at: updated.updated_at
         })
         .eq('id', renewingTenant.id)
@@ -231,7 +230,7 @@ export default function Founder() {
         .eq('tenant_id', renewingTenant.id)
       if (lErr) throw lErr
 
-      setTenants(prev => prev.map(t => t.id === renewingTenant.id ? updated : t))
+      setTenants(prev => prev.map(t => t.id === renewingTenant.id ? { ...updated, status: 'active' } : t))
       showNotification(`🎉 Lisensi "${renewingTenant.nama}" berhasil diperpanjang +${renewalMonths} bulan!`)
       setRenewingTenant(null)
     } catch (err) {
@@ -410,8 +409,7 @@ Jika butuh panduan awal atau ada pertanyaan teknis, silakan hubungi kami via cha
       const { error: tErr } = await supabase
         .from('tenants')
         .update({
-          subscription_status: 'ARCHIVED',
-          is_active: false,
+          status: 'archived',
           updated_at: updated.updated_at
         })
         .eq('id', tenantToArchive.id)
@@ -442,8 +440,7 @@ Jika butuh panduan awal atau ada pertanyaan teknis, silakan hubungi kami via cha
       const { error: tErr } = await supabase
         .from('tenants')
         .update({
-          subscription_status: 'ACTIVE',
-          is_active: true,
+          status: 'active',
           updated_at: updated.updated_at
         })
         .eq('id', tenant.id)
@@ -680,8 +677,8 @@ Jika butuh panduan awal atau ada pertanyaan teknis, silakan hubungi kami via cha
             </thead>
             <tbody className="divide-y divide-slate-800/60">
               {filteredTenants.map((t) => {
-                const isArchived = t.status === 'ARCHIVED' || t.subscription_status === 'ARCHIVED'
-                const isActive = !isArchived && t.is_active !== false && t.subscription_status !== 'SUSPENDED'
+                const isArchived = String(t.status || '').toUpperCase() === 'ARCHIVED' || t.subscription_status === 'ARCHIVED'
+                const isActive = !isArchived && String(t.status || '').toUpperCase() !== 'SUSPENDED' && t.is_active !== false && t.subscription_status !== 'SUSPENDED'
                 const expiresAt = t.license_expires_at ? new Date(t.license_expires_at) : null
                 const isExpiringSoon = !isArchived && expiresAt && (expiresAt - new Date()) < (30 * 24 * 60 * 60 * 1000)
                 const isExpanded = expandedTenantId === t.id
