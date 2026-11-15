@@ -241,6 +241,12 @@ export default function ThermalReceiptModal({
               <span>-{formatRupiahReceipt(receiptData.diskonCafe)}</span>
             </div>
           )}
+          {receiptData.pajak > 0 && (
+            <div className="flex justify-between text-slate-700">
+              <span>Pajak (PB1/PPN):</span>
+              <span>+{formatRupiahReceipt(receiptData.pajak)}</span>
+            </div>
+          )}
 
           <div className="flex justify-between items-center text-xs font-black pt-1 border-t border-slate-300">
             <span>{isDropOff ? 'TOTAL ESTIMASI:' : 'TOTAL TAGIHAN:'}</span>
@@ -253,7 +259,7 @@ export default function ThermalReceiptModal({
                 <span>Metode Bayar:</span>
                 <span className="font-bold">{receiptData.metodeBayar}</span>
               </div>
-              {receiptData.metodeBayar === 'CASH' && (
+              {(receiptData.metodeBayar === 'CASH' || receiptData.metodeBayar === 'SPLIT') && (
                 <>
                   <div className="flex justify-between text-slate-700">
                     <span>Uang Diterima:</span>

@@ -1113,12 +1113,15 @@ const Admin = () => {
         const insertRecipes = menuRecipe.map(r => {
           const matchedBahan = stokBahan.find(b => b.nama_bahan === r.nama_bahan);
           const resolvedBahanId = matchedBahan ? matchedBahan.id_bahan_baku : r.nama_bahan;
+          const qtyVal = parseFloat(r.jumlah_dibutuhkan);
           return {
             id_menu: resolvedMenuId,
             nama_menu: menuForm.nama_menu,
             id_bahan_baku: resolvedBahanId,
             nama_bahan: r.nama_bahan,
-            jumlah: parseFloat(r.jumlah_dibutuhkan),
+            jumlah: qtyVal,
+            jumlah_pemakaian: qtyVal,
+            jumlah_dibutuhkan: qtyVal,
             satuan: r.satuan
           };
         })

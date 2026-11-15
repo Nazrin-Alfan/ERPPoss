@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { RelationTable } from '../components/ui/tables'
 import {
   TableContainer,
@@ -262,19 +262,30 @@ const CRM = () => {
     }
   }
 
+  const redeemAttemptKeyRef = useRef({ scope: null, key: null })
+
   // Claim Customer Loyalty Reward
   const handleClaimReward = async () => {
     if (!activeCustomer) return
     const rewardTitle = activeCustomer.loyalty?.rewardTitle || programSettings.reward_title || 'Gratis Hadiah Loyalty'
     if (!confirm(`Konfirmasi klaim reward "${rewardTitle}" untuk kendaraan ${activeCustomer.plat}?`)) return
     setClaimingReward(true)
+    const attemptScope = `${tenantId}:${activeCustomer.plat}`
+    if (redeemAttemptKeyRef.current.scope !== attemptScope || !redeemAttemptKeyRef.current.key) {
+      const genKey = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `req_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
+      redeemAttemptKeyRef.current = { scope: attemptScope, key: genKey }
+    }
     try {
       await redeemCustomerReward(supabase, {
         tenant_id: tenantId,
         plat: activeCustomer.plat,
         reward_title: rewardTitle,
-        notes: `Reward Loyalty (${rewardTitle}) Diklaim untuk ${activeCustomer.model}`
+        notes: `Reward Loyalty (${rewardTitle}) Diklaim untuk ${activeCustomer.model}`,
+        request_key: redeemAttemptKeyRef.current.key
       })
+      redeemAttemptKeyRef.current = { scope: null, key: null }
       setSuccessToast(`Reward "${rewardTitle}" berhasil diklaim untuk ${activeCustomer.plat}!`)
       await loadData()
       setSelectedCustomerPlat(null)

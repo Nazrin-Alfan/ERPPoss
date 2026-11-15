@@ -98,20 +98,41 @@ export const AuthProvider = ({ children }) => {
 
     try {
       setIsLicenseLoading(true)
-      const fetchPromise = supabase
-        .from('tenant_licenses')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .order('created_at', { ascending: false })
-        .limit(1)
+      let lic = null
 
-      // Timeout 3 detik agar tidak memblokir UI jika koneksi lambat
-      const { data, error } = await Promise.race([
-        fetchPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('License fetch timeout')), 3000))
-      ])
+      if (api.isCloud && typeof supabase.rpc === 'function') {
+        const rpcPromise = supabase.rpc('fn_get_my_tenant_license_status')
+        const { data: rpcLic, error: rpcErr } = await Promise.race([
+          rpcPromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('License fetch timeout')), 3000))
+        ])
+        if (!rpcErr && rpcLic) {
+          lic = rpcLic
+        } else if (rpcErr && (userProfile?.role === 'Owner' || userProfile?.role === 'Super Admin')) {
+          const { data } = await supabase
+            .from('tenant_licenses')
+            .select('id, tenant_id, plan, tier, status, valid_until, expires_at, max_branches, max_users, features, created_at, updated_at')
+            .eq('tenant_id', tenantId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+          lic = Array.isArray(data) && data.length > 0 ? data[0] : null
+        }
+      } else {
+        const fetchPromise = supabase
+          .from('tenant_licenses')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .order('created_at', { ascending: false })
+          .limit(1)
 
-      const lic = Array.isArray(data) && data.length > 0 ? data[0] : null
+        // Timeout 3 detik agar tidak memblokir UI jika koneksi lambat
+        const { data } = await Promise.race([
+          fetchPromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('License fetch timeout')), 3000))
+        ])
+        lic = Array.isArray(data) && data.length > 0 ? data[0] : null
+      }
+
       setTenantLicense(lic)
       const evaluated = evaluateLicenseStatus(lic)
       setLicenseStatus(evaluated)

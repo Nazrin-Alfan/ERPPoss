@@ -170,14 +170,29 @@ export const formatExpensePayload = ({
     created_at: timestamp
   }
 
+  const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+
   const details = isBahanBaku
     ? barangMasukList.map(item => {
-        const matchingBahan = stokBahan.find(b => b.id_bahan_baku === item.id_bahan_baku || b.nama_bahan === item.id_bahan_baku || b.nama_produk === item.id_bahan_baku)
+        const matchingBahan = stokBahan.find(
+          b =>
+            b.id === item.id_bahan_baku ||
+            b.id_bahan_baku === item.id_bahan_baku ||
+            b.id_barang === item.id_bahan_baku ||
+            b.nama_bahan === item.id_bahan_baku ||
+            b.nama_produk === item.id_bahan_baku
+        )
+        const resolvedUuid = matchingBahan && isUuid(matchingBahan.id)
+          ? matchingBahan.id
+          : (isUuid(item.id_bahan_baku) ? item.id_bahan_baku : null)
+        const resolvedSku = matchingBahan?.id_barang || matchingBahan?.id_bahan_baku || String(item.id_bahan_baku || '')
+
         return {
           id_masuk: generateUUID(),
           id_pengeluaran: null,
           id_cashflow: newCfId,
-          id_bahan_baku: item.id_bahan_baku,
+          id_bahan_baku: resolvedUuid,
+          id_barang: resolvedSku || null,
           tanggal: txDate,
           nama_produk: matchingBahan ? (matchingBahan.nama_produk || matchingBahan.nama_bahan) : item.id_bahan_baku,
           jumlah_masuk: parseFloat(item.jumlah) || 0,

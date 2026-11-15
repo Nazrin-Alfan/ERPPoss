@@ -148,10 +148,10 @@ export const buildOrderReceiptData = (order, customConfig = null) => {
     })
   }
 
-  const rawId = (order?.id_struk || order?.id || order?.receiptNumber || '00000000').toString()
-  let cleanId = rawId.toUpperCase().replace(/^ORD-?/, '')
-  const shortId = cleanId.length >= 8 ? cleanId.substring(0, 8) : cleanId
-  const orderNumber = `ORD-${shortId}`
+  const rawId = (order?.id_struk || order?.id || order?.receiptNumber || '00000000').toString().trim()
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawId)
+  const cleanId = rawId.toUpperCase().replace(/^ORD-?/, '')
+  const orderNumber = isUuid ? `ORD-${cleanId.substring(0, 8)}` : rawId.toUpperCase()
 
   const total = parseFloat(order?.total_tagihan || order?.total_harga || order?.total || 0)
 
@@ -195,6 +195,7 @@ export const buildOrderReceiptData = (order, customConfig = null) => {
     subtotal: items.reduce((acc, it) => acc + (Number(it.subtotal) || 0), 0) || total,
     diskonCarwash: parseFloat(order?.diskon_carwash || 0),
     diskonCafe: parseFloat(order?.diskon_cafe || 0),
+    pajak: parseFloat(order?.pajak || 0),
     totalTagihan: total,
     total: total,
     isPaid: false,

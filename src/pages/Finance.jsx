@@ -1374,7 +1374,11 @@ const Finance = () => {
 
       if (payload.details && payload.details.length > 0) {
         const { error: bmErr } = await supabase.from('barang_masuk').insert(payload.details)
-        if (bmErr) throw bmErr
+        if (bmErr) {
+          // Compensating rollback to prevent orphaned cashflow without stock restock
+          await supabase.from('cashflow').delete().eq('id_cashflow', newCfId)
+          throw bmErr
+        }
       }
 
       // Save custom options if applicable

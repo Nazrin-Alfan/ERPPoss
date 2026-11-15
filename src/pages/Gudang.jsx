@@ -318,6 +318,14 @@ export default function Gudang() {
       return setError('Nama barang tidak boleh kosong.')
     }
 
+    const parsedHargaBeli = parseFloat(itemForm.harga_beli) || 0
+    const parsedHargaJual = parseFloat(itemForm.harga_jual) || 0
+    const parsedMinStok = parseFloat(itemForm.min_stok) || 0
+
+    if (parsedHargaBeli < 0 || parsedHargaJual < 0 || parsedMinStok < 0) {
+      return setError('Harga beli, harga jual, dan batas minimal stok tidak boleh bernilai negatif.')
+    }
+
     setIsSubmittingItem(true)
     setError('')
     try {
@@ -397,7 +405,12 @@ export default function Gudang() {
       await loadInventory()
       setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
-      setError(err.message || 'Gagal menghapus barang.')
+      const msg = err?.message || ''
+      if (msg.includes('FOREIGN_KEY_VIOLATION') || err?.code === '23503') {
+        setError('Barang tidak dapat dihapus karena masih digunakan dalam resep menu aktif.')
+      } else {
+        setError(msg || 'Gagal menghapus barang.')
+      }
     }
   }
 
@@ -911,6 +924,14 @@ export default function Gudang() {
                       >
                         Edit
                       </button>
+                      <button
+                        onClick={() => handleDeleteItem(item)}
+                        className="p-1.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-colors cursor-pointer active:scale-[0.98]"
+                        title="Hapus Barang"
+                        aria-label={`Hapus ${item.nama_barang}`}
+                      >
+                        <Trash2 size={13} />
+                      </button>
                     </>
                   )}
                 </div>
@@ -1088,6 +1109,8 @@ export default function Gudang() {
                   <label className="block text-[#bbcbb2] font-semibold mb-1">Harga Beli / HPP per {itemForm.satuan || 'Satuan'} (Rp)</label>
                   <input
                     type="number"
+                    min="0"
+                    step="any"
                     value={itemForm.harga_beli}
                     onChange={(e) => setItemForm({ ...itemForm, harga_beli: e.target.value })}
                     placeholder="0"
@@ -1104,6 +1127,8 @@ export default function Gudang() {
                   <label className="block text-[#bbcbb2] font-semibold mb-1">Batas Min. Stok</label>
                   <input
                     type="number"
+                    min="0"
+                    step="any"
                     value={itemForm.min_stok}
                     onChange={(e) => setItemForm({ ...itemForm, min_stok: e.target.value })}
                     placeholder="5"
@@ -1117,6 +1142,8 @@ export default function Gudang() {
                   <label className="block text-[#bbcbb2] font-semibold mb-1">Harga Jual ke Pelanggan (Rp)</label>
                   <input
                     type="number"
+                    min="0"
+                    step="any"
                     value={itemForm.harga_jual}
                     onChange={(e) => setItemForm({ ...itemForm, harga_jual: e.target.value })}
                     placeholder="Harga jual..."

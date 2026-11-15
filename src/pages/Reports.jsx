@@ -263,7 +263,22 @@ const Reports = () => {
     filteredCashflowLogs.forEach(c => {
       const inc = parseFloat(c.pemasukan || 0)
       const jenisLower = String(c.jenis || '').toLowerCase()
-      if (inc > 0 && !jenisLower.includes('pendapatan pos') && !jenisLower.includes('pendapatan carwash') && !jenisLower.includes('pendapatan cafe') && !jenisLower.includes('struk')) {
+      const katLower = String(c.kategori || '').toLowerCase()
+      const ketLower = String(c.keterangan_transaksi || '').toLowerCase()
+      const sumberUpper = String(c.id_sumber || '').toUpperCase()
+      const isPosAutoCashflow =
+        sumberUpper.startsWith('CF-POS-') ||
+        sumberUpper.startsWith('CF-SETTLE-') ||
+        sumberUpper.startsWith('CF-VOID-') ||
+        jenisLower.includes('pendapatan pos') ||
+        jenisLower.includes('pendapatan carwash') ||
+        jenisLower.includes('pendapatan cafe') ||
+        jenisLower.includes('struk') ||
+        katLower.includes('pendapatan kasir') ||
+        ketLower.includes('penjualan kasir pos') ||
+        ketLower.includes('pelunasan pos')
+
+      if (inc > 0 && !isPosAutoCashflow) {
         otherIncome += inc
       }
     })

@@ -1147,29 +1147,38 @@ const CafePOS = () => {
     setError('')
     setSuccess(false)
     try {
-      // 1. Update status_bayar di tabel struk menjadi 'Batal'
-      const { error: strukErr } = await supabase
-        .from('struk')
-        .update({ status_bayar: 'Batal' })
-        .eq('id_struk', idStruk)
+      if (api.isCloud && typeof supabase.rpc === 'function') {
+        const { error: voidErr } = await supabase.rpc('fn_void_or_cancel_receipt', {
+          p_tenant_id: effectiveTenantId,
+          p_id_struk: idStruk,
+          p_reason: 'Dibatalkan oleh Kasir/Owner'
+        })
+        if (voidErr) throw voidErr
+      } else {
+        // 1. Update status_bayar di tabel struk menjadi 'Batal'
+        const { error: strukErr } = await supabase
+          .from('struk')
+          .update({ status_bayar: 'Batal' })
+          .eq('id_struk', idStruk)
 
-      if (strukErr) throw strukErr
+        if (strukErr) throw strukErr
 
-      // 2. Update status di tabel cafe menjadi 'Batal' (memicu trigger pengembalian stok)
-      const { error: cafeErr } = await supabase
-        .from('cafe')
-        .update({ status: 'Batal' })
-        .eq('id_struk', idStruk)
+        // 2. Update status di tabel cafe menjadi 'Batal' (memicu trigger pengembalian stok)
+        const { error: cafeErr } = await supabase
+          .from('cafe')
+          .update({ status: 'Batal' })
+          .eq('id_struk', idStruk)
 
-      if (cafeErr) throw cafeErr
+        if (cafeErr) throw cafeErr
 
-      // 3. Update status di tabel carwash menjadi 'Batal'
-      const { error: cwErr } = await supabase
-        .from('carwash')
-        .update({ status: 'Batal' })
-        .eq('id_struk', idStruk)
+        // 3. Update status di tabel carwash menjadi 'Batal'
+        const { error: cwErr } = await supabase
+          .from('carwash')
+          .update({ status: 'Batal', gaji_anggota: 0, gaji_pencuci: 0 })
+          .eq('id_struk', idStruk)
 
-      if (cwErr) throw cwErr
+        if (cwErr) throw cwErr
+      }
 
       setSuccess(true)
       await fetchTodayTransactions()
@@ -1453,6 +1462,7 @@ const CafePOS = () => {
         kasir: (selectedCashier || settlingBill.kasir || 'KASIR').toUpperCase(),
         status_bayar: 'Selesai',
         metode_bayar: settlePaymentMethod,
+        pajak: parseFloat(settlingBill.pajak || 0),
         total_tagihan: finalTotal,
         nominal_cash: nCash,
         nominal_qris: nQris,
@@ -1646,8 +1656,11 @@ const CafePOS = () => {
 
   const grandTotal = Math.max(0, cafeTotal - diskonCafeNominal) + Math.max(0, carwashTotal - totalDiskonCarwash)
   
-  const kembalian = uangDiterima ? parseFloat(uangDiterima) - grandTotal : 0
-  const isUangKurang = uangDiterima && kembalian < 0
+  const targetCashRequired = String(selectedPayment || '').toUpperCase().trim() === 'SPLIT'
+    ? (parseFloat(splitCashAmount) || 0)
+    : grandTotal
+  const kembalian = uangDiterima ? parseFloat(uangDiterima) - targetCashRequired : 0
+  const isUangKurang = Boolean(uangDiterima) && targetCashRequired > 0 && kembalian < 0
 
   // Checkout Handler
   const handleCheckout = async () => {
@@ -1666,9 +1679,14 @@ const CafePOS = () => {
     if (cart.length > 0) {
       const missingRecipes = []
       for (const item of cart) {
+        const isMerch = Boolean(
+          item.is_merchandise ||
+          item.gudang === 'MERCHANDISE' ||
+          isMerchandiseCategory(item.kategori, item.sub_kategori) ||
+          merchandiseList.some(m => (m.nama_produk || m.nama_barang || '').toLowerCase() === item.nama_menu.toLowerCase())
+        )
+        if (isMerch) continue
         const hasRecipe = resepList.some(r => r.nama_menu.toLowerCase() === item.nama_menu.toLowerCase())
-        // Kita abaikan minuman botol/kemasan jika tidak ada di resep, asalkan mereka terdaftar di tabel stok langsung.
-        // Tapi asumsikan kebijakan: semua menu Cafe yang dijual HARUS memiliki resep di master data.
         if (!hasRecipe) {
           missingRecipes.push(item.nama_menu)
         }
@@ -1756,7 +1774,7 @@ const CafePOS = () => {
       let carwashPayload = null
       if (effectiveHasCarwash) {
         const hasAnggota2 = carwashForm.anggota2 && carwashForm.anggota2.trim() ? true : false;
-        const gajiPerAnggota = hasAnggota2 ? carwashForm.gaji_pencuci / 2 : carwashForm.gaji_pencuci;
+        const gajiPerAnggota = hasAnggota2 ? Math.round(carwashForm.gaji_pencuci / 2) : Math.round(carwashForm.gaji_pencuci);
 
         // Hitung harga_cuci dan harga_paket dasar secara dinamis
         const basicPkg = carwashPackages.find(p => p.nama_paket === 'PAKET CUCI BIASA') || carwashPackages[0]
@@ -4613,6 +4631,12 @@ const CafePOS = () => {
                           <span className="text-muted">Tagihan Layanan:</span>
                           <span className="font-bold text-slate-200 font-mono">{formatRupiah(settlingBill.total_harga)}</span>
                         </div>
+                        {parseFloat(settlingBill.pajak || 0) > 0 && (
+                          <div className="flex justify-between text-slate-300">
+                            <span className="text-muted">Termasuk Pajak:</span>
+                            <span className="font-bold font-mono tabular-nums">{formatRupiah(parseFloat(settlingBill.pajak || 0))}</span>
+                          </div>
+                        )}
                         {settleSurcharge.enabled && (
                           <div className="flex justify-between text-amber-400 font-medium">
                             <span>{settleSurcharge.keterangan || 'Cas Inap'}:</span>

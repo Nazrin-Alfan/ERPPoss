@@ -43,24 +43,32 @@ export default function Konsolidasi() {
   const [transactions, setTransactions] = useState([])
   const [expenses, setExpenses] = useState([])
   const [cashAccounts, setCashAccounts] = useState([])
+  const [branches, setBranches] = useState([])
   const [lastRefreshed, setLastRefreshed] = useState(new Date())
 
   // Muat data dari seluruh tenant milik owner yang berhak diakses
   const loadConsolidatedData = async () => {
     setIsLoading(true)
     try {
-      const { data: allTx } = await supabase.from('transaksi').select('*')
-      const { data: allExp } = await supabase.from('pengeluaran').select('*')
-      const { data: allAcc } = await supabase.from('akun_keuangan').select('*')
+      const [{ data: allStruk }, { data: allTx }, { data: allExp }, { data: allAcc }, { data: allBranches }] = await Promise.all([
+        supabase.from('struk').select('*'),
+        supabase.from('transaksi').select('*'),
+        supabase.from('pengeluaran').select('*'),
+        supabase.from('akun_keuangan').select('*'),
+        supabase.from('branches').select('*').eq('is_active', true)
+      ])
 
+      const sourceTx = Array.isArray(allStruk) && allStruk.length > 0 ? allStruk : (allTx || [])
       const allowedTenantIds = new Set((userTenants || []).map(t => t.id))
-      const myTx = (allTx || []).filter(t => allowedTenantIds.has(t.tenant_id) || (allowedTenantIds.size === 0))
+      const myTx = sourceTx.filter(t => allowedTenantIds.has(t.tenant_id) || (allowedTenantIds.size === 0))
       const myExp = (allExp || []).filter(e => allowedTenantIds.has(e.tenant_id) || (allowedTenantIds.size === 0))
       const myAcc = (allAcc || []).filter(a => allowedTenantIds.has(a.tenant_id) || (allowedTenantIds.size === 0))
+      const myBranches = (allBranches || []).filter(b => allowedTenantIds.has(b.tenant_id) || (allowedTenantIds.size === 0))
 
       setTransactions(myTx)
       setExpenses(myExp)
       setCashAccounts(myAcc)
+      setBranches(myBranches)
       setLastRefreshed(new Date())
     } catch (err) {
       console.error('Gagal memuat data konsolidasi:', err)
@@ -527,6 +535,32 @@ export default function Konsolidasi() {
                     </div>
                   </div>
                 </div>
+
+                {/* Daftar Cabang Aktif pada Outlet Ini */}
+                {(() => {
+                  const outletBranches = branches.filter(b => b.tenant_id === item.tenantId)
+                  if (outletBranches.length === 0) return null
+                  return (
+                    <div className="mb-3 pt-2 border-t border-slate-800/70 space-y-1.5">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Cabang Aktif ({outletBranches.length})
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {outletBranches.map(br => (
+                          <button
+                            key={br.id}
+                            type="button"
+                            onClick={() => handleJumpToTenant(item.tenantId)}
+                            className="px-2 py-1 rounded-lg bg-slate-950/80 hover:bg-brand-emerald/15 border border-slate-800 hover:border-brand-emerald/40 text-[10px] font-medium text-slate-300 hover:text-emerald-300 transition-colors cursor-pointer"
+                            title={`Switch ke ${br.nama || br.name}`}
+                          >
+                            {br.nama || br.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 {/* Card Footer: Action Button */}
                 <button

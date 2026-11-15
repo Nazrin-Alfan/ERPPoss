@@ -51,7 +51,7 @@ describe('Receipt Generator & Thermal Printing Helpers', () => {
 
     expect(receiptData.type).toBe('ORDER_DROP_OFF')
     expect(receiptData.title).toBe('BUKTI PENERIMAAN KENDARAAN')
-    expect(receiptData.orderNumber).toBe('ORD-12345678')
+    expect(receiptData.orderNumber).toBe('ORD-12345678-ABCD')
     expect(receiptData.isPaid).toBe(false)
     expect(receiptData.kehadiran).toBe('DITINGGAL')
     expect(receiptData.plat).toBe('B 1234 ABC')
@@ -171,7 +171,7 @@ describe('Receipt Generator & Thermal Printing Helpers', () => {
     const receipt = buildPaymentReceiptData(cafeSettledOrder)
 
     expect(receipt.orderNumber).not.toBe('ORD-00000000')
-    expect(receipt.orderNumber).toBe('ORD-BILL-889')
+    expect(receipt.orderNumber).toBe('BILL-889900')
     expect(receipt.total).toBe(51000)
     expect(receipt.totalTagihan).toBe(51000)
     expect(receipt.items.length).toBe(2)

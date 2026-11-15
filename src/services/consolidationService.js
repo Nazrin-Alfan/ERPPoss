@@ -6,10 +6,27 @@
 import { ROLES, isOwnerOrSuperAdmin } from '../constants/roles.js'
 
 /**
- * Filter transaksi valid (mengecualikan transaksi Batal / Void)
+ * Filter transaksi valid (mengecualikan transaksi Batal / Void / Pending)
  */
 export function getValidTransactions(transactions = []) {
-  return transactions.filter(t => t && t.status !== 'Batal' && t.status !== 'Void')
+  return transactions.filter(t => {
+    if (!t) return false
+    const st = String(t.status_bayar || t.status || '').trim().toLowerCase()
+    return st !== 'batal' && st !== 'void' && st !== 'cancelled' && st !== 'pending'
+  })
+}
+
+export function getTransactionRevenue(t) {
+  if (!t) return 0
+  return (
+    Number(t.total_tagihan) ||
+    Number(t.total_biaya) ||
+    Number(t.total_bayar) ||
+    Number(t.total_harga) ||
+    Number(t.nominal_bayar) ||
+    Number(t.total) ||
+    0
+  )
 }
 
 /**
@@ -47,7 +64,7 @@ export function calculateConsolidatedMetrics({
 
   // Transaksi valid yang termasuk dalam tenant milik owner
   const validTx = getValidTransactions(transactions).filter(t => tenantIdSet.has(t.tenant_id))
-  const totalRevenue = validTx.reduce((sum, t) => sum + (Number(t.total_biaya) || 0), 0)
+  const totalRevenue = validTx.reduce((sum, t) => sum + getTransactionRevenue(t), 0)
   const totalTransactionsCount = validTx.length
 
   // Total pengeluaran operasional
@@ -94,7 +111,7 @@ export function calculateOutletBreakdown({
   return tenants.map(tenant => {
     // Filter per tenant
     const tTx = validTx.filter(t => t.tenant_id === tenant.id)
-    const revenue = tTx.reduce((sum, t) => sum + (Number(t.total_biaya) || 0), 0)
+    const revenue = tTx.reduce((sum, t) => sum + getTransactionRevenue(t), 0)
     const transactionCount = tTx.length
 
     const tExpenses = expenses.filter(e => e.tenant_id === tenant.id)
@@ -158,11 +175,11 @@ export function calculateRevenueContribution({
   const tenantIdSet = new Set(tenants.map(t => t.id))
   const relevantTx = validTx.filter(t => tenantIdSet.has(t.tenant_id))
 
-  const totalRev = relevantTx.reduce((sum, t) => sum + (Number(t.total_biaya) || 0), 0)
+  const totalRev = relevantTx.reduce((sum, t) => sum + getTransactionRevenue(t), 0)
 
   return tenants.map(tenant => {
     const tTx = relevantTx.filter(t => t.tenant_id === tenant.id)
-    const rev = tTx.reduce((sum, t) => sum + (Number(t.total_biaya) || 0), 0)
+    const rev = tTx.reduce((sum, t) => sum + getTransactionRevenue(t), 0)
     const pct = totalRev > 0 ? (rev / totalRev) * 100 : 0
 
     return {
