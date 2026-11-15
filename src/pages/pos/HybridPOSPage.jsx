@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { supabase } from '../../supabaseClient'
+import { supabase, isCloudBackend } from '../../supabaseClient'
 import { useAuth } from '../../context/AuthContext'
 import { DEFAULT_TENANT_ID } from '../../constants/erpConfig'
 import { ROLES, isCashier } from '../../constants/roles'
@@ -1147,7 +1147,7 @@ const CafePOS = () => {
     setError('')
     setSuccess(false)
     try {
-      if (api.isCloud && typeof supabase.rpc === 'function') {
+      if (isCloudBackend && typeof supabase.rpc === 'function') {
         const { error: voidErr } = await supabase.rpc('fn_void_or_cancel_receipt', {
           p_tenant_id: effectiveTenantId,
           p_id_struk: idStruk,
@@ -1535,7 +1535,7 @@ const CafePOS = () => {
     setError('')
     setSuccess(false)
     try {
-      if (api.isCloud && typeof supabase.rpc === 'function') {
+      if (isCloudBackend && typeof supabase.rpc === 'function') {
         const { error: voidErr } = await supabase.rpc('fn_void_or_cancel_receipt', {
           p_tenant_id: effectiveTenantId,
           p_id_struk: billId,

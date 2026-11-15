@@ -1743,11 +1743,11 @@ const Finance = () => {
   }
 
   useEffect(() => {
-    if (expenseForm.kategori === EXPENSE_CATEGORIES.BAHAN_BAKU && barangMasukList.length > 0) {
+    if ((isRestockDetail || expenseForm.kategori === EXPENSE_CATEGORIES.BAHAN_BAKU) && barangMasukList.length > 0) {
       const computedTotal = barangMasukList.reduce((sum, item) => sum + ((parseFloat(item.jumlah) || 0) * (parseFloat(item.harga_satuan) || 0)), 0)
       setExpenseForm(prev => ({ ...prev, total_harga: computedTotal > 0 ? computedTotal : '' }))
     }
-  }, [barangMasukList, expenseForm.kategori])
+  }, [barangMasukList, expenseForm.kategori, isRestockDetail])
 
   return (
     <div className="p-4 md:p-6 pb-24 md:pb-8 space-y-6 max-w-7xl mx-auto">
