@@ -1247,6 +1247,11 @@ const CafePOS = () => {
           jam,
           kasir,
           total_tagihan,
+          subtotal,
+          diskon,
+          diskon_cafe,
+          diskon_carwash,
+          pajak,
           metode_bayar,
           created_at,
           cafe (nama_menu, qty, harga_satuan),
@@ -1265,6 +1270,11 @@ const CafePOS = () => {
           created_at: item.created_at || `${item.tanggal}T${item.jam || '00:00:00'}`,
           kasir: item.kasir || 'Kasir',
           total_harga: item.total_tagihan || 0,
+          subtotal: item.subtotal || 0,
+          diskon: item.diskon || 0,
+          diskon_cafe: item.diskon_cafe || 0,
+          diskon_carwash: item.diskon_carwash || 0,
+          pajak: item.pajak || 0,
           metode_bayar: item.metode_bayar || 'CASH',
           cafe: (item.cafe || []).map(c => ({
             nama_menu: c.nama_menu,
@@ -1525,25 +1535,34 @@ const CafePOS = () => {
     setError('')
     setSuccess(false)
     try {
-      // 1. Update status_bayar di struk menjadi 'Batal'
-      const { error: strukErr } = await supabase
-        .from('struk')
-        .update({ status_bayar: 'Batal' })
-        .eq('id_struk', billId)
+      if (api.isCloud && typeof supabase.rpc === 'function') {
+        const { error: voidErr } = await supabase.rpc('fn_void_or_cancel_receipt', {
+          p_tenant_id: effectiveTenantId,
+          p_id_struk: billId,
+          p_reason: 'Bon Pending dibatalkan oleh Kasir/Owner'
+        })
+        if (voidErr) throw voidErr
+      } else {
+        // 1. Update status_bayar di struk menjadi 'Batal'
+        const { error: strukErr } = await supabase
+          .from('struk')
+          .update({ status_bayar: 'Batal' })
+          .eq('id_struk', billId)
 
-      if (strukErr) throw strukErr
+        if (strukErr) throw strukErr
 
-      // 2. Update status di carwash (jika ada) menjadi 'Batal'
-      await supabase
-        .from('carwash')
-        .update({ status: 'Batal' })
-        .eq('id_struk', billId)
+        // 2. Update status di carwash (jika ada) menjadi 'Batal'
+        await supabase
+          .from('carwash')
+          .update({ status: 'Batal' })
+          .eq('id_struk', billId)
 
-      // 3. Update status di cafe (jika ada) menjadi 'Batal'
-      await supabase
-        .from('cafe')
-        .update({ status: 'Batal' })
-        .eq('id_struk', billId)
+        // 3. Update status di cafe (jika ada) menjadi 'Batal'
+        await supabase
+          .from('cafe')
+          .update({ status: 'Batal' })
+          .eq('id_struk', billId)
+      }
 
       setSuccess(true)
       await fetchPendingBills()

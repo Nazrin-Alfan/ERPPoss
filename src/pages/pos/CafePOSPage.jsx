@@ -268,12 +268,19 @@ export const CafePOSPage = () => {
     return diskonAmount
   }, [settlingBill, diskonAmount])
 
+  const effectivePajak = useMemo(() => {
+    if (settlingBill) {
+      return Number(settlingBill.pajak || 0)
+    }
+    return 0
+  }, [settlingBill])
+
   const effectiveGrandTotal = useMemo(() => {
     if (settlingBill) {
-      return Number(settlingBill.total_biaya || settlingBill.total_tagihan || settlingBill.total || Math.max(0, effectiveSubtotal - effectiveDiskon))
+      return Number(settlingBill.total_biaya || settlingBill.total_tagihan || settlingBill.total || Math.max(0, effectiveSubtotal - effectiveDiskon + effectivePajak))
     }
     return grandTotal
-  }, [settlingBill, effectiveSubtotal, effectiveDiskon, grandTotal])
+  }, [settlingBill, effectiveSubtotal, effectiveDiskon, effectivePajak, grandTotal])
 
   const effectiveKembalian = Math.max(0, (Number(nominalBayar) || 0) - effectiveGrandTotal)
 
@@ -363,6 +370,7 @@ export const CafePOSPage = () => {
       grandTotal,
       effectiveSubtotal,
       effectiveDiskon,
+      effectivePajak,
       effectiveGrandTotal,
       effectiveKembalian,
       posServiceInstance: posService,
@@ -709,6 +717,12 @@ export const CafePOSPage = () => {
                 <div className="flex justify-between text-primary font-medium">
                   <span>Potongan Promo {settlingBill ? '(Terkunci)' : ''}</span>
                   <span className="font-mono">-{formatRupiah(effectiveDiskon)}</span>
+                </div>
+              )}
+              {effectivePajak > 0 && (
+                <div className="flex justify-between text-amber-400 font-medium">
+                  <span>Pajak / PB1 {settlingBill ? '(Terkunci)' : ''}</span>
+                  <span className="font-mono tabular-nums">+{formatRupiah(effectivePajak)}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm font-bold pt-1.5 border-t border-border">
