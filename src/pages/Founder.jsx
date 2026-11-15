@@ -172,7 +172,25 @@ export default function Founder() {
     const updated = toggleTenantSubscriptionStatus(tenant, !isCurrentlyActive)
 
     try {
-      await supabase.from('tenants').upsert(updated)
+      const { error: tErr } = await supabase
+        .from('tenants')
+        .update({
+          is_active: updated.is_active,
+          subscription_status: updated.subscription_status,
+          updated_at: updated.updated_at
+        })
+        .eq('id', tenant.id)
+      if (tErr) throw tErr
+
+      const { error: lErr } = await supabase
+        .from('tenant_licenses')
+        .update({
+          status: !isCurrentlyActive ? 'ACTIVE' : 'SUSPENDED',
+          updated_at: updated.updated_at
+        })
+        .eq('tenant_id', tenant.id)
+      if (lErr) console.warn('Warning updating tenant_licenses status:', lErr)
+
       setTenants(prev => prev.map(t => t.id === tenant.id ? updated : t))
       showNotification(
         !isCurrentlyActive 
@@ -180,7 +198,8 @@ export default function Founder() {
           : `⚠️ Tenant "${tenant.nama}" telah dibekukan (Kill-Switch Aktif).`
       )
     } catch (err) {
-      showNotification('Gagal memperbarui status tenant.')
+      console.error('Gagal memperbarui status tenant:', err)
+      showNotification('Gagal memperbarui status tenant: ' + (err.message || ''))
     }
   }
 
@@ -190,12 +209,34 @@ export default function Founder() {
     const updated = generateLicenseRenewalPayload(renewingTenant, renewalMonths)
 
     try {
-      await supabase.from('tenants').upsert(updated)
+      const { error: tErr } = await supabase
+        .from('tenants')
+        .update({
+          is_active: updated.is_active,
+          subscription_status: updated.subscription_status,
+          updated_at: updated.updated_at
+        })
+        .eq('id', renewingTenant.id)
+      if (tErr) throw tErr
+
+      const { error: lErr } = await supabase
+        .from('tenant_licenses')
+        .update({
+          status: 'ACTIVE',
+          license_key: updated.serial_key,
+          valid_until: updated.license_expires_at,
+          expires_at: updated.license_expires_at,
+          updated_at: updated.updated_at
+        })
+        .eq('tenant_id', renewingTenant.id)
+      if (lErr) throw lErr
+
       setTenants(prev => prev.map(t => t.id === renewingTenant.id ? updated : t))
       showNotification(`🎉 Lisensi "${renewingTenant.nama}" berhasil diperpanjang +${renewalMonths} bulan!`)
       setRenewingTenant(null)
     } catch (err) {
-      showNotification('Gagal memperpanjang lisensi.')
+      console.error('Gagal memperpanjang lisensi:', err)
+      showNotification('Gagal memperpanjang lisensi: ' + (err.message || ''))
     }
   }
 
@@ -366,7 +407,15 @@ Jika butuh panduan awal atau ada pertanyaan teknis, silakan hubungi kami via cha
         updated_at: new Date().toISOString()
       }
 
-      await supabase.from('tenants').upsert(updated)
+      const { error: tErr } = await supabase
+        .from('tenants')
+        .update({
+          subscription_status: 'ARCHIVED',
+          is_active: false,
+          updated_at: updated.updated_at
+        })
+        .eq('id', tenantToArchive.id)
+      if (tErr) throw tErr
       setTenants(prev => prev.map(t => t.id === tenantToArchive.id ? updated : t))
       showNotification(`📦 Tenant "${tenantToArchive.nama}" berhasil dipindahkan ke Arsip (Data tetap aman).`)
       setTenantToArchive(null)
@@ -390,7 +439,15 @@ Jika butuh panduan awal atau ada pertanyaan teknis, silakan hubungi kami via cha
         updated_at: new Date().toISOString()
       }
 
-      await supabase.from('tenants').upsert(updated)
+      const { error: tErr } = await supabase
+        .from('tenants')
+        .update({
+          subscription_status: 'ACTIVE',
+          is_active: true,
+          updated_at: updated.updated_at
+        })
+        .eq('id', tenant.id)
+      if (tErr) throw tErr
       setTenants(prev => prev.map(t => t.id === tenant.id ? updated : t))
       showNotification(`✨ Tenant "${tenant.nama}" berhasil dipulihkan dari arsip dan aktif kembali!`)
     } catch (err) {
