@@ -393,6 +393,7 @@ export const AuthProvider = ({ children }) => {
                   'email belum memiliki tenant, silahkan klik DAFTAR untuk memulai'
                 try {
                   sessionStorage.setItem('relaypos_oauth_error', errMsg)
+                  window.dispatchEvent(new CustomEvent('relaypos:oauth_error', { detail: errMsg }))
                 } catch {
                   // ignore storage errors
                 }

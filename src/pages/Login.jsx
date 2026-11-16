@@ -49,15 +49,31 @@ const Login = () => {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    try {
-      const oauthErr = sessionStorage.getItem('relaypos_oauth_error')
-      if (oauthErr) {
-        sessionStorage.removeItem('relaypos_oauth_error')
-        setError(oauthErr)
+    const readOAuthError = () => {
+      try {
+        const oauthErr = sessionStorage.getItem('relaypos_oauth_error')
+        if (oauthErr) {
+          sessionStorage.removeItem('relaypos_oauth_error')
+          setError(oauthErr)
+        }
+      } catch {
+        // ignore storage errors
       }
-    } catch {
-      // ignore storage errors
     }
+    readOAuthError()
+
+    const handleOAuthErrorEvent = (e) => {
+      if (e?.detail) {
+        try {
+          sessionStorage.removeItem('relaypos_oauth_error')
+        } catch {
+          // ignore
+        }
+        setError(e.detail)
+      }
+    }
+    window.addEventListener('relaypos:oauth_error', handleOAuthErrorEvent)
+    return () => window.removeEventListener('relaypos:oauth_error', handleOAuthErrorEvent)
   }, [])
 
   const switchTab = (tab) => {
