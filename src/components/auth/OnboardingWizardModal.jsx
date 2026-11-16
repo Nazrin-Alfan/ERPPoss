@@ -18,9 +18,11 @@ import {
 } from 'lucide-react'
 import { saveReceiptConfig } from '../../utils/receiptHelpers'
 import { createCleanTenantPayload } from '../../utils/superAdminHelpers'
-import { supabase } from '../../supabaseClient'
+import { supabase, isCloudBackend } from '../../supabaseClient'
+import { useAuth } from '../../context/AuthContext'
 
-export default function OnboardingWizardModal({ isOpen, onClose, ownerUser, onCompleted }) {
+export default function OnboardingWizardModal({ isOpen, onClose, ownerUser, existingTenant = null, onCompleted }) {
+  const { registerKasir } = useAuth()
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -65,7 +67,66 @@ export default function OnboardingWizardModal({ isOpen, onClose, ownerUser, onCo
 
     setLoading(true)
     try {
-      // 1. Buat payload tenant bersih
+      if (existingTenant?.id) {
+        // Mode Google OAuth Onboarding: Perbarui tenant yang sudah otomatis dibuat oleh trigger DB
+        if (isCloudBackend && typeof supabase.rpc === 'function') {
+          const { error: rpcErr } = await supabase.rpc('fn_complete_google_owner_onboarding', {
+            p_tenant_id: existingTenant.id,
+            p_store_name: storeName.trim(),
+            p_business_type: businessModel,
+            p_telepon: storePhone.trim(),
+            p_alamat: storeAddress.trim(),
+          })
+          if (rpcErr) throw rpcErr
+        } else {
+          const cleanSlug =
+            storeName
+              .trim()
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/(^-|-$)/g, '') || existingTenant.slug
+          await supabase
+            .from('tenants')
+            .update({
+              nama: storeName.trim(),
+              slug: cleanSlug,
+              business_type: businessModel,
+              telepon: storePhone.trim(),
+              alamat: storeAddress.trim(),
+            })
+            .eq('id', existingTenant.id)
+        }
+
+        // Daftarkan akun kasir pertama jika diisi (minimal 6 karakter password/PIN)
+        let createdCashier = null
+        if (cashierUsername.trim() && cashierPin.trim().length >= 6) {
+          const kasirRes = await registerKasir(
+            cashierUsername.trim(),
+            cashierPin.trim(),
+            cashierName.trim() || 'Kasir 1',
+            'Kasir',
+            existingTenant.id
+          )
+          if (kasirRes?.success) {
+            createdCashier = kasirRes.user
+          }
+        }
+
+        saveReceiptConfig({
+          storeName: storeName.trim(),
+          storeAddress: storeAddress.trim(),
+          storePhone: storePhone.trim(),
+          paperWidth: printerWidth,
+        })
+
+        if (onCompleted) {
+          await onCompleted({ ...existingTenant, nama: storeName.trim(), business_type: businessModel }, createdCashier)
+        }
+        onClose()
+        return
+      }
+
+      // 1. Buat payload tenant bersih (Mode Tambah Outlet Baru)
       const payload = createCleanTenantPayload({
         storeName: storeName.trim(),
         ownerEmail: ownerUser?.email || 'owner@relaypos.com',

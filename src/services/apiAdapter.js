@@ -12,18 +12,19 @@ export const api = {
 
   // 1. AUTENTIKASI (DUAL-MODE CLOUD & LOCAL)
   auth: {
-    async login(emailOrUsername, password) {
+    async login(emailOrUsername, password, tenantSlug = null) {
       const cleanUser = (emailOrUsername || '').trim()
+      const cleanSlug = tenantSlug ? String(tenantSlug).trim().toLowerCase() : null
       let email = cleanUser
       if (!cleanUser.includes('@')) {
         const knownRelayAccounts = ['superadmin', 'owner', 'admin', 'kasir']
-        if (knownRelayAccounts.includes(cleanUser.toLowerCase())) {
+        if (!cleanSlug && knownRelayAccounts.includes(cleanUser.toLowerCase())) {
           email = `${cleanUser.toLowerCase()}@relaypos.com`
         } else {
           try {
             const { data: resolved, error: resolveErr } = await supabase.rpc('fn_resolve_login_email', {
               p_identifier: cleanUser,
-              p_tenant_slug: null,
+              p_tenant_slug: cleanSlug,
             })
             if (resolveErr) {
               if (
@@ -32,17 +33,17 @@ export const api = {
               ) {
                 throw resolveErr
               }
-              email = `${cleanUser.toLowerCase()}@jb.local`
+              email = cleanSlug ? `${cleanUser.toLowerCase()}.${cleanSlug}@pos.internal` : `${cleanUser.toLowerCase()}@jb.local`
             } else if (resolved?.email) {
               email = resolved.email
             } else {
-              email = `${cleanUser.toLowerCase()}@jb.local`
+              email = cleanSlug ? `${cleanUser.toLowerCase()}.${cleanSlug}@pos.internal` : `${cleanUser.toLowerCase()}@jb.local`
             }
           } catch (err) {
             if (err.message?.includes('ACCOUNT_INACTIVE') || err.message?.includes('dinonaktifkan')) {
               throw err
             }
-            email = `${cleanUser.toLowerCase()}@jb.local`
+            email = cleanSlug ? `${cleanUser.toLowerCase()}.${cleanSlug}@pos.internal` : `${cleanUser.toLowerCase()}@jb.local`
           }
         }
       }
@@ -202,7 +203,7 @@ export const api = {
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/konsolidasi` : undefined,
+            redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/` : undefined,
             ...options,
           },
         })

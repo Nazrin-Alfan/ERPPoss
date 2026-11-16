@@ -37,6 +37,7 @@ import InteractiveCalendar from '../components/InteractiveCalendar'
 import AIPromptBuilderModal from '../components/dashboard/AIPromptBuilderModal'
 import ExecutivePromptStudio from '../components/dashboard/ExecutivePromptStudio'
 import ExpenseDetailModal from '../components/dashboard/ExpenseDetailModal'
+import OnboardingWizardModal from '../components/auth/OnboardingWizardModal'
 import { formatRupiah, parseDateSafe, calculateDailyCashierRecap } from '../utils/helpers'
 import { isPindahSaldo } from '../utils/financeHelpers'
 
@@ -92,7 +93,15 @@ const fetchCafeRows = async (start = null, end = null, tenantId = null) => {
 
 const Dashboard = () => {
   const navigate = useNavigate()
-  const { activeTenant, profile } = useAuth()
+  const { activeTenant, profile, user, refreshTenants } = useAuth()
+  const [dismissedGoogleOnboarding, setDismissedGoogleOnboarding] = useState(false)
+  const needsGoogleOnboarding = Boolean(
+    !dismissedGoogleOnboarding &&
+    profile?.role === 'Owner' &&
+    activeTenant?.id &&
+    typeof activeTenant?.nama === 'string' &&
+    activeTenant.nama.endsWith("'s Store")
+  )
   const targetTenantId = activeTenant?.id || profile?.tenant_id
   const tenantBusinessType = activeTenant?.business_type || 'HYBRID' // 'HYBRID' | 'CAFE' | 'CARWASH'
   const [activeSection, setActiveSection] = useState(
@@ -2149,6 +2158,18 @@ const Dashboard = () => {
           totalExpenses: segmentedExpenses.totalExpenses || 0
         }}
         timeRangeLabel={timeRange === 'today' ? 'Hari Ini' : timeRange === 'month' ? 'Bulan Ini' : timeRange === 'custom' ? 'Kustom' : 'Semua'}
+      />
+
+      {/* Onboarding Setup Wizard otomatis untuk Owner baru via Google OAuth */}
+      <OnboardingWizardModal
+        isOpen={needsGoogleOnboarding}
+        onClose={() => setDismissedGoogleOnboarding(true)}
+        ownerUser={user}
+        existingTenant={activeTenant}
+        onCompleted={async () => {
+          setDismissedGoogleOnboarding(true)
+          if (refreshTenants) await refreshTenants()
+        }}
       />
     </div>
   )

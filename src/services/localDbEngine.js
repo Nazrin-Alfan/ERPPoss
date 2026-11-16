@@ -2009,6 +2009,51 @@ export const createLocalClient = () => {
 
         const existing = profiles.find((p) => p.email?.toLowerCase() === normalizedEmail)
         if (existing) {
+          // Smart Co-Owner Re-Bind:
+          // Jika mendaftarkan Owner (Co-Owner) dan akun tersebut hanya berada di tenant trial kosong (0 struk, <=1 profil)
+          // akibat salah klik Google Login sebelumnya, pindahkan ke targetTenantId dan hapus tenant kosongnya.
+          const requestedRole = options.data?.role
+          if (requestedRole === 'Owner' && existing.role !== 'Super Admin' && existing.tenant_id !== targetTenantId) {
+            const oldTenant = tenants.find((t) => t.id === existing.tenant_id)
+            const strukTable = localDbStore.getTable('struk') || []
+            const oldTxCount = strukTable.filter((s) => s.tenant_id === existing.tenant_id).length
+            const oldProfCount = profiles.filter((p) => p.tenant_id === existing.tenant_id).length
+
+            if (String(oldTenant?.plan || '').toUpperCase() === 'TRIAL' && oldTxCount === 0 && oldProfCount <= 1) {
+              const oldTenantId = existing.tenant_id
+              existing.tenant_id = targetTenantId
+              existing.branch_id = targetBranchId
+              existing.role = 'Owner'
+              existing.is_active = true
+              existing.nama = (options.data?.nama || existing.nama || username).trim().toUpperCase()
+
+              // Remove empty accidental trial tenant, branches, and licenses
+              const tIdx = tenants.findIndex((t) => t.id === oldTenantId)
+              if (tIdx !== -1) tenants.splice(tIdx, 1)
+
+              const branches = localDbStore.getTable('branches') || []
+              for (let i = branches.length - 1; i >= 0; i--) {
+                if (branches[i].tenant_id === oldTenantId) branches.splice(i, 1)
+              }
+              const licenses = localDbStore.getTable('tenant_licenses') || []
+              for (let i = licenses.length - 1; i >= 0; i--) {
+                if (licenses[i].tenant_id === oldTenantId) licenses.splice(i, 1)
+              }
+
+              localDbStore.saveToStorage()
+              const reboundUser = {
+                id: existing.id,
+                email: existing.email,
+                username,
+                nama: existing.nama,
+                role: 'Owner',
+                tenant_id: existing.tenant_id,
+                branch_id: existing.branch_id,
+                user_metadata: { nama: existing.nama, username, role: 'Owner', tenant_id: existing.tenant_id },
+              }
+              return { data: { user: reboundUser }, error: null }
+            }
+          }
           return { data: { user: null }, error: new Error('Email/Username sudah terdaftar.') }
         }
 
@@ -2276,14 +2321,15 @@ export const createLocalClient = () => {
           localDbStore.saveToStorage()
         }
 
+        const resolvedRole = profile.role || 'Owner'
         const userObj = {
           id: profile.id,
           email: profile.email,
-          role: 'Owner',
+          role: resolvedRole,
           tenant_id: profile.tenant_id,
           user_metadata: {
             nama: profile.nama,
-            role: 'Owner',
+            role: resolvedRole,
             tenant_id: profile.tenant_id,
             provider: 'google',
           },
@@ -2840,9 +2886,21 @@ export const createLocalClient = () => {
 
       if (name === 'fn_resolve_login_email') {
         const cleanId = String(params.p_identifier || '').trim().toLowerCase()
+        const cleanSlug = params.p_tenant_slug ? String(params.p_tenant_slug).trim().toLowerCase() : null
         const profiles = localDbStore.getTable('profiles') || []
-        const currentTenantId = getActiveTenantId()
+        const tenants = localDbStore.getTable('tenants') || []
+        let scopedTenantId = null
+        if (cleanSlug) {
+          const matchedTenant = tenants.find((t) => String(t.slug || '').toLowerCase() === cleanSlug)
+          if (matchedTenant) {
+            scopedTenantId = matchedTenant.id
+          } else if (!cleanId.includes('@')) {
+            return { data: { email: `${cleanId}.${cleanSlug}@pos.internal`, is_active: true }, error: null }
+          }
+        }
+        const currentTenantId = scopedTenantId || getActiveTenantId()
         const candidates = profiles.filter((p) => {
+          if (scopedTenantId && p.tenant_id !== scopedTenantId) return false
           const pEmail = (p.email || '').toLowerCase()
           const pLocal = pEmail.split('@')[0]
           const pBase = pLocal.split('.')[0]
@@ -2861,6 +2919,9 @@ export const createLocalClient = () => {
             }
           }
           return { data: { email: match.email, is_active: true }, error: null }
+        }
+        if (cleanSlug && !cleanId.includes('@')) {
+          return { data: { email: `${cleanId}.${cleanSlug}@pos.internal`, is_active: true }, error: null }
         }
         return { data: { email: cleanId.includes('@') ? cleanId : `${cleanId}@jb.local`, is_active: true }, error: null }
       }

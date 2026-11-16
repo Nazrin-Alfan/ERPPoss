@@ -11,6 +11,7 @@ import {
 import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
+import { isPayrollDeductionCategory, isWorkerNameMatch } from '../utils/payrollHelpers'
 import { 
   UserPlus, 
   Users, 
@@ -354,34 +355,16 @@ const Karyawan = () => {
       }
     })
 
-    // 2. Setup Alias Matching for name matching & normalization
-    const getWorkerAliases = (name) => {
-      const n = (name || '').toUpperCase().trim()
-      if (!n) return []
-      const list = [n]
-      // Support typo toleransi umum nama pekerja
-      if (n.includes('Y')) list.push(n.replace(/Y/g, 'I'))
-      if (n.includes('I')) list.push(n.replace(/I/g, 'Y'))
-      if (n.includes('P')) list.push(n.replace(/P/g, 'V'))
-      if (n.includes('V')) list.push(n.replace(/V/g, 'P'))
-      return Array.from(new Set(list))
-    }
-
-    const isMatch = (descText, workerName) => {
-      const desc = descText.toUpperCase()
-      const aliases = getWorkerAliases(workerName)
-      return aliases.some(alias => desc.includes(alias))
-    }
-
     const processedExpIds = new Set()
 
-    // 3. Process pengeluaran deductions (cashier withdrawals/kasbon)
+    // 3. Process pengeluaran deductions (cashier withdrawals/kasbon only)
     pengeluaranList.forEach(exp => {
+      if (!isPayrollDeductionCategory(exp.kategori, exp.jenis)) return
       const desc = (exp.nama_pengeluaran || '').toUpperCase()
       const amt = parseFloat(exp.nominal) || 0
       if (amt > 0) {
         Object.keys(summary).forEach(wName => {
-          if (isMatch(desc, wName)) {
+          if (isWorkerNameMatch(desc, wName)) {
             processedExpIds.add(exp.id_pengeluaran)
             summary[wName].totalWithdrawals += amt
             summary[wName].withdrawalsList.push({
@@ -396,15 +379,16 @@ const Karyawan = () => {
       }
     })
 
-    // 4. Process cashflow deductions (skipping ones already matched via id_sumber)
+    // 4. Process cashflow deductions (payroll/kasbon categories only, skipping ones already matched via id_sumber)
     cashflowList.forEach(cf => {
       if (cf.id_sumber && processedExpIds.has(cf.id_sumber)) return
+      if (!isPayrollDeductionCategory(cf.kategori, cf.jenis)) return
 
       const desc = (cf.keterangan_transaksi || '').toUpperCase()
       const amt = parseFloat(cf.pengeluaran) || 0
       if (amt > 0) {
         Object.keys(summary).forEach(wName => {
-          if (isMatch(desc, wName)) {
+          if (isWorkerNameMatch(desc, wName)) {
             summary[wName].totalWithdrawals += amt
             summary[wName].withdrawalsList.push({
               id: cf.id_cashflow,

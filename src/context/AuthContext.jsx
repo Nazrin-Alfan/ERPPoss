@@ -418,10 +418,10 @@ export const AuthProvider = ({ children }) => {
     }
   }, [loadTenantsForUser])
 
-  // Fungsi Login Universal (Username/Email & Password/PIN)
-  const login = async (usernameOrEmail, password) => {
+  // Fungsi Login Universal (Username/Email, Password/PIN & Opsional Kode Toko / Tenant Slug)
+  const login = async (usernameOrEmail, password, tenantSlug = null) => {
     try {
-      const res = await api.auth.login(usernameOrEmail, password)
+      const res = await api.auth.login(usernameOrEmail, password, tenantSlug)
       let resolvedProfile = null
       if (res.user) {
         setUser(res.user)
