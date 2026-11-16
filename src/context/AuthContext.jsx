@@ -319,6 +319,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     let isMounted = true
     let isInitialized = false
+    let inFlightOAuthPromise = null
 
     // Safety guard timeout: JANGAN PERNAH biarkan pengguna stuck di "Memuat Sesi..." lebih dari 3.5 detik
     const safetyTimer = setTimeout(() => {
@@ -331,17 +332,13 @@ export const AuthProvider = ({ children }) => {
     const syncSession = async (session) => {
       try {
         if (session && session.user) {
-          // Tetapkan user dan profil instan berbasis metadata sesi agar UI tidak menggantung
+          // Tetapkan profil instan berbasis metadata sesi sebagai fallback jika profil DB belum dimuat
           const fastProfile = {
             id: session.user.id,
             email: session.user.email,
             nama: session.user.user_metadata?.nama || session.user.email || 'Pengguna RelayPOS',
             role: session.user.role || session.user.user_metadata?.role || 'Owner',
             tenant_id: session.user.tenant_id || DEFAULT_TENANT_ID
-          }
-          if (isMounted) {
-            setUser(session.user)
-            setProfile(prev => prev || fastProfile)
           }
 
           // Sinkronisasi data profil lengkap dan tenant dengan batas waktu maksimum 3 detik
@@ -357,7 +354,6 @@ export const AuthProvider = ({ children }) => {
               const rawIntent = localStorage.getItem('relaypos_google_oauth_intent')
               if (rawIntent) {
                 intent = { ...intent, ...JSON.parse(rawIntent) }
-                localStorage.removeItem('relaypos_google_oauth_intent')
               }
             } catch {
               // ignore storage errors
@@ -365,17 +361,30 @@ export const AuthProvider = ({ children }) => {
 
             const isGoogleSession =
               session.user.app_metadata?.provider === 'google' ||
-              session.user.user_metadata?.iss?.includes('google')
+              session.user.user_metadata?.iss?.includes('google') ||
+              (Array.isArray(session.user.app_metadata?.providers) &&
+                session.user.app_metadata.providers.includes('google'))
 
             if (isGoogleSession) {
-              const { data: rpcRes } = await supabase
-                .rpc('fn_complete_google_oauth_flow', {
-                  p_mode: intent.mode || 'login',
-                  p_tenant_name: intent.tenantName || null,
-                  p_business_type: intent.businessType || 'HYBRID',
-                  p_owner_name: intent.nama || null,
-                })
-                .catch(() => ({ data: null }))
+              if (!inFlightOAuthPromise) {
+                inFlightOAuthPromise = supabase
+                  .rpc('fn_complete_google_oauth_flow', {
+                    p_mode: intent.mode || 'login',
+                    p_tenant_name: intent.tenantName || null,
+                    p_business_type: intent.businessType || 'HYBRID',
+                    p_owner_name: intent.nama || null,
+                  })
+                  .catch(() => ({ data: null }))
+                  .finally(() => {
+                    try {
+                      localStorage.removeItem('relaypos_google_oauth_intent')
+                    } catch {
+                      // ignore storage errors
+                    }
+                    inFlightOAuthPromise = null
+                  })
+              }
+              const { data: rpcRes } = await inFlightOAuthPromise
 
               if (rpcRes?.status === 'UNREGISTERED') {
                 try {
@@ -409,6 +418,7 @@ export const AuthProvider = ({ children }) => {
 
           if (isMounted) {
             const finalProfile = p || fastProfile
+            setUser(session.user)
             setProfile(finalProfile)
             await loadTenantsForUser(finalProfile)
           }

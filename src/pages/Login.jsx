@@ -169,13 +169,18 @@ const Login = () => {
 
   const handleGoogleLogin = () => runGoogleOAuth({ mode: 'login' })
 
-  const handleGoogleRegister = () =>
+  const handleGoogleRegister = () => {
+    if (!regTenantName.trim()) {
+      setError('Isi Nama Usaha / Toko terlebih dahulu sebelum daftar dengan Google.')
+      return
+    }
     runGoogleOAuth({
       mode: 'register',
       tenantName: regTenantName.trim(),
       businessType: regBusinessType,
       nama: regNama.trim()
     })
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#070a10] px-4 py-8 relative">
@@ -332,42 +337,6 @@ const Login = () => {
         {/* TAB 2: DAFTAR TOKO BARU (SELF-SERVICE ONBOARDING) */}
         {activeTab === 'register' && (
           <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
-            <button
-              type="button"
-              onClick={handleGoogleRegister}
-              disabled={!GOOGLE_AUTH_ENABLED || loading}
-              className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold flex items-center justify-center gap-2.5 transition-all shadow-md active:scale-[0.98] cursor-pointer border border-slate-200 text-xs sm:text-sm disabled:opacity-50"
-            >
-              <GoogleIcon />
-              <span>Daftar Toko Cepat dengan Google</span>
-            </button>
-
-            <div className="relative flex py-2 items-center">
-              <div className="flex-grow border-t border-slate-800"></div>
-              <span className="flex-shrink mx-3 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-                atau isi formulir manual
-              </span>
-              <div className="flex-grow border-t border-slate-800"></div>
-            </div>
-
-            <div>
-              <label htmlFor="reg-nama" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                Nama Lengkap Pemilik
-              </label>
-              <div className="relative">
-                <User className="absolute left-3.5 top-3 text-slate-500" size={16} />
-                <input
-                  id="reg-nama"
-                  type="text"
-                  placeholder="Budi Santoso"
-                  value={regNama}
-                  onChange={(e) => setRegNama(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm"
-                  required
-                />
-              </div>
-            </div>
-
             <div>
               <label htmlFor="reg-tenant-name" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
                 Nama Usaha / Toko
@@ -427,6 +396,42 @@ const Login = () => {
                   <div className="text-sm">☕</div>
                   <div className="text-[10px] mt-0.5">Cafe Only</div>
                 </button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGoogleRegister}
+              disabled={!GOOGLE_AUTH_ENABLED || loading}
+              className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold flex items-center justify-center gap-2.5 transition-all shadow-md active:scale-[0.98] cursor-pointer border border-slate-200 text-xs sm:text-sm disabled:opacity-50"
+            >
+              <GoogleIcon />
+              <span>Daftar Toko Cepat dengan Google</span>
+            </button>
+
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t border-slate-800"></div>
+              <span className="flex-shrink mx-3 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                atau daftar manual dengan email
+              </span>
+              <div className="flex-grow border-t border-slate-800"></div>
+            </div>
+
+            <div>
+              <label htmlFor="reg-nama" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                Nama Lengkap Pemilik
+              </label>
+              <div className="relative">
+                <User className="absolute left-3.5 top-3 text-slate-500" size={16} />
+                <input
+                  id="reg-nama"
+                  type="text"
+                  placeholder="Budi Santoso"
+                  value={regNama}
+                  onChange={(e) => setRegNama(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm"
+                  required
+                />
               </div>
             </div>
 
