@@ -4270,16 +4270,16 @@ const CafePOS = () => {
 
            {/* Mobile Cart Overlay/Drawer */}
            {showMobileCart && (
-           <div className="md:hidden fixed inset-0 bg-subsurface backdrop-blur-sm z-50 flex flex-col justify-end animate-fade-in">
+           <div className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[80] flex flex-col justify-end animate-fade-in">
            {/* Backdrop click area to close */}
            <div className="absolute inset-0" onClick={() => setShowMobileCart(false)}></div>
 
-           <div className="relative bg-[#080C14] border-t border-border rounded-t-3xl max-h-[85vh] flex flex-col p-5 animate-slide-up shadow-2xl">
+           <div className="relative bg-[#121215] border-t border-[#26272d] rounded-t-3xl max-h-[90vh] flex flex-col p-4 sm:p-5 animate-slide-up shadow-2xl overflow-hidden">
             {/* Header of Mobile Cart */}
-            <div className="flex items-center justify-between border-b border-slate-850 pb-4 mb-4">
+            <div className="flex items-center justify-between border-b border-[#26272d] pb-3 mb-3 shrink-0">
               <div className="flex items-center gap-2">
                 <ShoppingCart className="text-primary" size={20} />
-                <h3 className="font-bold text-lg text-white">Struk Belanja ({cart.reduce((sum, item) => sum + item.qty, 0) + (hasCarwash ? 1 : 0)} item)</h3>
+                <h3 className="font-bold text-base sm:text-lg text-white">Struk Belanja ({cart.reduce((sum, item) => sum + item.qty, 0) + (hasCarwash ? 1 : 0)} item)</h3>
               </div>
               <button
                 onClick={() => setShowMobileCart(false)}
@@ -4289,23 +4289,25 @@ const CafePOS = () => {
               </button>
             </div>
 
+            {/* Scrollable Content Container */}
+            <div className="flex-1 overflow-y-auto overscroll-contain pr-1 -mr-1 space-y-3">
             {/* Alert Popups in Mobile Cart */}
             {success && (
-              <div className="mb-4 p-4 rounded-xl bg-primary text-primary-foreground/10 border border-brand-emerald/20 text-primary text-xs flex items-center gap-3 shrink-0">
+              <div className="p-3.5 rounded-xl bg-primary/10 border border-brand-emerald/20 text-primary text-xs flex items-center gap-2.5 shrink-0">
                 <CheckCircle size={16} />
                 <span>Transaksi berhasil disimpan!</span>
               </div>
             )}
 
             {error && (
-              <div className="mb-4 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-3 shrink-0">
+              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2.5 shrink-0">
                 <AlertCircle size={16} />
                 <span>{error}</span>
               </div>
             )}
 
             {/* Quick Mobile Header: Tipe Pesanan & Meja/Nomor Antrean Akrilik */}
-            <div className="bg-surface p-2.5 rounded-xl border border-border mb-2 space-y-2 shrink-0">
+            <div className="bg-surface p-2.5 rounded-xl border border-border space-y-2 shrink-0">
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
@@ -4343,8 +4345,8 @@ const CafePOS = () => {
               </div>
             </div>
 
-            {/* List Cart Items (Scrollable) */}
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1 mb-4">
+            {/* List Cart Items */}
+            <div className="space-y-2">
               {cart.map((item) => (
                 <div key={item.nama_menu} className="p-2 rounded-xl bg-subsurface border border-slate-850">
                   <div className="flex justify-between items-start">
@@ -4611,6 +4613,7 @@ const CafePOS = () => {
               >
                 {loading ? 'Memproses Transaksi...' : editingStrukId ? 'Simpan Perubahan' : `Simpan & Cetak (${paymentStatus})`}
               </button>
+            </div>
             </div>
           </div>
         </div>
