@@ -2266,6 +2266,7 @@ export const createLocalClient = () => {
 
         const email = options?.data?.email || options?.queryParams?.email || 'owner.google@example.com'
         const nama = options?.data?.nama || options?.queryParams?.nama || 'Owner Google'
+        const mode = (options?.mode || options?.data?.mode || 'login').toLowerCase()
         const cleanEmail = email.trim().toLowerCase()
 
         const profiles = localDbStore.getTable('profiles')
@@ -2276,9 +2277,17 @@ export const createLocalClient = () => {
           // Akun sudah ada -> login langsung
           tenant = localDbStore.getTable('tenants').find((t) => t.id === profile.tenant_id)
         } else {
-          // Akun baru -> Buat tenant baru (Trial 14 Hari)
+          if (mode !== 'register') {
+            return {
+              data: { user: null, session: null },
+              error: new Error('email belum memiliki tenant, silahkan klik DAFTAR untuk memulai'),
+            }
+          }
+
+          // Mode register -> Buat tenant baru (Trial 14 Hari)
           const randomSuffix = Math.random().toString(36).substring(2, 7)
-          const tenantName = options?.data?.tenantName || `${nama}'s Store`
+          const tenantName = options?.tenantName || options?.data?.tenantName || `${nama}'s Store`
+          const businessType = (options?.businessType || options?.data?.businessType || 'HYBRID').toUpperCase()
           const newTenantId = `tenant_${Date.now()}_${randomSuffix}`
           const slug = tenantName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `toko-${randomSuffix}`
 
@@ -2288,7 +2297,7 @@ export const createLocalClient = () => {
             slug,
             owner_name: nama,
             owner_email: cleanEmail,
-            business_type: options?.data?.businessType || 'HYBRID',
+            business_type: businessType,
             plan: 'TRIAL',
             status: 'ACTIVE',
             created_at: new Date().toISOString(),
@@ -2924,6 +2933,64 @@ export const createLocalClient = () => {
           return { data: { email: `${cleanId}.${cleanSlug}@pos.internal`, is_active: true }, error: null }
         }
         return { data: { email: cleanId.includes('@') ? cleanId : `${cleanId}@jb.local`, is_active: true }, error: null }
+      }
+
+      if (name === 'fn_complete_google_oauth_flow') {
+        const session = localDbStore.getAuth()
+        const uid = session?.user?.id
+        if (!uid) {
+          return { data: null, error: new Error('UNAUTHORIZED: Sesi tidak ditemukan.') }
+        }
+        const profiles = localDbStore.getTable('profiles')
+        const existing = profiles.find((p) => p.id === uid || p.email?.toLowerCase() === session.user.email?.toLowerCase())
+        if (existing) {
+          return { data: { status: 'EXISTING_USER', tenant_id: existing.tenant_id, role: existing.role }, error: null }
+        }
+        const mode = String(params?.p_mode || 'login').trim().toLowerCase()
+        if (mode !== 'register') {
+          return {
+            data: { status: 'UNREGISTERED', message: 'email belum memiliki tenant, silahkan klik DAFTAR untuk memulai' },
+            error: null,
+          }
+        }
+        const ownerName = (params?.p_owner_name || session.user.user_metadata?.nama || session.user.email?.split('@')[0] || 'Owner').trim()
+        const tenantName = (params?.p_tenant_name || `${ownerName}'s Store`).trim()
+        const businessType = String(params?.p_business_type || 'HYBRID').toUpperCase()
+        const randomSuffix = Math.random().toString(36).substring(2, 7)
+        const newTenantId = `tenant_${Date.now()}_${randomSuffix}`
+        const slug = tenantName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `toko-${randomSuffix}`
+        localDbStore.getTable('tenants').push({
+          id: newTenantId,
+          nama: tenantName,
+          slug,
+          owner_name: ownerName,
+          owner_email: session.user.email,
+          business_type: businessType,
+          plan: 'TRIAL',
+          status: 'ACTIVE',
+          created_at: new Date().toISOString(),
+        })
+        const newBranchId = `branch_${newTenantId}_main`
+        localDbStore.getTable('branches').push({
+          id: newBranchId,
+          tenant_id: newTenantId,
+          nama: 'Cabang Utama',
+          is_active: true,
+          created_at: new Date().toISOString(),
+        })
+        localDbStore.ensureTenantMasterData(newTenantId, businessType)
+        profiles.push({
+          id: uid,
+          tenant_id: newTenantId,
+          branch_id: newBranchId,
+          nama: ownerName,
+          email: session.user.email,
+          role: 'Owner',
+          provider: 'google',
+          created_at: new Date().toISOString(),
+        })
+        localDbStore.saveToStorage()
+        return { data: { status: 'REGISTERED_NEW_TENANT', tenant_id: newTenantId }, error: null }
       }
 
       throw new Error(`RPC ${name} not supported on local client`)

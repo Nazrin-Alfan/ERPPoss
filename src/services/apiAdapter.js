@@ -198,6 +198,22 @@ export const api = {
     },
 
     async signInWithGoogle(options = {}) {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(
+            'relaypos_google_oauth_intent',
+            JSON.stringify({
+              mode: options.mode || 'login',
+              tenantName: options.tenantName || '',
+              businessType: options.businessType || 'HYBRID',
+              nama: options.nama || '',
+            })
+          )
+        }
+      } catch {
+        // ignore storage errors
+      }
+
       if (isCloudBackend) {
         // Di mode Cloud: Eksekusi Google OAuth resmi via Supabase Auth
         const { data, error } = await supabase.auth.signInWithOAuth({

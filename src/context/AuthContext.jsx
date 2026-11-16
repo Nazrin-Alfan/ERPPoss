@@ -346,10 +346,66 @@ export const AuthProvider = ({ children }) => {
 
           // Sinkronisasi data profil lengkap dan tenant dengan batas waktu maksimum 3 detik
           const profilePromise = api.auth.getProfile(session.user.id).catch(() => null)
-          const p = await Promise.race([
+          let p = await Promise.race([
             profilePromise,
             new Promise((resolve) => setTimeout(() => resolve(null), 3000))
           ])
+
+          if (!p && typeof supabase.rpc === 'function') {
+            let intent = { mode: 'login', tenantName: '', businessType: 'HYBRID', nama: '' }
+            try {
+              const rawIntent = localStorage.getItem('relaypos_google_oauth_intent')
+              if (rawIntent) {
+                intent = { ...intent, ...JSON.parse(rawIntent) }
+                localStorage.removeItem('relaypos_google_oauth_intent')
+              }
+            } catch {
+              // ignore storage errors
+            }
+
+            const isGoogleSession =
+              session.user.app_metadata?.provider === 'google' ||
+              session.user.user_metadata?.iss?.includes('google')
+
+            if (isGoogleSession) {
+              const { data: rpcRes } = await supabase
+                .rpc('fn_complete_google_oauth_flow', {
+                  p_mode: intent.mode || 'login',
+                  p_tenant_name: intent.tenantName || null,
+                  p_business_type: intent.businessType || 'HYBRID',
+                  p_owner_name: intent.nama || null,
+                })
+                .catch(() => ({ data: null }))
+
+              if (rpcRes?.status === 'UNREGISTERED') {
+                try {
+                  sessionStorage.setItem(
+                    'relaypos_oauth_error',
+                    rpcRes.message || 'email belum memiliki tenant, silahkan klik DAFTAR untuk memulai'
+                  )
+                } catch {
+                  // ignore storage errors
+                }
+                await supabase.auth.signOut().catch(() => {})
+                if (isMounted) {
+                  setUser(null)
+                  setProfile(null)
+                  setActiveTenant(null)
+                  setUserTenants([])
+                  setTenantLicense(null)
+                  setLicenseStatus(null)
+                }
+                if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+                  window.location.replace('/login')
+                }
+                return
+              }
+
+              if (rpcRes?.status === 'REGISTERED_NEW_TENANT' || rpcRes?.status === 'EXISTING_USER') {
+                p = await api.auth.getProfile(session.user.id).catch(() => null)
+              }
+            }
+          }
 
           if (isMounted) {
             const finalProfile = p || fastProfile

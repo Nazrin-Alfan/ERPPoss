@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useAppTheme } from '../context/ThemeContext'
@@ -10,13 +10,11 @@ import {
   User,
   Sparkles,
   CheckCircle2,
-  Store,
-  UserCheck
+  LogIn
 } from 'lucide-react'
 import { ROLES } from '../constants/roles'
 
 const GOOGLE_AUTH_ENABLED = import.meta.env?.VITE_GOOGLE_AUTH_ENABLED !== 'false'
-const SAVED_STORE_SLUG_KEY = 'relaypos_saved_store_slug'
 
 const GoogleIcon = () => (
   <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
@@ -32,23 +30,12 @@ const Login = () => {
   const { currentTheme } = useAppTheme()
   const navigate = useNavigate()
 
-  // 'owner' | 'staff' | 'register'
-  const [activeTab, setActiveTab] = useState('owner')
+  // 'login' | 'register'
+  const [activeTab, setActiveTab] = useState('login')
 
-  // Owner login state
-  const [email, setEmail] = useState('')
+  // Single Login state (Owner, Co-Owner, Admin, Kasir, Super Admin)
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
-
-  // Staff / Kasir login state (Store Slug + Username + PIN)
-  const [storeSlug, setStoreSlug] = useState(() => {
-    try {
-      return localStorage.getItem(SAVED_STORE_SLUG_KEY) || ''
-    } catch {
-      return ''
-    }
-  })
-  const [staffUsername, setStaffUsername] = useState('')
-  const [staffPin, setStaffPin] = useState('')
 
   // Self-registration (Owner Onboarding) form state
   const [regNama, setRegNama] = useState('')
@@ -60,6 +47,18 @@ const Login = () => {
   const [error, setError] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    try {
+      const oauthErr = sessionStorage.getItem('relaypos_oauth_error')
+      if (oauthErr) {
+        sessionStorage.removeItem('relaypos_oauth_error')
+        setError(oauthErr)
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, [])
 
   const switchTab = (tab) => {
     setActiveTab(tab)
@@ -83,60 +82,24 @@ const Login = () => {
     }
   }
 
-  const handleOwnerLoginSubmit = async (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setSuccessMsg('')
     setLoading(true)
 
-    const cleanEmail = (email || '').trim()
+    const cleanIdentifier = (identifier || '').trim()
     const cleanPass = (password || '').trim()
 
-    if (!cleanEmail || !cleanPass) {
-      setError('Email dan kata sandi wajib diisi.')
+    if (!cleanIdentifier || !cleanPass) {
+      setError('Username atau email serta kata sandi wajib diisi.')
       setLoading(false)
       return
     }
 
-    const res = await login(cleanEmail, cleanPass, null)
+    const res = await login(cleanIdentifier, cleanPass, null)
     if (!res.success) {
-      setError(res.error || 'Gagal masuk. Periksa kembali email dan kata sandi Anda.')
-    } else {
-      routeAfterLogin(res)
-    }
-    setLoading(false)
-  }
-
-  const handleStaffLoginSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setSuccessMsg('')
-    setLoading(true)
-
-    const cleanSlug = (storeSlug || '').trim().toLowerCase()
-    const cleanUser = (staffUsername || '').trim()
-    const cleanPin = (staffPin || '').trim()
-
-    if (!cleanSlug) {
-      setError('Kode Toko wajib diisi agar akun kasir terhubung ke outlet yang tepat.')
-      setLoading(false)
-      return
-    }
-    if (!cleanUser || !cleanPin) {
-      setError('Username staf dan PIN/kata sandi wajib diisi.')
-      setLoading(false)
-      return
-    }
-
-    try {
-      localStorage.setItem(SAVED_STORE_SLUG_KEY, cleanSlug)
-    } catch {
-      // ignore storage errors
-    }
-
-    const res = await login(cleanUser, cleanPin, cleanSlug)
-    if (!res.success) {
-      setError(res.error || 'Gagal masuk. Periksa Kode Toko, Username, dan PIN Anda.')
+      setError(res.error || 'Gagal masuk. Periksa kembali kredensial Anda.')
     } else {
       routeAfterLogin(res)
     }
@@ -183,7 +146,7 @@ const Login = () => {
     }
   }
 
-  const handleGoogleAuth = async () => {
+  const runGoogleOAuth = async (payload) => {
     if (!GOOGLE_AUTH_ENABLED) {
       setError('Google Sign-In sedang dinonaktifkan sementara. Silakan mendaftar atau masuk menggunakan email.')
       return
@@ -192,7 +155,7 @@ const Login = () => {
     setSuccessMsg('')
     setLoading(true)
 
-    const res = await loginWithGoogle()
+    const res = await loginWithGoogle(payload)
     if (!res.success) {
       setError(res.error || 'Autentikasi Google gagal. Silakan coba lagi.')
       setLoading(false)
@@ -202,8 +165,17 @@ const Login = () => {
         routeAfterLogin(res)
       }, 500)
     }
-    // In Cloud OAuth mode, browser redirects to Google automatically.
   }
+
+  const handleGoogleLogin = () => runGoogleOAuth({ mode: 'login' })
+
+  const handleGoogleRegister = () =>
+    runGoogleOAuth({
+      mode: 'register',
+      tenantName: regTenantName.trim(),
+      businessType: regBusinessType,
+      nama: regNama.trim()
+    })
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#070a10] px-4 py-8 relative">
@@ -223,43 +195,31 @@ const Login = () => {
           <p className="text-slate-400 text-xs mt-1">Sistem Operasional &amp; Kasir Estafet Terpadu</p>
         </div>
 
-        {/* 3-Tab Role Navigation: Owner vs Kasir/Staf vs Daftar Toko */}
-        <div className="grid grid-cols-3 gap-1 p-1 bg-slate-900/80 border border-slate-800 rounded-xl mb-5">
+        {/* 2-Tab Navigation: Masuk ke Toko vs Daftar Toko Baru */}
+        <div className="grid grid-cols-2 gap-1 p-1 bg-slate-900/80 border border-slate-800 rounded-xl mb-5">
           <button
             type="button"
-            onClick={() => switchTab('owner')}
-            className={`py-2 px-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1 ${
-              activeTab === 'owner'
+            onClick={() => switchTab('login')}
+            className={`py-2 px-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              activeTab === 'login'
                 ? 'bg-brand-emerald text-slate-950 shadow-md shadow-brand-emerald/20'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Building2 size={13} />
-            <span>Pemilik</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => switchTab('staff')}
-            className={`py-2 px-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1 ${
-              activeTab === 'staff'
-                ? 'bg-brand-emerald text-slate-950 shadow-md shadow-brand-emerald/20'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <UserCheck size={13} />
-            <span>Kasir &amp; Staf</span>
+            <LogIn size={14} />
+            <span>Masuk ke Toko</span>
           </button>
           <button
             type="button"
             onClick={() => switchTab('register')}
-            className={`py-2 px-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1 ${
+            className={`py-2 px-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
               activeTab === 'register'
                 ? 'bg-brand-emerald text-slate-950 shadow-md shadow-brand-emerald/20'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Sparkles size={13} />
-            <span>Buka Toko</span>
+            <Sparkles size={14} />
+            <span>Daftar Toko Baru</span>
           </button>
         </div>
 
@@ -279,12 +239,12 @@ const Login = () => {
           </div>
         )}
 
-        {/* TAB 1: LOGIN OWNER (GOOGLE OAUTH UTAMA + EMAIL/PASSWORD) */}
-        {activeTab === 'owner' && (
+        {/* TAB 1: MASUK KE TOKO (SINGLE LOGIN SEMUA ROLE) */}
+        {activeTab === 'login' && (
           <>
             <button
               type="button"
-              onClick={handleGoogleAuth}
+              onClick={handleGoogleLogin}
               disabled={!GOOGLE_AUTH_ENABLED || loading}
               className={`w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2.5 transition-all text-xs sm:text-sm border ${
                 GOOGLE_AUTH_ENABLED
@@ -293,34 +253,34 @@ const Login = () => {
               }`}
             >
               <GoogleIcon />
-              <span>{GOOGLE_AUTH_ENABLED ? 'Lanjutkan dengan Google (Owner)' : 'Google Sign-In Dinonaktifkan'}</span>
+              <span>{GOOGLE_AUTH_ENABLED ? 'Lanjutkan dengan Google' : 'Google Sign-In Dinonaktifkan'}</span>
             </button>
             <p className="text-[11px] text-slate-400 text-center mt-2">
-              Email Google terverifikasi otomatis. Mendukung Owner &amp; Co-Owner terdaftar.
+              Khusus akun Google yang sudah terdaftar di toko atau diundang Owner.
             </p>
 
             <div className="relative flex py-4 items-center">
               <div className="flex-grow border-t border-slate-800"></div>
               <span className="flex-shrink mx-3 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-                atau masuk dengan email
+                atau masuk dengan akun toko
               </span>
               <div className="flex-grow border-t border-slate-800"></div>
             </div>
 
-            <form onSubmit={handleOwnerLoginSubmit} className="space-y-4">
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div>
-                <label htmlFor="owner-email" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                  Email Pemilik / Owner
+                <label htmlFor="login-identifier" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                  Username atau Email
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-3 text-slate-500" size={16} />
+                  <User className="absolute left-3.5 top-3 text-slate-500" size={16} />
                   <input
-                    id="owner-email"
-                    name="email"
+                    id="login-identifier"
+                    name="identifier"
                     type="text"
-                    placeholder="owner@tokoanda.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="owner@tokoanda.com atau kasir1"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm font-mono"
                     required
                   />
@@ -329,8 +289,8 @@ const Login = () => {
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label htmlFor="owner-password" className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
-                    Kata Sandi
+                  <label htmlFor="login-password" className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    PIN / Kata Sandi
                   </label>
                   <Link
                     to="/forgot-password"
@@ -342,7 +302,7 @@ const Login = () => {
                 <div className="relative">
                   <KeyRound className="absolute left-3.5 top-3 text-slate-500" size={16} />
                   <input
-                    id="owner-password"
+                    id="login-password"
                     name="password"
                     type="password"
                     placeholder="••••••••"
@@ -362,97 +322,19 @@ const Login = () => {
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
                 ) : (
-                  'Masuk sebagai Pemilik'
+                  'Masuk'
                 )}
               </button>
             </form>
           </>
         )}
 
-        {/* TAB 2: LOGIN KASIR & STAF (KODE TOKO + USERNAME + PIN, TANPA GOOGLE OAUTH) */}
-        {activeTab === 'staff' && (
-          <form onSubmit={handleStaffLoginSubmit} className="space-y-4">
-            <div className="p-3 rounded-xl bg-slate-900/70 border border-slate-800 text-[11px] text-slate-400 leading-relaxed">
-              Khusus perangkat kasir &amp; admin operasional. Kode Toko tersimpan otomatis di perangkat ini setelah login pertama.
-            </div>
-
-            <div>
-              <label htmlFor="staff-store-slug" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                Kode Toko (Store ID)
-              </label>
-              <div className="relative">
-                <Store className="absolute left-3.5 top-3 text-slate-500" size={16} />
-                <input
-                  id="staff-store-slug"
-                  name="storeSlug"
-                  type="text"
-                  placeholder="contoh: berkah-auto-wash"
-                  value={storeSlug}
-                  onChange={(e) => setStoreSlug(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm font-mono lowercase"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="staff-username" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                Username Kasir / Staf
-              </label>
-              <div className="relative">
-                <User className="absolute left-3.5 top-3 text-slate-500" size={16} />
-                <input
-                  id="staff-username"
-                  name="username"
-                  type="text"
-                  placeholder="kasir1"
-                  value={staffUsername}
-                  onChange={(e) => setStaffUsername(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm font-mono"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="staff-pin" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                PIN / Kata Sandi
-              </label>
-              <div className="relative">
-                <KeyRound className="absolute left-3.5 top-3 text-slate-500" size={16} />
-                <input
-                  id="staff-pin"
-                  name="pin"
-                  type="password"
-                  placeholder="••••••"
-                  value={staffPin}
-                  onChange={(e) => setStaffPin(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm font-mono"
-                  required
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-brand-emerald hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-black rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-brand-emerald/20 cursor-pointer disabled:opacity-50 mt-2"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                'Buka Mesin Kasir (POS)'
-              )}
-            </button>
-          </form>
-        )}
-
-        {/* TAB 3: FORM REGISTRASI MANDIRI OWNER (SELF-SERVICE ONBOARDING) */}
+        {/* TAB 2: DAFTAR TOKO BARU (SELF-SERVICE ONBOARDING) */}
         {activeTab === 'register' && (
           <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
             <button
               type="button"
-              onClick={handleGoogleAuth}
+              onClick={handleGoogleRegister}
               disabled={!GOOGLE_AUTH_ENABLED || loading}
               className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold flex items-center justify-center gap-2.5 transition-all shadow-md active:scale-[0.98] cursor-pointer border border-slate-200 text-xs sm:text-sm disabled:opacity-50"
             >

@@ -13,7 +13,6 @@ import { BUSINESS_TYPES, getTenantFeatures } from './utils/businessCapabilities'
 import { ROLES, ROLE_PERMISSIONS, getRoleLandingRoute } from './constants/roles'
 
 import Login from './pages/Login'
-const FounderLogin = lazy(() => import('./pages/FounderLogin'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 
 // Lazy load seluruh modul halaman ERP agar initial bundle ringan & cepat dimuat
@@ -159,10 +158,9 @@ export const AppContent = () => {
     }
   }
 
-  // Cek apakah sedang berada di Halaman Mandiri tanpa Sidebar (Login, FounderLogin, ForgotPassword, Konsolidasi, Founder Cockpit)
+  // Cek apakah sedang berada di Halaman Mandiri tanpa Sidebar (Login, ForgotPassword, Konsolidasi, Founder Cockpit)
   const isStandalonePage =
     location.pathname === '/login' ||
-    location.pathname === '/founder-login' ||
     location.pathname === '/forgot-password' ||
     location.pathname === '/konsolidasi' ||
     location.pathname === '/founder'
@@ -256,7 +254,6 @@ export const AppContent = () => {
               <Routes>
               {/* Rute Login: Selalu dapat diakses langsung */}
               <Route path="/login" element={<Login />} />
-              <Route path="/founder-login" element={<FounderLogin />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
 
               {/* Rute Root Aplikasi: Smart Landing Dispatcher Berdasarkan Peran */}
