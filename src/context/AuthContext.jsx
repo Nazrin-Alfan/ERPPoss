@@ -367,22 +367,25 @@ export const AuthProvider = ({ children }) => {
 
             if (isGoogleSession) {
               if (!inFlightOAuthPromise) {
-                inFlightOAuthPromise = supabase
-                  .rpc('fn_complete_google_oauth_flow', {
-                    p_mode: intent.mode || 'login',
-                    p_tenant_name: intent.tenantName || null,
-                    p_business_type: intent.businessType || 'HYBRID',
-                    p_owner_name: intent.nama || null,
-                  })
-                  .catch(() => ({ data: null }))
-                  .finally(() => {
+                inFlightOAuthPromise = (async () => {
+                  try {
+                    return await supabase.rpc('fn_complete_google_oauth_flow', {
+                      p_mode: intent.mode || 'login',
+                      p_tenant_name: intent.tenantName || null,
+                      p_business_type: intent.businessType || 'HYBRID',
+                      p_owner_name: intent.nama || null,
+                    })
+                  } catch (rpcException) {
+                    return { data: null, error: rpcException }
+                  } finally {
                     try {
                       localStorage.removeItem('relaypos_google_oauth_intent')
                     } catch {
                       // ignore storage errors
                     }
                     inFlightOAuthPromise = null
-                  })
+                  }
+                })()
               }
               const { data: rpcRes, error: rpcErr } = await inFlightOAuthPromise
 
