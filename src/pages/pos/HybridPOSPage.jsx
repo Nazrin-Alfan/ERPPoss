@@ -210,10 +210,11 @@ const CafePOS = () => {
   const [menuItems, setMenuItems] = useState(() => (DEFAULT_MASTER_DATA.daftar_harga_menu || []).map(m => ({ ...m, nama_menu: m.daftar_menu })))
   const [resepList, setResepList] = useState(() => DEFAULT_MASTER_DATA.resep || [])
 
-  // Form State
+  // Form State - Terikat langsung ke akun pengguna/kasir yang sedang login
   const [selectedCashier, setSelectedCashier] = useState(() => {
+    if (profile?.nama) return profile.nama.toUpperCase()
     const active = (DEFAULT_MASTER_DATA.kasir || []).filter(k => k.is_active)
-    return active.length > 0 ? (active[0].nama || '').toUpperCase() : ''
+    return active.length > 0 ? (active[0].nama || '').toUpperCase() : 'KASIR'
   })
   const [selectedPayment, setSelectedPayment] = useState(() => {
     const active = (DEFAULT_MASTER_DATA.metode_bayar || []).filter(p => p.is_active)
@@ -517,10 +518,10 @@ const CafePOS = () => {
         console.warn('Fallback to static washing employees:', err)
       }
 
-      if (profile && isCashier(profile.role)) {
-        setSelectedCashier(profile.nama ? profile.nama.toUpperCase() : '')
+      if (profile?.nama) {
+        setSelectedCashier(profile.nama.toUpperCase())
       } else if (defaultCashiers && defaultCashiers.length > 0) {
-        setSelectedCashier(defaultCashiers[0].nama ? defaultCashiers[0].nama.toUpperCase() : '')
+        setSelectedCashier(defaultCashiers[0].nama ? defaultCashiers[0].nama.toUpperCase() : 'KASIR')
       }
 
       if (defaultPayments && defaultPayments.length > 0) setSelectedPayment(defaultPayments[0].nama)
@@ -2149,25 +2150,16 @@ const CafePOS = () => {
         </div>
         {/* Sisi Kanan: Kasir Aktif & Status Laci Kas Ringkas */}
         <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end pt-1 sm:pt-0 border-t border-border/50 sm:border-t-0">
-          {/* Status Kasir & Shift */}
+          {/* Status Akun Kasir Login & Shift */}
           <div className="flex items-center gap-1.5 bg-subsurface border border-border rounded-xl px-2.5 py-1 text-xs">
             <span className="w-2 h-2 rounded-full bg-primary text-primary-foreground animate-pulse shrink-0"></span>
             <span className="text-muted-dark text-[10px] font-semibold hidden sm:inline uppercase tracking-wider">Kasir:</span>
-            {isCashier(profile?.role) ? (
-              <span className="font-bold text-white uppercase text-xs">{selectedCashier}</span>
-            ) : (
-              <CustomSelect
-                value={selectedCashier}
-                onChange={(val) => setSelectedCashier(val)}
-                options={cashiers.map(c => ({ value: c.nama, label: c.nama }))}
-                size="xs"
-                variant="emerald"
-                className="w-28"
-              />
-            )}
+            <span className="font-bold text-white uppercase text-xs tracking-wide">
+              {profile?.nama || selectedCashier || 'KASIR'}
+            </span>
             <span className="text-slate-700 font-mono">|</span>
-            <span className="text-primary font-bold font-mono text-[11px]">
-              {getShiftForCashier(selectedCashier)}
+            <span className="text-primary font-bold font-mono text-[11px] bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
+              {getShiftForCashier(profile?.nama || selectedCashier)}
             </span>
           </div>
 
