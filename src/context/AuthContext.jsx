@@ -400,7 +400,7 @@ export const AuthProvider = ({ children }) => {
                 } catch {
                   // ignore storage errors
                 }
-                await supabase.auth.signOut().catch(() => {})
+                await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
                 if (isMounted) {
                   setUser(null)
                   setProfile(null)
@@ -408,9 +408,6 @@ export const AuthProvider = ({ children }) => {
                   setUserTenants([])
                   setTenantLicense(null)
                   setLicenseStatus(null)
-                }
-                if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-                  window.location.replace('/login')
                 }
                 return
               }
