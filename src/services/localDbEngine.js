@@ -2176,6 +2176,7 @@ export const createLocalClient = () => {
           business_type: cleanType,
           plan: 'TRIAL',
           status: 'ACTIVE',
+          onboarding_completed: false,
           created_at: new Date().toISOString(),
         }
         localDbStore.getTable('tenants').push(newTenant)
@@ -2300,6 +2301,7 @@ export const createLocalClient = () => {
             business_type: businessType,
             plan: 'TRIAL',
             status: 'ACTIVE',
+            onboarding_completed: false,
             created_at: new Date().toISOString(),
           }
           localDbStore.getTable('tenants').push(tenant)
@@ -2968,6 +2970,7 @@ export const createLocalClient = () => {
           business_type: businessType,
           plan: 'TRIAL',
           status: 'ACTIVE',
+          onboarding_completed: false,
           created_at: new Date().toISOString(),
         })
         const newBranchId = `branch_${newTenantId}_main`
@@ -2991,6 +2994,167 @@ export const createLocalClient = () => {
         })
         localDbStore.saveToStorage()
         return { data: { status: 'REGISTERED_NEW_TENANT', tenant_id: newTenantId }, error: null }
+      }
+
+      if (name === 'fn_complete_store_setup') {
+        const tenantId = params?.p_tenant_id
+        const payload = params?.p_payload || {}
+        const tenants = localDbStore.getTable('tenants') || []
+        const branches = localDbStore.getTable('branches') || []
+        const profiles = localDbStore.getTable('profiles') || []
+
+        const targetTenant = tenants.find((t) => t.id === tenantId)
+        if (!targetTenant) {
+          return { data: null, error: new Error('TENANT_NOT_FOUND') }
+        }
+
+        const session = localDbStore.getAuth()
+        const uid = session?.user?.id
+        const callerProfile = profiles.find((p) => p.id === uid)
+        if (callerProfile && callerProfile.role !== 'Super Admin' && callerProfile.tenant_id !== tenantId) {
+          return { data: null, error: new Error('FORBIDDEN: Hanya Owner toko ini yang berhak mengonfigurasi setup toko.') }
+        }
+
+        let mainBranch = branches.find((b) => b.tenant_id === tenantId && (b.is_main || b.kode === 'MAIN')) ||
+          branches.find((b) => b.tenant_id === tenantId)
+
+        if (payload.skip) {
+          targetTenant.onboarding_completed = true
+          targetTenant.updated_at = new Date().toISOString()
+          localDbStore.saveToStorage()
+          return {
+            data: {
+              success: true,
+              tenant_id: tenantId,
+              branch_id: mainBranch?.id || null,
+              onboarding_completed: true,
+              skipped: true,
+            },
+            error: null,
+          }
+        }
+
+        if (payload.owner_name && callerProfile) {
+          callerProfile.nama = String(payload.owner_name).trim()
+          callerProfile.updated_at = new Date().toISOString()
+        }
+        if (payload.store_name) {
+          targetTenant.nama = String(payload.store_name).trim()
+        }
+        if (payload.business_type && ['HYBRID', 'CAFE', 'CARWASH'].includes(String(payload.business_type).toUpperCase())) {
+          targetTenant.business_type = String(payload.business_type).toUpperCase()
+        }
+        targetTenant.onboarding_completed = true
+        targetTenant.updated_at = new Date().toISOString()
+
+        if (mainBranch) {
+          if (payload.store_name) mainBranch.nama = String(payload.store_name).trim()
+          if (payload.alamat !== undefined && payload.alamat !== null && String(payload.alamat).trim() !== '') {
+            mainBranch.alamat = String(payload.alamat).trim()
+          }
+          if (payload.telepon !== undefined && payload.telepon !== null && String(payload.telepon).trim() !== '') {
+            mainBranch.telepon = String(payload.telepon).trim()
+          }
+          mainBranch.updated_at = new Date().toISOString()
+        }
+
+        const hasTx = (localDbStore.getTable('struk') || []).some((s) => s.tenant_id === tenantId)
+        if (payload.clear_starter_samples && !hasTx) {
+          for (const tblName of ['resep', 'daftar_harga_menu', 'carwash_packages', 'stok_barang']) {
+            const arr = localDbStore.getTable(tblName)
+            if (Array.isArray(arr)) {
+              for (let i = arr.length - 1; i >= 0; i--) {
+                if (arr[i].tenant_id === tenantId) arr.splice(i, 1)
+              }
+            }
+          }
+        }
+
+        if (Array.isArray(payload.carwash_packages)) {
+          const pkgTable = localDbStore.getTable('carwash_packages')
+          for (const pkg of payload.carwash_packages) {
+            const pkgName = String(pkg.nama_paket || pkg.name || '').trim().toUpperCase()
+            const pkgPrice = Math.max(0, parseFloat(pkg.tarif ?? pkg.price ?? 0) || 0)
+            if (pkgName) {
+              pkgTable.push({
+                id: `pkg_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+                tenant_id: tenantId,
+                branch_id: mainBranch?.id || null,
+                name: pkgName,
+                nama_paket: pkgName,
+                price: pkgPrice,
+                tarif: pkgPrice,
+                is_active: true,
+                created_at: new Date().toISOString(),
+              })
+            }
+          }
+        }
+
+        if (Array.isArray(payload.cafe_menus)) {
+          const menuTable = localDbStore.getTable('daftar_harga_menu')
+          for (const menu of payload.cafe_menus) {
+            const menuName = String(menu.nama_menu || menu.daftar_menu || '').trim()
+            const menuPrice = Math.max(0, parseFloat(menu.harga ?? 0) || 0)
+            const menuCat = String(menu.kategori || 'Minuman').trim()
+            if (menuName) {
+              menuTable.push({
+                id: `menu_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+                tenant_id: tenantId,
+                branch_id: mainBranch?.id || null,
+                daftar_menu: menuName,
+                nama_menu: menuName,
+                harga: menuPrice,
+                kategori: menuCat,
+                is_active: true,
+                updated_at: new Date().toISOString(),
+              })
+            }
+          }
+        }
+
+        if (Array.isArray(payload.stock_items)) {
+          const stockTable = localDbStore.getTable('stok_barang')
+          for (const item of payload.stock_items) {
+            const itemName = String(item.nama_barang || item.nama_produk || '').trim()
+            if (itemName) {
+              const qty = Math.max(0, parseFloat(item.stok ?? 0) || 0)
+              const cost = Math.max(0, parseFloat(item.harga_satuan ?? item.harga_beli ?? 0) || 0)
+              const minStok = Math.max(0, parseFloat(item.min_stok ?? 5) || 5)
+              const gudang = ['CAFE', 'CARWASH', 'MERCHANDISE'].includes(String(item.gudang || '').toUpperCase())
+                ? String(item.gudang).toUpperCase()
+                : 'CAFE'
+              stockTable.push({
+                id: `stk_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+                tenant_id: tenantId,
+                branch_id: mainBranch?.id || null,
+                nama_produk: itemName,
+                nama_barang: itemName,
+                satuan: String(item.satuan || 'pcs').trim(),
+                stok: qty,
+                stok_akhir: qty,
+                harga_satuan: cost,
+                harga_beli: cost,
+                min_stok: minStok,
+                gudang,
+                kategori: 'Bahan Baku',
+                is_active: true,
+                updated_at: new Date().toISOString(),
+              })
+            }
+          }
+        }
+
+        localDbStore.saveToStorage()
+        return {
+          data: {
+            success: true,
+            tenant_id: tenantId,
+            branch_id: mainBranch?.id || null,
+            onboarding_completed: true,
+          },
+          error: null,
+        }
       }
 
       throw new Error(`RPC ${name} not supported on local client`)

@@ -5,6 +5,7 @@ import { DEFAULT_TENANT_ID, DEFAULT_BRANCH_ID } from '../constants/erpConfig'
 import { ROLES } from '../constants/roles'
 import { setActiveTenantId, setActiveActorContext, resetActiveActorContext } from '../services/localDbEngine'
 import { evaluateLicenseStatus } from '../utils/licenseHelpers'
+import { DEFAULT_RECEIPT_CONFIG, getReceiptConfig, saveReceiptConfig } from '../utils/receiptHelpers'
 
 const ACTIVE_TENANT_STORAGE_KEY = 'relaypos_active_tenant_id'
 
@@ -225,6 +226,33 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem(ACTIVE_TENANT_STORAGE_KEY, resolvedTenant.id)
         setActiveTenantId(resolvedTenant.id)
         await loadTenantLicense(resolvedTenant.id, prof)
+
+        // Sinkronkan identitas cabang aktif ke header struk jika masih memakai nilai default
+        try {
+          const { data: branchRows } = await supabase
+            .from('branches')
+            .select('nama, alamat, telepon, is_main, kode')
+            .eq('tenant_id', resolvedTenant.id)
+          const mainBranch = Array.isArray(branchRows)
+            ? branchRows.find((b) => b.is_main || b.kode === 'MAIN') || branchRows[0]
+            : null
+          const currentCfg = getReceiptConfig()
+          const patch = {}
+          if (resolvedTenant.nama && currentCfg.storeName === DEFAULT_RECEIPT_CONFIG.storeName) {
+            patch.storeName = resolvedTenant.nama
+          }
+          if (mainBranch?.alamat && currentCfg.storeAddress === DEFAULT_RECEIPT_CONFIG.storeAddress) {
+            patch.storeAddress = mainBranch.alamat
+          }
+          if (mainBranch?.telepon && currentCfg.storePhone === DEFAULT_RECEIPT_CONFIG.storePhone) {
+            patch.storePhone = mainBranch.telepon
+          }
+          if (Object.keys(patch).length > 0) {
+            saveReceiptConfig(patch)
+          }
+        } catch {
+          // Non-blocking sync
+        }
       }
     } catch (err) {
       console.warn('Gagal memuat daftar tenant pengguna:', err?.message || err)
