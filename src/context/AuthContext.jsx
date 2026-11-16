@@ -384,14 +384,15 @@ export const AuthProvider = ({ children }) => {
                     inFlightOAuthPromise = null
                   })
               }
-              const { data: rpcRes } = await inFlightOAuthPromise
+              const { data: rpcRes, error: rpcErr } = await inFlightOAuthPromise
 
-              if (rpcRes?.status === 'UNREGISTERED') {
+              if (rpcErr || !rpcRes || rpcRes?.status === 'UNREGISTERED') {
+                const errMsg =
+                  rpcRes?.message ||
+                  rpcErr?.message ||
+                  'email belum memiliki tenant, silahkan klik DAFTAR untuk memulai'
                 try {
-                  sessionStorage.setItem(
-                    'relaypos_oauth_error',
-                    rpcRes.message || 'email belum memiliki tenant, silahkan klik DAFTAR untuk memulai'
-                  )
+                  sessionStorage.setItem('relaypos_oauth_error', errMsg)
                 } catch {
                   // ignore storage errors
                 }
