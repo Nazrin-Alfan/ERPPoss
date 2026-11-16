@@ -2108,7 +2108,7 @@ const CafePOS = () => {
             {showCashOpsMenu && (
               <>
                 <div className="fixed inset-0 z-[60] bg-transparent" onClick={() => setShowCashOpsMenu(false)} />
-                <div className="absolute left-0 top-full mt-2 w-52 bg-[#121215] border border-[#26272d] rounded-xl p-1.5 shadow-2xl z-[70] space-y-1 animate-slide-up">
+                <div className="absolute right-0 sm:left-0 top-full mt-2 w-52 bg-[#121215] border border-[#26272d] rounded-xl p-1.5 shadow-2xl z-[70] space-y-1 animate-slide-up">
                   <button
                     type="button"
                     onClick={() => { setActiveTab('expense'); setShowCashOpsMenu(false); }}
