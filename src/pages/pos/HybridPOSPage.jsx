@@ -1980,7 +1980,7 @@ const CafePOS = () => {
   return (
     <div className="p-2 sm:p-4 md:pb-6 flex flex-col max-w-7xl mx-auto min-h-[calc(100vh-4rem)] w-full max-w-full min-w-0 overflow-x-hidden space-y-3">
       {/* 1. TOP HEADER FULL-WIDTH (BEBAS DARI SCROLL SAMPING & TAMPIL 100% LEGA) */}
-      <div className="glass-panel p-2.5 sm:px-3.5 sm:py-2.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0 relative z-30 w-full max-w-full">
+      <div className="glass-panel p-2.5 sm:px-3.5 sm:py-2.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0 relative z-40 w-full max-w-full">
         {/* Sisi Kiri: Navigasi Tabs Lengkap */}
         <div className="flex items-center gap-1.5 w-full sm:w-auto min-w-0">
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 flex-nowrap overscroll-x-contain shrink min-w-0">
@@ -2107,8 +2107,8 @@ const CafePOS = () => {
 
             {showCashOpsMenu && (
               <>
-                <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setShowCashOpsMenu(false)} />
-                <div className="absolute left-0 top-full mt-2 w-52 bg-surface backdrop-blur-md border border-border rounded-xl p-1.5 shadow-2xl z-50 space-y-1 animate-slide-up">
+                <div className="fixed inset-0 z-[60] bg-transparent" onClick={() => setShowCashOpsMenu(false)} />
+                <div className="absolute left-0 top-full mt-2 w-52 bg-[#121215] border border-[#26272d] rounded-xl p-1.5 shadow-2xl z-[70] space-y-1 animate-slide-up">
                   <button
                     type="button"
                     onClick={() => { setActiveTab('expense'); setShowCashOpsMenu(false); }}
@@ -2194,10 +2194,10 @@ const CafePOS = () => {
             {showCashDrawerDetail && (
               <>
                 <div
-                  className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[0.5px]"
+                  className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[0.5px]"
                   onClick={() => setShowCashDrawerDetail(false)}
                 />
-                <div className="absolute right-0 top-full mt-2 w-72 bg-surface backdrop-blur-md border border-border rounded-xl p-3.5 shadow-2xl z-50 space-y-2.5 animate-slide-up">
+                <div className="absolute right-0 top-full mt-2 w-72 bg-[#121215] border border-[#26272d] rounded-xl p-3.5 shadow-2xl z-[70] space-y-2.5 animate-slide-up">
                   <div className="flex items-center justify-between border-b border-border pb-2">
                     <span className="text-xs font-bold text-white flex items-center gap-1.5">
                       <Wallet size={14} className="text-purple-400" />
