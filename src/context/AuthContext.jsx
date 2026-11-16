@@ -17,6 +17,8 @@ const AuthContext = createContext({
   tenantLicense: null,
   licenseStatus: null,
   isLicenseLoading: false,
+  oauthError: '',
+  clearOAuthError: () => {},
   loadTenantLicense: async () => {},
   activateLicenseKey: async () => {},
   refreshLicense: async () => {},
@@ -38,6 +40,8 @@ export const AuthProvider = ({ children }) => {
   const [tenantLicense, setTenantLicense] = useState(null)
   const [licenseStatus, setLicenseStatus] = useState(null)
   const [isLicenseLoading, setIsLicenseLoading] = useState(false)
+  const [oauthError, setOauthError] = useState('')
+  const clearOAuthError = useCallback(() => setOauthError(''), [])
 
   // Ref stabil untuk mencegah re-trigger siklus render cascading
   const profileRef = useRef(profile)
@@ -318,8 +322,9 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     let isMounted = true
-    let isInitialized = false
     let inFlightOAuthPromise = null
+    let lastProcessedSessionKey = null
+    let activeSyncPromise = null
 
     // Safety guard timeout: JANGAN PERNAH biarkan pengguna stuck di "Memuat Sesi..." lebih dari 3.5 detik
     const safetyTimer = setTimeout(() => {
@@ -330,101 +335,119 @@ export const AuthProvider = ({ children }) => {
     }, 3500)
 
     const syncSession = async (session) => {
-      try {
-        if (session && session.user) {
-          // Tetapkan profil instan berbasis metadata sesi sebagai fallback jika profil DB belum dimuat
-          const fastProfile = {
-            id: session.user.id,
-            email: session.user.email,
-            nama: session.user.user_metadata?.nama || session.user.email || 'Pengguna RelayPOS',
-            role: session.user.role || session.user.user_metadata?.role || 'Owner',
-            tenant_id: session.user.tenant_id || DEFAULT_TENANT_ID
-          }
+      const sessionKey = session?.user ? `${session.user.id}:${session.access_token || ''}` : 'ANONYMOUS'
+      if (session?.user && sessionKey === lastProcessedSessionKey && activeSyncPromise) {
+        return activeSyncPromise
+      }
+      if (session?.user) {
+        lastProcessedSessionKey = sessionKey
+      } else {
+        lastProcessedSessionKey = null
+      }
 
-          // Sinkronisasi data profil lengkap dan tenant dengan batas waktu maksimum 3 detik
-          const profilePromise = api.auth.getProfile(session.user.id).catch(() => null)
-          let p = await Promise.race([
-            profilePromise,
-            new Promise((resolve) => setTimeout(() => resolve(null), 3000))
-          ])
-
-          if (!p && typeof supabase.rpc === 'function') {
-            let intent = { mode: 'login', tenantName: '', businessType: 'HYBRID', nama: '' }
-            try {
-              const rawIntent = localStorage.getItem('relaypos_google_oauth_intent')
-              if (rawIntent) {
-                intent = { ...intent, ...JSON.parse(rawIntent) }
-              }
-            } catch {
-              // ignore storage errors
+      const run = (async () => {
+        try {
+          if (session && session.user) {
+            // Tetapkan profil instan berbasis metadata sesi sebagai fallback jika profil DB belum dimuat
+            const fastProfile = {
+              id: session.user.id,
+              email: session.user.email,
+              nama: session.user.user_metadata?.nama || session.user.email || 'Pengguna RelayPOS',
+              role: session.user.role || session.user.user_metadata?.role || 'Owner',
+              tenant_id: session.user.tenant_id || DEFAULT_TENANT_ID
             }
 
-            const isGoogleSession =
-              session.user.app_metadata?.provider === 'google' ||
-              session.user.user_metadata?.iss?.includes('google') ||
-              (Array.isArray(session.user.app_metadata?.providers) &&
-                session.user.app_metadata.providers.includes('google'))
+            // Sinkronisasi data profil lengkap dan tenant dengan batas waktu maksimum 3 detik
+            const profilePromise = api.auth.getProfile(session.user.id).catch(() => null)
+            let p = await Promise.race([
+              profilePromise,
+              new Promise((resolve) => setTimeout(() => resolve(null), 3000))
+            ])
 
-            if (isGoogleSession) {
-              if (!inFlightOAuthPromise) {
-                inFlightOAuthPromise = (async () => {
-                  try {
-                    return await supabase.rpc('fn_complete_google_oauth_flow', {
-                      p_mode: intent.mode || 'login',
-                      p_tenant_name: intent.tenantName || null,
-                      p_business_type: intent.businessType || 'HYBRID',
-                      p_owner_name: intent.nama || null,
-                    })
-                  } catch (rpcException) {
-                    return { data: null, error: rpcException }
-                  } finally {
+            if (!p && typeof supabase.rpc === 'function') {
+              let intent = { mode: 'login', tenantName: '', businessType: 'HYBRID', nama: '' }
+              try {
+                const rawIntent = localStorage.getItem('relaypos_google_oauth_intent')
+                if (rawIntent) {
+                  intent = { ...intent, ...JSON.parse(rawIntent) }
+                }
+              } catch {
+                // ignore storage errors
+              }
+
+              const isGoogleSession =
+                session.user.app_metadata?.provider === 'google' ||
+                session.user.user_metadata?.iss?.includes('google') ||
+                (Array.isArray(session.user.app_metadata?.providers) &&
+                  session.user.app_metadata.providers.includes('google'))
+
+              if (isGoogleSession) {
+                if (!inFlightOAuthPromise) {
+                  inFlightOAuthPromise = (async () => {
                     try {
-                      localStorage.removeItem('relaypos_google_oauth_intent')
-                    } catch {
-                      // ignore storage errors
+                      return await supabase.rpc('fn_complete_google_oauth_flow', {
+                        p_mode: intent.mode || 'login',
+                        p_tenant_name: intent.tenantName || null,
+                        p_business_type: intent.businessType || 'HYBRID',
+                        p_owner_name: intent.nama || null,
+                      })
+                    } catch (rpcException) {
+                      return { data: null, error: rpcException }
+                    } finally {
+                      try {
+                        localStorage.removeItem('relaypos_google_oauth_intent')
+                      } catch {
+                        // ignore storage errors
+                      }
+                      inFlightOAuthPromise = null
                     }
-                    inFlightOAuthPromise = null
+                  })()
+                }
+                const { data: rpcRes, error: rpcErr } = await inFlightOAuthPromise
+
+                if (rpcErr || !rpcRes || rpcRes?.status === 'UNREGISTERED') {
+                  const errMsg =
+                    rpcRes?.message ||
+                    rpcErr?.message ||
+                    'email belum memiliki tenant, silahkan klik DAFTAR untuk memulai'
+                  if (isMounted) {
+                    setOauthError(errMsg)
+                    setUser(null)
+                    setProfile(null)
+                    setActiveTenant(null)
+                    setUserTenants([])
+                    setTenantLicense(null)
+                    setLicenseStatus(null)
                   }
-                })()
-              }
-              const { data: rpcRes, error: rpcErr } = await inFlightOAuthPromise
-
-              if (rpcErr || !rpcRes || rpcRes?.status === 'UNREGISTERED') {
-                const errMsg =
-                  rpcRes?.message ||
-                  rpcErr?.message ||
-                  'email belum memiliki tenant, silahkan klik DAFTAR untuk memulai'
-                try {
-                  sessionStorage.setItem('relaypos_oauth_error', errMsg)
-                  window.dispatchEvent(new CustomEvent('relaypos:oauth_error', { detail: errMsg }))
-                } catch {
-                  // ignore storage errors
+                  await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
+                  return
                 }
-                await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
-                if (isMounted) {
-                  setUser(null)
-                  setProfile(null)
-                  setActiveTenant(null)
-                  setUserTenants([])
-                  setTenantLicense(null)
-                  setLicenseStatus(null)
-                }
-                return
-              }
 
-              if (rpcRes?.status === 'REGISTERED_NEW_TENANT' || rpcRes?.status === 'EXISTING_USER') {
-                p = await api.auth.getProfile(session.user.id).catch(() => null)
+                if (rpcRes?.status === 'REGISTERED_NEW_TENANT' || rpcRes?.status === 'EXISTING_USER') {
+                  p = await api.auth.getProfile(session.user.id).catch(() => null)
+                }
               }
             }
-          }
 
-          if (isMounted) {
-            const finalProfile = p || fastProfile
-            setUser(session.user)
-            setProfile(finalProfile)
-            await loadTenantsForUser(finalProfile)
+            if (isMounted) {
+              const finalProfile = p || fastProfile
+              setOauthError('')
+              setUser(session.user)
+              setProfile(finalProfile)
+              await loadTenantsForUser(finalProfile)
+            }
+          } else {
+            if (isMounted) {
+              setUser(null)
+              setProfile(null)
+              setActiveTenant(null)
+              setUserTenants([])
+              setTenantLicense(null)
+              setLicenseStatus(null)
+            }
           }
-        } else {
+        } catch (err) {
+          console.error('Error syncing auth session:', err)
           if (isMounted) {
             setUser(null)
             setProfile(null)
@@ -433,46 +456,30 @@ export const AuthProvider = ({ children }) => {
             setTenantLicense(null)
             setLicenseStatus(null)
           }
+        } finally {
+          if (isMounted) {
+            clearTimeout(safetyTimer)
+            setLoading(false)
+          }
+          if (activeSyncPromise === run) {
+            activeSyncPromise = null
+          }
         }
-      } catch (err) {
-        console.error('Error syncing auth session:', err)
-        if (isMounted) {
-          setUser(null)
-          setProfile(null)
-          setActiveTenant(null)
-          setUserTenants([])
-          setTenantLicense(null)
-          setLicenseStatus(null)
-        }
-      } finally {
-        if (isMounted) {
-          isInitialized = true
-          clearTimeout(safetyTimer)
-          setLoading(false)
-        }
-      }
+      })()
+
+      activeSyncPromise = run
+      return run
     }
 
-    // 1. Eksekusi awal sinkronisasi sesi
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (isMounted) {
-        syncSession(session)
-      }
-    }).catch((err) => {
-      console.warn('Gagal getSession awal:', err)
-      if (isMounted) {
-        clearTimeout(safetyTimer)
-        setLoading(false)
-      }
-    })
-
-    // 2. Listener perubahan sesi (hanya tangani perubahan berikutnya)
+    // Listener tunggal perubahan sesi (INITIAL_SESSION menangani sesi awal secara otomatis)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'INITIAL_SESSION') {
-        if (session && !isInitialized) {
-          syncSession(session)
-        }
-      } else if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
+      if (
+        event === 'INITIAL_SESSION' ||
+        event === 'SIGNED_IN' ||
+        event === 'SIGNED_OUT' ||
+        event === 'USER_UPDATED' ||
+        event === 'TOKEN_REFRESHED'
+      ) {
         syncSession(session)
       }
     })
@@ -676,6 +683,8 @@ export const AuthProvider = ({ children }) => {
       tenantLicense,
       licenseStatus,
       isLicenseLoading,
+      oauthError,
+      clearOAuthError,
       loadTenantLicense,
       activateLicenseKey,
       refreshLicense: () => loadTenantLicense(activeTenant?.id, profile),

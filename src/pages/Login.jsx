@@ -26,12 +26,13 @@ const GoogleIcon = () => (
 )
 
 const Login = () => {
-  const { login, registerTenantOwner, loginWithGoogle } = useAuth()
+  const { login, registerTenantOwner, loginWithGoogle, oauthError, clearOAuthError } = useAuth()
   const { currentTheme } = useAppTheme()
   const navigate = useNavigate()
 
   // 'login' | 'register'
   const [activeTab, setActiveTab] = useState('login')
+  const [showManualRegister, setShowManualRegister] = useState(false)
 
   // Single Login state (Owner, Co-Owner, Admin, Kasir, Super Admin)
   const [identifier, setIdentifier] = useState('')
@@ -49,37 +50,16 @@ const Login = () => {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    const readOAuthError = () => {
-      try {
-        const oauthErr = sessionStorage.getItem('relaypos_oauth_error')
-        if (oauthErr) {
-          sessionStorage.removeItem('relaypos_oauth_error')
-          setError(oauthErr)
-        }
-      } catch {
-        // ignore storage errors
-      }
+    if (oauthError) {
+      setError(oauthError)
     }
-    readOAuthError()
-
-    const handleOAuthErrorEvent = (e) => {
-      if (e?.detail) {
-        try {
-          sessionStorage.removeItem('relaypos_oauth_error')
-        } catch {
-          // ignore
-        }
-        setError(e.detail)
-      }
-    }
-    window.addEventListener('relaypos:oauth_error', handleOAuthErrorEvent)
-    return () => window.removeEventListener('relaypos:oauth_error', handleOAuthErrorEvent)
-  }, [])
+  }, [oauthError])
 
   const switchTab = (tab) => {
     setActiveTab(tab)
     setError('')
     setSuccessMsg('')
+    clearOAuthError()
   }
 
   const routeAfterLogin = (res) => {
@@ -169,6 +149,7 @@ const Login = () => {
     }
     setError('')
     setSuccessMsg('')
+    clearOAuthError()
     setLoading(true)
 
     const res = await loginWithGoogle(payload)
@@ -427,77 +408,85 @@ const Login = () => {
 
             <div className="relative flex py-2 items-center">
               <div className="flex-grow border-t border-slate-800"></div>
-              <span className="flex-shrink mx-3 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-                atau daftar manual dengan email
-              </span>
+              <button
+                type="button"
+                onClick={() => setShowManualRegister((prev) => !prev)}
+                className="flex-shrink mx-3 text-[11px] font-bold text-slate-400 hover:text-brand-emerald transition-colors cursor-pointer"
+              >
+                {showManualRegister ? 'Sembunyikan form manual ▲' : 'Atau daftar manual dengan Email ▼'}
+              </button>
               <div className="flex-grow border-t border-slate-800"></div>
             </div>
 
-            <div>
-              <label htmlFor="reg-nama" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                Nama Lengkap Pemilik
-              </label>
-              <div className="relative">
-                <User className="absolute left-3.5 top-3 text-slate-500" size={16} />
-                <input
-                  id="reg-nama"
-                  type="text"
-                  placeholder="Budi Santoso"
-                  value={regNama}
-                  onChange={(e) => setRegNama(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm"
-                  required
-                />
-              </div>
-            </div>
+            {showManualRegister && (
+              <>
+                <div>
+                  <label htmlFor="reg-nama" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    Nama Lengkap Pemilik
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3.5 top-3 text-slate-500" size={16} />
+                    <input
+                      id="reg-nama"
+                      type="text"
+                      placeholder="Budi Santoso"
+                      value={regNama}
+                      onChange={(e) => setRegNama(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm"
+                      required
+                    />
+                  </div>
+                </div>
 
-            <div>
-              <label htmlFor="reg-email" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                Email Akun Owner
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-3 text-slate-500" size={16} />
-                <input
-                  id="reg-email"
-                  type="email"
-                  placeholder="budi@autoclean.com"
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm font-mono"
-                  required
-                />
-              </div>
-            </div>
+                <div>
+                  <label htmlFor="reg-email" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    Email Akun Owner
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-3 text-slate-500" size={16} />
+                    <input
+                      id="reg-email"
+                      type="email"
+                      placeholder="budi@autoclean.com"
+                      value={regEmail}
+                      onChange={(e) => setRegEmail(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm font-mono"
+                      required
+                    />
+                  </div>
+                </div>
 
-            <div>
-              <label htmlFor="reg-password" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                Kata Sandi (Min. 6 Karakter)
-              </label>
-              <div className="relative">
-                <KeyRound className="absolute left-3.5 top-3 text-slate-500" size={16} />
-                <input
-                  id="reg-password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={regPassword}
-                  onChange={(e) => setRegPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm font-mono"
-                  required
-                />
-              </div>
-            </div>
+                <div>
+                  <label htmlFor="reg-password" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    Kata Sandi (Min. 6 Karakter)
+                  </label>
+                  <div className="relative">
+                    <KeyRound className="absolute left-3.5 top-3 text-slate-500" size={16} />
+                    <input
+                      id="reg-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm font-mono"
+                      required
+                    />
+                  </div>
+                </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-brand-emerald hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-black rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-brand-emerald/20 cursor-pointer disabled:opacity-50 mt-3"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                'Daftar & Buka Toko Sekarang'
-              )}
-            </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 bg-brand-emerald hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-black rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-brand-emerald/20 cursor-pointer disabled:opacity-50 mt-3"
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    'Daftar & Buka Toko Sekarang'
+                  )}
+                </button>
+              </>
+            )}
 
             <p className="text-[10px] text-slate-500 text-center mt-2">
               Otomatis mendapatkan lisensi Trial 14 Hari dan Chart of Accounts (COA) siap pakai.
