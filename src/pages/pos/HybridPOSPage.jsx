@@ -31,7 +31,8 @@ import {
   Send,
   FileText,
   ShoppingBag,
-  Gift
+  Gift,
+  ArrowLeft
 } from 'lucide-react'
 
 import ThermalReceiptModal from '../../components/pos/ThermalReceiptModal'
@@ -4270,22 +4271,33 @@ const CafePOS = () => {
 
            {/* Mobile Cart Overlay/Drawer */}
            {showMobileCart && (
-           <div className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[80] flex flex-col justify-end animate-fade-in">
+           <div className="md:hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[80] flex flex-col justify-end animate-fade-in">
            {/* Backdrop click area to close */}
            <div className="absolute inset-0" onClick={() => setShowMobileCart(false)}></div>
 
-           <div className="relative bg-[#121215] border-t border-[#26272d] rounded-t-3xl max-h-[90vh] flex flex-col p-4 sm:p-5 animate-slide-up shadow-2xl overflow-hidden">
+           <div className="relative bg-[#121215] border-t border-[#26272d] rounded-t-3xl max-h-[82vh] flex flex-col p-4 sm:p-5 animate-slide-up shadow-2xl overflow-hidden">
             {/* Header of Mobile Cart */}
-            <div className="flex items-center justify-between border-b border-[#26272d] pb-3 mb-3 shrink-0">
+            <div className="flex items-center justify-between border-b border-[#26272d] pb-3 mb-2 shrink-0">
               <div className="flex items-center gap-2">
-                <ShoppingCart className="text-primary" size={20} />
-                <h3 className="font-bold text-base sm:text-lg text-white">Struk Belanja ({cart.reduce((sum, item) => sum + item.qty, 0) + (hasCarwash ? 1 : 0)} item)</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowMobileCart(false)}
+                  className="flex items-center gap-1 text-xs font-bold text-slate-200 hover:text-white px-2.5 py-1.5 rounded-lg bg-subsurface border border-border transition-colors active:scale-95"
+                >
+                  <ArrowLeft size={14} className="text-primary" />
+                  <span>Kembali</span>
+                </button>
+                <div className="flex items-center gap-1.5 ml-1">
+                  <ShoppingCart className="text-primary" size={16} />
+                  <h3 className="font-bold text-sm sm:text-base text-white">Struk Belanja ({cart.reduce((sum, item) => sum + item.qty, 0) + (hasCarwash ? 1 : 0)})</h3>
+                </div>
               </div>
               <button
+                type="button"
                 onClick={() => setShowMobileCart(false)}
                 className="text-xs font-bold text-muted hover:text-white px-3 py-1.5 rounded-lg bg-subsurface border border-border transition-colors"
               >
-                Tutup
+                ✕ Tutup
               </button>
             </div>
 
