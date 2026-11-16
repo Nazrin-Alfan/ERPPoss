@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Store,
   User,
@@ -299,13 +300,13 @@ export default function OnboardingWizardModal({
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="w-full max-w-2xl glass-panel border border-slate-800 rounded-3xl shadow-2xl relative flex flex-col max-h-[92dvh] overflow-hidden my-auto bg-[#0b101b]">
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
+      <div className="w-full max-w-2xl border border-[#26272d] rounded-2xl shadow-2xl relative flex flex-col max-h-[92dvh] overflow-hidden my-auto bg-[#121215] text-white">
         {/* Pinned Header Steps */}
-        <div className="px-6 sm:px-8 pt-6 pb-4 border-b border-slate-800/80 shrink-0 bg-slate-900/60">
+        <div className="px-5 sm:px-7 pt-5 pb-4 border-b border-[#26272d] shrink-0 bg-[#18181c]">
           <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-emerald/15 border border-brand-emerald/30 text-brand-emerald text-[11px] font-bold uppercase tracking-wider">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#00ffff]/10 border border-[#00ffff]/30 text-[#00ffff] text-[11px] font-bold uppercase tracking-wider">
               <Sparkles size={13} />
               <span>{isGuidedExisting ? 'Setup Awal Toko' : 'Setup Outlet Baru'}</span>
             </div>
@@ -314,7 +315,7 @@ export default function OnboardingWizardModal({
                 type="button"
                 onClick={handleSkipGuidedSetup}
                 disabled={loading}
-                className="text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                className="text-xs font-semibold text-[#bbcbb2] hover:text-white flex items-center gap-1 cursor-pointer disabled:opacity-50"
               >
                 <span>Lewati &amp; Pakai Template</span>
                 <SkipForward size={13} />
@@ -322,10 +323,10 @@ export default function OnboardingWizardModal({
             )}
           </div>
 
-          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+          <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">
             Konfigurasi Toko Anda
           </h2>
-          <p className="text-slate-400 text-xs mt-1">
+          <p className="text-[#bbcbb2] text-xs mt-1">
             Langkah {currentStep} dari 3:{' '}
             {currentStep === 1
               ? 'Profil Pemilik, Alamat & Printer Struk'
@@ -335,9 +336,9 @@ export default function OnboardingWizardModal({
           </p>
 
           <div className="grid grid-cols-3 gap-2 mt-3">
-            <div className={`h-1.5 rounded-full transition-all ${currentStep >= 1 ? 'bg-brand-emerald' : 'bg-slate-800'}`}></div>
-            <div className={`h-1.5 rounded-full transition-all ${currentStep >= 2 ? 'bg-brand-emerald' : 'bg-slate-800'}`}></div>
-            <div className={`h-1.5 rounded-full transition-all ${currentStep >= 3 ? 'bg-brand-emerald' : 'bg-slate-800'}`}></div>
+            <div className={`h-1.5 rounded-full transition-all ${currentStep >= 1 ? 'bg-[#00ffff]' : 'bg-[#26272d]'}`}></div>
+            <div className={`h-1.5 rounded-full transition-all ${currentStep >= 2 ? 'bg-[#00ffff]' : 'bg-[#26272d]'}`}></div>
+            <div className={`h-1.5 rounded-full transition-all ${currentStep >= 3 ? 'bg-[#00ffff]' : 'bg-[#26272d]'}`}></div>
           </div>
         </div>
 
@@ -750,13 +751,13 @@ export default function OnboardingWizardModal({
         </div>
 
         {/* Pinned Footer Actions */}
-        <div className="px-6 sm:px-8 py-4 border-t border-slate-800/80 bg-slate-900/90 shrink-0 flex items-center justify-between">
+        <div className="px-5 sm:px-7 py-4 border-t border-[#26272d] bg-[#18181c] shrink-0 flex items-center justify-between">
           {currentStep > 1 ? (
             <button
               type="button"
               onClick={handleBack}
               disabled={loading}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-[#26272d] hover:bg-zinc-700 text-zinc-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <ArrowLeft size={14} />
               <span>Kembali</span>
@@ -769,7 +770,7 @@ export default function OnboardingWizardModal({
             <button
               type="button"
               onClick={handleNext}
-              className="px-5 py-2.5 rounded-xl bg-brand-emerald hover:bg-emerald-500 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-brand-emerald/20 transition-all cursor-pointer ml-auto"
+              className="px-5 py-2.5 rounded-xl bg-[#00ffff] hover:bg-[#00e5e5] text-[#121215] text-xs font-black flex items-center gap-1.5 shadow-lg shadow-[#00ffff]/15 transition-all cursor-pointer ml-auto"
             >
               <span>Lanjut</span>
               <ArrowRight size={14} />
@@ -779,7 +780,7 @@ export default function OnboardingWizardModal({
               type="button"
               onClick={handleSubmit}
               disabled={loading}
-              className="px-6 py-2.5 rounded-xl bg-brand-emerald hover:bg-emerald-500 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-lg shadow-brand-emerald/20 transition-all cursor-pointer ml-auto disabled:opacity-50"
+              className="px-6 py-2.5 rounded-xl bg-[#00ffff] hover:bg-[#00e5e5] text-[#121215] text-xs font-black flex items-center gap-1.5 shadow-lg shadow-[#00ffff]/15 transition-all cursor-pointer ml-auto disabled:opacity-50"
             >
               <span>{loading ? 'Menyiapkan Toko...' : 'Selesai & Buka Toko'}</span>
             </button>
@@ -788,4 +789,6 @@ export default function OnboardingWizardModal({
       </div>
     </div>
   )
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent
 }

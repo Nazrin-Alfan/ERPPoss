@@ -88,7 +88,7 @@ const InteractiveCalendar = ({ startDate, endDate, onChange, onClose }) => {
   }
 
   return (
-    <div className="bg-[#090e17]/95 border border-slate-800 rounded-2xl p-5 shadow-2xl w-80 text-xs text-slate-200 font-sans select-none backdrop-blur-xl">
+    <div className="bg-[#121215]/95 border border-[#26272d] rounded-2xl p-4 sm:p-5 shadow-2xl w-full max-w-[320px] sm:w-80 text-xs text-zinc-200 font-sans select-none backdrop-blur-xl">
       {/* Month Header Navigation */}
       <div className="flex justify-between items-center mb-5 px-1">
         <button

@@ -1011,7 +1011,7 @@ const Dashboard = () => {
             </button>
 
             {timeRange === 'custom' && showCustomCalendar && (
-              <div className="absolute right-0 top-full mt-2 z-50">
+              <div className="fixed inset-x-3 top-36 sm:inset-x-auto sm:absolute sm:right-0 sm:top-full sm:mt-2 z-[999] flex justify-center sm:block">
                 <InteractiveCalendar
                   startDate={startDate}
                   endDate={endDate}
