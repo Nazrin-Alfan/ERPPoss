@@ -3331,9 +3331,9 @@ const CafePOS = () => {
                   {
                     key: 'id_bahan_baku',
                     label: 'Kode',
-                    render: (val) => (
+                    render: (val, item) => (
                       <span className="font-mono text-xs font-bold bg-subsurface text-warning border border-border px-2 py-0.5 rounded-md">
-                        {val}
+                        {val || item.id_barang || (item.id ? `SKU-${String(item.id).substring(0, 8).toUpperCase()}` : 'SKU-ITEM')}
                       </span>
                     ),
                   },

@@ -764,25 +764,28 @@ export default function Gudang() {
       {/* 4. TABEL DATA STOK GUDANG */}
       <InventoryTable
         data={filteredItems}
-        keyExtractor={(item) => item.id_barang || item.id_bahan_baku}
+        keyExtractor={(item) => item.id || item.id_barang || item.id_bahan_baku}
         emptyMessage="Tidak ada data barang ditemukan pada gudang ini."
         columns={[
           {
             key: 'id_barang',
             label: 'KODE / BARCODE',
-            render: (val, item) => (
-              <div>
-                <div className="font-mono font-bold text-primary flex items-center gap-1.5">
-                  <Barcode className="w-3.5 h-3.5 text-muted" />
-                  {val || item.id_bahan_baku}
+            render: (val, item) => {
+              const displaySku = val || item.id_bahan_baku || (item.id ? `SKU-${String(item.id).substring(0, 8).toUpperCase()}` : 'SKU-ITEM')
+              return (
+                <div>
+                  <div className="font-mono font-bold text-primary flex items-center gap-1.5">
+                    <Barcode className="w-3.5 h-3.5 text-muted" />
+                    {displaySku}
+                  </div>
+                  {item.barcode && (
+                    <span className="text-[10px] text-muted-dark font-mono">
+                      BARCODE: {item.barcode}
+                    </span>
+                  )}
                 </div>
-                {item.barcode && (
-                  <span className="text-[10px] text-muted-dark font-mono">
-                    BARCODE: {item.barcode}
-                  </span>
-                )}
-              </div>
-            ),
+              )
+            },
           },
           {
             key: 'nama_barang',
