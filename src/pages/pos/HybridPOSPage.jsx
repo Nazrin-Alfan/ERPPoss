@@ -801,12 +801,13 @@ const CafePOS = () => {
         const isCasbon = String(posExpenseForm.kategori || '').toLowerCase().includes('casbon') || 
                          String(posExpenseForm.kategori || '').toLowerCase().includes('kasbon') || 
                          posExpenseForm.kategori === EXPENSE_CATEGORIES.CASBON
+        const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
         const updatePayload = {
           jenis: isCasbon ? 'Casbon' : `pengeluaran ${posExpenseForm.unit}`,
           kategori: isCasbon ? `Casbon - ${posExpenseForm.karyawan}` : posExpenseForm.kategori,
           nominal: parseFloat(posExpenseForm.nominal),
           nama_pengeluaran: isCasbon ? `Casbon ${posExpenseForm.karyawan} (${posExpenseForm.keterangan})` : posExpenseForm.keterangan,
-          id_bahan_baku: posExpenseForm.id_bahan_baku || '',
+          id_bahan_baku: isUuid(posExpenseForm.id_bahan_baku) ? posExpenseForm.id_bahan_baku : null,
           id_barang: posExpenseForm.id_bahan_baku || '',
           qty: parseFloat(posExpenseForm.qty || 0),
           apakah_stok: Boolean(posExpenseForm.id_bahan_baku)
@@ -824,13 +825,22 @@ const CafePOS = () => {
         const todayDate = new Date().toLocaleDateString('en-CA')
         const currentTime = new Date().toTimeString().split(' ')[0]
         const newExpId = generateUUID()
+        const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
 
-        const payload = formatPosExpensePayload({
+        const rawPayload = formatPosExpensePayload({
           form: posExpenseForm,
           todayDate,
           currentTime,
           newExpId
         })
+
+        // Sanitasi field id_bahan_baku untuk cloud Postgres FK constraint (harus valid UUID atau null)
+        const payload = {
+          ...rawPayload,
+          id_bahan_baku: isUuid(rawPayload.id_bahan_baku) ? rawPayload.id_bahan_baku : null,
+          tenant_id: effectiveTenantId,
+          branch_id: profile?.branch_id || null
+        }
 
         const { error: insErr } = await supabase
           .from('pengeluaran')
@@ -3406,11 +3416,25 @@ const CafePOS = () => {
 
         {/* Tab 5: Catat Pengeluaran Kasir */}
         {activeTab === 'expense' && (
-          <div className="glass-panel p-6 rounded-xl border border-border flex-1 flex flex-col min-h-0 overflow-y-auto space-y-6">
+          <div className="glass-panel p-4 sm:p-6 rounded-xl border border-border flex-1 flex flex-col min-h-0 overflow-y-auto space-y-6">
             <div>
               <h3 className="text-lg font-bold text-white">Catat Pengeluaran Laci Kasir</h3>
               <p className="text-xs text-muted-dark mt-0.5">Catat pengeluaran operasional hari ini menggunakan uang dari laci kasir</p>
             </div>
+
+            {/* Alert Notifications */}
+            {error && (
+              <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2.5 animate-shake">
+                <AlertCircle size={16} className="shrink-0 text-rose-400" />
+                <span>{error}</span>
+              </div>
+            )}
+            {success && (
+              <div className="p-3.5 rounded-xl bg-primary/10 border border-brand-emerald/30 text-primary text-xs flex items-center gap-2.5 animate-fade-in">
+                <CheckCircle size={16} className="shrink-0 text-primary" />
+                <span>Pengeluaran berhasil dicatat ke laci kasir!</span>
+              </div>
+            )}
 
             <form onSubmit={handleSavePosExpense} className="space-y-4 max-w-xl shrink-0">
               <div className={`grid grid-cols-1 ${posExpenseForm.kategori === EXPENSE_CATEGORIES.CASBON ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4`}>
@@ -3552,18 +3576,22 @@ const CafePOS = () => {
                         <CustomSelect
                           value={posExpenseForm.id_bahan_baku}
                           onChange={(val) => {
-                            const selectedItem = inventoryList.find(i => (i.id_bahan_baku === val || i.id_barang === val))
+                            const selectedItem = inventoryList.find(i => (
+                              (i.id && String(i.id) === String(val)) ||
+                              (i.id_bahan_baku && String(i.id_bahan_baku) === String(val)) ||
+                              (i.id_barang && String(i.id_barang) === String(val))
+                            ))
                             setPosExpenseForm(prev => ({
                               ...prev,
                               id_bahan_baku: val,
                               id_barang: val,
-                              keterangan: prev.keterangan || (selectedItem ? `Beli ${selectedItem.nama_produk || selectedItem.nama_barang}` : '')
+                              keterangan: (selectedItem ? `Beli ${selectedItem.nama_produk || selectedItem.nama_barang}` : prev.keterangan)
                             }))
                           }}
                           options={[
                             { value: '', label: '-- Pilih Item Bahan Baku --' },
-                            ...inventoryList.map(item => ({
-                              value: item.id_bahan_baku || item.id_barang,
+                            ...inventoryList.map((item, idx) => ({
+                              value: item.id || item.id_bahan_baku || item.id_barang || `item_${idx}`,
                               label: `${item.nama_produk || item.nama_barang} (Sisa: ${item.stok} ${item.satuan || 'unit'})`
                             }))
                           ]}
