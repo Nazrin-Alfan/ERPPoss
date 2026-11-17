@@ -394,7 +394,15 @@ const Admin = () => {
         setCafeCategories(Array.from(uniqueCats))
       }
 
-      setCarwashPackages(cp && cp.length > 0 ? cp : DEFAULT_CARWASH_PACKAGES)
+      const normalizedCp = (cp || []).map(p => ({
+        ...p,
+        nama_paket: p.nama_paket || p.name,
+        name: p.name || p.nama_paket,
+        keterangan: p.keterangan || p.description,
+        tarif: p.tarif_matrix || p.tarif
+      }))
+
+      setCarwashPackages(normalizedCp.length > 0 ? normalizedCp : DEFAULT_CARWASH_PACKAGES)
 
       if (lic && lic.length > 0) {
         setLicenseData(lic[0])
@@ -486,20 +494,31 @@ const Admin = () => {
     }
   }
 
+  // Helper pengecekan UUID standar Postgres
+  const isPostgresUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+
   // Carwash Packages Handlers
   const handleSaveCarwashPackage = async (pkgPayload) => {
     try {
       setLoading(true)
+      const basePrice = typeof pkgPayload.tarif === 'number' 
+        ? pkgPayload.tarif 
+        : (pkgPayload.tarif?.Small?.Regular || 50000)
+
       const payload = {
         nama_paket: pkgPayload.nama_paket,
-        keterangan: pkgPayload.keterangan,
-        komisi_skema: pkgPayload.komisi_skema,
-        komisi_value: pkgPayload.komisi_value,
-        tarif: pkgPayload.tarif,
-        is_active: pkgPayload.is_active
+        name: pkgPayload.nama_paket,
+        description: pkgPayload.keterangan || '',
+        keterangan: pkgPayload.keterangan || '',
+        komisi_skema: pkgPayload.komisi_skema || 'TIERED',
+        komisi_value: parseFloat(pkgPayload.komisi_value) || 0,
+        price: basePrice,
+        tarif: basePrice,
+        tarif_matrix: typeof pkgPayload.tarif === 'object' ? pkgPayload.tarif : null,
+        is_active: pkgPayload.is_active !== false
       }
 
-      if (pkgPayload.id) {
+      if (isPostgresUuid(pkgPayload.id)) {
         const { error } = await supabase
           .from('carwash_packages')
           .update(payload)
@@ -553,8 +572,36 @@ const Admin = () => {
     if (!window.confirm(`Yakin ingin menghapus paket cuci "${pkg?.nama_paket || 'ini'}"?`)) return
     try {
       setLoading(true)
-      const { error } = await supabase.from('carwash_packages').delete().eq('id', pkgId)
-      if (error) throw error
+      if (isPostgresUuid(pkgId)) {
+        const { error } = await supabase.from('carwash_packages').delete().eq('id', pkgId)
+        if (error) throw error
+      } else {
+        // Jika data masih berupa template memory (belum ada di DB),
+        // persist paket lainnya ke DB sehingga paket ini tidak muncul lagi
+        const packagesToSeed = carwashPackages
+          .filter(p => p.id !== pkgId)
+          .map((p, idx) => {
+            const basePrice = typeof p.tarif === 'number' ? p.tarif : (p.tarif?.Small?.Regular || 50000)
+            return {
+              name: p.nama_paket,
+              nama_paket: p.nama_paket,
+              description: p.keterangan || '',
+              keterangan: p.keterangan || '',
+              price: basePrice,
+              tarif: basePrice,
+              tarif_matrix: typeof p.tarif === 'object' ? p.tarif : null,
+              komisi_skema: p.komisi_skema || 'TIERED',
+              komisi_value: parseFloat(p.komisi_value) || 0,
+              is_active: p.is_active !== false,
+              sort_order: idx + 1
+            }
+          })
+        if (packagesToSeed.length > 0) {
+          const { error: seedErr } = await supabase.from('carwash_packages').insert(packagesToSeed)
+          if (seedErr) throw seedErr
+        }
+      }
+
       if (pkg?.nama_paket) {
         await supabase.from('resep').delete().eq('nama_menu', pkg.nama_paket)
       }
@@ -570,11 +617,32 @@ const Admin = () => {
 
   const handleToggleCarwashPackageActive = async (pkgId, currentStatus) => {
     try {
-      const { error } = await supabase
-        .from('carwash_packages')
-        .update({ is_active: !currentStatus })
-        .eq('id', pkgId)
-      if (error) throw error
+      if (isPostgresUuid(pkgId)) {
+        const { error } = await supabase
+          .from('carwash_packages')
+          .update({ is_active: !currentStatus })
+          .eq('id', pkgId)
+        if (error) throw error
+      } else {
+        const packagesToSeed = carwashPackages.map((p, idx) => {
+          const basePrice = typeof p.tarif === 'number' ? p.tarif : (p.tarif?.Small?.Regular || 50000)
+          return {
+            name: p.nama_paket,
+            nama_paket: p.nama_paket,
+            description: p.keterangan || '',
+            keterangan: p.keterangan || '',
+            price: basePrice,
+            tarif: basePrice,
+            tarif_matrix: typeof p.tarif === 'object' ? p.tarif : null,
+            komisi_skema: p.komisi_skema || 'TIERED',
+            komisi_value: parseFloat(p.komisi_value) || 0,
+            is_active: p.id === pkgId ? !currentStatus : (p.is_active !== false),
+            sort_order: idx + 1
+          }
+        })
+        const { error: seedErr } = await supabase.from('carwash_packages').insert(packagesToSeed)
+        if (seedErr) throw seedErr
+      }
       setSuccess('Status paket cuci berhasil diperbarui!')
       await loadAdminData()
     } catch (err) {

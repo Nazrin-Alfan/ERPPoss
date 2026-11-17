@@ -453,7 +453,13 @@ const CafePOS = () => {
       const dbKaryawan = results[6].status === 'fulfilled' ? results[6].value : { data: [] }
 
       if (dbPackages.data && dbPackages.data.length > 0) {
-        setCarwashPackages(dbPackages.data)
+        const normalized = dbPackages.data.map(p => ({
+          ...p,
+          nama_paket: p.nama_paket || p.name,
+          keterangan: p.keterangan || p.description,
+          tarif: p.tarif_matrix || p.tarif
+        }))
+        setCarwashPackages(normalized)
       }
       if (dbKaryawan.data && dbKaryawan.data.length > 0) {
         const names = dbKaryawan.data.map(k => (k.nama || k.name || '').toUpperCase().trim()).filter(Boolean)

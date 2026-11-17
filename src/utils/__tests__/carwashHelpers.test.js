@@ -85,4 +85,39 @@ describe('carwashHelpers', () => {
     expect(res.harga).toBe(120000)
     expect(res.gaji_pencuci).toBeGreaterThan(0)
   })
+
+  it('should support tarif_matrix object as pricing source', () => {
+    const matrixPkg = {
+      nama_paket: 'PAKET HYDROPHOBIC',
+      tarif_matrix: {
+        Medium: { Regular: 125000, 'Body only': 110000 }
+      },
+      komisi_skema: 'TIERED'
+    }
+
+    const res = calculateCarwashPriceAndCommission({
+      packageItem: matrixPkg,
+      ukuran: 'Medium',
+      variant: 'Body only'
+    })
+
+    expect(res.harga).toBe(110000)
+    expect(res.gaji_pencuci).toBeGreaterThan(0)
+  })
+
+  it('should support flat single numeric tarif from database', () => {
+    const flatPkg = {
+      nama_paket: 'PAKET CUCI BIASA DB',
+      tarif: 50000,
+      komisi_skema: 'TIERED'
+    }
+
+    const res = calculateCarwashPriceAndCommission({
+      packageItem: flatPkg,
+      ukuran: 'Medium',
+      variant: 'Regular'
+    })
+
+    expect(res.harga).toBe(50000)
+  })
 })

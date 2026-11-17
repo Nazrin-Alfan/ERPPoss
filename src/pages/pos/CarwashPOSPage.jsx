@@ -134,7 +134,13 @@ export const CarwashPOSPage = () => {
       if (resKasir.status === 'fulfilled' && resKasir.value.data) setCashiers(resKasir.value.data)
       if (resPayment.status === 'fulfilled' && resPayment.value.data) setPaymentMethods(resPayment.value.data)
       if (resPackages.status === 'fulfilled' && resPackages.value.data && resPackages.value.data.length > 0) {
-        setCarwashPackages(resPackages.value.data)
+        const normalized = resPackages.value.data.map(p => ({
+          ...p,
+          nama_paket: p.nama_paket || p.name,
+          keterangan: p.keterangan || p.description,
+          tarif: p.tarif_matrix || p.tarif
+        }))
+        setCarwashPackages(normalized)
       }
       if (resCrew.status === 'fulfilled' && resCrew.value.data) setCrewList(resCrew.value.data)
       if (resDiskon.status === 'fulfilled' && resDiskon.value.data) setDiskonList(resDiskon.value.data)

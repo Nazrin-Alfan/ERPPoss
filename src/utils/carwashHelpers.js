@@ -125,9 +125,19 @@ export const calculateCarwashPriceAndCommission = ({
 
   if (ukuran === 'Custom') {
     finalHarga = parseFloat(customHarga) || 0
-  } else if (packageItem && packageItem.tarif) {
-    const sizeData = packageItem.tarif[ukuran] || packageItem.tarif['Large'] || {}
-    finalHarga = sizeData[variant] || sizeData['Regular'] || 0
+  } else if (packageItem && (packageItem.tarif || packageItem.tarif_matrix)) {
+    const matrix = (typeof packageItem.tarif === 'object' && packageItem.tarif !== null)
+      ? packageItem.tarif
+      : (typeof packageItem.tarif_matrix === 'object' && packageItem.tarif_matrix !== null)
+      ? packageItem.tarif_matrix
+      : null
+
+    if (matrix) {
+      const sizeData = matrix[ukuran] || matrix['Large'] || {}
+      finalHarga = sizeData[variant] || sizeData['Regular'] || 0
+    } else {
+      finalHarga = parseFloat(packageItem.tarif || packageItem.price || 0)
+    }
   } else {
     // Fallback standard basic wash
     const sizeData = DEFAULT_BASIC_WASH_PRICES[ukuran] || DEFAULT_BASIC_WASH_PRICES['Large'] || {}
