@@ -55,11 +55,13 @@ import ReceiptCustomizer from '../components/admin/ReceiptCustomizer'
 import CarwashPackageManager from '../components/admin/CarwashPackageManager'
 import MerchandiseManager from '../components/admin/MerchandiseManager'
 import LicenseManager from '../components/admin/LicenseManager'
+import MenuHppCalculator from '../components/admin/MenuHppCalculator'
 import ImageUploadPaste from '../components/common/ImageUploadPaste'
 import CustomCategoryPicker from '../components/common/CustomCategoryPicker'
 import CustomSelect from '../components/common/CustomSelect'
 import { DEFAULT_CARWASH_PACKAGES } from '../utils/carwashHelpers'
 import { getReceiptConfig } from '../utils/receiptHelpers'
+import { calculateIngredientCost } from '../utils/hppCalculator'
 
 const Admin = () => {
   const navigate = useNavigate()
@@ -341,7 +343,7 @@ const Admin = () => {
       const realStok = (sb || []).map(item => ({
         ...item,
         nama_bahan: item.nama_produk,
-        harga_satuan: parseFloat(item.harga_satuan || 0)
+        harga_satuan: parseFloat(item.harga_satuan || item.harga_beli || 0)
       }))
       const realResep = (rs || []).map(item => ({
         ...item,
@@ -3139,6 +3141,14 @@ const Admin = () => {
                   </div>
                 </div>
 
+                {/* Kalkulator HPP & Simulasi Margin Menu */}
+                <MenuHppCalculator
+                  menuRecipe={menuRecipe}
+                  stokBahan={stokBahan}
+                  sellingPrice={parseFloat(menuForm.harga) || 0}
+                  onApplyPrice={(newPrice) => setMenuForm(prev => ({ ...prev, harga: newPrice }))}
+                />
+
                 <div>
                   <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
                     Deskripsi Menu
@@ -3166,37 +3176,69 @@ const Admin = () => {
                     </button>
                   </div>
 
-                  {menuRecipe.map((row, idx) => (
-                    <div key={idx} className="flex gap-2 items-center p-2 rounded-xl bg-[#18181c]/60 border border-slate-850">
-                      <div className="flex-1 min-w-[120px]">
-                        <CustomSelect
-                          value={row.nama_bahan}
-                          onChange={(val) => updateRecipeRow(idx, 'nama_bahan', val)}
-                          options={stokBahan.map(b => ({ value: b.nama_bahan, label: b.nama_bahan }))}
-                          size="xs"
-                          variant="emerald"
-                          className="w-full"
-                        />
+                  {menuRecipe.map((row, idx) => {
+                    const matchedStock = stokBahan.find(b => b.nama_bahan === row.nama_bahan || b.nama_produk === row.nama_bahan);
+                    const costInfo = calculateIngredientCost(matchedStock, row.jumlah_dibutuhkan, row.satuan);
+                    return (
+                      <div key={idx} className="flex gap-2 items-center p-2 rounded-xl bg-[#18181c]/60 border border-slate-850">
+                        <div className="flex-1 min-w-[120px]">
+                          <CustomSelect
+                            value={row.nama_bahan}
+                            onChange={(val) => updateRecipeRow(idx, 'nama_bahan', val)}
+                            options={stokBahan.map(b => ({ value: b.nama_bahan, label: b.nama_bahan }))}
+                            size="xs"
+                            variant="emerald"
+                            className="w-full"
+                          />
+                        </div>
+                        <div className="w-20">
+                          <input
+                            type="number"
+                            placeholder="Jumlah"
+                            value={row.jumlah_dibutuhkan}
+                            onChange={(e) => updateRecipeRow(idx, 'jumlah_dibutuhkan', parseFloat(e.target.value) || 0)}
+                            className="w-full bg-[#18181c] border border-[#26272d] rounded py-1 px-2 text-white text-xs text-center font-mono"
+                          />
+                        </div>
+                        <span className="text-[10px] text-[#6b7367] w-12 font-mono">{row.satuan}</span>
+                        <div className="text-right min-w-[75px] shrink-0">
+                          <div className="text-xs font-mono font-bold text-[#00ffff] tabular-nums">
+                            {formatRupiah(costInfo.subtotalCost)}
+                          </div>
+                          <div className="text-[9px] text-[#6b7367] font-mono">
+                            {costInfo.isStockPriceZero ? 'Rp 0 (stok)' : `@${formatRupiah(costInfo.unitCost)}`}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeRecipeRow(idx)}
+                          className="text-rose-400 hover:text-rose-500 p-1"
+                          title="Hapus Bahan"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
-                      <div className="w-20">
-                        <input
-                          type="number"
-                          placeholder="Jumlah"
-                          value={row.jumlah_dibutuhkan}
-                          onChange={(e) => updateRecipeRow(idx, 'jumlah_dibutuhkan', parseFloat(e.target.value) || 0)}
-                          className="w-full bg-[#18181c] border border-[#26272d] rounded py-1 px-2 text-white text-xs text-center"
-                        />
+                    );
+                  })}
+
+                  {menuRecipe.length > 0 && (
+                    <div className="p-2.5 rounded-lg bg-[#18181c] border border-[#26272d] flex items-center justify-between text-xs">
+                      <span className="text-[#bbcbb2]">
+                        Total Bahan Resep: <strong className="text-white">{menuRecipe.length} item</strong>
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[#bbcbb2]">Subtotal Food Cost:</span>
+                        <span className="font-mono font-bold text-[#00ffff] text-sm tabular-nums">
+                          {formatRupiah(
+                            menuRecipe.reduce((acc, r) => {
+                              const m = stokBahan.find(b => b.nama_bahan === r.nama_bahan || b.nama_produk === r.nama_bahan);
+                              return acc + calculateIngredientCost(m, r.jumlah_dibutuhkan, r.satuan).subtotalCost;
+                            }, 0)
+                          )}
+                        </span>
                       </div>
-                      <span className="text-[10px] text-[#6b7367] w-12 font-mono">{row.satuan}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeRecipeRow(idx)}
-                        className="text-rose-400 hover:text-rose-500 p-1"
-                      >
-                        <Trash2 size={14} />
-                      </button>
                     </div>
-                  ))}
+                  )}
                 </div>
               </form>
             </div>
