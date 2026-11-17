@@ -29,6 +29,17 @@ export const generateSerialLicenseKey = (tierCode = 'PRO_ANNUAL', durationYears 
   return `RLPOS-${prefix}-${currentYear}-${randomPart}-${checksumPart}`
 }
 
+const generateUuid = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
 /**
  * Buat Tenant Baru Bersih (Zero-Transaction Clean State)
  */
@@ -111,13 +122,25 @@ export const createCleanTenantPayload = ({
     ],
     initialPackages: (String(businessType || '').toUpperCase() === 'CAFE') 
       ? [] 
-      : DEFAULT_CARWASH_PACKAGES.map((pkg, idx) => ({
-          ...pkg,
-          id: `pkg_${cleanSlug}_${idx + 1}`,
-          sort_order: idx + 1,
-          tenant_id: tenantId,
-          branch_id: branchId
-        }))
+      : DEFAULT_CARWASH_PACKAGES.map((pkg, idx) => {
+          const basePrice = typeof pkg.tarif === 'number' ? pkg.tarif : (pkg.tarif?.Small?.Regular || 50000)
+          return {
+            id: generateUuid(),
+            name: pkg.nama_paket,
+            nama_paket: pkg.nama_paket,
+            description: pkg.keterangan || '',
+            keterangan: pkg.keterangan || '',
+            price: basePrice,
+            tarif: basePrice,
+            tarif_matrix: typeof pkg.tarif === 'object' ? pkg.tarif : null,
+            komisi_skema: pkg.komisi_skema || 'TIERED',
+            komisi_value: parseFloat(pkg.komisi_value) || 0,
+            is_active: pkg.is_active !== false,
+            sort_order: idx + 1,
+            tenant_id: tenantId,
+            branch_id: branchId
+          }
+        })
   }
 }
 
