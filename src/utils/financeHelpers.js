@@ -247,6 +247,16 @@ export const validatePosExpenseForm = (form) => {
   if (isNaN(nominalVal) || nominalVal <= 0) {
     return { isValid: false, error: 'Nominal pengeluaran harus lebih besar dari 0.' }
   }
+
+  // Validasi pembelian bahan baku: jika item bahan baku dipilih atau kategori bahan baku aktif
+  const isBahanBaku = String(form.kategori || '').toLowerCase().includes('bahan') || Boolean(form.id_bahan_baku)
+  if (isBahanBaku && form.id_bahan_baku) {
+    const qtyVal = parseFloat(form.qty)
+    if (isNaN(qtyVal) || qtyVal <= 0) {
+      return { isValid: false, error: 'Jumlah / Qty bahan baku yang dibeli wajib diisi lebih dari 0.' }
+    }
+  }
+
   return { isValid: true }
 }
 
@@ -272,9 +282,11 @@ export const formatPosExpensePayload = ({ form, todayDate, currentTime, newExpId
     ? 'Pindah'
     : normalizeJenis(form.jenis || `Pengeluaran ${form.unit || 'Cafe'}`)
   
-  const rawItemId = form.id_barang || form.id_bahan_baku || ''
+  // Pastikan sinkronisasi stok hanya terjadi jika kategori memang terkait Bahan Baku
+  const isBahanCategory = String(form.kategori || '').toLowerCase().includes('bahan')
+  const rawItemId = isBahanCategory ? (form.id_barang || form.id_bahan_baku || '') : ''
   const hasRawMaterial = Boolean(rawItemId)
-  const qtyVal = parseFloat(form.qty || 0)
+  const qtyVal = hasRawMaterial ? parseFloat(form.qty || 0) : 0
 
   const res = {
     id_pengeluaran: newExpId,
@@ -289,7 +301,7 @@ export const formatPosExpensePayload = ({ form, todayDate, currentTime, newExpId
     qty: qtyVal
   }
 
-  if (form.id_barang) {
+  if (form.id_barang && isBahanCategory) {
     res.id_barang = form.id_barang
   }
 

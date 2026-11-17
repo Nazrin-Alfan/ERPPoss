@@ -251,6 +251,42 @@ describe('Finance Helpers', () => {
         qty: 0
       })
     })
+
+    it('memvalidasi kuantitas bahan baku wajib > 0 jika kategori atau item bahan baku dipilih', () => {
+      const invalidForm = {
+        nominal: '100000',
+        keterangan: 'Beli Kopi',
+        kategori: 'Bahan Baku',
+        id_bahan_baku: 'item-uuid-1',
+        qty: '0'
+      }
+      const valRes = validatePosExpenseForm(invalidForm)
+      expect(valRes.isValid).toBe(false)
+      expect(valRes.error).toContain('Jumlah / Qty bahan baku')
+
+      const validForm = { ...invalidForm, qty: '5.5' }
+      expect(validatePosExpenseForm(validForm).isValid).toBe(true)
+    })
+
+    it('membersihkan flag apakah_stok jika kategori diubah ke non-bahan baku', () => {
+      const form = {
+        nominal: '50000',
+        keterangan: 'Bayar Listrik',
+        unit: 'Cafe',
+        kategori: 'Operasional',
+        id_bahan_baku: 'item-uuid-1', // bekas state sebelumnya
+        qty: '5'
+      }
+      const payload = formatPosExpensePayload({
+        form,
+        todayDate: '2026-11-17',
+        currentTime: '15:00:00',
+        newExpId: 'exp-pos-2'
+      })
+      expect(payload.apakah_stok).toBe(false)
+      expect(payload.id_bahan_baku).toBe('')
+      expect(payload.qty).toBe(0)
+    })
   })
 
   describe('Edit Cashflow Validation', () => {

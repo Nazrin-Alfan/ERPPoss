@@ -801,21 +801,26 @@ const CafePOS = () => {
         const isCasbon = String(posExpenseForm.kategori || '').toLowerCase().includes('casbon') || 
                          String(posExpenseForm.kategori || '').toLowerCase().includes('kasbon') || 
                          posExpenseForm.kategori === EXPENSE_CATEGORIES.CASBON
+        const isBahanCategory = String(posExpenseForm.kategori || '').toLowerCase().includes('bahan')
         const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+        const targetBahanId = isBahanCategory && isUuid(posExpenseForm.id_bahan_baku) ? posExpenseForm.id_bahan_baku : null
+        const targetQty = targetBahanId ? parseFloat(posExpenseForm.qty || 0) : 0
+
         const updatePayload = {
           jenis: isCasbon ? 'Casbon' : `pengeluaran ${posExpenseForm.unit}`,
           kategori: isCasbon ? `Casbon - ${posExpenseForm.karyawan}` : posExpenseForm.kategori,
           nominal: parseFloat(posExpenseForm.nominal),
           nama_pengeluaran: isCasbon ? `Casbon ${posExpenseForm.karyawan} (${posExpenseForm.keterangan})` : posExpenseForm.keterangan,
-          id_bahan_baku: isUuid(posExpenseForm.id_bahan_baku) ? posExpenseForm.id_bahan_baku : null,
-          qty: parseFloat(posExpenseForm.qty || 0),
-          apakah_stok: Boolean(posExpenseForm.id_bahan_baku)
+          id_bahan_baku: targetBahanId,
+          qty: targetQty,
+          apakah_stok: Boolean(targetBahanId && targetQty > 0)
         }
 
+        const expFilterCol = isUuid(editingExpenseId) ? 'id' : 'id_pengeluaran'
         const { error: updErr } = await supabase
           .from('pengeluaran')
           .update(updatePayload)
-          .eq('id_pengeluaran', editingExpenseId)
+          .eq(expFilterCol, editingExpenseId)
 
         if (updErr) throw updErr
         setEditingExpenseId(null)
@@ -839,6 +844,8 @@ const CafePOS = () => {
 
         const payload = {
           ...cleanPayload,
+          id: newExpId,
+          id_pengeluaran: newExpId,
           id_bahan_baku: isUuid(cleanPayload.id_bahan_baku) ? cleanPayload.id_bahan_baku : null,
           tenant_id: effectiveTenantId,
           branch_id: profile?.branch_id || null
@@ -1125,7 +1132,7 @@ const CafePOS = () => {
       id_bahan_baku: exp.id_bahan_baku || exp.id_barang || '',
       qty: exp.qty ? String(exp.qty) : ''
     })
-    setEditingExpenseId(exp.id_pengeluaran)
+    setEditingExpenseId(exp.id || exp.id_pengeluaran)
   }
 
   const handleDeletePosExpense = async (idExp) => {
@@ -1134,10 +1141,12 @@ const CafePOS = () => {
     setLoading(true)
     setError('')
     try {
+      const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+      const expFilterCol = isUuid(idExp) ? 'id' : 'id_pengeluaran'
       const { error: delErr } = await supabase
         .from('pengeluaran')
         .delete()
-        .eq('id_pengeluaran', idExp)
+        .eq(expFilterCol, idExp)
 
       if (delErr) throw delErr
 
@@ -3508,15 +3517,27 @@ const CafePOS = () => {
                       onChange={(val) => {
                         if (val === '__CUSTOM__') {
                           setIsCustomPosExpenseKat(true)
-                          setPosExpenseForm(prev => ({ ...prev, kategori: '', category_id: '' }))
+                          setPosExpenseForm(prev => ({ 
+                            ...prev, 
+                            kategori: '', 
+                            category_id: '',
+                            id_bahan_baku: '',
+                            id_barang: '',
+                            qty: ''
+                          }))
                         } else {
                           const selected = filteredCashierCategories.find(c => c.nama_kategori === val) || cashierAllowedCategories.find(c => c.nama_kategori === val)
                           const isCasbonPicked = String(val).toLowerCase().includes('casbon') || String(val).toLowerCase().includes('kasbon')
+                          const isBahanPicked = String(val).toLowerCase().includes('bahan')
                           setPosExpenseForm(prev => ({ 
                             ...prev, 
                             kategori: val,
                             category_id: selected ? selected.id : '',
-                            karyawan: isCasbonPicked ? (prev.karyawan || anggotaOptions[0] || '') : prev.karyawan
+                            karyawan: isCasbonPicked ? (prev.karyawan || anggotaOptions[0] || '') : prev.karyawan,
+                            // Cegah kebocoran state bahan baku saat kasir memilih kategori non-bahan baku
+                            id_bahan_baku: isBahanPicked ? prev.id_bahan_baku : '',
+                            id_barang: isBahanPicked ? prev.id_barang : '',
+                            qty: isBahanPicked ? prev.qty : ''
                           }))
                         }
                       }}
@@ -3615,7 +3636,11 @@ const CafePOS = () => {
                             className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-amber-400"
                           />
                           <span className="text-xs font-bold text-amber-400 font-mono px-2 shrink-0">
-                            {inventoryList.find(i => (i.id_bahan_baku === posExpenseForm.id_bahan_baku || i.id_barang === posExpenseForm.id_bahan_baku))?.satuan || 'Porsi/Kg'}
+                            {inventoryList.find(i => (
+                              (i.id && String(i.id) === String(posExpenseForm.id_bahan_baku)) ||
+                              (i.id_bahan_baku && String(i.id_bahan_baku) === String(posExpenseForm.id_bahan_baku)) ||
+                              (i.id_barang && String(i.id_barang) === String(posExpenseForm.id_bahan_baku))
+                            ))?.satuan || 'Porsi/Kg'}
                           </span>
                         </div>
                       </div>
@@ -3687,7 +3712,7 @@ const CafePOS = () => {
               <h4 className="font-bold text-sm text-white mb-3">Daftar Pengeluaran Hari Ini</h4>
               <OperationalTable
                 data={todayExpenses}
-                keyExtractor={(exp) => exp.id_pengeluaran}
+                keyExtractor={(exp) => exp.id || exp.id_pengeluaran}
                 emptyMessage="Belum ada pengeluaran kasir hari ini."
                 columns={[
                   {
@@ -3731,7 +3756,7 @@ const CafePOS = () => {
                           Edit
                         </button>
                         <button
-                          onClick={() => handleDeletePosExpense(exp.id_pengeluaran)}
+                          onClick={() => handleDeletePosExpense(exp.id || exp.id_pengeluaran)}
                           className="text-destructive hover:underline font-bold text-[11px]"
                         >
                           Hapus
