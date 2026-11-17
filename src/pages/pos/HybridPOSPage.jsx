@@ -808,7 +808,6 @@ const CafePOS = () => {
           nominal: parseFloat(posExpenseForm.nominal),
           nama_pengeluaran: isCasbon ? `Casbon ${posExpenseForm.karyawan} (${posExpenseForm.keterangan})` : posExpenseForm.keterangan,
           id_bahan_baku: isUuid(posExpenseForm.id_bahan_baku) ? posExpenseForm.id_bahan_baku : null,
-          id_barang: posExpenseForm.id_bahan_baku || '',
           qty: parseFloat(posExpenseForm.qty || 0),
           apakah_stok: Boolean(posExpenseForm.id_bahan_baku)
         }
@@ -834,10 +833,13 @@ const CafePOS = () => {
           newExpId
         })
 
-        // Sanitasi field id_bahan_baku untuk cloud Postgres FK constraint (harus valid UUID atau null)
+        // Sanitasi payload untuk Postgres Cloud:
+        // Hapus id_barang jika ada karena tabel pengeluaran di Supabase Cloud menggunakan id_bahan_baku FK ke stok_barang(id)
+        const { id_barang, ...cleanPayload } = rawPayload
+
         const payload = {
-          ...rawPayload,
-          id_bahan_baku: isUuid(rawPayload.id_bahan_baku) ? rawPayload.id_bahan_baku : null,
+          ...cleanPayload,
+          id_bahan_baku: isUuid(cleanPayload.id_bahan_baku) ? cleanPayload.id_bahan_baku : null,
           tenant_id: effectiveTenantId,
           branch_id: profile?.branch_id || null
         }
