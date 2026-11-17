@@ -73,6 +73,7 @@ DECLARE
     v_unit_price NUMERIC;
     v_qty_delta NUMERIC;
     v_old_stok NUMERIC;
+    v_exp_id_str TEXT;
 BEGIN
     -- ==========================================
     -- A. INSERT: Kasir mencatat pembelian bahan baku
@@ -89,6 +90,7 @@ BEGIN
             IF FOUND THEN
                 v_item_name := COALESCE(v_target_stock.nama_produk, v_target_stock.nama_barang, NEW.nama_pengeluaran);
                 v_unit_price := ROUND(NEW.nominal / NEW.qty, 4);
+                v_exp_id_str := COALESCE(NEW.id_pengeluaran, NEW.id::text);
 
                 -- Catat ke tabel barang_masuk.
                 -- Trigger 'trg_apply_barang_masuk_to_stock' pada tabel barang_masuk
@@ -112,7 +114,7 @@ BEGIN
                     gen_random_uuid(),
                     NEW.tenant_id,
                     NEW.branch_id,
-                    NEW.id,
+                    v_exp_id_str,
                     NEW.id_bahan_baku,
                     NEW.tanggal,
                     v_item_name,
@@ -132,10 +134,14 @@ BEGIN
     -- B. UPDATE: Kasir mengedit qty atau item
     -- ==========================================
     ELSIF TG_OP = 'UPDATE' THEN
+        v_exp_id_str := COALESCE(OLD.id_pengeluaran, OLD.id::text);
+
         -- 1. Jika sebelumnya stok, tapi sekarang diubah jadi non-stok
         IF OLD.apakah_stok IS TRUE AND (NEW.apakah_stok IS NOT TRUE OR NEW.id_bahan_baku IS NULL) THEN
             -- Hapus catatan barang_masuk terkait
-            DELETE FROM public.barang_masuk WHERE id_pengeluaran = OLD.id;
+            DELETE FROM public.barang_masuk 
+            WHERE id_pengeluaran = v_exp_id_str OR id_pengeluaran = OLD.id::text;
+
             -- Kurangkan kembali stok
             UPDATE public.stok_barang
             SET stok = GREATEST(0, COALESCE(stok, 0) - COALESCE(OLD.qty, 0)),
@@ -151,13 +157,14 @@ BEGIN
             IF FOUND THEN
                 v_item_name := COALESCE(v_target_stock.nama_produk, v_target_stock.nama_barang, NEW.nama_pengeluaran);
                 v_unit_price := ROUND(NEW.nominal / NULLIF(NEW.qty, 0), 4);
+                v_exp_id_str := COALESCE(NEW.id_pengeluaran, NEW.id::text);
 
                 INSERT INTO public.barang_masuk (
                     id, tenant_id, branch_id, id_pengeluaran, id_bahan_baku,
                     tanggal, nama_produk, nama_barang, jumlah_masuk, harga_satuan,
                     harga_beli, total_harga, total_biaya, created_at
                 ) VALUES (
-                    gen_random_uuid(), NEW.tenant_id, NEW.branch_id, NEW.id, NEW.id_bahan_baku,
+                    gen_random_uuid(), NEW.tenant_id, NEW.branch_id, v_exp_id_str, NEW.id_bahan_baku,
                     NEW.tanggal, v_item_name, v_item_name, NEW.qty, v_unit_price,
                     v_unit_price, NEW.nominal, NEW.nominal, NOW()
                 );
@@ -174,7 +181,7 @@ BEGIN
                     harga_beli = ROUND(NEW.nominal / NULLIF(NEW.qty, 0), 4),
                     total_harga = NEW.nominal,
                     total_biaya = NEW.nominal
-                WHERE id_pengeluaran = NEW.id;
+                WHERE id_pengeluaran = v_exp_id_str OR id_pengeluaran = OLD.id::text;
 
                 -- Sesuaikan selisih stok_barang
                 UPDATE public.stok_barang
@@ -193,7 +200,8 @@ BEGIN
                 updated_at = NOW()
             WHERE id = OLD.id_bahan_baku;
 
-            DELETE FROM public.barang_masuk WHERE id_pengeluaran = OLD.id;
+            DELETE FROM public.barang_masuk 
+            WHERE id_pengeluaran = v_exp_id_str OR id_pengeluaran = OLD.id::text;
 
             -- Tambah stok item baru
             SELECT id, nama_produk, nama_barang, satuan INTO v_target_stock
@@ -202,13 +210,14 @@ BEGIN
             IF FOUND THEN
                 v_item_name := COALESCE(v_target_stock.nama_produk, v_target_stock.nama_barang, NEW.nama_pengeluaran);
                 v_unit_price := ROUND(NEW.nominal / NULLIF(NEW.qty, 0), 4);
+                v_exp_id_str := COALESCE(NEW.id_pengeluaran, NEW.id::text);
 
                 INSERT INTO public.barang_masuk (
                     id, tenant_id, branch_id, id_pengeluaran, id_bahan_baku,
                     tanggal, nama_produk, nama_barang, jumlah_masuk, harga_satuan,
                     harga_beli, total_harga, total_biaya, created_at
                 ) VALUES (
-                    gen_random_uuid(), NEW.tenant_id, NEW.branch_id, NEW.id, NEW.id_bahan_baku,
+                    gen_random_uuid(), NEW.tenant_id, NEW.branch_id, v_exp_id_str, NEW.id_bahan_baku,
                     NEW.tanggal, v_item_name, v_item_name, NEW.qty, v_unit_price,
                     v_unit_price, NEW.nominal, NEW.nominal, NOW()
                 );
@@ -222,8 +231,11 @@ BEGIN
     -- ==========================================
     ELSIF TG_OP = 'DELETE' THEN
         IF OLD.apakah_stok IS TRUE AND OLD.id_bahan_baku IS NOT NULL AND COALESCE(OLD.qty, 0) > 0 THEN
+            v_exp_id_str := COALESCE(OLD.id_pengeluaran, OLD.id::text);
+
             -- Hapus catatan barang_masuk
-            DELETE FROM public.barang_masuk WHERE id_pengeluaran = OLD.id;
+            DELETE FROM public.barang_masuk 
+            WHERE id_pengeluaran = v_exp_id_str OR id_pengeluaran = OLD.id::text;
 
             -- Kurangkan kembali stok fisik
             UPDATE public.stok_barang
