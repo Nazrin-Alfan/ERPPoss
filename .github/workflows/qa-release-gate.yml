@@ -92,11 +92,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Download Production Dist Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: production-dist
+          path: dist/
+
       - name: Install Playwright Chromium Browser
         run: npx playwright install --with-deps chromium
 
       - name: Run Tahap 3 Playwright E2E Functional Journeys (9 Checks)
+        env:
+          USE_DIST_PREVIEW: "true"
+          VITE_BACKEND_PROVIDER: local
         run: node scripts/qa_tahap3_playwright_e2e.mjs
 
       - name: Run Tahap 4 Playwright WCAG 2.2 AA, Web Vitals & Deep RBAC Suite (7 Checks)
+        env:
+          USE_DIST_PREVIEW: "true"
+          VITE_BACKEND_PROVIDER: local
         run: node scripts/qa_tahap4_a11y_perf_and_rbac_e2e.mjs

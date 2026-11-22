@@ -1,15 +1,25 @@
 import { chromium } from 'playwright';
-import { createServer } from 'vite';
+import { createServer, preview } from 'vite';
 
 async function runPlaywrightE2ESuite() {
-  console.log('🚀 Starting Vite Server for Tahap 3 Playwright E2E Suite...');
-  const server = await createServer({
-    server: { port: 4179, strictPort: false },
-    logLevel: 'error',
-  });
-  await server.listen();
-  const address = server.httpServer.address();
-  const baseURL = `http://localhost:${address.port}`;
+  const usePreview = process.env.USE_DIST_PREVIEW === 'true';
+  console.log(`🚀 Starting Vite ${usePreview ? 'Preview (dist)' : 'Dev'} Server for Tahap 3 Playwright E2E Suite...`);
+  let closeServer;
+  let port;
+  if (usePreview) {
+    const srv = await preview({ preview: { host: '127.0.0.1', port: 4179, strictPort: false } });
+    port = srv.httpServer.address().port;
+    closeServer = () => new Promise((resolve) => srv.httpServer.close(resolve));
+  } else {
+    const srv = await createServer({
+      server: { host: '127.0.0.1', port: 4179, strictPort: false },
+      logLevel: 'error',
+    });
+    await srv.listen();
+    port = srv.httpServer.address().port;
+    closeServer = () => srv.close();
+  }
+  const baseURL = `http://127.0.0.1:${port}`;
   console.log(`🌐 Vite Server listening at ${baseURL}`);
 
   const browser = await chromium.launch({ headless: true });
@@ -140,9 +150,14 @@ async function runPlaywrightE2ESuite() {
     );
 
     console.log('\n🎉 ALL 9 PLAYWRIGHT E2E CHECKS PASSED 100%!');
+  } catch (err) {
+    const curUrl = page.url();
+    const snippet = await page.locator('body').innerText().then((t) => t.replace(/\s+/g, ' ').slice(0, 200)).catch(() => '');
+    console.log(`::error::Tahap 3 E2E failed at ${curUrl}: ${err?.message || err} | pageErrors=${pageErrors.join('; ')} | body=${snippet}`);
+    throw err;
   } finally {
     await browser.close();
-    await server.close();
+    await closeServer();
   }
 }
 
