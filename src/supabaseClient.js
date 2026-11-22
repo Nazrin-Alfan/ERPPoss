@@ -4,32 +4,33 @@
  * - Local: Menggunakan In-Memory / LocalStorage engine untuk demo aman tanpa network.
  */
 import { createClient } from '@supabase/supabase-js'
-import { localSupabase } from './services/localDbEngine'
 
 const envUrl = import.meta.env?.VITE_SUPABASE_URL || ''
 const envAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || ''
-const provider = (import.meta.env?.VITE_BACKEND_PROVIDER || 'local').toLowerCase()
+const defaultProvider = import.meta.env?.PROD ? 'cloud' : 'local'
+const provider = (import.meta.env.VITE_BACKEND_PROVIDER || defaultProvider).toLowerCase()
 
 const hasCloudConfig = Boolean(envUrl && envAnonKey && envUrl.startsWith('http'))
 export const isCloudBackend = provider === 'cloud' && hasCloudConfig
 
 let clientInstance = null
 
-if (isCloudBackend) {
-  try {
-    clientInstance = createClient(envUrl, envAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-      },
-    })
-    console.info('⚡ RelayPOS tersambung ke Supabase Cloud Backend:', envUrl)
-  } catch (err) {
-    console.warn('⚠️ Gagal inisialisasi Supabase Cloud, fallback ke Local Engine:', err.message)
-    clientInstance = localSupabase
+if (provider === 'cloud') {
+  if (!hasCloudConfig) {
+    throw new Error(
+      'Konfigurasi Supabase Cloud (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY) wajib diisi saat VITE_BACKEND_PROVIDER=cloud.'
+    )
   }
+  clientInstance = createClient(envUrl, envAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  })
+  console.info('⚡ RelayPOS tersambung ke Supabase Cloud Backend:', envUrl)
 } else {
+  const { localSupabase } = await import('./services/localDbEngine')
   clientInstance = localSupabase
 }
 

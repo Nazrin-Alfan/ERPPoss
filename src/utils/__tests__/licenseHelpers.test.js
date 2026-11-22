@@ -98,6 +98,6 @@ describe('licenseHelpers', () => {
     expect(result.isActive).toBe(false)
     expect(result.isExpired).toBe(true)
     expect(result.isTrial).toBe(true)
-    expect(result.message).toContain('Masa uji coba 14 hari telah berakhir')
+    expect(result.message).toContain('Masa uji coba beta gratis telah berakhir')
   })
 })

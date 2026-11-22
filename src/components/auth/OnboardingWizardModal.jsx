@@ -20,7 +20,6 @@ import {
   SkipForward
 } from 'lucide-react'
 import { saveReceiptConfig } from '../../utils/receiptHelpers'
-import { createCleanTenantPayload } from '../../utils/superAdminHelpers'
 import { supabase } from '../../supabaseClient'
 import { useAuth } from '../../context/AuthContext'
 
@@ -92,7 +91,7 @@ export default function OnboardingWizardModal({
     if (!isGuidedExisting) {
       setCashierName('Kasir Doni')
       setCashierUsername('kasir1')
-      setCashierPin('123456')
+      setCashierPin('')
     } else {
       setCashierName('')
       setCashierUsername('')
@@ -159,12 +158,12 @@ export default function OnboardingWizardModal({
     e.preventDefault()
     setError('')
 
-    const wantsCashier = Boolean(cashierUsername.trim() || cashierPin.trim())
-    if (!isGuidedExisting && (!cashierUsername.trim() || !cashierPin.trim())) {
+    const wantsCashier = Boolean(cashierUsername.trim() || cashierPin)
+    if (!isGuidedExisting && (!cashierUsername.trim() || !cashierPin)) {
       return setError('Username dan kata sandi kasir pertama wajib diisi.')
     }
-    if (wantsCashier && cashierPin.trim().length < 6) {
-      return setError('Kata sandi / PIN kasir minimal 6 karakter.')
+    if (wantsCashier && cashierPin.length < 8) {
+      return setError('Kata sandi / PIN kasir minimal 8 karakter.')
     }
 
     setLoading(true)
@@ -213,7 +212,7 @@ export default function OnboardingWizardModal({
         if (wantsCashier && registerKasir) {
           const kasirRes = await registerKasir(
             cashierUsername.trim(),
-            cashierPin.trim(),
+            cashierPin,
             cashierName.trim() || 'Kasir 1',
             'Kasir',
             existingTenant.id
@@ -224,12 +223,19 @@ export default function OnboardingWizardModal({
           createdCashier = kasirRes.user
         }
 
-        saveReceiptConfig({
+        const nextReceiptPatch = {
           storeName: storeName.trim(),
           storeAddress: storeAddress.trim(),
           storePhone: storePhone.trim(),
           paperWidth: printerWidth,
-        })
+        }
+        const savedCfg = saveReceiptConfig(nextReceiptPatch)
+        if (typeof supabase.rpc === 'function') {
+          await supabase.rpc('fn_update_tenant_receipt_config', {
+            p_tenant_id: existingTenant.id,
+            p_config: savedCfg,
+          }).catch(() => {})
+        }
 
         if (onCompleted) {
           await onCompleted(
@@ -246,50 +252,52 @@ export default function OnboardingWizardModal({
         return
       }
 
-      // Mode Tambah Outlet Baru dari Konsolidasi
-      const payload = createCleanTenantPayload({
-        storeName: storeName.trim(),
-        ownerEmail: ownerUser?.email || 'owner@relaypos.com',
-        ownerName: ownerName.trim() || 'Owner Baru',
-        telepon: storePhone.trim(),
-        alamat: storeAddress.trim(),
-        tier: 'PRO_ANNUAL',
-        licenseDurationMonths: 12,
-        businessType: businessModel,
-      })
-      payload.tenant.onboarding_completed = true
-
-      await supabase.from('tenants').insert(payload.tenant)
-      await supabase.from('branches').insert(payload.branch)
-      await supabase.from('tenant_licenses').insert(payload.license)
-      if (payload.initialBalances?.length > 0) {
-        await supabase.from('pos_balances').insert(payload.initialBalances)
-      }
-      if (payload.initialPackages?.length > 0) {
-        await supabase.from('carwash_packages').insert(payload.initialPackages)
+      // Mode Tambah Outlet Baru dari Konsolidasi (Atomic RPC Server-Side)
+      let createdTenant = null
+      let newCashierProfile = null
+      if (typeof supabase.rpc === 'function') {
+        const { data: outletRes, error: outletErr } = await supabase.rpc('fn_create_owner_outlet', {
+          p_store_name: storeName.trim(),
+          p_business_type: businessModel,
+          p_telepon: storePhone.trim() || '-',
+          p_alamat: storeAddress.trim() || '-',
+        })
+        if (outletErr) throw outletErr
+        createdTenant = outletRes?.tenant || null
       }
 
-      const newCashierProfile = {
-        id: `usr_${payload.tenant.slug}_cashier_${Date.now()}`,
-        tenant_id: payload.tenant.id,
-        branch_id: payload.branch.id,
-        nama: cashierName.trim() || 'Kasir 1',
-        email: `${cashierUsername.trim().toLowerCase()}@${payload.tenant.slug}.local`,
-        role: 'Kasir',
-        pin: cashierPin.trim(),
-        created_at: new Date().toISOString(),
+      if (!createdTenant) {
+        throw new Error('Gagal membuat outlet baru di server. Silakan coba lagi.')
       }
-      await supabase.from('profiles').insert(newCashierProfile)
 
-      saveReceiptConfig({
+      if (wantsCashier && registerKasir && createdTenant?.id) {
+        const kasirRes = await registerKasir(
+          cashierUsername.trim(),
+          cashierPin,
+          cashierName.trim() || 'Kasir 1',
+          'Kasir',
+          createdTenant.id
+        )
+        if (kasirRes?.success) {
+          newCashierProfile = kasirRes.user
+        }
+      }
+
+      const savedNewOutletCfg = saveReceiptConfig({
         storeName: storeName.trim(),
         storeAddress: storeAddress.trim(),
         storePhone: storePhone.trim(),
         paperWidth: printerWidth,
       })
+      if (createdTenant?.id && typeof supabase.rpc === 'function') {
+        await supabase.rpc('fn_update_tenant_receipt_config', {
+          p_tenant_id: createdTenant.id,
+          p_config: savedNewOutletCfg,
+        }).catch(() => {})
+      }
 
       if (onCompleted) {
-        await onCompleted(payload.tenant, newCashierProfile)
+        await onCompleted(createdTenant, newCashierProfile)
       }
       onClose()
     } catch (err) {
@@ -694,7 +702,7 @@ export default function OnboardingWizardModal({
                 <span className="font-bold text-brand-emerald block mb-0.5">
                   Akun Kasir Meja Toko {isGuidedExisting ? '(Opsional)' : ''}
                 </span>
-                Staf kasir tidak membutuhkan akun Google. Buat username dan kata sandi (min. 6 karakter) jika Anda memiliki staf kasir, atau biarkan kosong untuk langsung masuk menggunakan akun Owner.
+                Staf kasir tidak membutuhkan akun Google. Buat username dan kata sandi (min. 8 karakter) jika Anda memiliki staf kasir, atau biarkan kosong untuk langsung masuk menggunakan akun Owner.
               </div>
 
               <div>
@@ -732,13 +740,15 @@ export default function OnboardingWizardModal({
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                    Kata Sandi / PIN (Min. 6) {!isGuidedExisting && <span className="text-rose-400">*</span>}
+                    Kata Sandi / PIN (Min. 8) {!isGuidedExisting && <span className="text-rose-400">*</span>}
                   </label>
                   <div className="relative">
                     <KeyRound size={15} className="absolute left-3 top-3 text-slate-500" />
                     <input
                       type="password"
-                      placeholder="••••••"
+                      placeholder="Minimal 8 karakter"
+                      minLength={8}
+                      autoComplete="new-password"
                       value={cashierPin}
                       onChange={(e) => setCashierPin(e.target.value)}
                       className="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-brand-emerald font-mono tracking-widest"

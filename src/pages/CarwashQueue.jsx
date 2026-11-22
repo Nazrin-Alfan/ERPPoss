@@ -50,6 +50,7 @@ const CarwashQueue = () => {
       const { data, error } = await supabase
         .from('carwash')
         .select(`
+          id,
           id_transaksi,
           id_struk,
           kehadiran,
@@ -86,7 +87,8 @@ const CarwashQueue = () => {
       let formattedData = []
       if (Array.isArray(data)) {
         formattedData = data.map((item) => ({
-          id: item.id_transaksi || `cw_${Math.random()}`,
+          id: item.id || item.id_transaksi,
+          idTransaksi: item.id_transaksi || null,
           platNomor: item.plat || '-',
           kehadiran: (item.kehadiran || 'TUNGGU').toUpperCase(),
           variant: item.variant || '-',
@@ -159,15 +161,18 @@ const CarwashQueue = () => {
     }
   }, [fetchQueue, activeTenant?.id])
 
+  const isUuidVal = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+
   const handleStartWashing = async (item) => {
     setUpdatingId(item.id)
     try {
+      const filterCol = isUuidVal(item.id) ? 'id' : 'id_transaksi'
       const { error } = await supabase
         .from('carwash')
         .update({
           status_pengerjaan: 'Sedang Dicuci'
         })
-        .eq('id_transaksi', item.id)
+        .eq(filterCol, item.id)
 
       if (error) console.error('Error updating status to Sedang Dicuci:', error)
       setQueue(prev => prev.map(q => q.id === item.id ? { ...q, statusPengerjaan: 'Sedang Dicuci' } : q))
@@ -182,12 +187,13 @@ const CarwashQueue = () => {
     if (!qcModalItem) return
     setUpdatingId(qcModalItem.id)
     try {
+      const filterCol = isUuidVal(qcModalItem.id) ? 'id' : 'id_transaksi'
       const { error } = await supabase
         .from('carwash')
         .update({
           status_pengerjaan: 'Siap Diambil'
         })
-        .eq('id_transaksi', qcModalItem.id)
+        .eq(filterCol, qcModalItem.id)
 
       if (error) {
         console.error('Error updating QC status:', error)

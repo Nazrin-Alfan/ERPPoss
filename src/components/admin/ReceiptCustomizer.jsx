@@ -39,8 +39,11 @@ import {
   testPrintViaBluetooth,
   getConnectedPrinterName 
 } from '../../utils/bluetoothPrinter'
+import { supabase } from '../../supabaseClient'
+import { useAuth } from '../../context/AuthContext'
 
 export default function ReceiptCustomizer() {
+  const { activeTenant } = useAuth()
   const [config, setConfig] = useState(DEFAULT_RECEIPT_CONFIG)
   const [activeSubSection, setActiveSubSection] = useState('hardware') // Default fokus langsung ke Hardware & Bluetooth!
   const [previewType, setPreviewType] = useState('PAYMENT') // 'ORDER' | 'PAYMENT'
@@ -68,18 +71,32 @@ export default function ReceiptCustomizer() {
     })
   }
 
-  const handleSave = () => {
+  const persistToCloudTenant = async (cfg) => {
+    if (!activeTenant?.id || typeof supabase.rpc !== 'function') return
+    try {
+      await supabase.rpc('fn_update_tenant_receipt_config', {
+        p_tenant_id: activeTenant.id,
+        p_config: cfg
+      })
+    } catch (err) {
+      console.warn('Sinkronisasi receipt_config ke DB dilewati:', err?.message || err)
+    }
+  }
+
+  const handleSave = async () => {
     saveReceiptConfig(config)
+    await persistToCloudTenant(config)
     setSaveSuccess(true)
     setTimeout(() => {
       setSaveSuccess(false)
     }, 3000)
   }
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (window.confirm('Kembalikan seluruh template struk ke pengaturan awal standar sistem?')) {
       setConfig(DEFAULT_RECEIPT_CONFIG)
       saveReceiptConfig(DEFAULT_RECEIPT_CONFIG)
+      await persistToCloudTenant(DEFAULT_RECEIPT_CONFIG)
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 3000)
     }

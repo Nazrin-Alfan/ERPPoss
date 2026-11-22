@@ -183,8 +183,8 @@ export default function TenantSwitcher({ isCollapsed = false }) {
                 <button
                   key={tenant.id}
                   type="button"
-                  onClick={() => {
-                    switchTenant(tenant.id)
+                  onClick={async () => {
+                    await switchTenant(tenant.id)
                     setIsOpen(false)
                   }}
                   className={`w-full p-2.5 rounded-sm text-left flex items-center justify-between gap-2.5 transition-all cursor-pointer group ${
@@ -242,12 +242,12 @@ export default function TenantSwitcher({ isCollapsed = false }) {
               </Link>
 
               <Link
-                to={currentRole === 'Super Admin' ? '/super-admin' : '/admin'}
+                to={currentRole === 'Super Admin' && (import.meta.env?.VITE_ENABLE_FOUNDER_CONSOLE === 'true' || import.meta.env?.MODE === 'test') ? '/founder' : '/admin'}
                 onClick={() => setIsOpen(false)}
                 className="w-full py-2 px-2.5 rounded-sm bg-[#18181c] hover:bg-[#242428] text-[11px] font-semibold text-[#bbcbb2] hover:text-white flex items-center justify-center gap-1.5 transition-all border border-[#26272d] hover:border-[#3f414a] group"
               >
                 <Plus size={13} className="text-[#bbcbb2] group-hover:text-white transition-colors" />
-                <span>{currentRole === 'Super Admin' ? 'Kelola Outlet di Console' : 'Atur Toko di Admin'}</span>
+                <span>{currentRole === 'Super Admin' && (import.meta.env?.VITE_ENABLE_FOUNDER_CONSOLE === 'true' || import.meta.env?.MODE === 'test') ? 'Kelola Outlet di Console' : 'Atur Toko di Admin'}</span>
               </Link>
             </div>
           )}

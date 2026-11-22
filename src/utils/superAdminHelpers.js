@@ -29,6 +29,18 @@ export const generateSerialLicenseKey = (tierCode = 'PRO_ANNUAL', durationYears 
   return `RLPOS-${prefix}-${currentYear}-${randomPart}-${checksumPart}`
 }
 
+/** Generate a strong random initial password for newly provisioned tenant owners. */
+export const generateSecureInitialPassword = (length = 12) => {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$'
+  const bytes = new Uint8Array(length)
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    crypto.getRandomValues(bytes)
+  } else {
+    for (let i = 0; i < length; i++) bytes[i] = Math.floor(Math.random() * 256)
+  }
+  return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('')
+}
+
 const generateUuid = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID()

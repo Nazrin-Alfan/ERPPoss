@@ -144,6 +144,12 @@ export const posService = {
       return new PosCheckoutError('Akses tenant tidak sah atau sesi telah berakhir.', 'FORBIDDEN', { raw: rawMsg })
     }
 
+    if (rawMsg.includes('LOYALTY_REWARD_UNAVAILABLE') || rawMsg.includes('Stamp kunjungan belum cukup')) {
+      const match = rawMsg.match(/(?:LOYALTY_REWARD_UNAVAILABLE|Stamp kunjungan belum cukup):\s*(.*)/)
+      const detail = match ? match[1].trim() : 'Stamp kunjungan belum mencukupi atau hadiah loyalty tidak tersedia.'
+      return new PosCheckoutError(detail, 'LOYALTY_REWARD_UNAVAILABLE', { raw: rawMsg })
+    }
+
     if (rawMsg.includes('chk_stok_barang_non_negative')) {
       return new PosCheckoutError('Transaksi dibatalkan karena menyebabkan stok menjadi negatif.', 'INSUFFICIENT_STOCK', { raw: rawMsg })
     }
@@ -166,10 +172,13 @@ export const posService = {
       const qty = parseFloat(item.qty ?? item.quantity ?? 1)
       const subtotal = parseFloat(item.subtotal ?? item.total ?? (price * qty))
       const name = item.nama_menu || item.nama || item.name || 'Menu'
+      const rawId = item.menu_id || item.id_menu || item.id || null
 
       return {
         ...item,
         id_menu: item.id_menu || item.id || null,
+        menu_id: rawId,
+        stok_barang_id: item.stok_barang_id || null,
         nama_menu: name,
         nama: name,
         harga: price,

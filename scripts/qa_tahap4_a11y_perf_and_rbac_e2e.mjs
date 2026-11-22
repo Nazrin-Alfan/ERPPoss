@@ -57,7 +57,7 @@ async function runTahap4Suite() {
     await passwordInput.focus();
     await page.keyboard.type('password123');
 
-    const submitBtn = page.getByRole('button', { name: 'Masuk ke Sistem' });
+    const submitBtn = page.getByRole('button', { name: /^(Masuk|Masuk ke Sistem)$/i });
     const isSubmitEnabled = await submitBtn.isEnabled();
     record(
       'T4-01',
@@ -87,7 +87,7 @@ async function runTahap4Suite() {
     for (const route of routesToBenchmark) {
       const t0 = Date.now();
       await page.goto(`${baseURL}${route}`, { waitUntil: 'domcontentloaded' });
-      await page.locator('main').waitFor({ state: 'visible', timeout: 10000 });
+      await page.locator('main').first().waitFor({ state: 'visible', timeout: 10000 });
       const navTimeMs = Date.now() - t0;
 
       const perfData = await page.evaluate(() => {
@@ -114,7 +114,7 @@ async function runTahap4Suite() {
 
     // T4-04: WCAG 2.2 AA Semantic Landmarks, Headings, & Interactive Control Accessible Names Audit
     await page.goto(`${baseURL}/finance`, { waitUntil: 'domcontentloaded' });
-    await page.locator('main').waitFor({ state: 'visible' });
+    await page.locator('main').first().waitFor({ state: 'visible' });
 
     const a11yDomAudit = await page.evaluate(() => {
       const mainCount = document.querySelectorAll('main').length;
@@ -165,7 +165,7 @@ async function runTahap4Suite() {
     await kasirPage.goto(`${baseURL}/login`, { waitUntil: 'domcontentloaded' });
     await kasirPage.getByLabel('Username atau Email', { exact: false }).fill('kasir');
     await kasirPage.getByLabel('PIN / Kata Sandi', { exact: false }).fill('password123');
-    await kasirPage.getByRole('button', { name: 'Masuk ke Sistem' }).click();
+    await kasirPage.getByRole('button', { name: /^(Masuk|Masuk ke Sistem)$/i }).click();
 
     await kasirPage.waitForURL((url) => url.pathname === '/pos' || url.pathname === '/queue', {
       timeout: 15000,

@@ -78,10 +78,12 @@ export const calculateMenuHpp = ({
   let hasMissingPrices = false
 
   const breakdown = (recipeList || []).map(r => {
-    const matchedStock = (stockItems || []).find(b => 
+    const matchedStock = (stockItems || []).find(b =>
+      (r.stok_barang_id && b.id === r.stok_barang_id) ||
+      (r.id_bahan_baku && (b.id === r.id_bahan_baku || b.id_bahan_baku === r.id_bahan_baku || b.id_barang === r.id_bahan_baku)) ||
       b.nama_bahan === r.nama_bahan ||
       b.nama_produk === r.nama_bahan ||
-      (r.id_bahan_baku && (b.id_bahan_baku === r.id_bahan_baku || b.id === r.id_bahan_baku))
+      b.nama_barang === r.nama_bahan
     )
 
     const costResult = calculateIngredientCost(matchedStock, r.jumlah_dibutuhkan, r.satuan)

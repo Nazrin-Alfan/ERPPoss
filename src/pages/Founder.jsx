@@ -8,7 +8,8 @@ import {
 } from '../services/founderService'
 import {
   createCleanTenantPayload,
-  deleteTenantCompletely
+  deleteTenantCompletely,
+  generateSecureInitialPassword
 } from '../utils/superAdminHelpers'
 import { formatRupiah } from '../utils/helpers'
 import {
@@ -42,6 +43,7 @@ import {
   MapPin,
   Clock,
   Archive,
+  Star,
   ArchiveRestore,
   Copy,
   Check,
@@ -87,6 +89,9 @@ export default function Founder() {
   // Modal State: Arsipkan Tenant (Soft Delete)
   const [tenantToArchive, setTenantToArchive] = useState(null)
 
+  // Daftar masukan pengguna beta
+  const [feedbackList, setFeedbackList] = useState([])
+
   // Status feedback toast
   const [toastMessage, setToastMessage] = useState('')
 
@@ -106,6 +111,15 @@ export default function Founder() {
       const { data: allProfiles } = await supabase.from('profiles').select('*', { ignoreTenant: true })
       const { data: allBranches } = await supabase.from('branches').select('*')
       const { data: allLicenses } = await supabase.from('tenant_licenses').select('*')
+      try {
+        const { data: allFeedback } = await supabase
+          .from('beta_feedback')
+          .select('*')
+          .order('created_at', { ascending: false })
+        setFeedbackList(allFeedback || [])
+      } catch {
+        setFeedbackList([])
+      }
 
       const enrichedTenants = (allTenants || []).map(t => {
         const lic = (allLicenses || []).find(l => l.tenant_id === t.id)
@@ -251,6 +265,7 @@ export default function Founder() {
     try {
       let res = null
       let usedRpc = false
+      const initialPassword = generateSecureInitialPassword()
 
       // Coba panggil RPC PostgreSQL atomic Supabase Cloud
       if (typeof supabase.rpc === 'function') {
@@ -258,7 +273,7 @@ export default function Founder() {
           p_store_name: createForm.storeName.trim(),
           p_owner_name: createForm.ownerName.trim() || `Owner ${createForm.storeName.trim()}`,
           p_owner_email: createForm.ownerEmail.trim(),
-          p_owner_password: 'password123',
+          p_owner_password: initialPassword,
           p_telepon: createForm.telepon.trim() || '-',
           p_alamat: createForm.alamat?.trim() || '-',
           p_business_type: createForm.businessType || 'HYBRID',
@@ -287,7 +302,7 @@ export default function Founder() {
           nama: payload.tenant.nama,
           owner_name: payload.tenant.owner_name,
           owner_email: payload.tenant.owner_email,
-          owner_password: 'password123',
+          owner_password: initialPassword,
           license_key: payload.license?.license_key,
           telepon: payload.tenant.telepon,
           plan: payload.tenant.plan,
@@ -313,7 +328,7 @@ export default function Founder() {
           expires_at: res.valid_until || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
           license_key: res.license_key
         },
-        plainPassword: res.owner_password || 'password123',
+        plainPassword: res.owner_password || initialPassword,
         loginUrl: `${window.location.origin}/login`
       }
 
@@ -898,6 +913,61 @@ Jika butuh panduan awal atau ada pertanyaan teknis, silakan hubungi kami via cha
         </div>
       </div>
 
+      {/* Panel Masukan Beta Pengguna */}
+      <div className="bg-slate-900/70 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <MessageSquare size={18} className="text-amber-400" />
+            <div>
+              <h2 className="text-base font-bold text-white">Masukan Pengguna Beta ({feedbackList.length})</h2>
+              <p className="text-xs text-slate-400">Laporan bug, saran fitur, dan rating bintang dari pengguna.</p>
+            </div>
+          </div>
+        </div>
+
+        {feedbackList.length === 0 ? (
+          <p className="text-xs text-slate-500 py-4 text-center">Belum ada masukan beta yang masuk.</p>
+        ) : (
+          <div className="space-y-2.5 max-h-96 overflow-y-auto pr-1">
+            {feedbackList.map((fb) => (
+              <div key={fb.id} className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 flex flex-col sm:flex-row sm:items-start justify-between gap-3 text-xs">
+                <div className="space-y-1.5 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-300 font-bold text-[10px] uppercase">{fb.category || 'FEATURE'}</span>
+                    {fb.rating > 0 && (
+                      <span className="inline-flex items-center gap-0.5 text-amber-400 font-bold text-[11px]">
+                        <Star size={12} className="fill-amber-400" />
+                        {fb.rating}/5
+                      </span>
+                    )}
+                    <span className="font-semibold text-white">{fb.user_name || 'Pengguna'}</span>
+                    <span className="text-slate-500">({fb.user_role || 'Owner'})</span>
+                    {fb.page_path && <span className="text-slate-500 font-mono text-[10px]">{fb.page_path}</span>}
+                  </div>
+                  <p className="text-slate-200 whitespace-pre-wrap break-words">{fb.message}</p>
+                </div>
+                <select
+                  value={fb.status || 'OPEN'}
+                  onChange={async (e) => {
+                    const nextStatus = e.target.value
+                    const { error } = await supabase.from('beta_feedback').update({ status: nextStatus }).eq('id', fb.id)
+                    if (!error) {
+                      setFeedbackList((prev) => prev.map((row) => (row.id === fb.id ? { ...row, status: nextStatus } : row)))
+                      showNotification(`Status masukan diubah ke ${nextStatus}`)
+                    }
+                  }}
+                  className="px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-[11px] font-semibold text-slate-200 shrink-0 cursor-pointer"
+                >
+                  <option value="OPEN">OPEN</option>
+                  <option value="IN_REVIEW">IN_REVIEW</option>
+                  <option value="RESOLVED">RESOLVED</option>
+                </select>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Modal Terbitkan Tenant Baru */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
@@ -1005,9 +1075,9 @@ Jika butuh panduan awal atau ada pertanyaan teknis, silakan hubungi kami via cha
               </div>
 
               <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-500/20 text-[11px] text-purple-200">
-                <p className="font-bold text-white mb-0.5">Kredensial Default Login Owner:</p>
+                <p className="font-bold text-white mb-0.5">Kredensial Awal Login Owner:</p>
                 <p>Username / Email: <span className="font-mono text-purple-300">{createForm.ownerEmail || 'email-owner@toko.com'}</span></p>
-                <p>Password Default: <span className="font-mono text-purple-300 font-bold">password123</span> (dapat diganti oleh Owner setelah login)</p>
+                <p>Password Awal: <span className="font-mono text-purple-300 font-bold">Di-generate acak otomatis setelah diterbitkan</span> (wajib diganti Owner setelah login)</p>
               </div>
 
               <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">

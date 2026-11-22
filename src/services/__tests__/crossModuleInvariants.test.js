@@ -60,7 +60,7 @@ describe('Cross-Module Relational Invariants & Staff Lifecycle Matrix', () => {
     expect(staffAlpha.user.role).toBe('Kasir')
     expect(staffAlpha.user.tenant_id).toBe(tenantAlphaId)
     expect(staffAlpha.user.email).toContain('@pos.internal')
-    expect(formatStaffLoginHandle(staffAlpha.user.email)).toBe('kasir1')
+    expect(formatStaffLoginHandle(staffAlpha.user.email)).toBe('kasir1.alpha-carwash')
 
     // Duplicate username "kasir1" inside the SAME tenant (Alpha) must be rejected
     await expect(

@@ -48,7 +48,7 @@ async function runPlaywrightE2ESuite() {
     await usernameInput.waitFor({ state: 'visible', timeout: 15000 });
     await usernameInput.fill('invalid_user@nowhere.test');
     await passwordInput.fill('wrong_password_123');
-    await page.getByRole('button', { name: 'Masuk ke Sistem' }).click();
+    await page.getByRole('button', { name: /^(Masuk|Masuk ke Sistem)$/i }).click();
 
     const alertBox = page.getByRole('alert');
     await alertBox.waitFor({ state: 'visible', timeout: 10000 });
@@ -59,16 +59,22 @@ async function runPlaywrightE2ESuite() {
     // E2E-02: Owner Login / Onboarding & Route Dispatch (R-08)
     await usernameInput.fill('owner');
     await passwordInput.fill('password123');
-    await page.getByRole('button', { name: 'Masuk ke Sistem' }).click();
+    await page.getByRole('button', { name: /^(Masuk|Masuk ke Sistem)$/i }).click();
 
     await page.waitForURL((url) => url.pathname === '/dashboard' || url.pathname === '/konsolidasi', {
       timeout: 15000,
     });
     record('E2E-02', 'Owner Authentication & Role Route Dispatch (R-08)', true, `Redirected to ${new URL(page.url()).pathname}`);
 
+    // Helper: navigate & wait for hydrated app route (<main>) before asserting content
+    const navigateAndWait = async (routePath) => {
+      await page.goto(`${baseURL}${routePath}`, { waitUntil: 'domcontentloaded' });
+      await page.locator('main').first().waitFor({ state: 'visible', timeout: 15000 });
+      await page.waitForFunction(() => (document.body.innerText || '').trim().length > 50, null, { timeout: 15000 });
+    };
+
     // E2E-03: Executive Dashboard & Multi-Branch Consolidation (R-09)
-    await page.goto(`${baseURL}/dashboard`, { waitUntil: 'domcontentloaded' });
-    await page.locator('body').waitFor({ state: 'visible' });
+    await navigateAndWait('/dashboard');
     const dashText = await page.locator('body').innerText();
     record(
       'E2E-03',
@@ -78,8 +84,7 @@ async function runPlaywrightE2ESuite() {
     );
 
     // E2E-04: Hybrid POS Workspace & Inventory Stock View (R-01, R-04)
-    await page.goto(`${baseURL}/pos`, { waitUntil: 'domcontentloaded' });
-    await page.locator('body').waitFor({ state: 'visible' });
+    await navigateAndWait('/pos');
     const startShiftBtn = page.getByRole('button', { name: /Mulai Shift/i });
     if (await startShiftBtn.isVisible().catch(() => false)) {
       await startShiftBtn.click();
@@ -93,8 +98,7 @@ async function runPlaywrightE2ESuite() {
     );
 
     // E2E-05: Carwash Queue Kanban Board (R-07)
-    await page.goto(`${baseURL}/queue`, { waitUntil: 'domcontentloaded' });
-    await page.locator('body').waitFor({ state: 'visible' });
+    await navigateAndWait('/queue');
     const queueText = await page.locator('body').innerText();
     record(
       'E2E-05',
@@ -104,8 +108,8 @@ async function runPlaywrightE2ESuite() {
     );
 
     // E2E-06: Double-Entry Finance & Tabular Numerals Audit (R-02)
-    await page.goto(`${baseURL}/finance`, { waitUntil: 'domcontentloaded' });
-    await page.locator('body').waitFor({ state: 'visible' });
+    await navigateAndWait('/finance');
+    await page.locator('.font-mono, .tabular-nums').first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
     const financeText = await page.locator('body').innerText();
     const monoElements = await page.locator('.font-mono, .tabular-nums').count();
     record(
@@ -116,14 +120,12 @@ async function runPlaywrightE2ESuite() {
     );
 
     // E2E-07: Staff & Payroll Management (R-07)
-    await page.goto(`${baseURL}/karyawan`, { waitUntil: 'domcontentloaded' });
-    await page.locator('body').waitFor({ state: 'visible' });
+    await navigateAndWait('/karyawan');
     const staffText = await page.locator('body').innerText();
     record('E2E-07', 'Staff & Payroll Management View (R-07)', staffText.length > 50, 'Karyawan module loaded');
 
     // E2E-08: CRM Loyalty & Customer Reward View (R-06)
-    await page.goto(`${baseURL}/crm`, { waitUntil: 'domcontentloaded' });
-    await page.locator('body').waitFor({ state: 'visible' });
+    await navigateAndWait('/crm');
     const crmText = await page.locator('body').innerText();
     record('E2E-08', 'CRM Loyalty & Reward Management View (R-06)', crmText.length > 50, 'CRM module loaded');
 

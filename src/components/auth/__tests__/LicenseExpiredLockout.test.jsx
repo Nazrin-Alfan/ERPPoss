@@ -23,7 +23,7 @@ describe('LicenseExpiredLockout & Trial Gate Suite', () => {
 
     const html = renderToString(React.createElement(LicenseExpiredLockout))
 
-    expect(html).toContain('Masa Uji Coba 14 Hari Telah Berakhir')
+    expect(html).toContain('Masa Uji Coba 30 Hari Telah Berakhir')
     expect(html).toContain('Kopi Kenangan')
     expect(html).toContain('tenant_trial_123')
     expect(html).toContain('Masukkan Serial Key Lisensi Resmi')
@@ -47,7 +47,7 @@ describe('LicenseExpiredLockout & Trial Gate Suite', () => {
 
     const html = renderToString(React.createElement(LicenseExpiredLockout))
 
-    expect(html).toContain('Masa Uji Coba 14 Hari Telah Berakhir')
+    expect(html).toContain('Masa Uji Coba 30 Hari Telah Berakhir')
     expect(html).toContain('Perhatian untuk Staf / Kasir')
     expect(html).toContain('Harap hubungi')
     expect(html).not.toContain('Masukkan Serial Key Lisensi Resmi')

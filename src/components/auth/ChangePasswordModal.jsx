@@ -88,8 +88,8 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
   const calculateStrength = (pwd) => {
     if (!pwd) return { score: 0, text: '', color: 'bg-slate-700' }
     let score = 0
-    if (pwd.length >= 6) score += 1
     if (pwd.length >= 8) score += 1
+    if (pwd.length >= 12) score += 1
     if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) score += 1
     if (/[0-9]/.test(pwd)) score += 1
     if (/[^A-Za-z0-9]/.test(pwd)) score += 1
@@ -111,8 +111,8 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
       return
     }
 
-    if (!newPassword || newPassword.length < 6) {
-      setErrorMsg('Kata sandi baru minimal 6 karakter.')
+    if (!newPassword || newPassword.length < 8) {
+      setErrorMsg('Kata sandi baru minimal 8 karakter.')
       return
     }
 
@@ -214,6 +214,7 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 required
+                autoComplete="current-password"
                 className="w-full pl-9 pr-10 py-2.5 bg-[#18181c] border border-[#26272d] rounded-xl text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-[#00ffff] transition"
               />
               <button
@@ -225,9 +226,6 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
                 {showCurrentPassword ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>
-            <p className="text-[10px] text-slate-500 mt-1">
-              Bagi tenant baru, kata sandi awal default adalah <code className="text-cyan-400 font-mono">password123</code>
-            </p>
           </div>
 
           {/* Input Password Baru */}
@@ -241,11 +239,12 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
               </div>
               <input
                 type={showNewPassword ? 'text' : 'password'}
-                placeholder="Minimal 6 karakter"
+                placeholder="Minimal 8 karakter"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
+                autoComplete="new-password"
                 className="w-full pl-9 pr-10 py-2.5 bg-[#18181c] border border-[#26272d] rounded-xl text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-[#00ffff] transition"
               />
               <button
@@ -284,7 +283,8 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
+                autoComplete="new-password"
                 className="w-full pl-9 pr-10 py-2.5 bg-[#18181c] border border-[#26272d] rounded-xl text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-[#00ffff] transition"
               />
               <button

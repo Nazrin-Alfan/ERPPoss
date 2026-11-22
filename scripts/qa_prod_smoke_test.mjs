@@ -59,11 +59,11 @@ async function runProdSmokeSuite() {
     const usernameInput = page.getByLabel('Username atau Email', { exact: false });
     const passwordInput = page.getByLabel('PIN / Kata Sandi', { exact: false });
     await usernameInput.waitFor({ state: 'visible', timeout: 15000 });
-    const submitBtn = page.getByRole('button', { name: 'Masuk ke Sistem' });
+    const submitBtn = page.getByRole('button', { name: 'Masuk', exact: true });
     record(
       'SMOKE-03',
       'Live Login Screen & Accessible Form Controls Rendered',
-      await submitBtn.isVisible(),
+      (await passwordInput.isVisible()) && (await submitBtn.isVisible()),
       'Username, Password & Submit Button visible'
     );
 

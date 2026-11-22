@@ -95,15 +95,27 @@ const CarwashPackageManager = ({
   const openEditModal = (pkg) => {
     setEditingId(pkg.id)
 
-    // Cari resep bahan kimia yang tersimpan untuk paket ini
+    // Cari resep bahan kimia yang tersimpan untuk paket ini (utamakan carwash_package_id)
     const existingRecipes = (resepList || [])
-      .filter(r => r.nama_menu === pkg.nama_paket || r.nama_menu?.toLowerCase() === pkg.nama_paket?.toLowerCase())
-      .map(r => ({
-        id_bahan_baku: r.id_bahan_baku || '',
-        nama_bahan: r.nama_bahan,
-        jumlah: parseFloat(r.jumlah_dibutuhkan || r.jumlah) || 0.1,
-        satuan: r.satuan || 'Liter'
-      }))
+      .filter(r =>
+        (pkg.id && r.carwash_package_id === pkg.id) ||
+        (!r.carwash_package_id && (r.nama_menu === pkg.nama_paket || r.nama_menu?.toLowerCase() === pkg.nama_paket?.toLowerCase()))
+      )
+      .map(r => {
+        const matchedBahan = (stokBahan || []).find(
+          b => (r.stok_barang_id && b.id === r.stok_barang_id) ||
+               b.nama_bahan === r.nama_bahan ||
+               b.nama_produk === r.nama_bahan ||
+               b.nama_barang === r.nama_bahan
+        )
+        return {
+          stok_barang_id: r.stok_barang_id || matchedBahan?.id || null,
+          id_bahan_baku: r.id_bahan_baku || matchedBahan?.id_bahan_baku || '',
+          nama_bahan: r.nama_bahan,
+          jumlah: parseFloat(r.jumlah_dibutuhkan || r.jumlah) || 0.1,
+          satuan: r.satuan || 'Liter'
+        }
+      })
 
     setFormData({
       nama_paket: pkg.nama_paket || '',
@@ -187,10 +199,11 @@ const CarwashPackageManager = ({
     setFormData(prev => {
       const updated = [...prev.resep_bahan]
       if (field === 'nama_bahan') {
-        const found = (stokBahan || []).find(b => b.nama_bahan === val || b.nama_barang === val)
+        const found = (stokBahan || []).find(b => b.nama_bahan === val || b.nama_produk === val || b.nama_barang === val)
         updated[idx] = {
           ...updated[idx],
           nama_bahan: val,
+          stok_barang_id: found?.id || null,
           id_bahan_baku: found ? (found.id_bahan_baku || found.id_barang || '') : updated[idx].id_bahan_baku,
           satuan: found ? (found.satuan || 'Liter') : updated[idx].satuan
         }

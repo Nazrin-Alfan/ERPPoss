@@ -32,6 +32,7 @@ export const LICENSE_TIERS = {
   }
 }
 
+export const BETA_TRIAL_DAYS = 30
 export const GRACE_PERIOD_DAYS = 7
 
 /**
@@ -44,6 +45,7 @@ export const evaluateLicenseStatus = (licenseData) => {
     !expiryRaw ||
     licenseData?.plan === 'trial' ||
     licenseData?.tier === 'TRIAL_14D' ||
+    licenseData?.tier === 'TRIAL_30D' ||
     licenseData?.is_trial === true ||
     licenseData?.features?.trial === true
   )
@@ -55,8 +57,8 @@ export const evaluateLicenseStatus = (licenseData) => {
       isGracePeriod: false,
       isExpired: false,
       isTrial: true,
-      daysRemaining: 14,
-      message: 'Mode Uji Coba Demo Sandbox (14 Hari Tersisa)',
+      daysRemaining: BETA_TRIAL_DAYS,
+      message: `Mode Uji Coba Beta Gratis (${BETA_TRIAL_DAYS} Hari Tersisa)`,
       color: 'amber'
     }
   }
@@ -106,7 +108,7 @@ export const evaluateLicenseStatus = (licenseData) => {
     daysRemaining: 0,
     graceDaysRemaining: 0,
     message: isTrial
-      ? 'Masa uji coba 14 hari telah berakhir. Silakan aktivasi lisensi resmi untuk melanjutkan.'
+      ? 'Masa uji coba beta gratis telah berakhir. Silakan aktivasi lisensi resmi untuk melanjutkan.'
       : 'Lisensi Telah Kadaluarsa. Hubungi pengembang untuk perpanjangan.',
     color: 'rose'
   }

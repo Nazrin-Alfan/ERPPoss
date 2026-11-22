@@ -111,6 +111,7 @@ export default function MerchandiseManager({
   const openEditModal = (item) => {
     setEditingItem(item)
     setFormData({
+      id: item.id || null,
       id_barang: item.id_barang || item.id_bahan_baku || '',
       nama_barang: item.nama_barang || item.nama_produk || '',
       kategori: item.kategori || 'Parfum Mobil',
@@ -141,6 +142,7 @@ export default function MerchandiseManager({
     }
 
     onSaveMerchandise({
+      ...(formData.id ? { id: formData.id } : {}),
       id_barang: formData.id_barang,
       id_bahan_baku: formData.id_barang,
       nama_barang: formData.nama_barang.trim(),
@@ -322,7 +324,7 @@ export default function MerchandiseManager({
                     </div>
 
                     <button
-                      onClick={() => onToggleActive(item.id_barang || item.id_bahan_baku, isActive)}
+                      onClick={() => onToggleActive(item.id || item.id_barang || item.id_bahan_baku, isActive)}
                       title={isActive ? 'Nonaktifkan dari Kasir' : 'Aktifkan ke Kasir'}
                       className={`p-1.5 rounded-lg border text-xs flex items-center gap-1 font-bold transition-all ${
                         isActive
@@ -383,7 +385,7 @@ export default function MerchandiseManager({
                     <span>Edit</span>
                   </button>
                   <button
-                    onClick={() => onDeleteMerchandise(item.id_barang || item.id_bahan_baku)}
+                    onClick={() => onDeleteMerchandise(item.id || item.id_barang || item.id_bahan_baku)}
                     className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-bold transition-all"
                     title="Hapus Produk"
                   >

@@ -388,5 +388,81 @@ describe('Finance Helpers', () => {
       expect(parseCurrencyInput(null)).toBe(0)
     })
   })
+
+  describe('Relational ID Preservation in formatExpensePayload & formatPosExpensePayload', () => {
+    it('preserves stok_barang.id UUID in details[0].id_bahan_baku when restocking existing stock by name/code', () => {
+      const stockUuid = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+      const result = formatExpensePayload({
+        form: {
+          jenis: 'Pengeluaran Cafe',
+          kategori: 'Bahan Baku',
+          total_harga: 200000,
+          keterangan: 'Restok Biji Kopi',
+          pos: 'SALDO CASH (Laci Kasir)',
+        },
+        barangMasukList: [
+          {
+            id_bahan_baku: 'Biji Kopi House Blend',
+            jumlah: 2,
+            satuan: 'kg',
+            harga_satuan: 100000,
+          },
+        ],
+        stokBahan: [
+          {
+            id: stockUuid,
+            id_barang: 'BB-KOPI',
+            nama_produk: 'Biji Kopi House Blend',
+            nama_bahan: 'Biji Kopi House Blend',
+          },
+        ],
+        newCfId: 'cf_restok_1',
+        todayDate: '2026-11-21',
+        timestamp: '2026-11-21T10:00:00.000Z',
+        isRestockDetail: true,
+      })
+
+      expect(result.details).toHaveLength(1)
+      expect(result.details[0].id_bahan_baku).toBe(stockUuid)
+    })
+
+    it('attaches valid karyawan_id UUID on kasbon expense payloads (Cashflow & POS Expense)', () => {
+      const crewUuid = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+      const result = formatExpensePayload({
+        form: {
+          jenis: 'Pengeluaran Bersama',
+          kategori: 'Kasbon',
+          total_harga: 50000,
+          keterangan: 'Kasbon Rini',
+          pos: 'SALDO CASH (Laci Kasir)',
+          karyawan: 'RINI',
+          karyawan_id: crewUuid,
+        },
+        barangMasukList: [],
+        stokBahan: [],
+        newCfId: 'cf_kasbon_1',
+        todayDate: '2026-11-21',
+        timestamp: '2026-11-21T10:00:00.000Z',
+        isRestockDetail: false,
+      })
+
+      expect(result.cashflow.karyawan_id).toBe(crewUuid)
+
+      const posRes = formatPosExpensePayload({
+        form: {
+          keterangan: 'Kasbon Rini POS',
+          nominal: 25000,
+          unit: 'Bersama',
+          kategori: 'Kasbon',
+          karyawan: 'RINI',
+          karyawan_id: crewUuid,
+        },
+        todayDate: '2026-11-21',
+        currentTime: '10:05:00',
+        newExpId: 'exp_pos_1',
+      })
+      expect(posRes.karyawan_id).toBe(crewUuid)
+    })
+  })
 })
 

@@ -149,11 +149,13 @@ export const formatExpensePayload = ({
   const isBahanBaku = requiresRestock && barangMasukList && barangMasukList.length > 0
   const txDate = form.tanggal || todayDate
 
-  const isEmployeeCasbon = (normKat.toLowerCase().includes('casbon') || normJenis.toLowerCase().includes('casbon')) && form.karyawan
+  const isEmployeeCasbon = (normKat.toLowerCase().includes('casbon') || normKat.toLowerCase().includes('kasbon') || normJenis.toLowerCase().includes('casbon') || normJenis.toLowerCase().includes('kasbon')) && form.karyawan
   const finalKet = isEmployeeCasbon && !form.keterangan.toUpperCase().includes(form.karyawan.toUpperCase())
     ? `Casbon ${form.karyawan} (${form.keterangan || 'Tanpa catatan'})`
     : form.keterangan
   const finalKat = isEmployeeCasbon ? `Casbon - ${form.karyawan}` : normKat
+
+  const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
 
   const cashflow = {
     id_cashflow: newCfId,
@@ -167,10 +169,9 @@ export const formatExpensePayload = ({
     pos: form.pos,
     apakah_stok: Boolean(isBahanBaku),
     qty: isBahanBaku ? barangMasukList.reduce((sum, item) => sum + parseFloat(item.jumlah || 0), 0) : 0,
-    created_at: timestamp
+    created_at: timestamp,
+    ...(isEmployeeCasbon && isUuid(form.karyawan_id) ? { karyawan_id: form.karyawan_id } : {})
   }
-
-  const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
 
   const details = isBahanBaku
     ? barangMasukList.map(item => {
@@ -288,6 +289,8 @@ export const formatPosExpensePayload = ({ form, todayDate, currentTime, newExpId
   const hasRawMaterial = Boolean(rawItemId)
   const qtyVal = hasRawMaterial ? parseFloat(form.qty || 0) : 0
 
+  const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+
   const res = {
     id_pengeluaran: newExpId,
     tanggal: form.tanggal || todayDate,
@@ -298,7 +301,8 @@ export const formatPosExpensePayload = ({ form, todayDate, currentTime, newExpId
     nama_pengeluaran: isEmployeeRelated ? `${normKat} ${form.karyawan} (${form.keterangan || 'Tanpa catatan'})` : form.keterangan,
     apakah_stok: Boolean(hasRawMaterial),
     id_bahan_baku: rawItemId,
-    qty: qtyVal
+    qty: qtyVal,
+    ...(isEmployeeRelated && isUuid(form.karyawan_id) ? { karyawan_id: form.karyawan_id } : {})
   }
 
   if (form.id_barang && isBahanCategory) {

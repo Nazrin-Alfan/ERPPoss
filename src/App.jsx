@@ -11,9 +11,17 @@ import ActivateLicenseModal from './components/auth/ActivateLicenseModal'
 import { ShieldAlert } from 'lucide-react'
 import { BUSINESS_TYPES, getTenantFeatures } from './utils/businessCapabilities'
 import { ROLES, ROLE_PERMISSIONS, getRoleLandingRoute } from './constants/roles'
+import { api } from './services/apiAdapter'
 
 import Login from './pages/Login'
+const LandingPage = lazy(() => import('./pages/LandingPage'))
+const UserManualPage = lazy(() => import('./pages/UserManualPage'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+
+const ENABLE_FOUNDER_CONSOLE =
+  import.meta.env?.VITE_ENABLE_FOUNDER_CONSOLE === 'true' ||
+  import.meta.env?.MODE === 'test'
 
 // Lazy load seluruh modul halaman ERP agar initial bundle ringan & cepat dimuat
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -26,9 +34,9 @@ const Reports = lazy(() => import('./pages/Reports'))
 const CRM = lazy(() => import('./pages/CRM'))
 const Gudang = lazy(() => import('./pages/Gudang'))
 const Konsolidasi = lazy(() => import('./pages/Konsolidasi'))
-const SuperAdmin = lazy(() => import('./pages/SuperAdmin'))
-const Founder = lazy(() => import('./pages/Founder'))
-const Database = lazy(() => import('./pages/Database'))
+const SuperAdmin = ENABLE_FOUNDER_CONSOLE ? lazy(() => import('./pages/SuperAdmin')) : () => null
+const Founder = ENABLE_FOUNDER_CONSOLE ? lazy(() => import('./pages/Founder')) : () => null
+const Database = ENABLE_FOUNDER_CONSOLE ? lazy(() => import('./pages/Database')) : () => null
 
 const PageLoader = () => (
   <div className="min-h-[70vh] flex flex-col items-center justify-center text-slate-400">
@@ -50,13 +58,13 @@ const ProtectedRoute = ({ children, allowedRoles = null, ownerOnly = false, requ
     )
   }
 
-  // Jika belum login, arahkan ke login
-  if (!user) {
+  // Jika belum login atau profil Cloud tidak termuat, arahkan ke login
+  if (!user || (api.isCloud && !profile)) {
     return <Navigate to="/login" replace />
   }
 
-  // Selesaikan role pengguna dari profile atau user metadata dengan fallback aman
-  const role = profile?.role || user?.role || user?.user_metadata?.role || ROLES.KASIR
+  // Selesaikan role pengguna murni dari tabel profile (atau mock user di mode lokal)
+  const role = profile?.role || (!api.isCloud ? user?.role : null) || ROLES.KASIR
   const isSuperAdmin = role === ROLES.SUPER_ADMIN || profile?.is_super_admin
   const features = getTenantFeatures(activeTenant?.business_type)
   const defaultLanding = getRoleLandingRoute(role, {
@@ -111,10 +119,10 @@ const RootDispatcher = () => {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />
+    return <LandingPage />
   }
 
-  const role = profile?.role || user?.role || user?.user_metadata?.role || ROLES.OWNER
+  const role = profile?.role || (!api.isCloud ? user?.role : null) || ROLES.KASIR
   const features = getTenantFeatures(activeTenant?.business_type)
   const landingRoute = getRoleLandingRoute(role, {
     tenantCount: userTenants?.length || 1,
@@ -158,10 +166,15 @@ export const AppContent = () => {
     }
   }
 
-  // Cek apakah sedang berada di Halaman Mandiri tanpa Sidebar (Login, ForgotPassword, Konsolidasi, Founder Cockpit)
+  // Cek apakah sedang berada di Halaman Mandiri tanpa Sidebar (Landing, Panduan, Login, ForgotPassword, ResetPassword, Konsolidasi, Founder Cockpit)
   const isStandalonePage =
+    (!user && location.pathname === '/') ||
+    location.pathname === '/welcome' ||
+    location.pathname === '/panduan' ||
+    location.pathname === '/manual' ||
     location.pathname === '/login' ||
     location.pathname === '/forgot-password' ||
+    location.pathname === '/reset-password' ||
     location.pathname === '/konsolidasi' ||
     location.pathname === '/founder'
   const showSidebar = !!user && !isStandalonePage
@@ -215,7 +228,7 @@ export const AppContent = () => {
               <div className="bg-[#121215] border-b border-[#26272d] px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0 z-20">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
-                  <span className="font-semibold text-white">Mode Trial 14 Hari:</span>
+                  <span className="font-semibold text-white">Mode Uji Coba Beta:</span>
                   <span className="text-[#bbcbb2]">
                     Tersisa <strong className="text-amber-400 font-mono font-bold">{licenseStatus.daysRemaining} hari</strong> masa uji coba gratis.
                   </span>
@@ -252,9 +265,13 @@ export const AppContent = () => {
           <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <Routes>
-              {/* Rute Login: Selalu dapat diakses langsung */}
+              {/* Rute Publik: Landing Page, Panduan Pengguna & Auth */}
+              <Route path="/welcome" element={<LandingPage />} />
+              <Route path="/panduan" element={<UserManualPage />} />
+              <Route path="/manual" element={<Navigate to="/panduan" replace />} />
               <Route path="/login" element={<Login />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
 
               {/* Rute Root Aplikasi: Smart Landing Dispatcher Berdasarkan Peran */}
               <Route path="/" element={<RootDispatcher />} />
@@ -351,27 +368,39 @@ export const AppContent = () => {
                 } 
               />
 
-              {/* Rute Solo Founder Platform Mission Control (HANYA Super Admin / Founder) */}
-              <Route 
-                path="/founder" 
-                element={
-                  <ProtectedRoute allowedRoles={ROLE_PERMISSIONS.CAN_MANAGE_TENANTS}>
-                    <FounderLayout>
-                      <Founder />
-                    </FounderLayout>
-                  </ProtectedRoute>
-                } 
-              />
+              {/* Rute Solo Founder Platform Mission Control (Terisolasi oleh VITE_ENABLE_FOUNDER_CONSOLE) */}
+              {ENABLE_FOUNDER_CONSOLE && (
+                <>
+                  <Route 
+                    path="/founder" 
+                    element={
+                      <ProtectedRoute allowedRoles={ROLE_PERMISSIONS.CAN_MANAGE_TENANTS}>
+                        <FounderLayout>
+                          <Founder />
+                        </FounderLayout>
+                      </ProtectedRoute>
+                    } 
+                  />
 
-              {/* Rute Solo Founder Platform Console Legacy (Redirect ke /founder - HANYA Super Admin) */}
-              <Route 
-                path="/super-admin" 
-                element={
-                  <ProtectedRoute allowedRoles={ROLE_PERMISSIONS.CAN_MANAGE_TENANTS}>
-                    <Navigate to="/founder" replace />
-                  </ProtectedRoute>
-                } 
-              />
+                  <Route 
+                    path="/super-admin" 
+                    element={
+                      <ProtectedRoute allowedRoles={ROLE_PERMISSIONS.CAN_MANAGE_TENANTS}>
+                        <Navigate to="/founder" replace />
+                      </ProtectedRoute>
+                    } 
+                  />
+
+                  <Route 
+                    path="/database" 
+                    element={
+                      <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}>
+                        <Database />
+                      </ProtectedRoute>
+                    } 
+                  />
+                </>
+              )}
 
               {/* Rute Manajemen Multi-Gudang (Cafe, Carwash, Merchandise) */}
               <Route 
@@ -385,16 +414,6 @@ export const AppContent = () => {
               <Route 
                 path="/inventory" 
                 element={<Navigate to="/gudang" replace />} 
-              />
-
-              {/* Rute Database Master Raw Spreadsheet (Developer / Super Admin Saja) */}
-              <Route 
-                path="/database" 
-                element={
-                  <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}>
-                    <Database />
-                  </ProtectedRoute>
-                } 
               />
 
               {/* Rute Catch-All */}

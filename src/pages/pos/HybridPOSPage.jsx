@@ -32,13 +32,16 @@ import {
   FileText,
   ShoppingBag,
   Gift,
-  ArrowLeft
+  ArrowLeft,
+  Users
 } from 'lucide-react'
 
 import ThermalReceiptModal from '../../components/pos/ThermalReceiptModal'
 import CustomerLoyaltyBanner from '../../components/pos/CustomerLoyaltyBanner'
+import VoidReasonModal from '../../components/pos/VoidReasonModal'
+import ShiftClosingModal from '../../components/pos/ShiftClosingModal'
+import CrewDailyCommissionModal from '../../components/pos/CrewDailyCommissionModal'
 import {
-  recordLoyaltyClaim,
   upsertCRMCustomerProfile
 } from '../../services/crmService'
 import { posService } from '../../services/posService'
@@ -185,10 +188,10 @@ const getMenuTheme = (menuName) => {
   }
 }
 
-const CafePOS = () => {
+const CafePOS = ({ forcedBusinessType = null } = {}) => {
   const { user, profile, activeTenant } = useAuth()
   const effectiveTenantId = activeTenant?.id || profile?.tenant_id || DEFAULT_TENANT_ID
-  const features = getTenantFeatures(activeTenant?.business_type)
+  const features = getTenantFeatures(forcedBusinessType || activeTenant?.business_type)
   const defaultTab = features.isCarwashOnly ? 'carwash' : 'cafe'
   const [activeTab, setActiveTab] = useState(defaultTab)
 
@@ -234,9 +237,9 @@ const CafePOS = () => {
 
   // Cashier Cash Register Stats
   const [cashierCash, setCashierCash] = useState({
-    balance: 0,
     todayIn: 0,
     todayOut: 0,
+    todayExchangeOut: 0,
     todayQRIS: 0
   })
   const [todayTransactions, setTodayTransactions] = useState([])
@@ -297,6 +300,12 @@ const CafePOS = () => {
     setActiveNoteText('')
   }
 
+  // Modal & Operational Audit States
+  const [voidTargetTx, setVoidTargetTx] = useState(null)
+  const [showShiftClosingModal, setShowShiftClosingModal] = useState(false)
+  const [showCrewCommissionModal, setShowCrewCommissionModal] = useState(false)
+  const [crewDailySummaries, setCrewDailySummaries] = useState([])
+
   // Custom Alert / Confirm Modal State
   const [customAlert, setCustomAlert] = useState(null)
 
@@ -340,6 +349,7 @@ const CafePOS = () => {
     unit: 'Cafe',
     kategori: 'Operasional',
     karyawan: '',
+    karyawan_id: '',
     category_id: '',
     id_bahan_baku: '',
     qty: ''
@@ -416,6 +426,8 @@ const CafePOS = () => {
   const [carwashPackages, setCarwashPackages] = useState(DEFAULT_CARWASH_PACKAGES)
   const [anggotaOptions, setAnggotaOptions] = useState([])
   const [staffOptions, setStaffOptions] = useState([])
+  const [carwashCrewDirectory, setCarwashCrewDirectory] = useState([])
+  const [staffDirectory, setStaffDirectory] = useState([])
 
   const paketOptions = useMemo(() => {
     if (!carwashPackages || carwashPackages.length === 0) {
@@ -462,7 +474,12 @@ const CafePOS = () => {
         setCarwashPackages(normalized)
       }
       if (dbKaryawan.data && dbKaryawan.data.length > 0) {
-        const names = dbKaryawan.data.map(k => (k.nama || k.name || '').toUpperCase().trim()).filter(Boolean)
+        const crewRows = dbKaryawan.data
+          .map(k => ({ id: k.id || null, nama: (k.nama || k.name || '').toUpperCase().trim() }))
+          .filter(k => k.nama)
+        const names = crewRows.map(k => k.nama)
+        setCarwashCrewDirectory(crewRows)
+        setStaffDirectory(crewRows)
         setAnggotaOptions(names)
         setStaffOptions(names)
       }
@@ -499,21 +516,35 @@ const CafePOS = () => {
           supabase.from('karyawan_kantor').select('id, nama, is_active').order('nama', { ascending: true })
         ])
 
-        const cuciNames = (resCuci.status === 'fulfilled' && resCuci.value.data)
-          ? resCuci.value.data.map(k => k.nama.toUpperCase().trim()).filter(Boolean)
+        const cuciRows = (resCuci.status === 'fulfilled' && resCuci.value.data)
+          ? resCuci.value.data.map(k => ({ id: k.id || null, nama: (k.nama || '').toUpperCase().trim() })).filter(k => k.nama)
           : []
-        const kantorNames = (resKantor.status === 'fulfilled' && resKantor.value.data)
-          ? resKantor.value.data.map(k => k.nama.toUpperCase().trim()).filter(Boolean)
+        const kantorRows = (resKantor.status === 'fulfilled' && resKantor.value.data)
+          ? resKantor.value.data.map(k => ({ id: k.id || null, nama: (k.nama || '').toUpperCase().trim() })).filter(k => k.nama)
           : []
 
-        // Gabungkan seluruh daftar nama karyawan tanpa duplikasi
-        const combinedStaffNames = Array.from(new Set([...cuciNames, ...kantorNames]))
-        if (cuciNames.length > 0) {
+        const cuciNames = cuciRows.map(k => k.nama)
+        const kantorNames = kantorRows.map(k => k.nama)
+
+        // Gabungkan seluruh daftar nama & ID karyawan tanpa duplikasi
+        const staffDirMap = new Map()
+        ;[...cuciRows, ...kantorRows].forEach(row => {
+          if (!staffDirMap.has(row.nama)) {
+            staffDirMap.set(row.nama, row)
+          }
+        })
+        const combinedStaffDir = Array.from(staffDirMap.values())
+        const combinedStaffNames = combinedStaffDir.map(r => r.nama)
+
+        if (cuciRows.length > 0) {
+          setCarwashCrewDirectory(cuciRows)
           setAnggotaOptions(cuciNames)
         } else if (combinedStaffNames.length > 0) {
+          setCarwashCrewDirectory(combinedStaffDir)
           setAnggotaOptions(combinedStaffNames)
         }
         if (combinedStaffNames.length > 0) {
+          setStaffDirectory(combinedStaffDir)
           setStaffOptions(combinedStaffNames)
           setCarwashForm(prev => ({
             ...prev,
@@ -547,38 +578,57 @@ const CafePOS = () => {
 
   const fetchCashierCash = async () => {
     try {
-      // 1. Fetch balance dari pos_balances
-      const { data: balData } = await supabase
-        .from('pos_balances')
-        .select('*')
-        .eq('pos', 'SALDO CASH')
-        .single()
-
-      const bal = balData ? parseFloat(balData.balance) : 0
-
       const todayDate = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD
-      const { data: todayStruk } = await supabase
-        .from('struk')
-        .select('total_tagihan, metode_bayar, nominal_cash, nominal_qris, waktu_dibayar, tanggal, status_bayar')
-        .eq('status_bayar', 'Selesai')
+      const dayStartIso = new Date(`${todayDate}T00:00:00`).toISOString()
+      const dayEndIso = new Date(`${todayDate}T23:59:59.999`).toISOString()
+      const strukCols = 'id_struk, total_tagihan, metode_bayar, nominal_cash, nominal_qris, waktu_dibayar, tanggal, status_bayar'
 
-      // 3. Fetch today's cash outflow
-      const { data: todayExp } = await supabase
-        .from('pengeluaran')
-        .select('nominal')
-        .eq('tanggal', todayDate)
+      const [resByDate, resBySettled, resExp, resPreview] = await Promise.all([
+        supabase
+          .from('struk')
+          .select(strukCols)
+          .eq('status_bayar', 'Selesai')
+          .eq('tanggal', todayDate),
+        supabase
+          .from('struk')
+          .select(strukCols)
+          .eq('status_bayar', 'Selesai')
+          .gte('waktu_dibayar', dayStartIso)
+          .lte('waktu_dibayar', dayEndIso),
+        supabase
+          .from('pengeluaran')
+          .select('nominal')
+          .eq('tanggal', todayDate),
+        typeof supabase.rpc === 'function' && effectiveTenantId
+          ? supabase
+              .rpc('fn_get_cashier_shift_preview', {
+                p_tenant_id: effectiveTenantId,
+                p_branch_id: profile?.branch_id || null,
+                p_tanggal: todayDate
+              })
+              .catch(() => ({ data: null }))
+          : Promise.resolve({ data: null })
+      ])
+
+      const strukMap = new Map()
+      ;[...(resByDate?.data || []), ...(resBySettled?.data || [])].forEach((row) => {
+        if (row?.id_struk) strukMap.set(row.id_struk, row)
+      })
+      const todayStruk = Array.from(strukMap.values())
+      const exchangeCashOut = Number(resPreview?.data?.exchange_cash_out || 0)
 
       const drawerStatus = calculateCashierDrawerStatus({
-        strukList: todayStruk || [],
-        expenses: todayExp || [],
+        strukList: todayStruk,
+        expenses: resExp?.data || [],
         startingCapital: todayStartingCapital,
+        exchangeCashOut,
         targetDate: todayDate
       })
 
       setCashierCash({
-        balance: bal,
         todayIn: drawerStatus.todayIn,
         todayOut: drawerStatus.todayOut,
+        todayExchangeOut: drawerStatus.todayExchangeOut,
         todayQRIS: drawerStatus.todayQRIS
       })
     } catch (err) {
@@ -588,9 +638,9 @@ const CafePOS = () => {
 
   const fetchTodayTransactions = async (targetDate = historyDate) => {
     try {
-      const { data, error } = await supabase
-        .from('struk')
-        .select(`
+      const dayStartIso = new Date(`${targetDate}T00:00:00`).toISOString()
+      const dayEndIso = new Date(`${targetDate}T23:59:59.999`).toISOString()
+      const historyCols = `
           id_struk,
           tanggal,
           jam,
@@ -606,22 +656,45 @@ const CafePOS = () => {
           waktu_dibayar,
           cafe (nama_menu, qty, harga_satuan),
           carwash (paket, plat, harga, model, no_telepon, kehadiran)
-        `)
-        .order('jam', { ascending: false })
+        `
 
-      if (error) throw error
+      const [resByDate, resBySettled] = await Promise.all([
+        supabase
+          .from('struk')
+          .select(historyCols)
+          .eq('tanggal', targetDate)
+          .order('tanggal', { ascending: false })
+          .order('jam', { ascending: false }),
+        supabase
+          .from('struk')
+          .select(historyCols)
+          .gte('waktu_dibayar', dayStartIso)
+          .lte('waktu_dibayar', dayEndIso)
+          .order('tanggal', { ascending: false })
+          .order('jam', { ascending: false })
+      ])
 
-      if (data) {
-        const filtered = data.filter(item => {
+      if (resByDate.error) throw resByDate.error
+      if (resBySettled.error) throw resBySettled.error
+
+      const mergedMap = new Map()
+      ;[...(resByDate.data || []), ...(resBySettled.data || [])].forEach((item) => {
+        if (item?.id_struk) mergedMap.set(item.id_struk, item)
+      })
+      const merged = Array.from(mergedMap.values())
+
+      const filtered = merged
+        .filter(item => {
           const settleDate = (item.waktu_dibayar ? getLocalDateString(item.waktu_dibayar) : null) || item.tanggal
           return item.tanggal === targetDate || settleDate === targetDate
         })
+        .sort((a, b) => {
+          const dateCmp = String(b.tanggal || '').localeCompare(String(a.tanggal || ''))
+          if (dateCmp !== 0) return dateCmp
+          return String(b.jam || '').localeCompare(String(a.jam || ''))
+        })
 
-        const formatted = filtered.map(mapPosHistoryTransaction)
-        setTodayTransactions(formatted)
-      } else {
-        setTodayTransactions([])
-      }
+      setTodayTransactions(filtered.map(mapPosHistoryTransaction))
     } catch (err) {
       console.error('Error fetching today transactions:', err)
     }
@@ -777,12 +850,27 @@ const CafePOS = () => {
       if (resAll.status === 'fulfilled' && resAll.value.data) {
         setPosMasterCategories(resAll.value.data)
       }
-      const cNames = (resCuci.status === 'fulfilled' && resCuci.value.data) ? resCuci.value.data.map(k => (k.nama || '').toUpperCase().trim()).filter(Boolean) : []
-      const kNames = (resKantor.status === 'fulfilled' && resKantor.value.data) ? resKantor.value.data.map(k => (k.nama || '').toUpperCase().trim()).filter(Boolean) : []
-      const merged = Array.from(new Set([...cNames, ...kNames]))
+      const cuciRows = (resCuci.status === 'fulfilled' && resCuci.value.data)
+        ? resCuci.value.data.map(k => ({ id: k.id || null, nama: (k.nama || '').toUpperCase().trim() })).filter(k => k.nama)
+        : []
+      const kantorRows = (resKantor.status === 'fulfilled' && resKantor.value.data)
+        ? resKantor.value.data.map(k => ({ id: k.id || null, nama: (k.nama || '').toUpperCase().trim() })).filter(k => k.nama)
+        : []
+      const staffDirMap = new Map()
+      ;[...cuciRows, ...kantorRows].forEach(row => {
+        if (!staffDirMap.has(row.nama)) {
+          staffDirMap.set(row.nama, row)
+        }
+      })
+      const combinedStaffDir = Array.from(staffDirMap.values())
+      const merged = combinedStaffDir.map(r => r.nama)
       if (merged.length > 0) {
+        setStaffDirectory(combinedStaffDir)
         setStaffOptions(merged)
-        if (cNames.length > 0) setAnggotaOptions(cNames)
+        if (cuciRows.length > 0) {
+          setCarwashCrewDirectory(cuciRows)
+          setAnggotaOptions(cuciRows.map(r => r.nama))
+        }
       }
     } catch (err) {
       console.error('Error fetching today expenses:', err)
@@ -811,6 +899,12 @@ const CafePOS = () => {
         const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
         const targetBahanId = isBahanCategory && isUuid(posExpenseForm.id_bahan_baku) ? posExpenseForm.id_bahan_baku : null
         const targetQty = targetBahanId ? parseFloat(posExpenseForm.qty || 0) : 0
+        const matchedStaff = staffDirectory.find(
+          s => s.nama === String(posExpenseForm.karyawan || '').toUpperCase().trim()
+        )
+        const targetKaryawanId = isCasbon
+          ? (isUuid(posExpenseForm.karyawan_id) ? posExpenseForm.karyawan_id : (matchedStaff?.id || null))
+          : null
 
         const updatePayload = {
           jenis: isCasbon ? 'Casbon' : `pengeluaran ${posExpenseForm.unit}`,
@@ -818,6 +912,7 @@ const CafePOS = () => {
           nominal: parseFloat(posExpenseForm.nominal),
           nama_pengeluaran: isCasbon ? `Casbon ${posExpenseForm.karyawan} (${posExpenseForm.keterangan})` : posExpenseForm.keterangan,
           id_bahan_baku: targetBahanId,
+          karyawan_id: isUuid(targetKaryawanId) ? targetKaryawanId : null,
           qty: targetQty,
           apakah_stok: Boolean(targetBahanId && targetQty > 0)
         }
@@ -837,8 +932,13 @@ const CafePOS = () => {
         const newExpId = generateUUID()
         const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
 
+        const matchedStaff = staffDirectory.find(
+          s => s.nama === String(posExpenseForm.karyawan || '').toUpperCase().trim()
+        )
+        const resolvedKaryawanId = posExpenseForm.karyawan_id || matchedStaff?.id || ''
+
         const rawPayload = formatPosExpensePayload({
-          form: posExpenseForm,
+          form: { ...posExpenseForm, karyawan_id: resolvedKaryawanId },
           todayDate,
           currentTime,
           newExpId
@@ -853,6 +953,7 @@ const CafePOS = () => {
           id: newExpId,
           id_pengeluaran: newExpId,
           id_bahan_baku: isUuid(cleanPayload.id_bahan_baku) ? cleanPayload.id_bahan_baku : null,
+          ...(isUuid(cleanPayload.karyawan_id) ? { karyawan_id: cleanPayload.karyawan_id } : {}),
           tenant_id: effectiveTenantId,
           branch_id: profile?.branch_id || null
         }
@@ -872,6 +973,7 @@ const CafePOS = () => {
         unit: 'Cafe',
         kategori: 'Operasional',
         karyawan: '',
+        karyawan_id: '',
         category_id: '',
         id_bahan_baku: '',
         qty: ''
@@ -919,70 +1021,19 @@ const CafePOS = () => {
 
     try {
       const todayDate = new Date().toLocaleDateString('en-CA')
-      const currentTime = new Date().toTimeString().split(' ')[0]
-      const timestamp = new Date().toISOString()
 
-      // Logika Tukar Uang:
-      // Uang cash keluar dari laci kasir (SALDO CASH) dan diganti dengan transfer/QRIS masuk ke rekening (SALDO REKENING Y).
-      // Ini adalah PERPINDAHAN SALDO (Mutasi Saldo Kas), BUKAN beban pengeluaran dan BUKAN omzet penjualan toko.
-      const insertions = [
-        // 1. Kas keluar dari Laci Kasir (SALDO CASH)
-        {
-          id_cashflow: generateUUID(),
-          tanggal: todayDate,
-          jenis: 'Pindah',
-          kategori: 'Tukar Uang',
-          pos: 'SALDO CASH',
-          pemasukan: 0,
-          pengeluaran: cashOut,
-          keterangan_transaksi: `Tukar Uang Cash Keluar - Cust: ${exchangeCustomer || 'Umum'}`,
-          created_at: timestamp
-        },
-        // 2. Kas masuk ke Rekening QRIS/Bank (SALDO REKENING Y)
-        {
-          id_cashflow: generateUUID(),
-          tanggal: todayDate,
-          jenis: 'Pindah',
-          kategori: 'Tukar Uang',
-          pos: 'SALDO REKENING Y',
-          pemasukan: cashOut,
-          pengeluaran: 0,
-          keterangan_transaksi: `Tukar Uang QRIS Masuk - Cust: ${exchangeCustomer || 'Umum'}`,
-          created_at: timestamp
-        }
-      ]
-
-      // 3. Jika ada selisih biaya admin (pendapatan fee toko), catat sebagai pemasukan fee
-      if (adminFee > 0) {
-        insertions.push({
-          id_cashflow: generateUUID(),
-          tanggal: todayDate,
-          jenis: 'Pemasukan',
-          kategori: 'Pendapatan Lain-lain',
-          pos: 'SALDO REKENING Y',
-          pemasukan: adminFee,
-          pengeluaran: 0,
-          keterangan_transaksi: `Biaya Admin Tukar Uang - Cust: ${exchangeCustomer || 'Umum'}`,
-          created_at: timestamp
-        })
-      }
-
-      const { error: insErr } = await supabase.from('cashflow').insert(insertions)
-      if (insErr) throw insErr
-
-      // Sinkronkan update saldo laci kasir dan rekening di pos_balances
-      const { data: currentBalances } = await supabase.from('pos_balances').select('*')
-      if (currentBalances) {
-        const cashAccount = currentBalances.find(b => b.pos === 'SALDO CASH')
-        const qrisAccount = currentBalances.find(b => b.pos === 'SALDO REKENING Y')
-        if (cashAccount) {
-          const newBalCash = (parseFloat(cashAccount.balance) || 0) - cashOut
-          await supabase.from('pos_balances').update({ balance: newBalCash }).eq('pos', 'SALDO CASH')
-        }
-        if (qrisAccount) {
-          const newBalQris = (parseFloat(qrisAccount.balance) || 0) + qrisIn
-          await supabase.from('pos_balances').update({ balance: newBalQris }).eq('pos', 'SALDO REKENING Y')
-        }
+      const { data: exRes, error: exErr } = await supabase.rpc('fn_record_cashier_money_exchange', {
+        p_tenant_id: effectiveTenantId,
+        p_branch_id: profile?.branch_id || null,
+        p_kasir: selectedCashier || profile?.nama || 'KASIR',
+        p_cash_out: cashOut,
+        p_qris_in: qrisIn,
+        p_customer: exchangeCustomer || 'Umum',
+        p_tanggal: todayDate
+      })
+      if (exErr) throw exErr
+      if (exRes && exRes.success === false) {
+        throw new Error(exRes.message || 'Gagal mencatat mutasi tukar uang.')
       }
 
       await showAlert(`Transaksi Tukar Uang berhasil dicatat sebagai Perpindahan Saldo!\n\n• Uang tunai keluar dari Laci Kasir: ${formatRupiah(cashOut)}\n• Transfer masuk ke Rekening QRIS: ${formatRupiah(qrisIn)}${adminFee > 0 ? `\n• Pendapatan Biaya Admin: ${formatRupiah(adminFee)}` : ''}\n\n*Transaksi ini tidak dicatat sebagai beban pengeluaran operasional.`, 'Sukses')
@@ -1127,6 +1178,7 @@ const CafePOS = () => {
       }
     }
 
+    const matchedStaff = staffDirectory.find(s => s.nama === employeeName.toUpperCase())
     setPosExpenseForm({
       tanggal: exp.tanggal || new Date().toLocaleDateString('en-CA'),
       keterangan: cleanKeterangan,
@@ -1134,6 +1186,7 @@ const CafePOS = () => {
       unit: exp.jenis ? exp.jenis.replace('pengeluaran ', '') : 'Cafe',
       kategori: isCasbon ? 'Casbon' : (exp.kategori || 'Operasional'),
       karyawan: employeeName,
+      karyawan_id: exp.karyawan_id || matchedStaff?.id || '',
       category_id: exp.category_id || '',
       id_bahan_baku: exp.id_bahan_baku || exp.id_barang || '',
       qty: exp.qty ? String(exp.qty) : ''
@@ -1169,9 +1222,17 @@ const CafePOS = () => {
     }
   }
 
-  const handleCancelPaidTransaction = async (idStruk) => {
-    const confirmed = await showConfirm('Apakah Anda yakin ingin MEMBATALKAN transaksi yang sudah lunas ini? Status transaksi akan diubah menjadi Batal dan stok bahan baku akan dikembalikan otomatis.', 'Batalkan Transaksi')
-    if (!confirmed) return
+  const handleCancelPaidTransaction = (txOrId) => {
+    const txObj = typeof txOrId === 'object' && txOrId !== null
+      ? txOrId
+      : todayTransactions.find((t) => t.id === txOrId || t.id_struk === txOrId) || { id_struk: txOrId, total_tagihan: 0 }
+    setVoidTargetTx(txObj)
+  }
+
+  const handleConfirmVoid = async (transaction, reason) => {
+    const idStruk = transaction?.id_struk || transaction?.id
+    if (!idStruk) throw new Error('Nomor struk tidak ditemukan.')
+
     setLoading(true)
     setError('')
     setSuccess(false)
@@ -1180,32 +1241,26 @@ const CafePOS = () => {
         const { error: voidErr } = await supabase.rpc('fn_void_or_cancel_receipt', {
           p_tenant_id: effectiveTenantId,
           p_id_struk: idStruk,
-          p_reason: 'Dibatalkan oleh Kasir/Owner'
+          p_reason: reason || 'Dibatalkan oleh Kasir/Owner'
         })
         if (voidErr) throw voidErr
       } else {
-        // 1. Update status_bayar di tabel struk menjadi 'Batal'
         const { error: strukErr } = await supabase
           .from('struk')
-          .update({ status_bayar: 'Batal' })
+          .update({ status_bayar: 'Batal', catatan: reason })
           .eq('id_struk', idStruk)
-
         if (strukErr) throw strukErr
 
-        // 2. Update status di tabel cafe menjadi 'Batal' (memicu trigger pengembalian stok)
         const { error: cafeErr } = await supabase
           .from('cafe')
           .update({ status: 'Batal' })
           .eq('id_struk', idStruk)
-
         if (cafeErr) throw cafeErr
 
-        // 3. Update status di tabel carwash menjadi 'Batal'
         const { error: cwErr } = await supabase
           .from('carwash')
           .update({ status: 'Batal', gaji_anggota: 0, gaji_pencuci: 0 })
           .eq('id_struk', idStruk)
-
         if (cwErr) throw cwErr
       }
 
@@ -1217,50 +1272,7 @@ const CafePOS = () => {
     } catch (err) {
       console.error('Error canceling paid transaction:', err)
       setError(err.message || 'Gagal membatalkan transaksi.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleReactivatePaidTransaction = async (idStruk) => {
-    const confirmed = await showConfirm('Apakah Anda yakin ingin MENGAKTIFKAN KEMBALI transaksi yang telah dibatalkan ini? Status transaksi akan diubah menjadi Selesai dan stok bahan baku akan dipotong kembali.', 'Pulihkan Transaksi')
-    if (!confirmed) return
-    setLoading(true)
-    setError('')
-    setSuccess(false)
-    try {
-      // 1. Update status_bayar di tabel struk menjadi 'Selesai'
-      const { error: strukErr } = await supabase
-        .from('struk')
-        .update({ status_bayar: 'Selesai' })
-        .eq('id_struk', idStruk)
-
-      if (strukErr) throw strukErr
-
-      // 2. Update status di tabel cafe menjadi 'Selesai' (memicu trigger pengurangan stok)
-      const { error: cafeErr } = await supabase
-        .from('cafe')
-        .update({ status: 'Selesai' })
-        .eq('id_struk', idStruk)
-
-      if (cafeErr) throw cafeErr
-
-      // 3. Update status di tabel carwash menjadi 'Selesai'
-      const { error: cwErr } = await supabase
-        .from('carwash')
-        .update({ status: 'Selesai' })
-        .eq('id_struk', idStruk)
-
-      if (cwErr) throw cwErr
-
-      setSuccess(true)
-      await fetchTodayTransactions()
-      await fetchCashierCash()
-      await fetchPendingBills()
-      setTimeout(() => setSuccess(false), 3000)
-    } catch (err) {
-      console.error('Error reactivating transaction:', err)
-      setError(err.message || 'Gagal mengaktifkan kembali transaksi.')
+      throw err
     } finally {
       setLoading(false)
     }
@@ -1331,7 +1343,8 @@ const CafePOS = () => {
   const checkTodayStartingCapital = async () => {
     try {
       const todayDate = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD
-      const localCapital = localStorage.getItem(`starting_capital_${todayDate}`)
+      const capitalKey = `starting_capital_${effectiveTenantId}_${todayDate}`
+      const localCapital = localStorage.getItem(capitalKey)
 
       if (localCapital !== null) {
         setHasStartingCapital(true)
@@ -1355,7 +1368,8 @@ const CafePOS = () => {
     setError('')
     try {
       const todayDate = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD
-      localStorage.setItem(`starting_capital_${todayDate}`, amount.toString())
+      const capitalKey = `starting_capital_${effectiveTenantId}_${todayDate}`
+      localStorage.setItem(capitalKey, amount.toString())
 
       setHasStartingCapital(true)
       setShowModalModal(false)
@@ -1371,54 +1385,56 @@ const CafePOS = () => {
   }
 
   const handleTutupKasir = async () => {
-    const confirmed = await showConfirm('Apakah Anda yakin ingin Tutup Kasir hari ini? Ini akan merekap total omzet (Cash & QRIS) serta pengeluaran kasir ke dalam tabel Cashflow. Lakukan ini HANYA SEKALI di akhir shift terakhir.', 'Tutup Kasir (EOD)')
-    if (!confirmed) return
-    setLoading(true)
-    setError('')
+    await fetchCashierCash()
+    setShowShiftClosingModal(true)
+  }
+
+  const handleConfirmShiftClose = async (recapData) => {
+    const todayDate = new Date().toLocaleDateString('en-CA')
+    const { error: closeErr } = await supabase.rpc('fn_close_cashier_shift', {
+      p_tenant_id: effectiveTenantId,
+      p_branch_id: profile?.branch_id || null,
+      p_kasir: selectedCashier || profile?.nama || 'KASIR',
+      p_tanggal: todayDate,
+      p_modal_awal: Number(recapData.startingCapital || 0),
+      p_kas_fisik: Number(recapData.physicalCash || 0),
+      p_catatan: recapData.notes || ''
+    })
+    if (closeErr) throw closeErr
+  }
+
+  const handleOpenCrewCommissionModal = async () => {
     try {
       const todayDate = new Date().toLocaleDateString('en-CA')
-
-      // 1. Ambil semua struk lunas hari ini beserta rincian carwash & cafe
-      const { data: strukHariIni, error: errStruk } = await supabase
-        .from('struk')
-        .select(`
-          id_struk, total_tagihan, metode_bayar, nominal_cash, nominal_qris,
-          cafe (subtotal, status),
-          carwash (harga, status)
-        `)
-        .eq('status_bayar', 'Selesai')
+      const { data: cwRows } = await supabase
+        .from('carwash')
+        .select('anggota_1, anggota_2, gaji_anggota, gaji_pencuci, status')
         .eq('tanggal', todayDate)
 
-      if (errStruk) throw errStruk
-
-      // 2. Ambil total pengeluaran kasir hari ini (pengeluaran sudah tercatat real-time, tidak diduplikasi)
-      const { data: expHariIni, error: errExp } = await supabase
-        .from('pengeluaran')
-        .select('nominal')
-        .eq('tanggal', todayDate)
-
-      if (errExp) throw errExp
-
-      const timestamp = new Date().toISOString()
-      const insertions = calculateTutupKasirRecap({
-        receipts: strukHariIni || [],
-        expenses: [], // Pengeluaran sudah tercatat otomatis per transaksi real-time ke cashflow
-        cashierName: selectedCashier,
-        todayDate,
-        timestamp
-      })
-
-      if (insertions.length > 0) {
-        const { error: insErr } = await supabase.from('cashflow').insert(insertions)
-        if (insErr) throw insErr
+      const map = new Map()
+      const addCrew = (rawName, wage) => {
+        const name = String(rawName || '').trim().toUpperCase()
+        if (!name || name === '-') return
+        const prev = map.get(name) || { name, totalCars: 0, totalWage: 0, totalWithdrawals: 0 }
+        prev.totalCars += 1
+        prev.totalWage += Number(wage || 0)
+        map.set(name, prev)
       }
 
-      await showAlert('Berhasil Tutup Kasir. Rekap Omzet Harian (Carwash & Cafe) telah masuk ke Cashflow.', 'Sukses')
+      ;(cwRows || []).forEach((cw) => {
+        if (String(cw.status || '').toLowerCase() === 'batal') return
+        const hasTwo = Boolean(cw.anggota_2 && String(cw.anggota_2).trim())
+        const totalWage = Number(cw.gaji_pencuci || 0) || (Number(cw.gaji_anggota || 0) * (hasTwo ? 2 : 1))
+        const perCrew = Number(cw.gaji_anggota || 0) || (hasTwo ? Math.round(totalWage / 2) : totalWage)
+        addCrew(cw.anggota_1, perCrew)
+        if (hasTwo) addCrew(cw.anggota_2, perCrew)
+      })
+
+      setCrewDailySummaries(Array.from(map.values()).sort((a, b) => b.totalWage - a.totalWage))
+      setShowCrewCommissionModal(true)
     } catch (err) {
-      console.error('Error Tutup Kasir:', err)
-      await showAlert('Gagal tutup kasir: ' + err.message, 'Error')
-    } finally {
-      setLoading(false)
+      console.error('Gagal memuat komisi kru harian:', err)
+      setError('Gagal memuat ringkasan komisi kru hari ini.')
     }
   }
 
@@ -1712,29 +1728,30 @@ const CafePOS = () => {
 
   // Checkout Handler
   const handleCheckout = async () => {
-    // Reward consumption must be part of the same transaction as checkout.
-    // Until that backend exists, stale/forced reward state must not create a discounted sale.
-    if (claimedLoyaltyReward.isClaimed) {
-      setError('Hadiah loyalty belum dapat digunakan pada transaksi kasir. Hubungi pengelola toko.')
-      return
-    }
     if (!selectedCashier) return setError('Pilih kasir terlebih dahulu.')
     if (paymentStatus === 'Selesai' && !selectedPayment) return setError('Pilih metode pembayaran.')
     if (cart.length === 0 && !effectiveHasCarwash) return setError('Keranjang belanja kosong.')
     if (effectiveHasCarwash && !carwashForm.platNomor) return setError('Plat nomor mobil wajib diisi.')
 
-    // Validasi Resep Bahan Baku
+    // Validasi Resep Bahan Baku (prioritaskan menu_id & stok_barang_id)
     if (cart.length > 0) {
       const missingRecipes = []
       for (const item of cart) {
         const isMerch = Boolean(
           item.is_merchandise ||
           item.gudang === 'MERCHANDISE' ||
+          item.stok_barang_id ||
           isMerchandiseCategory(item.kategori, item.sub_kategori) ||
-          merchandiseList.some(m => (m.nama_produk || m.nama_barang || '').toLowerCase() === item.nama_menu.toLowerCase())
+          merchandiseList.some(m =>
+            (item.stok_barang_id && m.id === item.stok_barang_id) ||
+            (m.nama_produk || m.nama_barang || '').toLowerCase() === item.nama_menu.toLowerCase()
+          )
         )
         if (isMerch) continue
-        const hasRecipe = resepList.some(r => r.nama_menu.toLowerCase() === item.nama_menu.toLowerCase())
+        const hasRecipe = resepList.some(r =>
+          (item.menu_id && r.menu_id === item.menu_id) ||
+          (!r.menu_id && r.nama_menu.toLowerCase() === item.nama_menu.toLowerCase())
+        )
         if (!hasRecipe) {
           missingRecipes.push(item.nama_menu)
         }
@@ -1799,17 +1816,20 @@ const CafePOS = () => {
         tipe_pesanan: orderType,
         no_meja: tableOrQueueNumber || (effectiveHasCarwash ? carwashForm.platNomor : ''),
         nama_pelanggan: tableOrQueueNumber || (effectiveHasCarwash ? carwashForm.platNomor : '') || 'Pelanggan',
+        redeem_loyalty: Boolean(claimedLoyaltyReward.isClaimed),
         waktu_dibuat: new Date().toISOString(),
         waktu_dibayar: paymentStatus === 'Selesai' ? new Date().toISOString() : null
       }
 
-      // 2. Siapkan Payload Item Cafe (jika ada)
+      // 2. Siapkan Payload Item Cafe (sertakan menu_id / stok_barang_id)
       const cafeItems = cart.map(item => ({
         id_detail: generateUUID(),
         id_struk: effectiveStrukId,
         tenant_id: effectiveTenantId,
         tanggal: todayDate,
         jam: currentTime,
+        menu_id: item.menu_id || null,
+        stok_barang_id: item.stok_barang_id || null,
         nama_menu: item.nama_menu,
         qty: item.qty,
         harga_satuan: item.harga,
@@ -1823,6 +1843,8 @@ const CafePOS = () => {
       if (effectiveHasCarwash) {
         const hasAnggota2 = carwashForm.anggota2 && carwashForm.anggota2.trim() ? true : false;
         const gajiPerAnggota = hasAnggota2 ? Math.round(carwashForm.gaji_pencuci / 2) : Math.round(carwashForm.gaji_pencuci);
+        const crew1 = carwashCrewDirectory.find(c => c.nama === String(carwashForm.anggota1 || '').toUpperCase().trim())
+        const crew2 = carwashCrewDirectory.find(c => c.nama === String(carwashForm.anggota2 || '').toUpperCase().trim())
 
         // Hitung harga_cuci dan harga_paket dasar secara dinamis
         const basicPkg = carwashPackages.find(p => p.nama_paket === 'PAKET CUCI BIASA') || carwashPackages[0]
@@ -1859,6 +1881,8 @@ const CafePOS = () => {
           harga_custom: carwashForm.ukuran === 'Custom' ? carwashForm.harga : 0,
           anggota_1: carwashForm.anggota1,
           anggota_2: carwashForm.anggota2 || null,
+          anggota_1_id: crew1?.id || null,
+          anggota_2_id: crew2?.id || null,
           status: paymentStatus === 'Selesai' ? 'Selesai' : 'Pending',
           status_pengerjaan: paymentStatus === 'Selesai' ? 'Siap Diambil' : 'Sedang Dicuci',
           kondisi_bodi: carwashForm.kondisi_bodi || 'Normal',
@@ -1879,7 +1903,7 @@ const CafePOS = () => {
         carwashPayload
       })
 
-        // Sinkronkan data pelanggan ke CRM terpadu & catat klaim reward jika ada
+        // Sinkronkan data pelanggan ke CRM terpadu (klaim reward sudah tercatat atomik di checkout)
         const cleanPlat = (carwashForm.platNomor || '').replace(/\s+/g, '').toUpperCase();
         try {
           if (cleanPlat) {
@@ -1891,18 +1915,6 @@ const CafePOS = () => {
               model_kendaraan: carwashForm.model || '',
               catatan_khusus: carwashForm.catatan_kendaraan || ''
             })
-
-            if (claimedLoyaltyReward.isClaimed) {
-              await recordLoyaltyClaim(supabase, {
-                tenant_id: effectiveTenantId,
-                plat: cleanPlat,
-                nama_pelanggan: cleanPlat,
-                reward_title: claimedLoyaltyReward.title,
-                reward_type: claimedLoyaltyReward.type,
-                id_struk: effectiveStrukId,
-                notes: `Klaim reward ${claimedLoyaltyReward.title} di Kasir Hybrid POS`
-              })
-            }
           }
         } catch (crmSyncErr) {
           console.warn('CRM sync warning in HybridPOS checkout:', crmSyncErr)
@@ -2205,7 +2217,7 @@ const CafePOS = () => {
             >
               <Wallet size={13} className="text-primary" />
               <span className="font-bold text-white font-mono text-xs">
-                {formatRupiah(todayStartingCapital + cashierCash.todayIn - cashierCash.todayOut)}
+                {formatRupiah(todayStartingCapital + cashierCash.todayIn - cashierCash.todayOut - (cashierCash.todayExchangeOut || 0))}
               </span>
               <ChevronDown size={12} className={`text-muted-dark transition-transform ${showCashDrawerDetail ? 'rotate-180' : ''}`} />
             </button>
@@ -2244,6 +2256,12 @@ const CafePOS = () => {
                       <span>Uang Keluar (Cash)</span>
                       <span className="font-mono text-rose-400 font-bold">-{formatRupiah(cashierCash.todayOut)}</span>
                     </div>
+                    {(cashierCash.todayExchangeOut || 0) > 0 && (
+                      <div className="flex justify-between items-center text-muted">
+                        <span>Tukar Uang (Cash Keluar)</span>
+                        <span className="font-mono text-amber-400 font-bold">-{formatRupiah(cashierCash.todayExchangeOut)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between items-center text-muted">
                       <span>Total QRIS Masuk</span>
                       <span className="font-mono text-cyan-400 font-bold">{formatRupiah(cashierCash.todayQRIS)}</span>
@@ -2251,7 +2269,7 @@ const CafePOS = () => {
                     <div className="border-t border-border pt-1.5 flex justify-between items-center font-bold text-white">
                       <span>Sisa Fisik di Laci</span>
                       <span className="font-mono text-purple-300 font-black">
-                        {formatRupiah(todayStartingCapital + cashierCash.todayIn - cashierCash.todayOut)}
+                        {formatRupiah(todayStartingCapital + cashierCash.todayIn - cashierCash.todayOut - (cashierCash.todayExchangeOut || 0))}
                       </span>
                     </div>
                   </div>
@@ -2308,9 +2326,9 @@ const CafePOS = () => {
                 const inCartItem = cart.find(c => c.nama_menu === menu.nama_menu)
                 return (
                   <button
-                    key={menu.nama_menu}
+                    key={menu.id || menu.nama_menu}
                     type="button"
-                    onClick={() => addToCart({ nama_menu: menu.nama_menu, harga: menu.harga })}
+                    onClick={() => addToCart({ menu_id: menu.id || null, nama_menu: menu.nama_menu, harga: menu.harga })}
                     className={`glass-card hover:border-primary/50 p-0 rounded-xl flex flex-col justify-between text-left transition-all duration-300 active:scale-[0.98] group overflow-hidden min-h-[170px] relative w-full min-w-0 ${
                       inCartItem ? 'border-brand-emerald/60 ring-1 ring-brand-emerald/40 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'border-border'
                     }`}
@@ -2407,6 +2425,14 @@ const CafePOS = () => {
                 <p className="text-xs text-muted-dark mt-0.5">Lengkapi form transaksi cucian mobil pelanggan</p>
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleOpenCrewCommissionModal}
+                  className="text-xs font-bold text-[#00ffff] bg-[#00ffff]/10 hover:bg-[#00ffff]/20 px-2.5 py-1 rounded-full border border-[#00ffff]/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
+                >
+                  <Users size={13} />
+                  <span>Komisi Kru Hari Ini</span>
+                </button>
                 <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
                   ✓ Masuk ke Transaksi
                 </span>
@@ -2515,6 +2541,7 @@ const CafePOS = () => {
                     onClaimReward={(reward) => setClaimedLoyaltyReward(reward)}
                     isRewardClaimed={claimedLoyaltyReward.isClaimed}
                     claimedRewardTitle={claimedLoyaltyReward.title}
+                    rewardCheckoutEnabled={features.hasCRM}
                   />
                 </div>
 
@@ -3150,18 +3177,10 @@ const CafePOS = () => {
                           )}
                           {isSelesai && tx.status_bayar === 'Selesai' && (
                             <button
-                              onClick={() => handleCancelPaidTransaction(tx.id)}
+                              onClick={() => handleCancelPaidTransaction(tx)}
                               className="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/30 text-rose-450 font-bold rounded text-[10px] transition-colors"
                             >
                               Batalkan
-                            </button>
-                          )}
-                          {tx.status_bayar === 'Batal' && (
-                            <button
-                              onClick={() => handleReactivatePaidTransaction(tx.id)}
-                              className="px-2.5 py-1 bg-primary text-primary-foreground/10 hover:bg-primary text-primary-foreground/20 border border-brand-emerald/20 hover:border-brand-emerald/30 text-primary font-bold rounded text-[10px] transition-colors"
-                            >
-                              Pulihkan
                             </button>
                           )}
                         </div>
@@ -3535,11 +3554,14 @@ const CafePOS = () => {
                           const selected = filteredCashierCategories.find(c => c.nama_kategori === val) || cashierAllowedCategories.find(c => c.nama_kategori === val)
                           const isCasbonPicked = String(val).toLowerCase().includes('casbon') || String(val).toLowerCase().includes('kasbon')
                           const isBahanPicked = String(val).toLowerCase().includes('bahan')
+                          const defaultKaryawan = isCasbonPicked ? (prev.karyawan || staffOptions[0] || anggotaOptions[0] || '') : prev.karyawan
+                          const matchedEmp = staffDirectory.find(s => s.nama === String(defaultKaryawan || '').toUpperCase().trim())
                           setPosExpenseForm(prev => ({ 
                             ...prev, 
                             kategori: val,
                             category_id: selected ? selected.id : '',
-                            karyawan: isCasbonPicked ? (prev.karyawan || anggotaOptions[0] || '') : prev.karyawan,
+                            karyawan: defaultKaryawan,
+                            karyawan_id: isCasbonPicked ? (prev.karyawan_id || matchedEmp?.id || '') : prev.karyawan_id,
                             // Cegah kebocoran state bahan baku saat kasir memilih kategori non-bahan baku
                             id_bahan_baku: isBahanPicked ? prev.id_bahan_baku : '',
                             id_barang: isBahanPicked ? prev.id_barang : '',
@@ -3574,7 +3596,14 @@ const CafePOS = () => {
                     <label className="block text-xs font-semibold text-muted mb-1.5 uppercase">Karyawan</label>
                     <CustomSelect
                       value={posExpenseForm.karyawan}
-                      onChange={(val) => setPosExpenseForm(prev => ({ ...prev, karyawan: val }))}
+                      onChange={(val) => {
+                        const matchedEmp = staffDirectory.find(s => s.nama === String(val || '').toUpperCase().trim())
+                        setPosExpenseForm(prev => ({
+                          ...prev,
+                          karyawan: val,
+                          karyawan_id: matchedEmp?.id || ''
+                        }))
+                      }}
                       options={[
                         { value: '', label: '-- Pilih Karyawan --' },
                         ...(staffOptions.length > 0 ? staffOptions : anggotaOptions).map(name => ({ value: name, label: name }))
@@ -3696,7 +3725,8 @@ const CafePOS = () => {
                         nominal: '',
                         unit: 'Cafe',
                         kategori: 'Operasional',
-                        karyawan: ''
+                        karyawan: '',
+                        karyawan_id: ''
                       })
                     }}
                     className="flex-1 py-2.5 bg-subsurface hover:bg-slate-700 text-slate-350 font-bold rounded-lg text-sm transition-all"
@@ -5172,6 +5202,37 @@ const CafePOS = () => {
           onClose={() => setActiveReceipt(null)}
         />
       )}
+
+      {/* MODAL: Audit Alasan Pembatalan Nota (Void) */}
+      <VoidReasonModal
+        isOpen={Boolean(voidTargetTx)}
+        onClose={() => setVoidTargetTx(null)}
+        onConfirm={handleConfirmVoid}
+        transaction={voidTargetTx}
+      />
+
+      {/* MODAL: Tutup Shift Kasir (Model Terbuka + Kirim WA ke Owner) */}
+      <ShiftClosingModal
+        isOpen={showShiftClosingModal}
+        onClose={() => setShowShiftClosingModal(false)}
+        cashierName={selectedCashier || profile?.nama || 'Kasir'}
+        storeName={activeTenant?.nama || 'RelayPOS Outlet'}
+        ownerPhone={getReceiptConfig().storePhone || ''}
+        startingCapital={todayStartingCapital}
+        todayCashSales={cashierCash.todayIn}
+        todayQrisSales={cashierCash.todayQRIS}
+        todayExpenses={cashierCash.todayOut}
+        todayExchangeOut={cashierCash.todayExchangeOut || 0}
+        onConfirmClose={handleConfirmShiftClose}
+      />
+
+      {/* MODAL: Rekap Transparan Komisi Kru Harian */}
+      <CrewDailyCommissionModal
+        isOpen={showCrewCommissionModal}
+        onClose={() => setShowCrewCommissionModal(false)}
+        storeName={activeTenant?.nama || 'RelayPOS Outlet'}
+        crewSummaries={crewDailySummaries}
+      />
     </div>
   )
 }

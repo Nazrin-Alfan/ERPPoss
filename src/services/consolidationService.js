@@ -37,6 +37,48 @@ export function isExecutiveAuthorized(userRole) {
 }
 
 /**
+ * Filter daftar tenant yang boleh diakses oleh Owner/Super Admin tanpa bergantung
+ * pada kolom `owner_email` (yang tidak tersedia di skema Postgres Cloud).
+ */
+export function filterOwnerAccessibleTenants({
+  tenants = [],
+  profile = null,
+  membershipTenantIds = new Set(),
+  trustRlsResult = false,
+} = {}) {
+  const list = Array.isArray(tenants) ? tenants : []
+  const role = profile?.role
+  if (role === ROLES.SUPER_ADMIN) return list
+
+  const userTenantId = profile?.tenant_id || null
+  const profileEmail = (profile?.email || '').toLowerCase().trim()
+  const memberSet =
+    membershipTenantIds instanceof Set
+      ? membershipTenantIds
+      : new Set(Array.isArray(membershipTenantIds) ? membershipTenantIds : [])
+
+  const matched = list.filter((t) => {
+    if (!t?.id) return false
+    if (userTenantId && t.id === userTenantId) return true
+    if (memberSet.has(t.id)) return true
+    return Boolean(profileEmail && t.owner_email && t.owner_email.toLowerCase().trim() === profileEmail)
+  })
+
+  if (matched.length > 0) return matched
+  return trustRlsResult ? list : []
+}
+
+/**
+ * Filter baris data berdasarkan daftar tenant yang diizinkan (tanpa bypass saat kosong).
+ */
+export function filterTenantScopedRecords(records = [], allowedTenantIds = new Set()) {
+  if (!Array.isArray(records) || !(allowedTenantIds instanceof Set) || allowedTenantIds.size === 0) {
+    return []
+  }
+  return records.filter((item) => item && allowedTenantIds.has(item.tenant_id))
+}
+
+/**
  * Menghitung ringkasan metrik konsolidasi eksekutif seluruh outlet
  */
 export function calculateConsolidatedMetrics({

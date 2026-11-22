@@ -112,4 +112,29 @@ describe('Staff to Karyawan Kantor Auto-Sync Architecture', () => {
     expect(alexa.role).toBe('Kasir')
     expect(alexa.source).toBe('staff_registration')
   }, 25000)
+
+  it('6. should match existing karyawan_kantor by profile_id without duplicates when profile nama changes', () => {
+    const BIMA_UUID = '33333333-3333-4333-8333-333333333333'
+    const CINTYA_UUID = '44444444-4444-4444-8444-444444444444'
+    const existingKaryawanKantor = [
+      { id: 'kk_10', profile_id: BIMA_UUID, nama: 'BIMA LAMA', role: 'Kasir', source: 'staff_registration' },
+    ]
+    const staffProfiles = [
+      { id: BIMA_UUID, nama: 'BIMA BARU', role: 'Admin', email: 'bima@relaypos.com' },
+      { id: CINTYA_UUID, nama: 'CINTYA', role: 'Kasir', email: 'cintya@relaypos.com' },
+    ]
+
+    const { mergedList, newRecordsToInsert } = syncStaffToKaryawanKantor({
+      staffProfiles,
+      existingKaryawanKantor,
+    })
+
+    // BIMA_UUID matched by profile_id -> NOT inserted as a duplicate row
+    expect(newRecordsToInsert).toHaveLength(1)
+    expect(newRecordsToInsert[0].nama).toBe('CINTYA')
+    expect(newRecordsToInsert[0].profile_id).toBe(CINTYA_UUID)
+
+    const bimaRows = mergedList.filter(k => k.profile_id === BIMA_UUID)
+    expect(bimaRows).toHaveLength(1)
+  })
 })

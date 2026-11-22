@@ -336,6 +336,7 @@ export const calculateCashierDrawerStatus = ({
   strukList = [],
   expenses = [],
   startingCapital = 0,
+  exchangeCashOut = 0,
   targetDate = new Date().toLocaleDateString('en-CA')
 }) => {
   let todayIn = 0
@@ -377,13 +378,15 @@ export const calculateCashierDrawerStatus = ({
   const todayOut = Array.isArray(expenses)
     ? expenses.reduce((sum, item) => sum + (parseFloat(item?.nominal || 0)), 0)
     : 0
+  const todayExchangeOut = parseFloat(exchangeCashOut || 0)
 
-  const physicalDrawerCash = parseFloat(startingCapital || 0) + todayIn - todayOut
+  const physicalDrawerCash = parseFloat(startingCapital || 0) + todayIn - todayOut - todayExchangeOut
 
   return {
     todayIn,
     todayQRIS,
     todayOut,
+    todayExchangeOut,
     startingCapital: parseFloat(startingCapital || 0),
     physicalDrawerCash
   }

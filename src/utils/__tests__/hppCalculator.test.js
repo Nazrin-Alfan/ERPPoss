@@ -145,4 +145,43 @@ describe('HPP Calculator Utility (TDD)', () => {
       expect(simLoss.marginStatus).toBe('LOSS')
     })
   })
+
+  describe('Relasi ID stok_barang_id saat bahan baku di-rename', () => {
+    it('tetap menghitung HPP menu menggunakan stok_barang_id walau nama_bahan pada resep belum sama persis', () => {
+      const renamedStock = [
+        {
+          id: '11111111-1111-4111-8111-111111111111',
+          id_barang: 'BB-KOPI',
+          id_bahan_baku: 'BB-KOPI',
+          nama_produk: 'Biji Kopi Arabica Single Origin (Renamed)',
+          nama_bahan: 'Biji Kopi Arabica Single Origin (Renamed)',
+          satuan: 'kg',
+          harga_satuan: 250000,
+          harga_beli: 250000,
+        },
+      ]
+      const staleNameRecipe = [
+        {
+          stok_barang_id: '11111111-1111-4111-8111-111111111111',
+          id_bahan_baku: 'BB-KOPI-LAMA',
+          nama_bahan: 'Biji Kopi Nama Lama',
+          jumlah_dibutuhkan: 20,
+          satuan: 'gram',
+        },
+      ]
+
+      const res = calculateMenuHpp({
+        recipeList: staleNameRecipe,
+        stockItems: renamedStock,
+        packagingCost: 1000,
+        overheadCost: 500,
+      })
+
+      // 250.000 / 1000gr = 250/gr * 20gr = 5.000 + 1.000 + 500 = 6.500
+      expect(res.foodCost).toBe(5000)
+      expect(res.totalHpp).toBe(6500)
+      expect(res.breakdown).toHaveLength(1)
+      expect(res.breakdown[0].isStockPriceZero).toBe(false)
+    })
+  })
 })

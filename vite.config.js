@@ -41,6 +41,7 @@ export default defineConfig(({ mode }) => {
   const supabaseUrl = env.VITE_SUPABASE_URL || fallbackEnv.VITE_SUPABASE_URL || ''
   const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY || fallbackEnv.VITE_SUPABASE_ANON_KEY || ''
   const backendProvider = env.VITE_BACKEND_PROVIDER || fallbackEnv.VITE_BACKEND_PROVIDER || 'local'
+  const enableFounderConsole = env.VITE_ENABLE_FOUNDER_CONSOLE || 'false'
 
   // Metadata build dinamis dari git commit & timestamp ISO
   let gitCommit = 'dev'
@@ -65,6 +66,7 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.VITE_BACKEND_PROVIDER': JSON.stringify(backendProvider),
       'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(supabaseUrl),
       'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseAnonKey),
+      'import.meta.env.VITE_ENABLE_FOUNDER_CONSOLE': JSON.stringify(enableFounderConsole),
       'import.meta.env.VITE_BUILD_COMMIT': JSON.stringify(gitCommit),
       'import.meta.env.VITE_BUILD_TIME': JSON.stringify(buildTime),
     },

@@ -14,7 +14,7 @@ import {
 import { supabase } from '../supabaseClient'
 import { generateCSVString, downloadCSV } from '../utils/financeHelpers'
 import { useAuth } from '../context/AuthContext'
-import { getActiveTenantId, DEFAULT_TENANT_ID } from '../services/localDbEngine'
+import { DEFAULT_TENANT_ID } from '../constants/erpConfig'
 import {
   aggregateCustomerCRMData,
   redeemCustomerReward,
@@ -67,8 +67,8 @@ import {
 import { formatRupiah, parseDateSafe } from '../utils/helpers'
 
 const CRM = () => {
-  const { activeTenant } = useAuth()
-  const tenantId = activeTenant?.id || getActiveTenantId() || DEFAULT_TENANT_ID
+  const { activeTenant, profile } = useAuth()
+  const tenantId = activeTenant?.id || profile?.tenant_id || DEFAULT_TENANT_ID
 
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState(null)

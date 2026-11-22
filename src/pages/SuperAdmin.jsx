@@ -25,7 +25,8 @@ import {
   generateSerialLicenseKey,
   createCleanTenantPayload,
   purgeTransactionsForTenant,
-  deleteTenantCompletely
+  deleteTenantCompletely,
+  generateSecureInitialPassword
 } from '../utils/superAdminHelpers'
 import { evaluateLicenseStatus } from '../utils/licenseHelpers'
 import { DEVELOPER_CONFIG } from '../constants/erpConfig'
@@ -130,12 +131,13 @@ const SuperAdmin = () => {
       let res = null
       let usedRpc = false
 
+      const initialPassword = generateSecureInitialPassword()
       if (typeof supabase.rpc === 'function') {
         const rpcResult = await supabase.rpc('fn_founder_create_tenant', {
           p_store_name: tenantForm.storeName.trim(),
           p_owner_name: tenantForm.ownerName?.trim() || `Owner ${tenantForm.storeName.trim()}`,
           p_owner_email: tenantForm.ownerEmail.trim(),
-          p_owner_password: 'password123',
+          p_owner_password: initialPassword,
           p_telepon: tenantForm.telepon?.trim() || '-',
           p_alamat: tenantForm.alamat?.trim() || '-',
           p_business_type: 'HYBRID',

@@ -172,6 +172,7 @@ export default function MerchandiseCatalog({
                 onClick={() => {
                   if (currentStock > 0 && !inCart) {
                     onAddToCart && onAddToCart({
+                      stok_barang_id: prod.id || null,
                       id_barang: prod.id_barang,
                       nama_menu: prodName,
                       harga: prodPrice,
@@ -269,6 +270,7 @@ export default function MerchandiseCatalog({
                         onClick={(e) => {
                           e.stopPropagation()
                           onAddToCart && onAddToCart({
+                            stok_barang_id: prod.id || null,
                             id_barang: prod.id_barang,
                             nama_menu: prodName,
                             harga: prodPrice,

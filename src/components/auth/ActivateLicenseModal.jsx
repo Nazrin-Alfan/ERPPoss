@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
+import { DEVELOPER_CONFIG } from '../../constants/erpConfig'
 import { buildWhatsAppRenewalLink } from '../../utils/licenseHelpers'
 import { 
   KeyRound, 
@@ -45,7 +46,7 @@ export default function ActivateLicenseModal({ isOpen, onClose }) {
   }
 
   const waLink = buildWhatsAppRenewalLink({
-    developerPhone: '6281234567890',
+    developerPhone: DEVELOPER_CONFIG.whatsappNumber,
     tenantName: activeTenant?.nama || 'Outlet RelayPOS',
     tenantId: activeTenant?.id || 'tenant_unknown',
     planCode: 'PRO_ANNUAL',

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { ROLES } from '../../constants/roles'
+import { DEVELOPER_CONFIG } from '../../constants/erpConfig'
 import { buildWhatsAppRenewalLink } from '../../utils/licenseHelpers'
 import { 
   ShieldAlert, 
@@ -46,7 +47,7 @@ export default function LicenseExpiredLockout() {
   }
 
   const waLink = buildWhatsAppRenewalLink({
-    developerPhone: '6281234567890',
+    developerPhone: DEVELOPER_CONFIG.whatsappNumber,
     tenantName: activeTenant?.nama || 'Outlet RelayPOS',
     tenantId: activeTenant?.id || 'tenant_unknown',
     planCode: 'PRO_ANNUAL',
@@ -77,7 +78,7 @@ export default function LicenseExpiredLockout() {
         {/* Headline & Informasi Toko */}
         <div className="mt-5 space-y-2">
           <h2 className="text-lg font-bold text-white tracking-tight">
-            Masa Uji Coba 14 Hari Telah Berakhir
+            Masa Uji Coba 30 Hari Telah Berakhir
           </h2>
           <p className="text-xs text-[#bbcbb2] leading-relaxed">
             Akses operasional untuk <strong className="text-white font-semibold">{activeTenant?.nama || 'Toko Anda'}</strong> saat ini dikunci. Seluruh data transaksi, keuangan, dan inventori Anda tersimpan aman di cloud.

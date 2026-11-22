@@ -24,6 +24,7 @@ export default function ShiftClosingModal({
   todayCashSales = 0,
   todayQrisSales = 0,
   todayExpenses = 0,
+  todayExchangeOut = 0,
   onConfirmClose
 }) {
   const [physicalCash, setPhysicalCash] = useState('')
@@ -36,7 +37,8 @@ export default function ShiftClosingModal({
   if (!isOpen) return null
 
   // Hitungan Model Terbuka Sistem
-  const expectedDrawerCash = Number(startingCapital) + Number(todayCashSales) - Number(todayExpenses)
+  const expectedDrawerCash =
+    Number(startingCapital) + Number(todayCashSales) - Number(todayExpenses) - Number(todayExchangeOut)
   const physicalCashNum = parseFloat(physicalCash) || 0
   const discrepancy = physicalCashNum - expectedDrawerCash
 
@@ -55,6 +57,7 @@ export default function ShiftClosingModal({
         todayCashSales,
         todayQrisSales,
         todayExpenses,
+        todayExchangeOut,
         expectedDrawerCash,
         physicalCash: physicalCashNum,
         discrepancy,
@@ -89,7 +92,7 @@ export default function ShiftClosingModal({
 💵 Modal Awal Laci: ${formatRupiah(closingSummary.startingCapital)}
 🛒 Penjualan Tunai: ${formatRupiah(closingSummary.todayCashSales)}
 💳 Penjualan QRIS / Bank: ${formatRupiah(closingSummary.todayQrisSales)}
-🔻 Total Pengeluaran Kasir: ${formatRupiah(closingSummary.todayExpenses)}
+🔻 Total Pengeluaran Kasir: ${formatRupiah(closingSummary.todayExpenses)}${Number(closingSummary.todayExchangeOut || 0) > 0 ? `\n🔁 Tukar Uang (Cash Keluar): -${formatRupiah(closingSummary.todayExchangeOut)}` : ''}
 ------------------------------------------------
 📊 *Ekspektasi Uang Fisik Laci*: ${formatRupiah(closingSummary.expectedDrawerCash)}
 💰 *Uang Fisik Dihitung Kasir*: ${formatRupiah(closingSummary.physicalCash)}
@@ -161,6 +164,12 @@ export default function ShiftClosingModal({
                   <span className="text-slate-200">Pengeluaran Kasir Hari Ini</span>
                   <span className="font-mono font-bold text-rose-400">-{formatRupiah(todayExpenses)}</span>
                 </div>
+                {Number(todayExchangeOut || 0) > 0 && (
+                  <div className="flex justify-between items-center py-1 border-b border-[#26272d]/60">
+                    <span className="text-slate-200">Tukar Uang (Cash Keluar → QRIS)</span>
+                    <span className="font-mono font-bold text-amber-400">-{formatRupiah(todayExchangeOut)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center pt-1.5 font-bold text-sm">
                   <span className="text-amber-300">Ekspektasi Uang Fisik Laci:</span>
                   <span className="font-mono text-amber-300 text-base">{formatRupiah(expectedDrawerCash)}</span>
@@ -249,7 +258,7 @@ export default function ShiftClosingModal({
             <div>
               <h4 className="text-lg font-black text-white">Tutup Kasir Berhasil!</h4>
               <p className="text-[#bbcbb2] text-xs mt-1">
-                Data penutupan shift kasir telah dibukukan ke jurnal arus kas (cashflow).
+                Audit penutupan shift kasir telah tersimpan dengan aman.
               </p>
             </div>
 

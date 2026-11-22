@@ -59,7 +59,7 @@ describe('Change Password & Auth Security Suite', () => {
     expect(changeRes.error).toContain('Kata sandi saat ini salah')
   })
 
-  it('TC_03: changePassword rejects passwords shorter than 6 characters', async () => {
+  it('TC_03: changePassword rejects passwords shorter than 8 characters', async () => {
     await supabase.auth.signInWithPassword({
       email: 'owner@relaypos.com',
       password: 'password123'
@@ -67,11 +67,11 @@ describe('Change Password & Auth Security Suite', () => {
 
     const changeRes = await supabase.auth.changePassword({
       currentPassword: 'password123',
-      newPassword: '123'
+      newPassword: '1234567'
     })
 
     expect(changeRes.success).toBe(false)
-    expect(changeRes.error).toContain('minimal 6 karakter')
+    expect(changeRes.error).toContain('minimal 8 karakter')
   })
 
   it('TC_04: ChangePasswordModal renders clean form with password fields and submit button', () => {
