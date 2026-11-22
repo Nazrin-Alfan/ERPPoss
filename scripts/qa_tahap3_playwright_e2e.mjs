@@ -24,6 +24,12 @@ async function runPlaywrightE2ESuite() {
 
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext();
+  // Prevent localDbEngine demo auto-login race from redirecting /login -> /dashboard before auth tests run
+  await context.addInitScript(() => {
+    if (!window.localStorage.getItem('relaypos_real_auth_v2')) {
+      window.localStorage.setItem('relaypos_real_auth_v2', 'null');
+    }
+  });
   const page = await context.newPage();
 
   const pageErrors = [];

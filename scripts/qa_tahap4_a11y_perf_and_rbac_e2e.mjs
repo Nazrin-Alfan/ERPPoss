@@ -45,6 +45,12 @@ async function runTahap4Suite() {
     // PART A: OWNER SESSION — A11Y, KEYBOARD NAVIGATION & WEB VITALS BUDGETS
     // =========================================================================
     const ownerCtx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    // Prevent localDbEngine demo auto-login race from redirecting /login -> /dashboard before auth tests run
+    await ownerCtx.addInitScript(() => {
+      if (!window.localStorage.getItem('relaypos_real_auth_v2')) {
+        window.localStorage.setItem('relaypos_real_auth_v2', 'null');
+      }
+    });
     const page = await ownerCtx.newPage();
 
     const pageErrors = [];
@@ -165,6 +171,11 @@ async function runTahap4Suite() {
     // PART B: KASIR SESSION — DEEP RBAC ROUTE CONTAINMENT & PRIVILEGE GUARD
     // =========================================================================
     const kasirCtx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    await kasirCtx.addInitScript(() => {
+      if (!window.localStorage.getItem('relaypos_real_auth_v2')) {
+        window.localStorage.setItem('relaypos_real_auth_v2', 'null');
+      }
+    });
     const kasirPage = await kasirCtx.newPage();
 
     kasirPage.on('pageerror', (err) => pageErrors.push(err.message || String(err)));
