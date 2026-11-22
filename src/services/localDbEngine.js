@@ -10,6 +10,7 @@ import { DEFAULT_TENANT_ID, DEFAULT_BRANCH_ID } from '../constants/erpConfig.js'
 import { GeneralLedgerService, calculateMovingAverageCost } from './generalLedgerService.js'
 import { DEFAULT_CARWASH_PACKAGES, calculateCarwashPriceAndCommission } from '../utils/carwashHelpers.js'
 import { resolveAccountForPaymentMethod } from '../constants/transactionConstants.js'
+import { normalizeEmailIdentity } from './mandiriEmailParser.js'
 
 const POSTGRES_UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
@@ -36,6 +37,10 @@ const POSTGRES_UUID_PK_TABLES = new Set([
   'resep',
   'pengeluaran',
   'barang_masuk',
+  'bank_email_connections',
+  'bank_account_bindings',
+  'bank_email_messages',
+  'bank_transaction_drafts',
 ])
 
 /** Exact live Supabase column whitelists per table for strict parity checks. */
@@ -165,8 +170,18 @@ let inMemoryActiveActorContext = {
 
 export const getActiveActorContext = () => ({ ...inMemoryActiveActorContext })
 
-export const setActiveActorContext = ({ role = null, branchId = null, userId = null, tenant_id = null, is_active = true } = {}) => {
-  inMemoryActiveActorContext = { role, branchId, userId, tenant_id, is_active }
+export const setActiveActorContext = ({
+  role = null,
+  branchId = null,
+  branch_id = null,
+  userId = null,
+  id = null,
+  tenant_id = null,
+  is_active = true,
+} = {}) => {
+  const resolvedBranch = branchId !== null ? branchId : branch_id
+  const resolvedUser = userId !== null ? userId : id
+  inMemoryActiveActorContext = { role, branchId: resolvedBranch, userId: resolvedUser, tenant_id, is_active }
   if (tenant_id) {
     setActiveTenantId(tenant_id)
   }
@@ -496,6 +511,10 @@ export class LocalDatabaseStore {
   ensureInitialized() {
     if (!this.data.journal_entries) this.data.journal_entries = []
     if (!this.data.journal_entry_lines) this.data.journal_entry_lines = []
+    if (!this.data.bank_email_connections) this.data.bank_email_connections = []
+    if (!this.data.bank_account_bindings) this.data.bank_account_bindings = []
+    if (!this.data.bank_email_messages) this.data.bank_email_messages = []
+    if (!this.data.bank_transaction_drafts) this.data.bank_transaction_drafts = []
     if (!this.data.master_categories || this.data.master_categories.length === 0) {
       this.data.master_categories = JSON.parse(JSON.stringify(INITIAL_SEED_DATA.master_categories || []))
     }
@@ -689,6 +708,10 @@ export class LocalDatabaseStore {
 
   resetDatabase(cleanTransactions = true) {
     this.data = JSON.parse(JSON.stringify(INITIAL_SEED_DATA))
+    this.data.bank_email_connections = []
+    this.data.bank_account_bindings = []
+    this.data.bank_email_messages = []
+    this.data.bank_transaction_drafts = []
     if (cleanTransactions) {
       this.data.struk = []
       this.data.cafe = []
@@ -1231,7 +1254,11 @@ export class LocalQueryBuilder {
         'pos_balances',
         'v_pocket_balances',
         'cashflow',
-        'intelligence_daily_snapshots'
+        'intelligence_daily_snapshots',
+        'bank_email_connections',
+        'bank_account_bindings',
+        'bank_email_messages',
+        'bank_transaction_drafts',
       ]
       if (sensitiveTables.includes(this.tableName)) {
         return { data: [], error: null, count: 0 }
@@ -1264,6 +1291,7 @@ export class LocalQueryBuilder {
       const strictBranchTables = [
         'pos_balances',
         'v_pocket_balances',
+        'bank_transaction_drafts',
         'cashflow',
         'pengeluaran',
         'struk',
@@ -1467,6 +1495,38 @@ export class LocalQueryBuilder {
         created_at: item.created_at || new Date().toISOString(),
         ...item,
         ...(effectiveTenant ? { tenant_id: effectiveTenant } : {}),
+      }
+
+      if (this.tableName === 'bank_email_connections') {
+        record.normalized_email = normalizeEmailIdentity(record.email_address)
+        record.status = record.status || 'CONNECTED'
+        if (record.status !== 'DISCONNECTED') {
+          const conflict = table.find(
+            (c) =>
+              c.tenant_id !== record.tenant_id &&
+              c.status !== 'DISCONNECTED' &&
+              (c.normalized_email === record.normalized_email ||
+                (c.provider === (record.provider || 'GMAIL_OAUTH') && c.provider_account_id === record.provider_account_id))
+          )
+          if (conflict) {
+            const memberships = this.store.getTable('tenant_memberships') || []
+            const uid = actorInsert?.userId || this.store.getAuth()?.user?.id || null
+            const sameOwner =
+              actorInsert?.role === 'Super Admin' ||
+              (uid &&
+                memberships.some((m) => m.user_id === uid && m.tenant_id === record.tenant_id && String(m.role || '').toUpperCase() === 'OWNER') &&
+                memberships.some((m) => m.user_id === uid && m.tenant_id === conflict.tenant_id && String(m.role || '').toUpperCase() === 'OWNER'))
+            if (!sameOwner) {
+              return {
+                data: null,
+                error: Object.assign(
+                  new Error('EMAIL_ALREADY_BOUND_TO_OTHER_TENANT: Akun email ini sudah terhubung ke organisasi/toko lain di ERPPoss.'),
+                  { code: '23505' }
+                ),
+              }
+            }
+          }
+        }
       }
 
       if (this.tableName === 'pos_balances') {
@@ -4406,11 +4466,508 @@ export const createLocalClient = (options = {}) => {
         return { data: { success: true, outlets }, error: null }
       }
 
+      if (name === 'fn_ingest_mandiri_normalized_tx') {
+        const {
+          p_connection_id,
+          p_provider_message_id,
+          p_sender_email = 'noreply.livin@bankmandiri.co.id',
+          p_sender_verified = true,
+          p_subject = '',
+          p_received_at = new Date().toISOString(),
+          p_payload = {},
+        } = params || {}
+
+        const connections = localDbStore.getTable('bank_email_connections') || []
+        const conn = connections.find((c) => c.id === p_connection_id)
+        if (!conn) {
+          return { data: null, error: Object.assign(new Error('CONNECTION_NOT_FOUND: Koneksi email tidak ditemukan.'), { code: '23503' }) }
+        }
+
+        const actor = getActiveActorContext()
+        const callerRole = actor?.role || localDbStore.getAuth()?.user?.role || 'Owner'
+        const callerTenant = actor?.tenant_id || getActiveTenantId()
+        if (callerRole !== 'Super Admin' && (callerTenant !== conn.tenant_id || !['Owner', 'Admin Pusat', 'Admin'].includes(callerRole))) {
+          return { data: null, error: Object.assign(new Error('FORBIDDEN: Tidak memiliki akses ingest pada koneksi email ini.'), { code: '42501' }) }
+        }
+
+        const messages = localDbStore.getTable('bank_email_messages')
+        const drafts = localDbStore.getTable('bank_transaction_drafts')
+        const bindings = localDbStore.getTable('bank_account_bindings')
+        const pockets = localDbStore.getTable('pos_balances')
+        const cashflows = localDbStore.getTable('cashflow')
+
+        const existingMsg = messages.find((m) => m.connection_id === p_connection_id && m.provider_message_id === p_provider_message_id)
+        if (existingMsg) {
+          const existingDraft = drafts.find((d) => d.tenant_id === conn.tenant_id && d.source_message_id === existingMsg.id)
+          return {
+            data: {
+              status: 'ALREADY_INGESTED',
+              idempotent_replay: true,
+              message_id: existingMsg.id,
+              draft_id: existingDraft?.id || null,
+              review_status: existingDraft?.review_status || null,
+              pocket_id: existingDraft?.pocket_id || null,
+              branch_id: existingDraft?.branch_id || null,
+            },
+            error: null,
+          }
+        }
+
+        const msgId = generateLocalUuid()
+        const txStatus = String(p_payload?.transaction_status || 'SUCCESS').toUpperCase()
+        const direction = String(p_payload?.direction || 'OUT').toUpperCase()
+        const bankCode = String(p_payload?.bank_code || p_payload?.bank || 'MANDIRI').toUpperCase()
+        const txType = String(p_payload?.tx_type || 'TRANSFER').toUpperCase()
+        const last4 = String(p_payload?.account_last4 || '').trim() || null
+        const principal = parseFloat(p_payload?.principal_amount || 0)
+        const fee = p_payload?.fee_amount !== null && p_payload?.fee_amount !== undefined && p_payload?.fee_amount !== ''
+          ? parseFloat(p_payload.fee_amount)
+          : null
+        const totalDebit = p_payload?.total_debit ? parseFloat(p_payload.total_debit) : principal + (fee || 0)
+        const occurredAt = p_payload?.occurred_at || p_received_at || new Date().toISOString()
+        const bookDate = p_payload?.book_date || String(occurredAt).slice(0, 10)
+        const bankRef = String(p_payload?.bank_reference || '').trim() || null
+        const counterparty = String(p_payload?.counterparty_name || '').trim() || null
+        const parserVer = p_payload?.parser_version || 'mandiri_transfer_v1'
+        const sugJenis = p_payload?.suggested_jenis || 'Pengeluaran Bersama'
+        const sugKat = p_payload?.suggested_kategori || 'Biaya Operasional Lainnya'
+
+        if (txStatus !== 'SUCCESS' || direction !== 'OUT' || totalDebit <= 0) {
+          messages.push({
+            id: msgId,
+            tenant_id: conn.tenant_id,
+            connection_id: p_connection_id,
+            provider_message_id: p_provider_message_id,
+            content_sha256: `sha_${msgId}`,
+            sender_email: p_sender_email,
+            sender_verified: Boolean(p_sender_verified),
+            subject: p_subject,
+            received_at: p_received_at,
+            parse_status: 'IGNORED_NON_OUTGOING',
+            parser_version: parserVer,
+            created_at: new Date().toISOString(),
+          })
+          return { data: { status: 'IGNORED_NON_OUTGOING', message_id: msgId }, error: null }
+        }
+
+        const activeBindings = bindings.filter(
+          (b) => b.tenant_id === conn.tenant_id && b.connection_id === p_connection_id && b.bank_code === bankCode && b.is_active !== false
+        )
+        const matchedBindings = last4 ? activeBindings.filter((b) => String(b.account_last4) === String(last4)) : []
+
+        if (matchedBindings.length === 0 && activeBindings.length > 0 && last4) {
+          messages.push({
+            id: msgId,
+            tenant_id: conn.tenant_id,
+            connection_id: p_connection_id,
+            provider_message_id: p_provider_message_id,
+            content_sha256: `sha_${msgId}`,
+            sender_email: p_sender_email,
+            sender_verified: Boolean(p_sender_verified),
+            subject: p_subject,
+            received_at: p_received_at,
+            parse_status: 'IGNORED_UNBOUND_ACCOUNT',
+            parser_version: parserVer,
+            created_at: new Date().toISOString(),
+          })
+          return { data: { status: 'IGNORED_UNBOUND_ACCOUNT', message_id: msgId, account_last4: last4 }, error: null }
+        }
+
+        let targetBindingId = null
+        let targetPocketId = null
+        let targetBranchId = null
+        let reviewStatus = 'NEEDS_REVIEW'
+        let reviewReason = 'UNRECOGNIZED_ACCOUNT'
+
+        if (matchedBindings.length === 1) {
+          const b = matchedBindings[0]
+          if (b.import_start_date && bookDate < b.import_start_date) {
+            return { data: { status: 'IGNORED_BEFORE_START_DATE', message_id: msgId }, error: null }
+          }
+          const pocket = pockets.find((p) => p.tenant_id === conn.tenant_id && p.id === b.pocket_id)
+          targetBindingId = b.id
+          targetPocketId = b.pocket_id
+          targetBranchId = pocket ? (pocket.branch_id ?? null) : null
+          reviewStatus = 'READY'
+          reviewReason = 'READY_AUTO_MATCHED'
+        } else if (matchedBindings.length > 1) {
+          const defB = matchedBindings.find((b) => b.is_default_for_last4) || matchedBindings[0]
+          targetBindingId = defB.id
+          targetPocketId = null
+          targetBranchId = null
+          reviewStatus = 'NEEDS_REVIEW'
+          reviewReason = 'AMBIGUOUS_POCKET'
+        }
+
+        let dupCfId = null
+        if (
+          bankRef &&
+          drafts.some((d) => d.tenant_id === conn.tenant_id && d.bank_code === bankCode && d.bank_reference === bankRef && d.review_status !== 'IGNORED')
+        ) {
+          reviewStatus = 'NEEDS_REVIEW'
+          reviewReason = 'POSSIBLE_DUPLICATE'
+        } else if (targetPocketId) {
+          const dupCf = cashflows.find(
+            (cf) =>
+              cf.tenant_id === conn.tenant_id &&
+              cf.pocket_id === targetPocketId &&
+              cf.tanggal === bookDate &&
+              parseFloat(cf.pengeluaran || 0) === totalDebit
+          )
+          if (dupCf) {
+            dupCfId = dupCf.id
+            reviewStatus = 'NEEDS_REVIEW'
+            reviewReason = 'POSSIBLE_DUPLICATE'
+          }
+        }
+
+        messages.push({
+          id: msgId,
+          tenant_id: conn.tenant_id,
+          connection_id: p_connection_id,
+          provider_message_id: p_provider_message_id,
+          content_sha256: `sha_${msgId}`,
+          sender_email: p_sender_email,
+          sender_verified: Boolean(p_sender_verified),
+          subject: p_subject,
+          received_at: p_received_at,
+          parse_status: 'PARSED',
+          parser_version: parserVer,
+          created_at: new Date().toISOString(),
+        })
+
+        const draftId = generateLocalUuid()
+        drafts.push({
+          id: draftId,
+          tenant_id: conn.tenant_id,
+          branch_id: targetBranchId,
+          connection_id: p_connection_id,
+          source_message_id: msgId,
+          binding_id: targetBindingId,
+          pocket_id: targetPocketId,
+          bank_code: bankCode,
+          direction: 'OUT',
+          tx_type: txType,
+          currency: 'IDR',
+          principal_amount: principal,
+          fee_amount: fee,
+          total_debit: totalDebit,
+          occurred_at: occurredAt,
+          book_date: bookDate,
+          bank_reference: bankRef,
+          counterparty_name: counterparty,
+          account_last4: last4,
+          parser_version: parserVer,
+          suggested_jenis: sugJenis,
+          suggested_kategori: sugKat,
+          review_status: reviewStatus,
+          review_reason: reviewReason,
+          duplicate_candidate_cashflow_id: dupCfId,
+          version: 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        localDbStore.saveToStorage()
+
+        return {
+          data: {
+            status: 'DRAFT_CREATED',
+            message_id: msgId,
+            draft_id: draftId,
+            review_status: reviewStatus,
+            review_reason: reviewReason,
+            pocket_id: targetPocketId,
+            branch_id: targetBranchId,
+            duplicate_candidate_cashflow_id: dupCfId,
+          },
+          error: null,
+        }
+      }
+
+      if (name === 'fn_post_bank_transaction_draft') {
+        const {
+          p_draft_id,
+          p_expected_version = 1,
+          p_action = 'RECORD_EXPENSE',
+          p_pocket_id = null,
+          p_jenis = null,
+          p_kategori = null,
+          p_keterangan = null,
+          p_destination_pocket_id = null,
+          p_existing_cashflow_id = null,
+          p_ignore_reason = null,
+          p_idempotency_key = null,
+        } = params || {}
+
+        const actor = getActiveActorContext()
+        const callerRole = actor?.role || localDbStore.getAuth()?.user?.role || 'Owner'
+        const callerTenant = actor?.tenant_id || getActiveTenantId()
+        const callerBranch = actor?.branchId || null
+        const callerUid = actor?.userId || localDbStore.getAuth()?.user?.id || 'demo-owner-id'
+
+        if (!['Super Admin', 'Owner', 'Admin Pusat', 'Admin'].includes(callerRole)) {
+          return { data: null, error: Object.assign(new Error('FORBIDDEN: Peran tidak diizinkan mem-posting draft mutasi bank.'), { code: '42501' }) }
+        }
+
+        const drafts = localDbStore.getTable('bank_transaction_drafts')
+        const draft = drafts.find((d) => d.id === p_draft_id)
+        if (!draft) {
+          return { data: null, error: Object.assign(new Error('DRAFT_NOT_FOUND: Draft tidak ditemukan.'), { code: '23503' }) }
+        }
+        if (callerRole !== 'Super Admin' && draft.tenant_id !== callerTenant) {
+          return { data: null, error: Object.assign(new Error('TENANT_FORBIDDEN: Akses lintas tenant ditolak.'), { code: '42501' }) }
+        }
+
+        if (draft.review_status === 'POSTED') {
+          if (p_idempotency_key && draft.idempotency_key === p_idempotency_key) {
+            return {
+              data: {
+                status: 'POSTED',
+                idempotent_replay: true,
+                draft_id: draft.id,
+                posting_action: draft.posting_action,
+                posted_amount: draft.total_debit,
+                posted_cashflow_id: draft.posted_cashflow_id,
+                posted_transfer_pair_cashflow_id: draft.posted_transfer_pair_cashflow_id,
+                posted_journal_id: draft.posted_journal_id,
+                linked_cashflow_id: draft.linked_cashflow_id,
+              },
+              error: null,
+            }
+          }
+          return { data: null, error: Object.assign(new Error('ALREADY_POSTED: Draft sudah pernah diposting.'), { code: '23505' }) }
+        }
+
+        if (p_expected_version !== null && draft.version !== p_expected_version) {
+          return { data: null, error: Object.assign(new Error(`VERSION_CONFLICT: expected ${p_expected_version}, actual ${draft.version}`), { code: '40001' }) }
+        }
+
+        const action = String(p_action || 'RECORD_EXPENSE').trim().toUpperCase()
+        if (action === 'IGNORE') {
+          if (!p_ignore_reason || !String(p_ignore_reason).trim()) {
+            return { data: null, error: Object.assign(new Error('IGNORE_REASON_REQUIRED: Alasan wajib diisi.'), { code: '22023' }) }
+          }
+          if (callerRole === 'Admin' && draft.branch_id !== callerBranch) {
+            return { data: null, error: Object.assign(new Error('BRANCH_FORBIDDEN: Admin Cabang hanya dapat mengabaikan draft cabangnya.'), { code: '42501' }) }
+          }
+          draft.review_status = 'IGNORED'
+          draft.posting_action = 'IGNORE'
+          draft.ignore_reason = String(p_ignore_reason).trim()
+          draft.idempotency_key = p_idempotency_key || draft.idempotency_key
+          draft.posted_by = callerUid
+          draft.posted_at = new Date().toISOString()
+          draft.version += 1
+          localDbStore.saveToStorage()
+          return { data: { status: 'IGNORED', draft_id: draft.id, posting_action: 'IGNORE' }, error: null }
+        }
+
+        const targetPocketId = p_pocket_id || draft.pocket_id
+        if (!targetPocketId) {
+          return { data: null, error: Object.assign(new Error('POCKET_REQUIRED: Pilih kantong rekening sumber sebelum mem-posting.'), { code: '23502' }) }
+        }
+
+        const pockets = localDbStore.getTable('pos_balances')
+        const pocket = pockets.find((p) => p.id === targetPocketId && p.tenant_id === draft.tenant_id)
+        if (!pocket) {
+          return { data: null, error: Object.assign(new Error('POCKET_NOT_FOUND: Kantong tidak ditemukan.'), { code: '23503' }) }
+        }
+
+        if (callerRole === 'Admin' && (!pocket.branch_id || pocket.branch_id !== callerBranch || (draft.branch_id && draft.branch_id !== callerBranch))) {
+          return { data: null, error: Object.assign(new Error('BRANCH_FORBIDDEN: Admin Cabang hanya dapat mem-posting kantong cabangnya sendiri.'), { code: '42501' }) }
+        }
+
+        const amount = parseFloat(draft.total_debit)
+        const jenis = (p_jenis && String(p_jenis).trim()) || draft.suggested_jenis || 'Pengeluaran Bersama'
+        const kategori = (p_kategori && String(p_kategori).trim()) || draft.suggested_kategori || 'Biaya Operasional Lainnya'
+        const ket =
+          (p_keterangan && String(p_keterangan).trim()) ||
+          `Mutasi Mandiri ${draft.tx_type || 'OUT'}${draft.counterparty_name ? ' - ' + draft.counterparty_name : ''}`
+        const cashflows = localDbStore.getTable('cashflow')
+
+        if (action === 'LINK_EXISTING_CASHFLOW') {
+          const existingCf = cashflows.find((cf) => cf.id === p_existing_cashflow_id && cf.tenant_id === draft.tenant_id)
+          if (!existingCf) {
+            return { data: null, error: Object.assign(new Error('CASHFLOW_NOT_FOUND: Transaksi cashflow tidak ditemukan.'), { code: '23503' }) }
+          }
+          draft.pocket_id = pocket.id
+          draft.branch_id = pocket.branch_id ?? null
+          draft.review_status = 'POSTED'
+          draft.posting_action = 'LINK_EXISTING_CASHFLOW'
+          draft.linked_cashflow_id = existingCf.id
+          draft.idempotency_key = p_idempotency_key || draft.idempotency_key
+          draft.posted_by = callerUid
+          draft.posted_at = new Date().toISOString()
+          draft.version += 1
+          localDbStore.saveToStorage()
+          return {
+            data: {
+              status: 'POSTED',
+              idempotent_replay: false,
+              draft_id: draft.id,
+              posting_action: 'LINK_EXISTING_CASHFLOW',
+              posted_amount: amount,
+              linked_cashflow_id: existingCf.id,
+            },
+            error: null,
+          }
+        }
+
+        if (action === 'TRANSFER_POCKET') {
+          const destPocket = pockets.find((p) => p.id === p_destination_pocket_id && p.tenant_id === draft.tenant_id)
+          if (!destPocket || destPocket.id === pocket.id) {
+            return { data: null, error: Object.assign(new Error('INVALID_DESTINATION_POCKET: Kantong tujuan tidak valid.'), { code: '22023' }) }
+          }
+          const outCfId = generateLocalUuid()
+          const inCfId = generateLocalUuid()
+          cashflows.push(
+            {
+              id: outCfId,
+              id_cashflow: outCfId,
+              id_sumber: `BANK-IMP-${draft.id}`,
+              tenant_id: draft.tenant_id,
+              branch_id: pocket.branch_id || callerBranch || DEFAULT_BRANCH_ID,
+              pocket_id: pocket.id,
+              pos: pocket.pos,
+              tanggal: draft.book_date,
+              jenis: 'Pindah',
+              kategori: 'Pindah',
+              pemasukan: 0,
+              pengeluaran: amount,
+              keterangan_transaksi: ket,
+              created_at: new Date().toISOString(),
+            },
+            {
+              id: inCfId,
+              id_cashflow: inCfId,
+              id_sumber: `BANK-IMP-${draft.id}`,
+              tenant_id: draft.tenant_id,
+              branch_id: destPocket.branch_id || callerBranch || DEFAULT_BRANCH_ID,
+              pocket_id: destPocket.id,
+              pos: destPocket.pos,
+              tanggal: draft.book_date,
+              jenis: 'Pindah',
+              kategori: 'Pindah',
+              pemasukan: amount,
+              pengeluaran: 0,
+              keterangan_transaksi: ket,
+              created_at: new Date().toISOString(),
+            }
+          )
+          draft.pocket_id = pocket.id
+          draft.branch_id = pocket.branch_id ?? null
+          draft.review_status = 'POSTED'
+          draft.posting_action = 'TRANSFER_POCKET'
+          draft.posted_cashflow_id = outCfId
+          draft.posted_transfer_pair_cashflow_id = inCfId
+          draft.idempotency_key = p_idempotency_key || draft.idempotency_key
+          draft.posted_by = callerUid
+          draft.posted_at = new Date().toISOString()
+          draft.version += 1
+          localDbStore.saveToStorage()
+          return {
+            data: {
+              status: 'POSTED',
+              idempotent_replay: false,
+              draft_id: draft.id,
+              posting_action: 'TRANSFER_POCKET',
+              posted_amount: amount,
+              posted_cashflow_id: outCfId,
+              posted_transfer_pair_cashflow_id: inCfId,
+            },
+            error: null,
+          }
+        }
+
+        // Default: RECORD_EXPENSE
+        const cfId = generateLocalUuid()
+        const journalId = generateLocalUuid()
+        cashflows.push({
+          id: cfId,
+          id_cashflow: cfId,
+          id_sumber: `BANK-IMP-${draft.id}`,
+          tenant_id: draft.tenant_id,
+          branch_id: pocket.branch_id || callerBranch || DEFAULT_BRANCH_ID,
+          pocket_id: pocket.id,
+          pos: pocket.pos,
+          tanggal: draft.book_date,
+          jenis,
+          kategori,
+          pemasukan: 0,
+          pengeluaran: amount,
+          keterangan_transaksi: ket,
+          apakah_stok: false,
+          created_at: new Date().toISOString(),
+        })
+
+        const journals = localDbStore.getTable('journal_entries')
+        const journalLines = localDbStore.getTable('journal_entry_lines')
+        journals.push({
+          id: journalId,
+          tenant_id: draft.tenant_id,
+          branch_id: pocket.branch_id || callerBranch || DEFAULT_BRANCH_ID,
+          entry_no: `JE-BNK-${String(draft.id).slice(0, 8)}`,
+          date: draft.book_date,
+          memo: ket,
+          total_amount: amount,
+          status: 'POSTED',
+          created_by: callerUid,
+          created_at: new Date().toISOString(),
+        })
+        journalLines.push(
+          {
+            id: generateLocalUuid(),
+            tenant_id: draft.tenant_id,
+            journal_entry_id: journalId,
+            account_id: '6102',
+            debit: amount,
+            credit: 0,
+            memo: ket,
+          },
+          {
+            id: generateLocalUuid(),
+            tenant_id: draft.tenant_id,
+            journal_entry_id: journalId,
+            account_id: pocket.account_id || '1102',
+            debit: 0,
+            credit: amount,
+            memo: `Kredit ${pocket.pos}`,
+          }
+        )
+
+        draft.pocket_id = pocket.id
+        draft.branch_id = pocket.branch_id ?? null
+        draft.suggested_jenis = jenis
+        draft.suggested_kategori = kategori
+        draft.review_status = 'POSTED'
+        draft.posting_action = 'RECORD_EXPENSE'
+        draft.posted_cashflow_id = cfId
+        draft.posted_journal_id = journalId
+        draft.idempotency_key = p_idempotency_key || draft.idempotency_key
+        draft.posted_by = callerUid
+        draft.posted_at = new Date().toISOString()
+        draft.version += 1
+        localDbStore.saveToStorage()
+
+        return {
+          data: {
+            status: 'POSTED',
+            idempotent_replay: false,
+            draft_id: draft.id,
+            posting_action: 'RECORD_EXPENSE',
+            posted_amount: amount,
+            posted_cashflow_id: cfId,
+            posted_journal_id: journalId,
+          },
+          error: null,
+        }
+      }
+
       throw new Error(`RPC ${name} not supported on local client`)
     },
 
     setActiveTenantId,
     setActiveActorContext,
+    setActiveActor: setActiveActorContext,
     resetActiveActorContext,
 
     channel(name) {

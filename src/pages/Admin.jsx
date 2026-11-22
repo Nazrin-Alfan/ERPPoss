@@ -45,7 +45,8 @@ import {
   Filter,
   Layers,
   ArrowRight,
-  Info
+  Info,
+  Mail
 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { formatRupiah, calculateTutupKasirRecap } from '../utils/helpers'
@@ -56,6 +57,7 @@ import CarwashPackageManager from '../components/admin/CarwashPackageManager'
 import MerchandiseManager from '../components/admin/MerchandiseManager'
 import LicenseManager from '../components/admin/LicenseManager'
 import MenuHppCalculator from '../components/admin/MenuHppCalculator'
+import BankEmailBindingModal from '../components/admin/BankEmailBindingModal'
 import ImageUploadPaste from '../components/common/ImageUploadPaste'
 import CustomCategoryPicker from '../components/common/CustomCategoryPicker'
 import CustomSelect from '../components/common/CustomSelect'
@@ -152,6 +154,8 @@ const Admin = () => {
   // State Akun Likuiditas (Kas & Rekening Dinamis)
   const [posAccountList, setPosAccountList] = useState([])
   const [showAccountModal, setShowAccountModal] = useState(false)
+  const [showBankEmailModal, setShowBankEmailModal] = useState(false)
+  const [selectedBankEmailPocketId, setSelectedBankEmailPocketId] = useState('')
   const [editingAccount, setEditingAccount] = useState(null)
   const [accountModalError, setAccountModalError] = useState('')
   const [accountModalLoading, setAccountModalLoading] = useState(false)
@@ -2201,13 +2205,26 @@ const Admin = () => {
                   Atur daftar kas fisik dan rekening bank yang dipantau di dashboard eksekutif dan laporan keuangan.
                 </p>
               </div>
-              <button
-                onClick={handleOpenAddAccount}
-                className="flex items-center gap-1.5 px-4 py-2 bg-[#00ffff] hover:bg-cyan-500 active:bg-cyan-600 text-[#0f0f0f] font-bold rounded-xl text-xs transition-all shadow-md shadow-brand-blue/10"
-              >
-                <Plus size={15} />
-                Tambah Akun Rekening / Kas
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedBankEmailPocketId('')
+                    setShowBankEmailModal(true)
+                  }}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-[#18181c] hover:bg-[#26272d] active:scale-[0.98] text-[#00ffff] border border-[#00ffff]/30 font-bold rounded-xl text-xs transition-all"
+                >
+                  <Mail size={14} />
+                  Integrasi Email Bank
+                </button>
+                <button
+                  onClick={handleOpenAddAccount}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-[#00ffff] hover:bg-cyan-500 active:bg-cyan-600 text-[#0f0f0f] font-bold rounded-xl text-xs transition-all shadow-md shadow-brand-blue/10"
+                >
+                  <Plus size={15} />
+                  Tambah Akun Rekening / Kas
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
@@ -2241,6 +2258,19 @@ const Admin = () => {
                         <p className="text-[11px] text-[#bbcbb2] mt-0.5">{acc.keterangan || (acc.pos === 'SALDO CASH' ? 'Uang fisik di kasir' : 'Rekening bank operasional')}</p>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
+                        {!isProtected && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedBankEmailPocketId(acc.id || '')
+                              setShowBankEmailModal(true)
+                            }}
+                            className="p-1.5 rounded-lg bg-[#00ffff]/10 hover:bg-[#00ffff]/20 text-[#00ffff] transition-all active:scale-[0.98]"
+                            title="Integrasi Email Notifikasi Bank Mandiri"
+                          >
+                            <Mail size={13} />
+                          </button>
+                        )}
                         <button
                           onClick={() => handleOpenEditAccount(acc)}
                           className="p-1.5 rounded-lg bg-[#18181c] hover:bg-slate-700 text-white hover:text-white transition-all"
@@ -3823,6 +3853,15 @@ const Admin = () => {
           </div>
         </div>
       )}
+      {/* MODAL INTEGRASI EMAIL BANK MANDIRI */}
+      <BankEmailBindingModal
+        isOpen={showBankEmailModal}
+        onClose={() => setShowBankEmailModal(false)}
+        onSuccess={() => loadAdminData()}
+        pockets={posAccountList}
+        initialPocketId={selectedBankEmailPocketId}
+      />
+
       {/* CUSTOM MODAL: Alert / Confirm */}
       {customAlert && (
         <div className="fixed inset-0 bg-[#18181c]/80 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">

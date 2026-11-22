@@ -43,7 +43,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Receipt,
-  RotateCcw
+  RotateCcw,
+  Mail
 } from 'lucide-react'
 import { formatRupiah, parseDateSafe, generateUUID } from '../utils/helpers'
 import CustomSelect from '../components/common/CustomSelect'
@@ -63,6 +64,7 @@ import {
   parseCurrencyInput
 } from '../utils/financeHelpers'
 import OwnerWithdrawalModal from '../components/finance/OwnerWithdrawalModal'
+import BankMutationInboxTab from '../components/finance/BankMutationInboxTab'
 
 const Finance = () => {
   const { activeTenant, profile } = useAuth()
@@ -70,8 +72,9 @@ const Finance = () => {
   const canWithdrawOwnerPrive = isOwnerOrSuperAdmin(profile?.role)
 
   // Navigation & Loading States
-  const [activeTab, setActiveTab] = useState('cashflow') // 'cashflow' | 'carwash' | 'cafe' | 'expenses'
+  const [activeTab, setActiveTab] = useState('cashflow') // 'cashflow' | 'carwash' | 'cafe' | 'expenses' | 'bank_inbox'
   const [showWithdrawalModal, setShowWithdrawalModal] = useState(false)
+  const [pendingBankDraftsCount, setPendingBankDraftsCount] = useState(0)
 
   useEffect(() => {
     if (activeTab === 'carwash' && !features.hasCarwash) {
@@ -778,6 +781,22 @@ const Finance = () => {
         return pbQ
       }
 
+      const fetchBankDraftCount = async () => {
+        try {
+          let dq = supabase.from('bank_transaction_drafts').select('id, review_status')
+          if (targetTenantId) dq = dq.eq('tenant_id', targetTenantId)
+          const res = await dq
+          if (!res?.error && Array.isArray(res?.data)) {
+            return res.data.filter(
+              (d) => d.review_status === 'READY' || d.review_status === 'NEEDS_REVIEW'
+            ).length
+          }
+        } catch {
+          // ignore if table not available
+        }
+        return 0
+      }
+
       // 2-6. Fetch Cashflow, Carwash, Cafe, Expenses, Master Categories, Stok Barang, & POS Balances secara paralel
       const [
         cfData,
@@ -788,7 +807,8 @@ const Finance = () => {
         resSb,
         resKc,
         resKk,
-        resPb
+        resPb,
+        bankPendingCount
       ] = await Promise.all([
         fetchAllData('cashflow', '*', 'tanggal'),
         fetchAllData('carwash', '*', 'tanggal'),
@@ -798,8 +818,11 @@ const Finance = () => {
         sbQuery,
         kcQuery,
         kkQuery,
-        fetchPockets()
+        fetchPockets(),
+        fetchBankDraftCount()
       ])
+
+      setPendingBankDraftsCount(bankPendingCount || 0)
 
       const mcData = resMc?.data
       const sbData = resSb?.data
@@ -2120,7 +2143,8 @@ const Finance = () => {
           { id: 'cashflow', label: '1. Arus Kas (Cashflow)', icon: DollarSign, count: filteredCashflow.length, visible: true },
           { id: 'carwash', label: '2. Log Carwash', icon: Car, count: filteredCarwash.length, visible: features.hasCarwash },
           { id: 'cafe', label: '3. Log Cafe (F&B)', icon: Coffee, count: filteredCafe.length, visible: features.hasCafe },
-          { id: 'expenses', label: '4. Pengeluaran (Expenses)', icon: Receipt, count: filteredExpenses.length, visible: true }
+          { id: 'expenses', label: '4. Pengeluaran (Expenses)', icon: Receipt, count: filteredExpenses.length, visible: true },
+          { id: 'bank_inbox', label: '5. Inbox Mutasi Bank', icon: Mail, count: pendingBankDraftsCount, visible: true }
         ].filter(t => t.visible).map(tab => {
           const Icon = tab.icon
           const isActive = activeTab === tab.id
@@ -3077,6 +3101,17 @@ const Finance = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* TAB CONTENT 5: INBOX MUTASI BANK MANDIRI */}
+      {activeTab === 'bank_inbox' && (
+        <BankMutationInboxTab
+          pockets={dynamicPosAccounts}
+          cashflowList={cashflowList}
+          expenseCategories={allKategoriOptions}
+          onPosted={fetchFinanceData}
+          onPendingCountChange={setPendingBankDraftsCount}
+        />
       )}
 
       {/* MODAL 1: CATAT PENGELUARAN BARU */}
