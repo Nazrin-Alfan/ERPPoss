@@ -2,6 +2,7 @@
 // Compatible with both Supabase Cloud (with RLS) and local in-memory engine.
 
 import { supabase, isCloudBackend } from '../supabaseClient'
+import { ROLES } from '../constants/roles'
 
 export const BACKEND_PROVIDER = isCloudBackend ? 'cloud' : 'local'
 export const isCloudflare = false
@@ -13,53 +14,46 @@ export const api = {
   // 1. AUTENTIKASI (DUAL-MODE CLOUD & LOCAL)
   auth: {
     async login(emailOrUsername, password, tenantSlug = null) {
-      const cleanUser = (emailOrUsername || '').trim()
-      const cleanSlug = tenantSlug ? String(tenantSlug).trim().toLowerCase() : null
-      let email = cleanUser
-      if (!cleanUser.includes('@')) {
-        const knownRelayAccounts = ['superadmin', 'owner', 'admin', 'kasir']
-        if (!cleanSlug && knownRelayAccounts.includes(cleanUser.toLowerCase())) {
-          email = `${cleanUser.toLowerCase()}@relaypos.com`
-        } else {
-          try {
-            const { data: resolved, error: resolveErr } = await supabase.rpc('fn_resolve_login_email', {
-              p_identifier: cleanUser,
-              p_tenant_slug: cleanSlug,
-            })
-            if (resolveErr) {
-              if (
-                resolveErr.message?.includes('ACCOUNT_INACTIVE') ||
-                resolveErr.message?.includes('dinonaktifkan')
-              ) {
-                throw resolveErr
-              }
-              email = cleanSlug ? `${cleanUser.toLowerCase()}.${cleanSlug}@pos.internal` : `${cleanUser.toLowerCase()}@jb.local`
-            } else if (resolved?.email) {
-              email = resolved.email
-            } else {
-              email = cleanSlug ? `${cleanUser.toLowerCase()}.${cleanSlug}@pos.internal` : `${cleanUser.toLowerCase()}@jb.local`
-            }
-          } catch (err) {
-            if (err.message?.includes('ACCOUNT_INACTIVE') || err.message?.includes('dinonaktifkan')) {
-              throw err
-            }
-            email = cleanSlug ? `${cleanUser.toLowerCase()}.${cleanSlug}@pos.internal` : `${cleanUser.toLowerCase()}@jb.local`
-          }
-        }
+      const cleanUser = (emailOrUsername || '').trim().toLowerCase()
+      const cleanSlug = tenantSlug ? String(tenantSlug).trim().toLowerCase().replace(/[^a-z0-9-]/g, '') : ''
+      if (!cleanUser) {
+        throw new Error('Username atau email wajib diisi.')
       }
+
+      let email = cleanUser
+      if (cleanUser.includes('@')) {
+        const [localPart, domainPart] = cleanUser.split('@')
+        email = (localPart && domainPart && !domainPart.includes('.'))
+          ? `${localPart}.${domainPart}@pos.internal`
+          : cleanUser
+      } else if (!isCloudBackend && !cleanSlug && ['superadmin', 'owner', 'admin', 'kasir'].includes(cleanUser)) {
+        email = `${cleanUser}@relaypos.com`
+      } else if (cleanSlug) {
+        email = `${cleanUser}.${cleanSlug}@pos.internal`
+      } else if (cleanUser.includes('.')) {
+        email = `${cleanUser}@pos.internal`
+      } else {
+        email = `${cleanUser}@jb.local`
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
-      const profile = (await this.getProfile(data.user.id)) || {
-        id: data.user.id,
-        nama: data.user.user_metadata?.nama || data.user.email,
-        role: data.user.role || data.user.user_metadata?.role || 'Kasir',
-        tenant_id: data.user.tenant_id,
+      const profile = await this.getProfile(data.user.id)
+      if (!profile && isCloudBackend) {
+        await Promise.resolve(supabase.auth.signOut?.({ scope: 'local' })).catch(() => {})
+        throw new Error('Profil akun tidak ditemukan. Hubungi Owner toko.')
       }
-      if (profile?.is_active === false) {
+      const resolvedProfile = profile || {
+        id: data.user.id,
+        nama: data.user.email,
+        role: ROLES.KASIR,
+        tenant_id: null,
+      }
+      if (resolvedProfile?.is_active === false) {
         await supabase.auth.signOut()
         throw new Error('ACCOUNT_INACTIVE: Akun staf ini telah dinonaktifkan oleh Owner.')
       }
-      return { success: true, user: data.user, profile }
+      return { success: true, user: data.user, profile: resolvedProfile }
     },
 
     async logout() {
@@ -75,8 +69,8 @@ export const api = {
       if (typeof currentPassword !== 'string' || !currentPassword) {
         throw new Error('Kata sandi saat ini wajib diisi.')
       }
-      if (typeof newPassword !== 'string' || newPassword.length < 6) {
-        throw new Error('Kata sandi baru minimal 6 karakter.')
+      if (typeof newPassword !== 'string' || newPassword.length < 8) {
+        throw new Error('Kata sandi baru minimal 8 karakter.')
       }
       const { data: currentData, error: currentError } = await supabase.auth.getUser()
       if (currentError) throw currentError
@@ -94,17 +88,64 @@ export const api = {
       }
       const { data, error } = await supabase.auth.updateUser({ password: newPassword })
       if (error) throw error
+      if (typeof supabase.auth.signOut === 'function') {
+        await Promise.resolve(supabase.auth.signOut({ scope: 'others' })).catch(() => {})
+      }
+      return { success: true, data }
+    },
+
+    async forgotPassword(email) {
+      const cleanEmail = String(email || '').trim().toLowerCase()
+      if (!cleanEmail || !cleanEmail.includes('@')) {
+        throw new Error('Alamat email yang valid wajib diisi.')
+      }
+      if (isCloudBackend) {
+        const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : undefined
+        const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, { redirectTo })
+        if (error) throw error
+        return { success: true, emailSent: true }
+      }
+      if (typeof supabase.auth.forgotPassword === 'function') {
+        return await supabase.auth.forgotPassword(cleanEmail)
+      }
+      return { success: true, emailSent: true }
+    },
+
+    async resetPassword({ newPassword, token = null }) {
+      if (typeof newPassword !== 'string' || newPassword.length < 8) {
+        throw new Error('Kata sandi baru minimal 8 karakter.')
+      }
+      if (isCloudBackend) {
+        const { data, error } = await supabase.auth.updateUser({ password: newPassword })
+        if (error) throw error
+        if (typeof supabase.auth.signOut === 'function') {
+          await Promise.resolve(supabase.auth.signOut({ scope: 'global' })).catch(() => {})
+        }
+        return { success: true, data }
+      }
+      if (typeof supabase.auth.resetPassword === 'function') {
+        return await supabase.auth.resetPassword({ newPassword, token })
+      }
+      const { data, error } = await supabase.auth.updateUser({ password: newPassword })
+      if (error) throw error
       return { success: true, data }
     },
 
     async getMe() {
       const { data } = await supabase.auth.getUser()
       if (!data?.user) return null
-      const profile = (await this.getProfile(data.user.id)) || {
-        id: data.user.id,
-        nama: data.user.user_metadata?.nama || data.user.email,
-        role: data.user.role || data.user.user_metadata?.role || 'Kasir',
-        tenant_id: data.user.tenant_id,
+      const profile = await this.getProfile(data.user.id)
+      if (!profile) {
+        if (isCloudBackend) return null
+        return {
+          user: data.user,
+          profile: {
+            id: data.user.id,
+            nama: data.user.email,
+            role: ROLES.KASIR,
+            tenant_id: null,
+          },
+        }
       }
       return { user: data.user, profile }
     },
@@ -119,9 +160,9 @@ export const api = {
       return data || null
     },
 
-    async registerKasir(emailOrUsername, password, nama, role = 'Kasir', tenantId = null) {
+    async registerKasir(emailOrUsername, password, nama, role = 'Kasir', tenantId = null, branchId = null) {
       const cleanInput = String(emailOrUsername || '').trim()
-      const allowedRoles = ['Kasir', 'Admin', 'Owner', 'Staff Kantor', 'Karyawan Cuci']
+      const allowedRoles = ['Kasir', 'Admin', 'Admin Pusat', 'Owner', 'Staff Kantor', 'Karyawan Cuci']
       const safeRole = allowedRoles.includes(role) ? role : 'Kasir'
 
       if (isCloudBackend) {
@@ -131,7 +172,7 @@ export const api = {
           p_nama: nama,
           p_role: safeRole,
           p_tenant_id: tenantId || null,
-          p_branch_id: null,
+          p_branch_id: branchId || null,
         })
         if (rpcErr) throw rpcErr
         return { success: true, user: rpcRes?.user || null }
@@ -140,7 +181,14 @@ export const api = {
       const { data, error } = await supabase.auth.signUp({
         email: cleanInput,
         password,
-        options: { data: { nama, role: safeRole, ...(tenantId ? { tenant_id: tenantId } : {}) } },
+        options: {
+          data: {
+            nama,
+            role: safeRole,
+            ...(tenantId ? { tenant_id: tenantId } : {}),
+            ...(branchId ? { branch_id: branchId } : {}),
+          },
+        },
       })
       if (error) throw error
       return { success: true, user: data.user }
@@ -159,10 +207,14 @@ export const api = {
     async registerOwner({ email, password, nama, tenantName, businessType }) {
       if (isCloudBackend) {
         // Alur registrasi Cloud Supabase Auth
+        const redirectTo = typeof window !== 'undefined' && window.location?.origin
+          ? `${window.location.origin}/`
+          : undefined
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
+            ...(redirectTo ? { emailRedirectTo: redirectTo } : {}),
             data: {
               nama: nama.trim(),
               role: 'Owner',
@@ -276,19 +328,52 @@ export const api = {
       return data || []
     },
 
-    async deleteMenuWithRecipe(menuName) {
-      const cleanMenuName = String(menuName || '').trim()
-      if (!cleanMenuName) {
-        throw new Error('Nama menu wajib diisi.')
+    async deleteMenuWithRecipe(menuOrName) {
+      const isObj = menuOrName && typeof menuOrName === 'object'
+      const menuUuid = isObj ? menuOrName.id : null
+      const cleanMenuName = String(
+        isObj ? (menuOrName.nama_menu || menuOrName.daftar_menu || '') : (menuOrName || '')
+      ).trim()
+      const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+
+      if (!cleanMenuName && !isUuid(menuUuid)) {
+        throw new Error('Nama menu atau ID menu wajib diisi.')
       }
-      // 1. Hapus komposisi resep yang melekat terlebih dahulu agar tidak terjadi orphan rows
+
+      if (isUuid(menuUuid)) {
+        // 1. Hapus komposisi resep berdasarkan menu_id (dan legacy nama_menu tanpa menu_id)
+        const { error: resepErr } = await supabase
+          .from('resep')
+          .delete()
+          .eq('menu_id', menuUuid)
+        if (resepErr) throw resepErr
+
+        if (cleanMenuName) {
+          const { error: legacyResepErr } = await supabase
+            .from('resep')
+            .delete()
+            .is('menu_id', null)
+            .eq('nama_menu', cleanMenuName)
+          if (legacyResepErr) throw legacyResepErr
+        }
+
+        // 2. Hapus item menu dari daftar_harga_menu berdasarkan PK UUID id
+        const { error: menuErr } = await supabase
+          .from('daftar_harga_menu')
+          .delete()
+          .eq('id', menuUuid)
+        if (menuErr) throw menuErr
+
+        return { success: true, deleted_id: menuUuid, deleted_menu: cleanMenuName }
+      }
+
+      // Fallback untuk pemanggil string lama (misal test atau integrasi legacy)
       const { error: resepErr } = await supabase
         .from('resep')
         .delete()
         .eq('nama_menu', cleanMenuName)
       if (resepErr) throw resepErr
 
-      // 2. Hapus item menu dari daftar_harga_menu
       const { error: menuErr } = await supabase
         .from('daftar_harga_menu')
         .delete()
@@ -319,17 +404,42 @@ export const api = {
         if (error) throw error
         return data
       } else {
-        const strukRes = await supabase.from('struk').insert([struk_payload])
-        if (strukRes.error) throw strukRes.error
-        if (cafe_items && cafe_items.length > 0) {
-          const cafeRes = await supabase.from('cafe').insert(cafe_items)
-          if (cafeRes.error) throw cafeRes.error
+        let redeemedLogId = null
+        if (struk_payload?.redeem_loyalty) {
+          if (!carwash_payload?.plat) {
+            throw new Error('LOYALTY_REWARD_UNAVAILABLE: Klaim hadiah loyalty memerlukan transaksi layanan cuci kendaraan.')
+          }
+          const { data: redeemData, error: redeemErr } = await supabase.rpc('redeem_customer_reward', {
+            p_tenant_id: tenant_id,
+            p_plat: carwash_payload.plat,
+            p_notes: `Klaim hadiah loyalty saat checkout POS (${struk_payload.id_struk})`,
+            p_nama_pelanggan: struk_payload.nama_pelanggan || carwash_payload.plat,
+            p_id_struk: struk_payload.id_struk,
+            p_request_key: struk_payload.id_struk,
+          })
+          if (redeemErr) throw redeemErr
+          redeemedLogId = redeemData?.redemption_id || null
         }
-        if (carwash_payload) {
-          const cwRes = await supabase.from('carwash').insert([carwash_payload])
-          if (cwRes.error) throw cwRes.error
+
+        try {
+          const strukRes = await supabase.from('struk').insert([struk_payload])
+          if (strukRes.error) throw strukRes.error
+          if (cafe_items && cafe_items.length > 0) {
+            const cafeRes = await supabase.from('cafe').insert(cafe_items)
+            if (cafeRes.error) throw cafeRes.error
+          }
+          if (carwash_payload) {
+            const cwRes = await supabase.from('carwash').insert([carwash_payload])
+            if (cwRes.error) throw cwRes.error
+          }
+          return { status: 'SUCCESS', id_struk: struk_payload.id_struk }
+        } catch (err) {
+          // Roll back local loyalty redemption if checkout fails before completion
+          if (redeemedLogId) {
+            await supabase.from('crm_loyalty_logs').delete().eq('id', redeemedLogId).catch(() => {})
+          }
+          throw err
         }
-        return { status: 'SUCCESS', id_struk: struk_payload.id_struk }
       }
     },
 

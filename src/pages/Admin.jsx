@@ -294,8 +294,15 @@ const Admin = () => {
     try {
       // Fetch seluruh master data secara paralel (Promise.all)
       const targetTenantId = activeTenant?.id || profile?.tenant_id
-      let posQuery = supabase.from('pos_balances').select('*')
-      if (targetTenantId) posQuery = posQuery.eq('tenant_id', targetTenantId)
+      const fetchPockets = async () => {
+        let viewQuery = supabase.from('v_pocket_balances').select('*')
+        if (targetTenantId) viewQuery = viewQuery.eq('tenant_id', targetTenantId)
+        const viewRes = await viewQuery
+        if (!viewRes?.error && Array.isArray(viewRes?.data)) return viewRes
+        let fallbackQuery = supabase.from('pos_balances').select('*')
+        if (targetTenantId) fallbackQuery = fallbackQuery.eq('tenant_id', targetTenantId)
+        return fallbackQuery
+      }
 
       const [
         resKc,
@@ -316,7 +323,7 @@ const Admin = () => {
         supabase.from('resep').select('*'),
         supabase.from('diskon').select('*').order('created_at', { ascending: false }),
         supabase.from('master_categories').select('*'),
-        posQuery,
+        fetchPockets(),
         supabase.from('carwash_packages').select('*').order('sort_order', { ascending: true }),
         supabase.from('tenant_licenses').select('*').limit(1)
       ])
@@ -352,18 +359,23 @@ const Admin = () => {
 
       let cashVal = 0, rekYVal = 0, rekNVal = 0, rekRVal = 0
       const balancesMap = {}
-      if (bal) {
-        bal.forEach(item => {
-          const val = parseFloat(item.balance) || 0
-          balancesMap[item.pos] = val
-          if (item.pos === 'SALDO CASH') cashVal = val
-          else if (item.pos === 'SALDO REKENING Y') rekYVal = val
-          else if (item.pos === 'SALDO REKENING N') rekNVal = val
-          else if (item.pos === 'SALDO REKENING R') rekRVal = val
-        })
-      }
+      const normalizedPockets = (bal || []).map(item => {
+        const liveVal = parseFloat(item.current_balance ?? item.balance ?? 0) || 0
+        const openingVal = parseFloat(item.opening_balance ?? item.balance ?? 0) || 0
+        balancesMap[item.pos] = liveVal
+        if (item.pos === 'SALDO CASH') cashVal = liveVal
+        else if (item.pos === 'SALDO REKENING Y') rekYVal = liveVal
+        else if (item.pos === 'SALDO REKENING N') rekNVal = liveVal
+        else if (item.pos === 'SALDO REKENING R') rekRVal = liveVal
+        return {
+          ...item,
+          opening_balance: openingVal,
+          current_balance: liveVal,
+          balance: liveVal
+        }
+      })
       setBalances({ cash: cashVal, rekY: rekYVal, rekN: rekNVal, rekR: rekRVal, ...balancesMap })
-      setPosAccountList(bal || [])
+      setPosAccountList(normalizedPockets)
 
       setCashiers(realCashiers)
       setPaymentMethods(realPayments)
@@ -441,22 +453,37 @@ const Admin = () => {
     }
   }
 
-  const toggleCashierActive = async (nama, currentVal) => {
+  const toggleCashierActive = async (cashierOrName, currentVal) => {
     try {
       const targetTenantId = activeTenant?.id || profile?.tenant_id
+      const cashierObj = typeof cashierOrName === 'object' && cashierOrName !== null ? cashierOrName : null
+      const nama = cashierObj ? cashierObj.nama : cashierOrName
       const cleanNama = (nama || '').trim().toUpperCase()
-      let query = supabase.from('kasir').update({ is_active: !currentVal }).eq('nama', nama)
+      const useIdFilter = isPostgresUuid(cashierObj?.id)
+
+      let query = supabase
+        .from('kasir')
+        .update({ is_active: !currentVal })
+        .eq(useIdFilter ? 'id' : 'nama', useIdFilter ? cashierObj.id : nama)
       if (targetTenantId) query = query.eq('tenant_id', targetTenantId)
       const { error } = await query
       if (error) throw error
 
-      // Sinkronkan juga ke profiles & karyawan_kantor jika kasir memiliki akun login staf
-      const matchedStaff = (staffList || []).find(
-        (s) => (s.nama || '').trim().toUpperCase() === cleanNama && s.role === 'Kasir'
-      )
-      if (matchedStaff?.id && typeof manageStaff === 'function') {
+      // Sinkronkan juga ke profiles & karyawan_kantor: utamakan profile_id jika sudah tertaut
+      let targetProfileId = isPostgresUuid(cashierObj?.profile_id) ? cashierObj.profile_id : null
+      if (!targetProfileId) {
+        let staffQuery = supabase.from('profiles').select('id, nama, role').eq('role', 'Kasir')
+        if (targetTenantId) staffQuery = staffQuery.eq('tenant_id', targetTenantId)
+        const { data: tenantStaff } = await staffQuery
+        const matchedStaff = (tenantStaff || []).find(
+          (s) => (s.nama || '').trim().toUpperCase() === cleanNama && s.role === 'Kasir'
+        )
+        targetProfileId = matchedStaff?.id || null
+      }
+
+      if (targetProfileId && typeof manageStaff === 'function') {
         await manageStaff({
-          staffId: matchedStaff.id,
+          staffId: targetProfileId,
           action: currentVal ? 'DEACTIVATE' : 'ACTIVATE'
         })
       }
@@ -518,37 +545,67 @@ const Admin = () => {
         is_active: pkgPayload.is_active !== false
       }
 
-      if (isPostgresUuid(pkgPayload.id)) {
+      let savedPkgId = isPostgresUuid(pkgPayload.id) ? pkgPayload.id : null
+      const previousPkg = savedPkgId ? carwashPackages.find(p => p.id === savedPkgId) : null
+
+      if (savedPkgId) {
         const { error } = await supabase
           .from('carwash_packages')
           .update(payload)
-          .eq('id', pkgPayload.id)
+          .eq('id', savedPkgId)
         if (error) throw error
         setSuccess(`Paket "${pkgPayload.nama_paket}" berhasil diperbarui!`)
       } else {
-        const { error } = await supabase
+        const { data: insPkg, error } = await supabase
           .from('carwash_packages')
           .insert({
             ...payload,
             sort_order: carwashPackages.length + 1
           })
+          .select('id')
+          .single()
         if (error) throw error
+        savedPkgId = insPkg?.id || null
         setSuccess(`Paket cuci baru "${pkgPayload.nama_paket}" berhasil ditambahkan!`)
       }
 
-      // Sinkronisasi resep bahan kimia cuci ke tabel resep
-      await supabase
-        .from('resep')
-        .delete()
-        .eq('nama_menu', pkgPayload.nama_paket)
+      // Sinkronisasi resep bahan kimia cuci ke tabel resep berdasarkan carwash_package_id
+      if (isPostgresUuid(savedPkgId)) {
+        await supabase.from('resep').delete().eq('carwash_package_id', savedPkgId)
+        if (previousPkg?.nama_paket) {
+          await supabase
+            .from('resep')
+            .delete()
+            .is('carwash_package_id', null)
+            .eq('nama_menu', previousPkg.nama_paket)
+        }
+        await supabase
+          .from('resep')
+          .delete()
+          .is('carwash_package_id', null)
+          .eq('nama_menu', pkgPayload.nama_paket)
+      } else {
+        await supabase.from('resep').delete().eq('nama_menu', pkgPayload.nama_paket)
+      }
 
       if (pkgPayload.resep_bahan && pkgPayload.resep_bahan.length > 0) {
         for (const b of pkgPayload.resep_bahan) {
           if (b.nama_bahan && parseFloat(b.jumlah) > 0) {
+            const matchedBahan = stokBahan.find(
+              s => (b.stok_barang_id && s.id === b.stok_barang_id) ||
+                   s.nama_bahan === b.nama_bahan ||
+                   s.nama_produk === b.nama_bahan ||
+                   s.nama_barang === b.nama_bahan
+            )
+            const resolvedStokId = b.stok_barang_id || matchedBahan?.id || null
             await supabase.from('resep').insert({
               id_resep: `rsp_cw_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+              id_menu: pkgPayload.nama_paket,
               nama_menu: pkgPayload.nama_paket,
-              id_bahan_baku: b.id_bahan_baku || null,
+              daftar_menu: pkgPayload.nama_paket,
+              ...(isPostgresUuid(savedPkgId) ? { carwash_package_id: savedPkgId } : {}),
+              ...(isPostgresUuid(resolvedStokId) ? { stok_barang_id: resolvedStokId } : {}),
+              id_bahan_baku: b.id_bahan_baku || matchedBahan?.id_bahan_baku || null,
               nama_bahan: b.nama_bahan,
               jumlah: parseFloat(b.jumlah),
               jumlah_dibutuhkan: parseFloat(b.jumlah),
@@ -573,6 +630,10 @@ const Admin = () => {
     try {
       setLoading(true)
       if (isPostgresUuid(pkgId)) {
+        await supabase.from('resep').delete().eq('carwash_package_id', pkgId)
+        if (pkg?.nama_paket) {
+          await supabase.from('resep').delete().is('carwash_package_id', null).eq('nama_menu', pkg.nama_paket)
+        }
         const { error } = await supabase.from('carwash_packages').delete().eq('id', pkgId)
         if (error) throw error
       } else {
@@ -600,11 +661,11 @@ const Admin = () => {
           const { error: seedErr } = await supabase.from('carwash_packages').insert(packagesToSeed)
           if (seedErr) throw seedErr
         }
+        if (pkg?.nama_paket) {
+          await supabase.from('resep').delete().eq('nama_menu', pkg.nama_paket)
+        }
       }
 
-      if (pkg?.nama_paket) {
-        await supabase.from('resep').delete().eq('nama_menu', pkg.nama_paket)
-      }
       setSuccess('Paket cuci berhasil dihapus.')
       await loadAdminData()
     } catch (err) {
@@ -663,10 +724,14 @@ const Admin = () => {
     try {
       setLoading(true)
       const existing = (stokBahan || []).find(
-        (s) => s.id_barang === itemPayload.id_barang || s.id_bahan_baku === itemPayload.id_barang
+        (s) => (itemPayload.id && s.id === itemPayload.id) ||
+               s.id_barang === itemPayload.id_barang ||
+               s.id_bahan_baku === itemPayload.id_barang
       )
 
       if (existing) {
+        const targetFilterCol = isPostgresUuid(existing.id) ? 'id' : 'id_barang'
+        const targetFilterVal = isPostgresUuid(existing.id) ? existing.id : itemPayload.id_barang
         const { error } = await supabase
           .from('stok_barang')
           .update({
@@ -686,7 +751,7 @@ const Admin = () => {
             is_active: itemPayload.is_active,
             keterangan: itemPayload.keterangan
           })
-          .eq('id_barang', itemPayload.id_barang)
+          .eq(targetFilterCol, targetFilterVal)
         if (error) throw error
         setSuccess(`Produk merchandise "${itemPayload.nama_barang}" berhasil diperbarui!`)
       } else {
@@ -725,11 +790,12 @@ const Admin = () => {
   }
 
   const handleDeleteMerchandise = async (itemId) => {
-    const item = (stokBahan || []).find((s) => s.id_barang === itemId || s.id_bahan_baku === itemId)
+    const item = (stokBahan || []).find((s) => s.id === itemId || s.id_barang === itemId || s.id_bahan_baku === itemId)
     if (!window.confirm(`Yakin ingin menghapus produk merchandise "${item?.nama_barang || item?.nama_produk || 'ini'}"?`)) return
     try {
       setLoading(true)
-      const { error } = await supabase.from('stok_barang').delete().eq('id_barang', itemId)
+      const filterCol = isPostgresUuid(itemId) ? 'id' : 'id_barang'
+      const { error } = await supabase.from('stok_barang').delete().eq(filterCol, itemId)
       if (error) throw error
       setSuccess('Produk merchandise berhasil dihapus.')
       await loadAdminData()
@@ -744,10 +810,11 @@ const Admin = () => {
   const handleToggleMerchandiseActive = async (itemId, currentActive) => {
     try {
       setLoading(true)
+      const filterCol = isPostgresUuid(itemId) ? 'id' : 'id_barang'
       const { error } = await supabase
         .from('stok_barang')
         .update({ is_active: !currentActive })
-        .eq('id_barang', itemId)
+        .eq(filterCol, itemId)
       if (error) throw error
       setSuccess(`Status produk berhasil diubah menjadi ${!currentActive ? 'Aktif' : 'Non-aktif'}.`)
       await loadAdminData()
@@ -836,12 +903,15 @@ const Admin = () => {
     e.preventDefault()
     if (!editingIngredient) return
     try {
+      const cleanProduk = editingIngredient.nama_produk.trim()
+      const useId = isPostgresUuid(editingIngredient.id)
       const { error } = await supabase.from('stok_barang').update({
-        nama_produk: editingIngredient.nama_produk.trim(),
+        nama_produk: cleanProduk,
+        nama_barang: cleanProduk,
         stok: parseFloat(editingIngredient.stok) || 0,
         satuan: editingIngredient.satuan,
         harga_satuan: parseFloat(editingIngredient.harga_satuan) || 0
-      }).eq('id_bahan_baku', editingIngredient.id_bahan_baku)
+      }).eq(useId ? 'id' : 'id_bahan_baku', useId ? editingIngredient.id : editingIngredient.id_bahan_baku)
 
       if (error) throw error
       setSuccess('Bahan Baku berhasil diperbarui!')
@@ -856,7 +926,8 @@ const Admin = () => {
     const confirmed = await showConfirm('Yakin ingin menghapus bahan baku ini?', 'Hapus Bahan Baku')
     if (!confirmed) return
     try {
-      const { error } = await supabase.from('stok_barang').delete().eq('id_bahan_baku', id)
+      const filterCol = isPostgresUuid(id) ? 'id' : 'id_bahan_baku'
+      const { error } = await supabase.from('stok_barang').delete().eq(filterCol, id)
       if (error) throw error
       await showAlert('Berhasil dihapus.', 'Sukses')
       loadAdminData()
@@ -878,10 +949,11 @@ const Admin = () => {
     // In a full implementation, you would save this to a ledger or history.
     // For now, we update the main stock to match the physical stock to correct the leakage.
     try {
+      const useId = isPostgresUuid(opnameIngredient.id)
       const { error } = await supabase.from('stok_barang').update({
         stok: fisik,
         updated_at: new Date().toISOString()
-      }).eq('id_bahan_baku', opnameIngredient.id_bahan_baku)
+      }).eq(useId ? 'id' : 'id_bahan_baku', useId ? opnameIngredient.id : opnameIngredient.id_bahan_baku)
       if (error) throw error
       
       await showAlert('Stok fisik berhasil disimpan dan diupdate di sistem.', 'Sukses')
@@ -898,9 +970,13 @@ const Admin = () => {
 
   // 4. Menu & Resep Handlers
   const handleAddRecipeRow = () => {
-    const defaultBahan = stokBahan[0]?.nama_bahan || ''
-    const defaultSatuan = stokBahan[0]?.satuan || 'Gram'
-    setMenuRecipe(prev => [...prev, { nama_bahan: defaultBahan, jumlah_dibutuhkan: 1, satuan: defaultSatuan }])
+    const defaultItem = stokBahan[0]
+    setMenuRecipe(prev => [...prev, {
+      stok_barang_id: defaultItem?.id || null,
+      nama_bahan: defaultItem?.nama_bahan || '',
+      jumlah_dibutuhkan: 1,
+      satuan: defaultItem?.satuan || 'Gram'
+    }])
   }
 
   const removeRecipeRow = (index) => {
@@ -913,8 +989,11 @@ const Admin = () => {
         if (i === index) {
           const updated = { ...item, [field]: value }
           if (field === 'nama_bahan') {
-            const match = stokBahan.find(b => b.nama_bahan === value)
-            if (match) updated.satuan = match.satuan
+            const match = stokBahan.find(b => b.nama_bahan === value || b.nama_produk === value)
+            if (match) {
+              updated.satuan = match.satuan
+              updated.stok_barang_id = match.id || null
+            }
           }
           return updated
         }
@@ -926,6 +1005,9 @@ const Admin = () => {
   const openAddMenuModal = () => {
     setIsEditingMenu(false)
     setMenuForm({
+      id: null,
+      id_menu: null,
+      original_nama_menu: '',
       nama_menu: '',
       harga: 0,
       kategori: 'Minuman',
@@ -941,7 +1023,9 @@ const Admin = () => {
   const openEditMenuModal = (menu) => {
     setIsEditingMenu(true)
     setMenuForm({
+      id: menu.id || null,
       id_menu: menu.id_menu,
+      original_nama_menu: menu.nama_menu,
       nama_menu: menu.nama_menu,
       harga: parseFloat(menu.harga),
       kategori: menu.kategori || 'Minuman',
@@ -951,14 +1035,25 @@ const Admin = () => {
       is_active: menu.is_active
     })
     
-    // Cari resep yang terkait
+    // Cari resep yang terkait (prioritaskan menu_id, lalu nama_menu lama)
     const recipeRows = resepList
-      .filter(r => r.nama_menu === menu.nama_menu)
-      .map(r => ({
-        nama_bahan: r.nama_bahan,
-        jumlah_dibutuhkan: parseFloat(r.jumlah_dibutuhkan),
-        satuan: r.satuan
-      }))
+      .filter(r =>
+        (isPostgresUuid(menu.id) && r.menu_id === menu.id) ||
+        (!r.menu_id && r.nama_menu === menu.nama_menu)
+      )
+      .map(r => {
+        const matchedBahan = stokBahan.find(
+          b => (r.stok_barang_id && b.id === r.stok_barang_id) ||
+               b.nama_bahan === r.nama_bahan ||
+               b.nama_produk === r.nama_bahan
+        )
+        return {
+          stok_barang_id: r.stok_barang_id || matchedBahan?.id || null,
+          nama_bahan: r.nama_bahan,
+          jumlah_dibutuhkan: parseFloat(r.jumlah_dibutuhkan),
+          satuan: r.satuan
+        }
+      })
 
     setMenuRecipe(recipeRows)
     setShowMenuModal(true)
@@ -1136,13 +1231,20 @@ const Admin = () => {
     }
 
     try {
-      // 1. Simpan Menu (Insert / Update)
+      const cleanMenuName = menuForm.nama_menu.trim()
+      let savedMenuUuid = isPostgresUuid(menuForm.id) ? menuForm.id : null
+      let savedMenuCode = menuForm.id_menu || cleanMenuName
+
+      // 1. Simpan Menu (Insert / Update berdasarkan PK UUID id)
       if (isEditingMenu) {
-        // Update menu properties
+        const useId = isPostgresUuid(savedMenuUuid)
         const { error: menuErr } = await supabase
           .from('daftar_harga_menu')
           .update({
-            daftar_menu: menuForm.nama_menu.trim(),
+            daftar_menu: cleanMenuName,
+            nama_menu: cleanMenuName,
+            nama_item: cleanMenuName,
+            nama: cleanMenuName,
             harga: parseFloat(menuForm.harga),
             kategori: finalKategori,
             deskripsi: menuForm.deskripsi,
@@ -1150,22 +1252,30 @@ const Admin = () => {
             is_bundling: menuForm.is_bundling,
             is_active: menuForm.is_active
           })
-          .eq('id_menu', menuForm.id_menu)
+          .eq(useId ? 'id' : 'id_menu', useId ? savedMenuUuid : menuForm.id_menu)
 
         if (menuErr) throw menuErr
 
-        // Delete existing recipe rows to rewrite them
-        await supabase
-          .from('resep')
-          .delete()
-          .eq('id_menu', menuForm.id_menu)
+        // Hapus resep lama terkait menu_id (serta sisa legacy tanpa menu_id)
+        if (useId) {
+          await supabase.from('resep').delete().eq('menu_id', savedMenuUuid)
+          if (menuForm.id_menu) {
+            await supabase.from('resep').delete().is('menu_id', null).eq('id_menu', menuForm.id_menu)
+          }
+          if (menuForm.original_nama_menu) {
+            await supabase.from('resep').delete().is('menu_id', null).eq('nama_menu', menuForm.original_nama_menu)
+          }
+        } else {
+          await supabase.from('resep').delete().eq('id_menu', menuForm.id_menu)
+        }
       } else {
-        // Insert new menu
-        const { error: menuErr } = await supabase
+        const { data: insertedMenu, error: menuErr } = await supabase
           .from('daftar_harga_menu')
           .insert({
-            id_menu: menuForm.nama_menu.trim(),
-            daftar_menu: menuForm.nama_menu.trim(),
+            daftar_menu: cleanMenuName,
+            nama_menu: cleanMenuName,
+            nama_item: cleanMenuName,
+            nama: cleanMenuName,
             harga: parseFloat(menuForm.harga),
             kategori: finalKategori,
             deskripsi: menuForm.deskripsi,
@@ -1173,27 +1283,39 @@ const Admin = () => {
             is_bundling: menuForm.is_bundling,
             is_active: menuForm.is_active
           })
+          .select('id, id_menu')
+          .single()
 
         if (menuErr) throw menuErr
+        if (isPostgresUuid(insertedMenu?.id)) savedMenuUuid = insertedMenu.id
+        if (insertedMenu?.id_menu) savedMenuCode = insertedMenu.id_menu
       }
 
-      // 2. Simpan Resep (jika ada)
+      // 2. Simpan Resep (tautkan menu_id & stok_barang_id UUID)
       if (menuRecipe.length > 0) {
-        const resolvedMenuId = menuForm.id_menu || menuForm.nama_menu.trim();
+        const resolvedMenuId = savedMenuCode || cleanMenuName
         const insertRecipes = menuRecipe.map(r => {
-          const matchedBahan = stokBahan.find(b => b.nama_bahan === r.nama_bahan);
-          const resolvedBahanId = matchedBahan ? matchedBahan.id_bahan_baku : r.nama_bahan;
-          const qtyVal = parseFloat(r.jumlah_dibutuhkan);
+          const matchedBahan = stokBahan.find(
+            b => (r.stok_barang_id && b.id === r.stok_barang_id) ||
+                 b.nama_bahan === r.nama_bahan ||
+                 b.nama_produk === r.nama_bahan
+          )
+          const resolvedStokUuid = r.stok_barang_id || matchedBahan?.id || null
+          const resolvedBahanCode = matchedBahan ? (matchedBahan.id_bahan_baku || matchedBahan.id_barang || matchedBahan.id) : r.nama_bahan
+          const qtyVal = parseFloat(r.jumlah_dibutuhkan)
           return {
+            ...(isPostgresUuid(savedMenuUuid) ? { menu_id: savedMenuUuid } : {}),
+            ...(isPostgresUuid(resolvedStokUuid) ? { stok_barang_id: resolvedStokUuid } : {}),
             id_menu: resolvedMenuId,
-            nama_menu: menuForm.nama_menu,
-            id_bahan_baku: resolvedBahanId,
+            nama_menu: cleanMenuName,
+            daftar_menu: cleanMenuName,
+            id_bahan_baku: resolvedBahanCode,
             nama_bahan: r.nama_bahan,
             jumlah: qtyVal,
             jumlah_pemakaian: qtyVal,
             jumlah_dibutuhkan: qtyVal,
             satuan: r.satuan
-          };
+          }
         })
 
         const { error: rErr } = await supabase
@@ -1212,11 +1334,14 @@ const Admin = () => {
     }
   }
 
-  const handleDeleteMenu = async (menuName) => {
-    const confirmed = await showConfirm(`Apakah Anda yakin ingin menghapus menu "${menuName}"? Tindakan ini akan menghapus data resep yang melekat.`, 'Hapus Menu')
+  const handleDeleteMenu = async (menuOrName) => {
+    const label = typeof menuOrName === 'object' && menuOrName !== null
+      ? (menuOrName.nama_menu || menuOrName.daftar_menu)
+      : menuOrName
+    const confirmed = await showConfirm(`Apakah Anda yakin ingin menghapus menu "${label}"? Tindakan ini akan menghapus data resep yang melekat.`, 'Hapus Menu')
     if (!confirmed) return
     try {
-      await api.master.deleteMenuWithRecipe(menuName)
+      await api.master.deleteMenuWithRecipe(menuOrName)
       setSuccess('Menu dan komposisi resep berhasil dihapus!')
       await loadAdminData()
     } catch (err) {
@@ -1246,7 +1371,7 @@ const Admin = () => {
       pos: acc.pos,
       label: acc.label || acc.pos,
       tipe: acc.tipe || 'BANK',
-      balance: acc.balance || 0,
+      balance: acc.opening_balance ?? acc.balance ?? 0,
       keterangan: acc.keterangan || '',
       color: acc.color || 'blue',
       is_active: acc.is_active !== false
@@ -1301,7 +1426,16 @@ const Admin = () => {
       }
 
       if (editingAccount) {
-        let query = supabase.from('pos_balances').update(payload).eq('pos', editingAccount.pos)
+        const updatePayload = {
+          pos: normalizedPos,
+          label: payload.label,
+          tipe: payload.tipe,
+          keterangan: payload.keterangan,
+          color: payload.color,
+          is_active: payload.is_active
+        }
+        let query = supabase.from('pos_balances').update(updatePayload)
+        query = editingAccount.id ? query.eq('id', editingAccount.id) : query.eq('pos', editingAccount.pos)
         if (targetTenantId) query = query.eq('tenant_id', targetTenantId)
         const { error: updErr } = await query
         if (updErr) throw updErr
@@ -1335,13 +1469,44 @@ const Admin = () => {
     if (account.pos === 'SALDO CASH') {
       return setError('Akun SALDO CASH adalah kas fisik utama kasir dan tidak boleh dihapus.')
     }
+    const targetTenantId = activeTenant?.id || profile?.tenant_id
+    const hasHistory = Number(account.tx_count || 0) > 0
+    if (hasHistory) {
+      if (!window.confirm(`Akun "${account.label || account.pos}" sudah memiliki ${account.tx_count} transaksi cashflow sehingga tidak dapat dihapus permanen. Nonaktifkan akun ini?`)) return
+      try {
+        let q = supabase.from('pos_balances').update({ is_active: false })
+        q = account.id ? q.eq('id', account.id) : q.eq('pos', account.pos)
+        if (targetTenantId) q = q.eq('tenant_id', targetTenantId)
+        const { error: deactErr } = await q
+        if (deactErr) throw deactErr
+        setSuccess(`Akun "${account.label || account.pos}" dinonaktifkan agar histori transaksi tetap utuh.`)
+        await loadAdminData()
+      } catch (err) {
+        setError(err.message || 'Gagal menonaktifkan akun.')
+      }
+      return
+    }
     if (!window.confirm(`Yakin ingin menghapus akun likuiditas "${account.label || account.pos}"?`)) return
     try {
-      const targetTenantId = activeTenant?.id || profile?.tenant_id
-      let query = supabase.from('pos_balances').delete().eq('pos', account.pos)
+      let query = supabase.from('pos_balances').delete()
+      query = account.id ? query.eq('id', account.id) : query.eq('pos', account.pos)
       if (targetTenantId) query = query.eq('tenant_id', targetTenantId)
       const { error: delErr } = await query
-      if (delErr) throw delErr
+      if (delErr) {
+        if (String(delErr.code || '') === '23503' || /23503|foreign key|digunakan/i.test(String(delErr.message || ''))) {
+          if (window.confirm(`Akun "${account.label || account.pos}" masih direferensikan histori transaksi. Nonaktifkan akun ini saja?`)) {
+            let q = supabase.from('pos_balances').update({ is_active: false })
+            q = account.id ? q.eq('id', account.id) : q.eq('pos', account.pos)
+            if (targetTenantId) q = q.eq('tenant_id', targetTenantId)
+            const { error: deactErr } = await q
+            if (deactErr) throw deactErr
+            setSuccess(`Akun "${account.label || account.pos}" dinonaktifkan agar histori tetap utuh.`)
+            await loadAdminData()
+            return
+          }
+        }
+        throw delErr
+      }
       setSuccess(`Akun "${account.label || account.pos}" berhasil dihapus.`)
       await loadAdminData()
     } catch (err) {
@@ -1386,7 +1551,7 @@ const Admin = () => {
         if (valStr !== '' && valStr !== undefined && valStr !== null) {
           const target = parseFloat(valStr)
           if (!isNaN(target)) {
-            const currentBal = parseFloat(acc.balance || 0)
+            const currentBal = parseFloat(acc.current_balance ?? acc.balance ?? 0)
             const diff = target - currentBal
             if (diff !== 0) {
               const insertItem = {
@@ -1394,18 +1559,14 @@ const Admin = () => {
                 tanggal: currentTimestamp,
                 jenis: diff > 0 ? 'Pemasukan' : 'Pengeluaran',
                 pos: acc.pos,
+                ...(acc.id ? { pocket_id: acc.id } : {}),
                 pemasukan: diff > 0 ? Math.abs(diff) : 0,
                 pengeluaran: diff < 0 ? Math.abs(diff) : 0,
                 keterangan_transaksi: `Kalibrasi Saldo ${acc.label || acc.pos} (Penyesuaian Manual Admin)`
               }
               if (targetTenantId) insertItem.tenant_id = targetTenantId
-              if (targetBranchId) insertItem.branch_id = targetBranchId
+              if (acc.branch_id || targetBranchId) insertItem.branch_id = acc.branch_id || targetBranchId
               inserts.push(insertItem)
-
-              // Sinkronkan saldo langsung di tabel pos_balances
-              let updateQuery = supabase.from('pos_balances').update({ balance: target }).eq('pos', acc.pos)
-              if (targetTenantId) updateQuery = updateQuery.eq('tenant_id', targetTenantId)
-              await updateQuery
             }
           }
         }
@@ -1806,9 +1967,12 @@ const Admin = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-800/50">
                   {filteredMenuItems.map((item) => {
-                    const menuRecipes = resepList.filter(r => r.nama_menu === item.nama_menu)
+                    const menuRecipes = resepList.filter(r =>
+                      (isPostgresUuid(item.id) && r.menu_id === item.id) ||
+                      (!r.menu_id && r.nama_menu === item.nama_menu)
+                    )
                     return (
-                      <tr key={item.nama_menu} className="hover:bg-[#26272d]/20 transition-colors">
+                      <tr key={item.id || item.id_menu || item.nama_menu} className="hover:bg-[#26272d]/20 transition-colors">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
                             {item.foto_url ? (
@@ -1861,7 +2025,7 @@ const Admin = () => {
                               <Edit3 size={14} />
                             </button>
                             <button
-                              onClick={() => handleDeleteMenu(item.nama_menu)}
+                              onClick={() => handleDeleteMenu(item)}
                               className="p-1.5 bg-slate-850 hover:bg-[#26272d] text-brand-rose rounded-lg transition-colors"
                               title="Hapus Menu"
                             >
@@ -1961,10 +2125,10 @@ const Admin = () => {
 
             <div className="divide-y divide-slate-800/50 pt-2">
               {cashiers.map(c => (
-                <div key={c.nama} className="flex justify-between items-center py-2.5">
+                <div key={c.id || c.nama} className="flex justify-between items-center py-2.5">
                   <span className="text-sm font-bold text-white">{c.nama}</span>
                   <button
-                    onClick={() => toggleCashierActive(c.nama, c.is_active)}
+                    onClick={() => toggleCashierActive(c, c.is_active)}
                     className={`text-[10px] px-3 py-1 rounded font-bold border transition-colors ${
                       c.is_active 
                         ? 'bg-[#00ffff]/10 text-[#00ffff] border-brand-emerald/20' 
@@ -2097,9 +2261,11 @@ const Admin = () => {
                     </div>
 
                     <div className="pt-2 border-t border-[#26272d] flex justify-between items-center">
-                      <span className="text-[10px] text-[#6b7367] uppercase font-bold">Saldo Berjalan</span>
-                      <span className={`font-mono font-black text-base ${colorText}`}>
-                        {formatRupiah(balances[acc.pos] ?? acc.balance ?? 0)}
+                      <span className="text-[10px] text-[#6b7367] uppercase font-bold">
+                        Saldo Buku ERPPoss{acc.is_active === false ? ' (Nonaktif)' : ''}
+                      </span>
+                      <span className={`font-mono tabular-nums font-black text-base ${colorText}`}>
+                        {formatRupiah(balances[acc.pos] ?? acc.current_balance ?? acc.balance ?? 0)}
                       </span>
                     </div>
                   </div>
@@ -3245,7 +3411,11 @@ const Admin = () => {
                   </div>
 
                   {menuRecipe.map((row, idx) => {
-                    const matchedStock = stokBahan.find(b => b.nama_bahan === row.nama_bahan || b.nama_produk === row.nama_bahan);
+                    const matchedStock = stokBahan.find(
+                      b => (row.stok_barang_id && b.id === row.stok_barang_id) ||
+                           b.nama_bahan === row.nama_bahan ||
+                           b.nama_produk === row.nama_bahan
+                    );
                     const costInfo = calculateIngredientCost(matchedStock, row.jumlah_dibutuhkan, row.satuan);
                     return (
                       <div key={idx} className="flex gap-2 items-center p-2 rounded-xl bg-[#18181c]/60 border border-slate-850">

@@ -40,6 +40,11 @@ import ExpenseDetailModal from '../components/dashboard/ExpenseDetailModal'
 import OnboardingWizardModal from '../components/auth/OnboardingWizardModal'
 import { formatRupiah, parseDateSafe, calculateDailyCashierRecap } from '../utils/helpers'
 import { isPindahSaldo } from '../utils/financeHelpers'
+import {
+  isTestOrCancelledStruk,
+  isTukarUangStruk,
+  classifyExpenseBucket
+} from '../utils/reportClassificationHelpers'
 
 // Helper function to fetch all rows beyond Supabase's default 1000 row REST limit
 const fetchAllRows = async (table, select = '*', dateColumn = null, start = null, end = null, tenantId = null) => {
@@ -171,22 +176,30 @@ const Dashboard = () => {
         fetchAllRows('pengeluaran', '*', null, null, null, targetTenantId)
       ])
 
-      let balQuery = supabase.from('pos_balances').select('*')
+      let balQuery = supabase.from('v_pocket_balances').select('*')
       if (targetTenantId) balQuery = balQuery.eq('tenant_id', targetTenantId)
-      const { data: dbBal, error: balErr } = await balQuery
+      let { data: dbBal, error: balErr } = await balQuery
+      if (balErr || !Array.isArray(dbBal)) {
+        let fbQuery = supabase.from('pos_balances').select('*')
+        if (targetTenantId) fbQuery = fbQuery.eq('tenant_id', targetTenantId)
+        const fbRes = await fbQuery
+        dbBal = fbRes.data
+        balErr = fbRes.error
+      }
 
       if (balErr) throw balErr
 
       let cash = 0, rekY = 0, rekN = 0, rekR = 0
-      if (dbBal) {
-        dbBal.forEach(item => {
-          const bal = parseFloat(item.balance) || 0
-          if (item.pos === 'SALDO CASH') cash = bal
-          else if (item.pos === 'SALDO REKENING Y') rekY = bal
-          else if (item.pos === 'SALDO REKENING N') rekN = bal
-          else if (item.pos === 'SALDO REKENING R') rekR = bal
+      const normalizedBal = (dbBal || [])
+        .filter(item => item.is_active !== false)
+        .map(item => {
+          const liveBal = parseFloat(item.current_balance ?? item.balance ?? 0) || 0
+          if (item.pos === 'SALDO CASH') cash = liveBal
+          else if (item.pos === 'SALDO REKENING Y') rekY = liveBal
+          else if (item.pos === 'SALDO REKENING N') rekN = liveBal
+          else if (item.pos === 'SALDO REKENING R') rekR = liveBal
+          return { ...item, balance: liveBal, current_balance: liveBal }
         })
-      }
 
       setStrukList(dbStruk || [])
       setCarwashList(dbCw || [])
@@ -195,7 +208,7 @@ const Dashboard = () => {
       setStokList(dbStok || [])
       setPengeluaranList(dbExp || [])
       setPosBalances({ cash, rekY, rekN, rekR })
-      setPosAccountList(dbBal || [])
+      setPosAccountList(normalizedBal)
 
     } catch (err) {
       console.error('Error fetching analytics data:', err)
@@ -249,12 +262,7 @@ const Dashboard = () => {
     if (timeRange !== 'all') {
       list = strukList.filter(s => isDateInRange(s.tanggal))
     }
-    return list.filter(s => {
-      const ket = String(s.keterangan || '').toLowerCase()
-      const isTestOrBatal = ket.includes('kalibrasi') || ket.includes('test') || s.status_bayar === 'Batal'
-      const isTukarUang = ket.includes('tukar uang') || ket.includes('tarik tunai') || ket.includes('tukar cash') || ket.includes('lebih qris')
-      return !isTestOrBatal && !isTukarUang
-    })
+    return list.filter(s => !isTestOrCancelledStruk(s) && !isTukarUangStruk(s))
   }, [strukList, isDateInRange, timeRange])
 
   const filteredCarwashList = useMemo(() => {
@@ -264,11 +272,8 @@ const Dashboard = () => {
     }
     return list.filter(cw => {
       const parentStruk = strukMap.get(cw.id_struk)
-      if (parentStruk) {
-        const ket = String(parentStruk.keterangan || '').toLowerCase()
-        if (ket.includes('kalibrasi') || ket.includes('test') || parentStruk.status_bayar === 'Batal') {
-          return false
-        }
+      if (parentStruk && isTestOrCancelledStruk(parentStruk)) {
+        return false
       }
       return cw.status !== 'Batal' && cw.status !== 'Cancelled' && parseFloat(cw.harga || 0) > 0
     })
@@ -284,11 +289,8 @@ const Dashboard = () => {
         const dateStr = parentStruk?.tanggal || c.struk?.tanggal || c.created_at
         if (!isDateInRange(dateStr)) return false
       }
-      if (parentStruk) {
-        const ket = String(parentStruk.keterangan || '').toLowerCase()
-        if (ket.includes('kalibrasi') || ket.includes('test') || parentStruk.status_bayar === 'Batal') {
-          return false
-        }
+      if (parentStruk && isTestOrCancelledStruk(parentStruk)) {
+        return false
       }
       return true
     })
@@ -453,13 +455,12 @@ const Dashboard = () => {
 
     // 1. Dari tabel pengeluaran resmi
     filteredPengeluaranList.forEach(exp => {
-      processedExpIds.add(exp.id_pengeluaran)
+      if (exp.id_pengeluaran) processedExpIds.add(exp.id_pengeluaran)
+      if (exp.id) processedExpIds.add(exp.id)
       const nom = parseFloat(exp.nominal || exp.total_harga || 0)
       if (nom <= 0) return
 
       const jenis = String(exp.jenis || '').toLowerCase()
-      const kat = String(exp.kategori || '').toLowerCase()
-      const ket = String(exp.nama_pengeluaran || exp.keterangan || '').toLowerCase()
 
       const itemObj = {
         id: exp.id_pengeluaran || `exp-${exp.id}`,
@@ -470,33 +471,30 @@ const Dashboard = () => {
         nominal: nom
       }
 
-      if (jenis.includes('cafe')) {
+      const expBucket = classifyExpenseBucket({
+        jenis: exp.jenis,
+        kategori: exp.kategori,
+        keterangan: exp.nama_pengeluaran || exp.keterangan || '',
+        karyawan_id: exp.karyawan_id,
+        fromCashflow: false
+      })
+
+      if (expBucket === 'cafe_bahan' || expBucket === 'cafe_ops') {
         itemObj.divisi = 'CAFE'
         cafeExpenseItems.push(itemObj)
-        if (kat.includes('bahan') || kat.includes('kulakan') || ket.includes('biji kopi') || ket.includes('susu') || ket.includes('sirup')) {
-          cafeBahanBaku += nom
-        } else {
-          cafeOperasional += nom
-        }
-      } else if (jenis.includes('carwash')) {
+        if (expBucket === 'cafe_bahan') cafeBahanBaku += nom
+        else cafeOperasional += nom
+      } else if (expBucket === 'carwash_bahan' || expBucket === 'carwash_ops') {
         itemObj.divisi = 'CARWASH'
         carwashExpenseItems.push(itemObj)
-        if (kat.includes('bahan') || kat.includes('chemical') || ket.includes('shampoo') || kat.includes('sabun') || ket.includes('semir')) {
-          carwashBahan += nom
-        } else {
-          carwashOperasional += nom
-        }
+        if (expBucket === 'carwash_bahan') carwashBahan += nom
+        else carwashOperasional += nom
       } else {
         itemObj.divisi = 'SHARED'
         sharedExpenseItems.push(itemObj)
-        // Beban Bersama / Overhead
-        if (kat.includes('gaji') || kat.includes('casbon') || jenis.includes('casbon') || ket.includes('gaji') || ket.includes('casbon')) {
-          bebanBersamaGaji += nom
-        } else if (kat.includes('listrik') || kat.includes('air') || kat.includes('pdam') || kat.includes('wifi') || kat.includes('utilitas') || ket.includes('listrik') || ket.includes('air')) {
-          bebanBersamaUtilitas += nom
-        } else {
-          bebanBersamaLain += nom
-        }
+        if (expBucket === 'overhead_gaji') bebanBersamaGaji += nom
+        else if (expBucket === 'overhead_utilitas') bebanBersamaUtilitas += nom
+        else bebanBersamaLain += nom
       }
     })
 
@@ -523,7 +521,7 @@ const Dashboard = () => {
       ) return
 
       const itemObj = {
-        id: c.id_cashflow || `cf-${c.id || idx}`,
+        id: c.id || c.id_cashflow || `cf-${idx}`,
         tanggal: c.tanggal || '',
         kategori: c.kategori || 'Beban Kas',
         keterangan: c.keterangan_transaksi || c.keterangan || 'Log Pengeluaran',
@@ -531,21 +529,28 @@ const Dashboard = () => {
         nominal: nom
       }
 
-      if (jenis.includes('cafe')) {
+      const bucket = classifyExpenseBucket({
+        jenis: c.jenis,
+        kategori: c.kategori,
+        keterangan: c.keterangan_transaksi || c.keterangan || '',
+        karyawan_id: c.karyawan_id,
+        fromCashflow: true
+      })
+      if (bucket === 'cafe_bahan' || bucket === 'cafe_ops') {
         itemObj.divisi = 'CAFE'
         cafeExpenseItems.push(itemObj)
-        if (kat.includes('bahan') || kat.includes('kulakan')) cafeBahanBaku += nom
+        if (bucket === 'cafe_bahan') cafeBahanBaku += nom
         else cafeOperasional += nom
-      } else if (jenis.includes('carwash')) {
+      } else if (bucket === 'carwash_bahan' || bucket === 'carwash_ops') {
         itemObj.divisi = 'CARWASH'
         carwashExpenseItems.push(itemObj)
-        if (kat.includes('bahan') || kat.includes('chemical')) carwashBahan += nom
+        if (bucket === 'carwash_bahan') carwashBahan += nom
         else carwashOperasional += nom
       } else {
         itemObj.divisi = 'SHARED'
         sharedExpenseItems.push(itemObj)
-        if (ket.includes('casbon') || kat.includes('casbon') || ket.includes('gaji')) bebanBersamaGaji += nom
-        else if (ket.includes('listrik') || kat.includes('air') || kat.includes('wifi')) bebanBersamaUtilitas += nom
+        if (bucket === 'overhead_gaji') bebanBersamaGaji += nom
+        else if (bucket === 'overhead_utilitas') bebanBersamaUtilitas += nom
         else bebanBersamaLain += nom
       }
     })
@@ -2038,28 +2043,35 @@ const Dashboard = () => {
 
               <div className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d]">
                 <div className="flex justify-between items-center text-xs mb-2">
-                  <span className="font-semibold text-white">Posisi Saldo Kas & Rekening Bank Terdaftar:</span>
+                  <span className="font-semibold text-white">Posisi Saldo Buku Kas &amp; Rekening Terdaftar:</span>
                   <button onClick={() => navigate('/finance')} className="text-[#00ffff] hover:underline font-semibold flex items-center gap-1 cursor-pointer">
                     Buku Kas <ArrowRight size={12} />
                   </button>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                  <div className="p-2 rounded-lg bg-[#121215] border border-[#26272d] text-center">
-                    <span className="text-[10px] text-[#6b7367] uppercase block font-bold">Laci Kasir</span>
-                    <span className="font-mono font-bold text-white text-xs">{formatRupiah(posBalances.cash)}</span>
-                  </div>
-                  <div className="p-2 rounded-lg bg-[#121215] border border-[#26272d] text-center">
-                    <span className="text-[10px] text-[#6b7367] uppercase block font-bold">Rekening Y</span>
-                    <span className="font-mono font-bold text-white text-xs">{formatRupiah(posBalances.rekY)}</span>
-                  </div>
-                  <div className="p-2 rounded-lg bg-[#121215] border border-[#26272d] text-center">
-                    <span className="text-[10px] text-[#6b7367] uppercase block font-bold">Rekening N</span>
-                    <span className="font-mono font-bold text-white text-xs">{formatRupiah(posBalances.rekN)}</span>
-                  </div>
-                  <div className="p-2 rounded-lg bg-[#121215] border border-[#26272d] text-center">
-                    <span className="text-[10px] text-[#6b7367] uppercase block font-bold">Rekening R</span>
-                    <span className="font-mono font-bold text-white text-xs">{formatRupiah(posBalances.rekR)}</span>
-                  </div>
+                  {posAccountList.length > 0 ? (
+                    posAccountList.map((acc) => (
+                      <div key={acc.id || acc.pos} className="p-2 rounded-lg bg-[#121215] border border-[#26272d] text-center">
+                        <span className="text-[10px] text-[#6b7367] uppercase block font-bold truncate" title={acc.label || acc.pos}>
+                          {acc.label || acc.pos}
+                        </span>
+                        <span className="font-mono tabular-nums font-bold text-white text-xs">
+                          {formatRupiah(acc.current_balance ?? acc.balance ?? 0)}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <>
+                      <div className="p-2 rounded-lg bg-[#121215] border border-[#26272d] text-center">
+                        <span className="text-[10px] text-[#6b7367] uppercase block font-bold">Laci Kasir</span>
+                        <span className="font-mono tabular-nums font-bold text-white text-xs">{formatRupiah(posBalances.cash)}</span>
+                      </div>
+                      <div className="p-2 rounded-lg bg-[#121215] border border-[#26272d] text-center">
+                        <span className="text-[10px] text-[#6b7367] uppercase block font-bold">Rekening Utama</span>
+                        <span className="font-mono tabular-nums font-bold text-white text-xs">{formatRupiah(posBalances.rekY)}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

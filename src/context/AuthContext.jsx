@@ -3,9 +3,9 @@ import { supabase } from '../supabaseClient'
 import { api } from '../services/apiAdapter'
 import { DEFAULT_TENANT_ID, DEFAULT_BRANCH_ID } from '../constants/erpConfig'
 import { ROLES } from '../constants/roles'
-import { setActiveTenantId, setActiveActorContext, resetActiveActorContext } from '../services/localDbEngine'
 import { evaluateLicenseStatus } from '../utils/licenseHelpers'
 import { DEFAULT_RECEIPT_CONFIG, getReceiptConfig, saveReceiptConfig } from '../utils/receiptHelpers'
+import { filterOwnerAccessibleTenants } from '../services/consolidationService'
 
 const ACTIVE_TENANT_STORAGE_KEY = 'relaypos_active_tenant_id'
 
@@ -52,10 +52,10 @@ export const AuthProvider = ({ children }) => {
   const activeTenantRef = useRef(activeTenant)
   activeTenantRef.current = activeTenant
 
-  // Synchronize runtime actor context with localDbEngine for RBAC & multi-tenant containment
+  // Synchronize runtime actor context with local engine (no-op in Cloud mode) for RBAC & multi-tenant containment
   useEffect(() => {
     if (profile) {
-      setActiveActorContext({
+      supabase?.setActiveActorContext?.({
         role: profile.role || null,
         branchId: profile.branch_id || null,
         userId: profile.id || null,
@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }) => {
         is_active: profile.is_active !== false
       })
     } else {
-      resetActiveActorContext()
+      supabase?.resetActiveActorContext?.()
     }
   }, [profile, activeTenant])
 
@@ -113,7 +113,7 @@ export const AuthProvider = ({ children }) => {
         ])
         if (!rpcErr && rpcLic) {
           lic = rpcLic
-        } else if (rpcErr && (userProfile?.role === 'Owner' || userProfile?.role === 'Super Admin')) {
+        } else if (rpcErr && (effectiveProfile?.role === 'Owner' || effectiveProfile?.role === 'Super Admin')) {
           const { data } = await supabase
             .from('tenant_licenses')
             .select('id, tenant_id, plan, tier, status, valid_until, expires_at, max_branches, max_users, features, created_at, updated_at')
@@ -158,39 +158,61 @@ export const AuthProvider = ({ children }) => {
     const prof = currentProfile || profileRef.current
     try {
       const fetchTenants = supabase.from('tenants').select('*')
-      const { data: allTenants, error } = await Promise.race([
-        fetchTenants,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Tenants fetch timeout')), 3000))
+      const fetchMemberships = prof?.id
+        ? supabase.from('tenant_memberships').select('tenant_id').eq('user_id', prof.id)
+        : Promise.resolve({ data: [] })
+
+      const [tenantsRes, membershipsRes] = await Promise.all([
+        Promise.race([
+          fetchTenants,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Tenants fetch timeout')), 3000))
+        ]),
+        Promise.race([
+          fetchMemberships,
+          new Promise((resolve) => setTimeout(() => resolve({ data: [] }), 2500))
+        ]).catch(() => ({ data: [] }))
       ])
+
+      const { data: allTenants, error } = tenantsRes
       if (error) throw error
 
       const tenantList = Array.isArray(allTenants) ? allTenants : []
+      const membershipTenantIds = new Set(
+        (Array.isArray(membershipsRes?.data) ? membershipsRes.data : [])
+          .map((m) => m?.tenant_id)
+          .filter(Boolean)
+      )
       let allowedTenants = []
 
       const role = prof?.role || ROLES.KASIR
-      const userTenantId = prof?.tenant_id || DEFAULT_TENANT_ID
+      const fallbackDefaultTenant = api.isCloud ? null : DEFAULT_TENANT_ID
+      const userTenantId = prof?.tenant_id || fallbackDefaultTenant
 
       if (role === ROLES.SUPER_ADMIN) {
         // Super admin memiliki akses penuh ke semua tenant
-        allowedTenants = tenantList.length > 0 ? tenantList : [
-          { id: DEFAULT_TENANT_ID, nama: 'RelayPOS Enterprise', slug: 'relaypos-enterprise', plan: 'ENTERPRISE', status: 'ACTIVE' }
-        ]
+        allowedTenants = tenantList.length > 0 ? tenantList : (
+          fallbackDefaultTenant
+            ? [{ id: fallbackDefaultTenant, nama: 'RelayPOS Enterprise', slug: 'relaypos-enterprise', plan: 'ENTERPRISE', status: 'ACTIVE' }]
+            : []
+        )
       } else if (role === ROLES.OWNER) {
-        // Owner HANYA memiliki akses ke tenant miliknya (berdasarkan tenant_id profil atau owner_email)
-        const profileEmail = (prof?.email || '').toLowerCase().trim()
-        const myTenants = tenantList.filter(t => {
-          const matchTenantId = t.id === userTenantId
-          const matchEmail = Boolean(profileEmail && t.owner_email && t.owner_email.toLowerCase().trim() === profileEmail)
-          return matchTenantId || matchEmail
+        // Owner mengakses outlet miliknya melalui profil, tenant_memberships, maupun RLS Cloud
+        const myTenants = filterOwnerAccessibleTenants({
+          tenants: tenantList,
+          profile: prof,
+          membershipTenantIds,
+          trustRlsResult: api.isCloud
         })
 
-        allowedTenants = myTenants.length > 0 ? myTenants : [
-          { id: userTenantId, nama: prof?.nama ? `Outlet ${prof.nama}` : 'Outlet Utama Owner', slug: 'outlet-owner', plan: 'ENTERPRISE', status: 'ACTIVE' }
-        ]
+        allowedTenants = myTenants.length > 0 ? myTenants : (
+          userTenantId
+            ? [{ id: userTenantId, nama: prof?.nama ? `Outlet ${prof.nama}` : 'Outlet Utama Owner', slug: 'outlet-owner', plan: 'ENTERPRISE', status: 'ACTIVE' }]
+            : []
+        )
       } else {
         // Kasir dan Staf 100% terkunci pada tenant_id profil mereka
-        allowedTenants = tenantList.filter(t => t.id === userTenantId)
-        if (allowedTenants.length === 0) {
+        allowedTenants = userTenantId ? tenantList.filter(t => t.id === userTenantId) : []
+        if (allowedTenants.length === 0 && userTenantId) {
           allowedTenants = [{ id: userTenantId, nama: 'Outlet Toko Kasir', slug: 'outlet-kasir', plan: 'BASIC', status: 'ACTIVE' }]
         }
       }
@@ -224,7 +246,7 @@ export const AuthProvider = ({ children }) => {
       if (resolvedTenant) {
         setActiveTenant(resolvedTenant)
         localStorage.setItem(ACTIVE_TENANT_STORAGE_KEY, resolvedTenant.id)
-        setActiveTenantId(resolvedTenant.id)
+        supabase?.setActiveTenantId?.(resolvedTenant.id)
         await loadTenantLicense(resolvedTenant.id, prof)
 
         // Sinkronkan identitas cabang aktif ke header struk jika masih memakai nilai default
@@ -237,14 +259,17 @@ export const AuthProvider = ({ children }) => {
             ? branchRows.find((b) => b.is_main || b.kode === 'MAIN') || branchRows[0]
             : null
           const currentCfg = getReceiptConfig()
-          const patch = {}
-          if (resolvedTenant.nama && currentCfg.storeName === DEFAULT_RECEIPT_CONFIG.storeName) {
+          const dbCfg = resolvedTenant.receipt_config && typeof resolvedTenant.receipt_config === 'object'
+            ? resolvedTenant.receipt_config
+            : null
+          const patch = { ...(dbCfg || {}) }
+          if (!dbCfg?.storeName && resolvedTenant.nama && currentCfg.storeName === DEFAULT_RECEIPT_CONFIG.storeName) {
             patch.storeName = resolvedTenant.nama
           }
-          if (mainBranch?.alamat && currentCfg.storeAddress === DEFAULT_RECEIPT_CONFIG.storeAddress) {
+          if (!dbCfg?.storeAddress && mainBranch?.alamat && currentCfg.storeAddress === DEFAULT_RECEIPT_CONFIG.storeAddress) {
             patch.storeAddress = mainBranch.alamat
           }
-          if (mainBranch?.telepon && currentCfg.storePhone === DEFAULT_RECEIPT_CONFIG.storePhone) {
+          if (!dbCfg?.storePhone && mainBranch?.telepon && currentCfg.storePhone === DEFAULT_RECEIPT_CONFIG.storePhone) {
             patch.storePhone = mainBranch.telepon
           }
           if (Object.keys(patch).length > 0) {
@@ -266,7 +291,7 @@ export const AuthProvider = ({ children }) => {
       }
       setUserTenants([fallbackTenant])
       setActiveTenant(fallbackTenant)
-      setActiveTenantId(fallbackTenant.id)
+      supabase?.setActiveTenantId?.(fallbackTenant.id)
       await loadTenantLicense(fallbackTenant.id, prof)
     }
   }, [loadTenantLicense])
@@ -306,11 +331,11 @@ export const AuthProvider = ({ children }) => {
   }, [activeTenant, profile, user])
 
   // Fungsi ganti tenant aktif (Hanya untuk Owner & Super Admin)
-  const switchTenant = useCallback((tenantId) => {
+  const switchTenant = useCallback(async (tenantId) => {
     let targetTenant = userTenants.find(t => t.id === tenantId)
 
-    // Jika Super Admin berpindah ke tenant yang baru saja dibuat di halaman Founder
-    if (!targetTenant && (profile?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.SUPER_ADMIN)) {
+    // Jika Super Admin berpindah ke tenant yang baru saja dibuat di mode sandbox lokal
+    if (import.meta.env.VITE_BACKEND_PROVIDER !== 'cloud' && !targetTenant && (profile?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.SUPER_ADMIN)) {
       try {
         const storedTenants = JSON.parse(localStorage.getItem('relaypos_real_sandbox_v2') || '{}').tenants || []
         targetTenant = storedTenants.find(t => t.id === tenantId)
@@ -327,10 +352,38 @@ export const AuthProvider = ({ children }) => {
       return false
     }
 
+    // Sinkronkan tenant aktif ke backend RLS (Opsi B: fn_switch_active_tenant)
+    if (typeof supabase.rpc === 'function') {
+      try {
+        const { data: switchRes, error: switchErr } = await supabase.rpc('fn_switch_active_tenant', {
+          p_tenant_id: targetTenant.id
+        })
+        if (switchErr) {
+          console.error('Gagal berpindah outlet di server:', switchErr)
+          return false
+        }
+        if (switchRes?.branch_id || switchRes?.tenant_id) {
+          setProfile(prev => prev ? {
+            ...prev,
+            tenant_id: targetTenant.id,
+            branch_id: switchRes.branch_id || prev.branch_id
+          } : prev)
+        }
+      } catch (err) {
+        if (api.isCloud) {
+          console.error('Gagal memanggil fn_switch_active_tenant:', err)
+          return false
+        }
+      }
+    }
+
     setActiveTenant(targetTenant)
     localStorage.setItem(ACTIVE_TENANT_STORAGE_KEY, targetTenant.id)
-    setActiveTenantId(targetTenant.id)
-    loadTenantLicense(targetTenant.id, profile)
+    supabase?.setActiveTenantId?.(targetTenant.id)
+    if (targetTenant.receipt_config && typeof targetTenant.receipt_config === 'object' && Object.keys(targetTenant.receipt_config).length > 0) {
+      saveReceiptConfig(targetTenant.receipt_config)
+    }
+    await loadTenantLicense(targetTenant.id, profile)
 
     // Trigger event ke seluruh aplikasi
     if (typeof window !== 'undefined') {
@@ -373,23 +426,15 @@ export const AuthProvider = ({ children }) => {
         lastProcessedSessionKey = null
       }
 
-      const run = (async () => {
+      let run = null
+      run = (async () => {
         try {
           if (session && session.user) {
-            // Tetapkan profil instan berbasis metadata sesi sebagai fallback jika profil DB belum dimuat
-            const fastProfile = {
-              id: session.user.id,
-              email: session.user.email,
-              nama: session.user.user_metadata?.nama || session.user.email || 'Pengguna RelayPOS',
-              role: session.user.role || session.user.user_metadata?.role || 'Owner',
-              tenant_id: session.user.tenant_id || DEFAULT_TENANT_ID
-            }
-
-            // Sinkronisasi data profil lengkap dan tenant dengan batas waktu maksimum 3 detik
+            // Sinkronisasi data profil lengkap dan tenant dengan batas waktu maksimum 5 detik
             const profilePromise = api.auth.getProfile(session.user.id).catch(() => null)
             let p = await Promise.race([
               profilePromise,
-              new Promise((resolve) => setTimeout(() => resolve(null), 3000))
+              new Promise((resolve) => setTimeout(() => resolve(null), 5000))
             ])
 
             if (!p && typeof supabase.rpc === 'function') {
@@ -433,7 +478,7 @@ export const AuthProvider = ({ children }) => {
                 }
                 const { data: rpcRes, error: rpcErr } = await inFlightOAuthPromise
 
-                if (rpcErr || !rpcRes || rpcRes?.status === 'UNREGISTERED') {
+                if (rpcErr || !rpcRes || rpcRes?.status === 'UNREGISTERED' || rpcRes?.status === 'INACTIVE') {
                   const errMsg =
                     rpcRes?.message ||
                     rpcErr?.message ||
@@ -457,8 +502,41 @@ export const AuthProvider = ({ children }) => {
               }
             }
 
+            if (p && p.is_active === false) {
+              if (isMounted) {
+                setOauthError('ACCOUNT_INACTIVE: Akun staf ini telah dinonaktifkan oleh Owner.')
+                setUser(null)
+                setProfile(null)
+                setActiveTenant(null)
+                setUserTenants([])
+                setTenantLicense(null)
+                setLicenseStatus(null)
+              }
+              await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
+              return
+            }
+
+            if (!p && api.isCloud) {
+              if (isMounted) {
+                setOauthError('Gagal memuat profil akun Anda. Silakan muat ulang atau masuk kembali.')
+                setUser(null)
+                setProfile(null)
+                setActiveTenant(null)
+                setUserTenants([])
+                setTenantLicense(null)
+                setLicenseStatus(null)
+              }
+              return
+            }
+
             if (isMounted) {
-              const finalProfile = p || fastProfile
+              const finalProfile = p || {
+                id: session.user.id,
+                email: session.user.email,
+                nama: session.user.email || 'Pengguna RelayPOS',
+                role: ROLES.KASIR,
+                tenant_id: DEFAULT_TENANT_ID
+              }
               setOauthError('')
               setUser(session.user)
               setProfile(finalProfile)
@@ -489,7 +567,7 @@ export const AuthProvider = ({ children }) => {
             clearTimeout(safetyTimer)
             setLoading(false)
           }
-          if (activeSyncPromise === run) {
+          if (run && activeSyncPromise === run) {
             activeSyncPromise = null
           }
         }
@@ -525,26 +603,28 @@ export const AuthProvider = ({ children }) => {
   const login = async (usernameOrEmail, password, tenantSlug = null) => {
     try {
       const res = await api.auth.login(usernameOrEmail, password, tenantSlug)
-      let resolvedProfile = null
-      if (res.user) {
-        setUser(res.user)
-        resolvedProfile = res.profile || { 
-          id: res.user.id, 
-          nama: res.user.email, 
-          role: res.user.role || 'Owner',
-          tenant_id: DEFAULT_TENANT_ID
-        }
-        setProfile(resolvedProfile)
-        if (resolvedProfile.tenant_id) {
-          localStorage.setItem(ACTIVE_TENANT_STORAGE_KEY, resolvedProfile.tenant_id)
-          setActiveTenantId(resolvedProfile.tenant_id)
-        }
-        await loadTenantsForUser(resolvedProfile)
+      if (!res.user || !res.profile) {
+        return { success: false, error: 'Profil akun tidak ditemukan.' }
       }
-      return { 
-        success: true, 
-        user: res.user, 
-        profile: resolvedProfile || res.profile 
+      const resolvedProfile = res.profile
+      setUser(res.user)
+      setProfile(resolvedProfile)
+      if (tenantSlug && String(tenantSlug).trim()) {
+        try {
+          localStorage.setItem('relaypos_last_tenant_slug', String(tenantSlug).trim().toLowerCase())
+        } catch {
+          // ignore storage errors
+        }
+      }
+      if (resolvedProfile.tenant_id) {
+        localStorage.setItem(ACTIVE_TENANT_STORAGE_KEY, resolvedProfile.tenant_id)
+        supabase?.setActiveTenantId?.(resolvedProfile.tenant_id)
+      }
+      await loadTenantsForUser(resolvedProfile)
+      return {
+        success: true,
+        user: res.user,
+        profile: resolvedProfile
       }
     } catch (err) {
       console.error('Login error:', err)
@@ -591,7 +671,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   // Fungsi Logout Universal
-  const logout = async () => {
+  const logout = useCallback(async () => {
     setLoading(true)
     try {
       await api.auth.logout()
@@ -605,13 +685,40 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  // Fungsi Pendaftaran Kasir Baru
-  const registerKasir = async (usernameOrEmail, password, nama, role = 'Kasir', explicitTenantId = null) => {
+  // Auto-logout saat perangkat kasir/ERP diam selama 2 jam untuk keamanan terminal bersama
+  useEffect(() => {
+    if (!user || typeof window === 'undefined' || import.meta.env?.MODE === 'test') return undefined
+    const IDLE_TIMEOUT_MS = 2 * 60 * 60 * 1000
+    let timerId = null
+    let lastResetAt = 0
+
+    const resetIdleTimer = () => {
+      const now = Date.now()
+      if (timerId && now - lastResetAt < 15000) return
+      lastResetAt = now
+      clearTimeout(timerId)
+      timerId = setTimeout(() => {
+        logout()
+      }, IDLE_TIMEOUT_MS)
+    }
+
+    resetIdleTimer()
+    window.addEventListener('pointerdown', resetIdleTimer, { passive: true })
+    window.addEventListener('keydown', resetIdleTimer, { passive: true })
+    return () => {
+      clearTimeout(timerId)
+      window.removeEventListener('pointerdown', resetIdleTimer)
+      window.removeEventListener('keydown', resetIdleTimer)
+    }
+  }, [user, logout])
+
+  // Fungsi Pendaftaran Kasir / Staf Baru
+  const registerKasir = async (usernameOrEmail, password, nama, role = 'Kasir', explicitTenantId = null, explicitBranchId = null) => {
     try {
       const targetTenantId = explicitTenantId || activeTenant?.id || null
-      const res = await api.auth.registerKasir(usernameOrEmail, password, nama, role, targetTenantId)
+      const res = await api.auth.registerKasir(usernameOrEmail, password, nama, role, targetTenantId, explicitBranchId)
       return { success: true, user: res.user }
     } catch (err) {
       console.error('Registration error:', err)
@@ -636,8 +743,8 @@ export const AuthProvider = ({ children }) => {
       if (!currentPassword || !String(currentPassword).trim()) {
         return { success: false, error: 'Kata sandi saat ini wajib diisi.' }
       }
-      if (!newPassword || newPassword.length < 6) {
-        return { success: false, error: 'Kata sandi baru minimal 6 karakter.' }
+      if (!newPassword || newPassword.length < 8) {
+        return { success: false, error: 'Kata sandi baru minimal 8 karakter.' }
       }
       if (currentPassword === newPassword) {
         return { success: false, error: 'Kata sandi baru tidak boleh sama dengan kata sandi saat ini.' }

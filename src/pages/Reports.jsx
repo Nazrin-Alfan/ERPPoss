@@ -19,17 +19,25 @@ import {
 import InteractiveCalendar from '../components/InteractiveCalendar'
 import { formatRupiah, parseDateSafe } from '../utils/helpers'
 import { isPindahSaldo } from '../utils/financeHelpers'
+import {
+  isTestOrCancelledStruk,
+  isTukarUangStruk,
+  classifyExpenseBucket
+} from '../utils/reportClassificationHelpers'
 import { getTenantFeatures } from '../utils/businessCapabilities'
 import GeneralLedgerView from '../components/reports/GeneralLedgerView'
 import { DEFAULT_TENANT_ID } from '../constants/erpConfig.js'
 import { getReceiptConfig } from '../utils/receiptHelpers'
 
-const fetchAllRows = async (table, select = '*', dateColumn = null, start = null, end = null) => {
+const fetchAllRows = async (table, select = '*', dateColumn = null, start = null, end = null, tenantId = null) => {
   let allData = []
   let from = 0
   const step = 1000
   while (true) {
     let query = supabase.from(table).select(select)
+    if (tenantId) {
+      query = query.eq('tenant_id', tenantId)
+    }
     if (dateColumn && start) {
       query = query.gte(dateColumn, start)
     }
@@ -46,12 +54,15 @@ const fetchAllRows = async (table, select = '*', dateColumn = null, start = null
   return allData
 }
 
-const fetchCafeRows = async (start = null, end = null) => {
+const fetchCafeRows = async (start = null, end = null, tenantId = null) => {
   let allData = []
   let from = 0
   const step = 1000
   while (true) {
     let query = supabase.from('cafe').select('*, struk!inner(tanggal)')
+    if (tenantId) {
+      query = query.eq('tenant_id', tenantId)
+    }
     if (start) {
       query = query.gte('struk.tanggal', start)
     }
@@ -85,6 +96,7 @@ const Reports = () => {
   const [cashflowLogs, setCashflowLogs] = useState([])
   const [pengeluaranList, setPengeluaranList] = useState([])
   const [posBalances, setPosBalances] = useState({ cash: 0, rekY: 0, rekN: 0, rekR: 0 })
+  const [posAccountList, setPosAccountList] = useState([])
   const receiptConfig = useMemo(() => getReceiptConfig(), [])
 
   const fetchReportsData = async () => {
@@ -119,22 +131,30 @@ const Reports = () => {
         fetchAllRows('pengeluaran', '*', 'tanggal', filterStart, filterEnd, targetTenantId)
       ])
 
-      let balQuery = supabase.from('pos_balances').select('*')
+      let balQuery = supabase.from('v_pocket_balances').select('*')
       if (targetTenantId) balQuery = balQuery.eq('tenant_id', targetTenantId)
-      const { data: dbBal, error: balErr } = await balQuery
+      let { data: dbBal, error: balErr } = await balQuery
+      if (balErr || !Array.isArray(dbBal)) {
+        let fbQuery = supabase.from('pos_balances').select('*')
+        if (targetTenantId) fbQuery = fbQuery.eq('tenant_id', targetTenantId)
+        const fbRes = await fbQuery
+        dbBal = fbRes.data
+        balErr = fbRes.error
+      }
 
       if (balErr) throw balErr
 
       let cash = 0, rekY = 0, rekN = 0, rekR = 0
-      if (dbBal) {
-        dbBal.forEach(item => {
-          const bal = parseFloat(item.balance) || 0
-          if (item.pos === 'SALDO CASH') cash = bal
-          else if (item.pos === 'SALDO REKENING Y') rekY = bal
-          else if (item.pos === 'SALDO REKENING N') rekN = bal
-          else if (item.pos === 'SALDO REKENING R') rekR = bal
+      const activePockets = (dbBal || [])
+        .filter(item => item.is_active !== false)
+        .map(item => {
+          const liveBal = parseFloat(item.current_balance ?? item.balance ?? 0) || 0
+          if (item.pos === 'SALDO CASH') cash = liveBal
+          else if (item.pos === 'SALDO REKENING Y') rekY = liveBal
+          else if (item.pos === 'SALDO REKENING N') rekN = liveBal
+          else if (item.pos === 'SALDO REKENING R') rekR = liveBal
+          return { ...item, balance: liveBal, current_balance: liveBal }
         })
-      }
 
       setStrukList(dbStruk || [])
       setCarwashList(dbCw || [])
@@ -142,6 +162,7 @@ const Reports = () => {
       setCashflowLogs(dbCf || [])
       setPengeluaranList(dbExp || [])
       setPosBalances({ cash, rekY, rekN, rekR })
+      setPosAccountList(activePockets)
 
     } catch (err) {
       console.error('Error fetching reports data:', err)
@@ -187,12 +208,7 @@ const Reports = () => {
     if (timeRange !== 'all') {
       list = strukList.filter(s => isDateInRange(s.tanggal))
     }
-    return list.filter(s => {
-      const ket = String(s.keterangan || '').toLowerCase()
-      const isTestOrBatal = ket.includes('kalibrasi') || ket.includes('test') || s.status_bayar === 'Batal'
-      const isTukarUang = ket.includes('tukar uang') || ket.includes('tarik tunai') || ket.includes('tukar cash') || ket.includes('lebih qris')
-      return !isTestOrBatal && !isTukarUang
-    })
+    return list.filter(s => !isTestOrCancelledStruk(s) && !isTukarUangStruk(s))
   }, [strukList, isDateInRange, timeRange])
 
   const filteredCarwashList = useMemo(() => {
@@ -202,11 +218,8 @@ const Reports = () => {
     }
     return list.filter(cw => {
       const parentStruk = strukMap.get(cw.id_struk)
-      if (parentStruk) {
-        const ket = String(parentStruk.keterangan || '').toLowerCase()
-        if (ket.includes('kalibrasi') || ket.includes('test') || parentStruk.status_bayar === 'Batal') {
-          return false
-        }
+      if (parentStruk && isTestOrCancelledStruk(parentStruk)) {
+        return false
       }
       return cw.status !== 'Batal' && cw.status !== 'Cancelled' && parseFloat(cw.harga || 0) > 0
     })
@@ -222,11 +235,8 @@ const Reports = () => {
         const dateStr = parentStruk?.tanggal || c.struk?.tanggal || c.created_at
         if (!isDateInRange(dateStr)) return false
       }
-      if (parentStruk) {
-        const ket = String(parentStruk.keterangan || '').toLowerCase()
-        if (ket.includes('kalibrasi') || ket.includes('test') || parentStruk.status_bayar === 'Batal') {
-          return false
-        }
+      if (parentStruk && isTestOrCancelledStruk(parentStruk)) {
+        return false
       }
       return true
     })
@@ -297,36 +307,25 @@ const Reports = () => {
     // Sumber 1: Tabel Pengeluaran resmi
     const processedExpIds = new Set()
     filteredPengeluaranList.forEach(exp => {
-      processedExpIds.add(exp.id_pengeluaran)
+      if (exp.id_pengeluaran) processedExpIds.add(exp.id_pengeluaran)
+      if (exp.id) processedExpIds.add(exp.id)
       const nom = parseFloat(exp.nominal || exp.total_harga || 0)
       if (nom <= 0) return
 
-      const jenis = String(exp.jenis || '').toLowerCase()
-      const kat = String(exp.kategori || '').toLowerCase()
-      const ket = String(exp.keterangan || '').toLowerCase()
-
-      if (jenis.includes('cafe')) {
-        if (kat.includes('bahan') || kat.includes('kulakan') || ket.includes('biji kopi') || ket.includes('susu') || ket.includes('sirup')) {
-          cafeBahanBaku += nom
-        } else {
-          cafeOperasional += nom
-        }
-      } else if (jenis.includes('carwash')) {
-        if (kat.includes('bahan') || kat.includes('chemical') || ket.includes('shampoo') || ket.includes('sabun') || ket.includes('semir')) {
-          carwashBahan += nom
-        } else {
-          carwashOperasional += nom
-        }
-      } else {
-        // Beban Bersama / Overhead
-        if (kat.includes('gaji') || ket.includes('gaji') || kat.includes('casbon') || ket.includes('casbon') || jenis.includes('casbon')) {
-          bebanBersamaGaji += nom
-        } else if (kat.includes('listrik') || kat.includes('air') || ket.includes('listrik') || ket.includes('pdam') || ket.includes('wifi') || kat.includes('utilitas')) {
-          bebanBersamaUtilitas += nom
-        } else {
-          bebanBersamaLain += nom
-        }
-      }
+      const bucket = classifyExpenseBucket({
+        jenis: exp.jenis,
+        kategori: exp.kategori,
+        keterangan: exp.nama_pengeluaran || exp.keterangan || '',
+        karyawan_id: exp.karyawan_id,
+        fromCashflow: false
+      })
+      if (bucket === 'cafe_bahan') cafeBahanBaku += nom
+      else if (bucket === 'cafe_ops') cafeOperasional += nom
+      else if (bucket === 'carwash_bahan') carwashBahan += nom
+      else if (bucket === 'carwash_ops') carwashOperasional += nom
+      else if (bucket === 'overhead_gaji') bebanBersamaGaji += nom
+      else if (bucket === 'overhead_utilitas') bebanBersamaUtilitas += nom
+      else bebanBersamaLain += nom
     })
 
     // Sumber 2: Fallback Cashflow Logs untuk pengeluaran manual yang belum ada di tabel pengeluaran
@@ -351,17 +350,20 @@ const Reports = () => {
         jenis.includes('rekap')
       ) return
 
-      if (jenis.includes('cafe')) {
-        if (kat.includes('bahan') || kat.includes('kulakan')) cafeBahanBaku += nom
-        else cafeOperasional += nom
-      } else if (jenis.includes('carwash')) {
-        if (kat.includes('bahan') || kat.includes('chemical')) carwashBahan += nom
-        else carwashOperasional += nom
-      } else {
-        if (ket.includes('casbon') || kat.includes('casbon') || ket.includes('gaji')) bebanBersamaGaji += nom
-        else if (ket.includes('listrik') || ket.includes('air') || ket.includes('wifi')) bebanBersamaUtilitas += nom
-        else if (!jenis.includes('pindah')) bebanBersamaLain += nom
-      }
+      const bucket = classifyExpenseBucket({
+        jenis: c.jenis,
+        kategori: c.kategori,
+        keterangan: c.keterangan_transaksi || c.keterangan || '',
+        karyawan_id: c.karyawan_id,
+        fromCashflow: true
+      })
+      if (bucket === 'cafe_bahan') cafeBahanBaku += nom
+      else if (bucket === 'cafe_ops') cafeOperasional += nom
+      else if (bucket === 'carwash_bahan') carwashBahan += nom
+      else if (bucket === 'carwash_ops') carwashOperasional += nom
+      else if (bucket === 'overhead_gaji') bebanBersamaGaji += nom
+      else if (bucket === 'overhead_utilitas') bebanBersamaUtilitas += nom
+      else if (!jenis.includes('pindah')) bebanBersamaLain += nom
     })
 
     const totalBebanCafe = cafeBahanBaku + cafeOperasional
@@ -377,7 +379,9 @@ const Reports = () => {
     const totalRevenue = consolidatedRevenue + otherIncome
     const totalOperatingExpenses = totalBebanCafe + totalBebanCarwash + totalBebanBersama
     const netProfit = totalRevenue - totalOperatingExpenses
-    const totalLiquid = posBalances.cash + posBalances.rekY + posBalances.rekN + posBalances.rekR
+    const totalLiquid = posAccountList.length > 0
+      ? posAccountList.reduce((sum, item) => sum + (parseFloat(item.current_balance ?? item.balance ?? 0) || 0), 0)
+      : (posBalances.cash + posBalances.rekY + posBalances.rekN + posBalances.rekR)
 
     return {
       // Unit Cafe
@@ -414,7 +418,7 @@ const Reports = () => {
       totalCars: filteredCarwashList.length,
       aov: filteredStrukByTime.length > 0 ? Math.round(totalRevenue / filteredStrukByTime.length) : 0
     }
-  }, [filteredCafeList, filteredCarwashList, filteredCashflowLogs, filteredPengeluaranList, filteredStrukByTime, posBalances])
+  }, [filteredCafeList, filteredCarwashList, filteredCashflowLogs, filteredPengeluaranList, filteredStrukByTime, posBalances, posAccountList])
 
   return (
     <div className="p-6 pb-24 md:pb-8 space-y-6 max-w-7xl mx-auto">
@@ -762,22 +766,30 @@ const Reports = () => {
           </h3>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 print:grid-cols-4">
-            <div className="p-4 rounded-xl border border-[#26272d] bg-[#18181c]/30 text-center print:border-black print:bg-transparent">
-              <span className="text-[10px] text-[#6b7367] uppercase font-semibold">Kas Laci Kasir</span>
-              <h4 className="text-lg font-black text-white mt-1 print:text-black">{formatRupiah(posBalances.cash)}</h4>
-            </div>
-            <div className="p-4 rounded-xl border border-[#26272d] bg-[#18181c]/30 text-center print:border-black print:bg-transparent">
-              <span className="text-[10px] text-[#6b7367] uppercase font-semibold">Rekening Mandiri Y</span>
-              <h4 className="text-lg font-black text-white mt-1 print:text-black">{formatRupiah(posBalances.rekY)}</h4>
-            </div>
-            <div className="p-4 rounded-xl border border-[#26272d] bg-[#18181c]/30 text-center print:border-black print:bg-transparent">
-              <span className="text-[10px] text-[#6b7367] uppercase font-semibold">Rekening Mandiri N</span>
-              <h4 className="text-lg font-black text-white mt-1 print:text-black">{formatRupiah(posBalances.rekN)}</h4>
-            </div>
-            <div className="p-4 rounded-xl border border-[#26272d] bg-[#18181c]/30 text-center print:border-black print:bg-transparent">
-              <span className="text-[10px] text-[#6b7367] uppercase font-semibold">Rekening Simpanan R</span>
-              <h4 className="text-lg font-black text-white mt-1 print:text-black">{formatRupiah(posBalances.rekR)}</h4>
-            </div>
+            {posAccountList.length > 0 ? (
+              posAccountList.map((acc) => (
+                <div key={acc.id || acc.pos} className="p-4 rounded-xl border border-[#26272d] bg-[#18181c]/30 text-center print:border-black print:bg-transparent">
+                  <span className="text-[10px] text-[#6b7367] uppercase font-semibold block truncate" title={acc.label || acc.pos}>
+                    {acc.label || acc.pos}
+                  </span>
+                  <h4 className="text-lg font-mono tabular-nums font-black text-white mt-1 print:text-black">
+                    {formatRupiah(acc.current_balance ?? acc.balance ?? 0)}
+                  </h4>
+                  <span className="text-[9px] text-[#6b7367] block mt-0.5 print:text-black">Saldo Buku ERPPoss</span>
+                </div>
+              ))
+            ) : (
+              <>
+                <div className="p-4 rounded-xl border border-[#26272d] bg-[#18181c]/30 text-center print:border-black print:bg-transparent">
+                  <span className="text-[10px] text-[#6b7367] uppercase font-semibold">Kas Laci Kasir</span>
+                  <h4 className="text-lg font-mono tabular-nums font-black text-white mt-1 print:text-black">{formatRupiah(posBalances.cash)}</h4>
+                </div>
+                <div className="p-4 rounded-xl border border-[#26272d] bg-[#18181c]/30 text-center print:border-black print:bg-transparent">
+                  <span className="text-[10px] text-[#6b7367] uppercase font-semibold">Rekening Utama</span>
+                  <h4 className="text-lg font-mono tabular-nums font-black text-white mt-1 print:text-black">{formatRupiah(posBalances.rekY)}</h4>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="p-4 rounded-xl border border-slate-700 bg-[#18181c]/50 flex justify-between items-center text-xs font-bold print:border-black print:bg-slate-100">

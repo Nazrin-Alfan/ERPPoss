@@ -62,11 +62,7 @@ export const formatStaffLoginHandle = (email = '') => {
   const clean = String(email || '').trim()
   if (!clean) return '-'
   const lower = clean.toLowerCase()
-  if (lower.endsWith('@pos.internal')) {
-    const localPart = clean.split('@')[0]
-    return localPart.split('.')[0] || localPart
-  }
-  if (lower.endsWith('@jb.local')) {
+  if (lower.endsWith('@pos.internal') || lower.endsWith('@jb.local')) {
     return clean.split('@')[0]
   }
   return clean
@@ -78,19 +74,28 @@ export const syncStaffToKaryawanKantor = ({
   defaultTenantId = DEFAULT_TENANT_ID,
   defaultBranchId = DEFAULT_BRANCH_ID
 }) => {
+  const existingByProfileId = new Map()
+  const existingByEmail = new Map()
   const existingMap = new Map()
+  const deactivatedProfileIds = new Set()
+  const deactivatedEmails = new Set()
   const deactivatedNames = new Set()
 
-  // Indeks karyawan kantor eksisting berdasarkan nama uppercase yang bersih
+  // Indeks karyawan kantor eksisting: prioritaskan profile_id -> email -> nama uppercase
   existingKaryawanKantor.forEach((item) => {
     const key = (item.nama || '').trim().toUpperCase()
-    if (!key) return
+    const emailLow = (item.email || '').trim().toLowerCase()
+    const profId = item.profile_id || null
     const isInactive = item.is_active === false || String(item.status || '').toLowerCase() === 'nonaktif'
     if (isInactive) {
-      deactivatedNames.add(key)
+      if (profId) deactivatedProfileIds.add(profId)
+      if (emailLow) deactivatedEmails.add(emailLow)
+      if (key) deactivatedNames.add(key)
       return
     }
-    existingMap.set(key, item)
+    if (profId) existingByProfileId.set(profId, item)
+    if (emailLow) existingByEmail.set(emailLow, item)
+    if (key) existingMap.set(key, item)
   })
 
   const newRecordsToInsert = []
@@ -102,15 +107,27 @@ export const syncStaffToKaryawanKantor = ({
   staffProfiles.forEach((profile) => {
     if (profile.is_active === false) return
     const pName = (profile.nama || '').trim().toUpperCase()
-    if (!pName || deactivatedNames.has(pName)) return
+    const pEmail = (profile.email || '').trim().toLowerCase()
+    const pId = profile.id || null
 
-    if (!existingMap.has(pName)) {
+    if (!pName) return
+    if ((pId && deactivatedProfileIds.has(pId)) || (pEmail && deactivatedEmails.has(pEmail)) || deactivatedNames.has(pName)) {
+      return
+    }
+
+    const existing =
+      (pId && existingByProfileId.get(pId)) ||
+      (pEmail && existingByEmail.get(pEmail)) ||
+      existingMap.get(pName)
+
+    if (!existing) {
       const generatedId = (typeof crypto !== 'undefined' && crypto.randomUUID)
         ? crypto.randomUUID()
         : '00000000-0000-4000-8000-' + Math.random().toString(16).substring(2, 14).padEnd(12, '0')
       const newRecord = {
         id: generatedId,
         id_karyawan: `kk_auto_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        ...(isValidUUID(pId) ? { profile_id: pId } : {}),
         nama: pName,
         role: profile.role || 'Kasir',
         email: profile.email || '',
@@ -122,17 +139,21 @@ export const syncStaffToKaryawanKantor = ({
         created_at: profile.created_at || new Date().toISOString()
       }
 
+      if (isValidUUID(pId)) existingByProfileId.set(pId, newRecord)
+      if (pEmail) existingByEmail.set(pEmail, newRecord)
       existingMap.set(pName, newRecord)
       mergedList.push(newRecord)
       newRecordsToInsert.push(newRecord)
     } else {
       // Sinkronkan role & email tampilan dengan profil terbaru
-      const existing = existingMap.get(pName)
       if (profile.role) {
         existing.role = profile.role
       }
       if (!existing.email && profile.email) {
         existing.email = profile.email
+      }
+      if (!existing.profile_id && isValidUUID(pId)) {
+        existing.profile_id = pId
       }
       if (!existing.source) {
         existing.source = 'staff_registration'
@@ -168,11 +189,18 @@ export const getRoleBadgeConfig = (role = '') => {
       dotClass: 'bg-brand-emerald'
     }
   }
+  if (normalized === 'admin pusat') {
+    return {
+      label: 'Admin Pusat',
+      bgClass: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
+      dotClass: 'bg-cyan-400'
+    }
+  }
   if (normalized === 'admin') {
     return {
-      label: 'Admin',
-      bgClass: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
-      dotClass: 'bg-purple-400'
+      label: 'Admin Cabang',
+      bgClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+      dotClass: 'bg-amber-400'
     }
   }
   return {

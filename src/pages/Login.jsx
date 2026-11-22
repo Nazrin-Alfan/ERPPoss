@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useAppTheme } from '../context/ThemeContext'
+import { api } from '../services/apiAdapter'
 import {
   KeyRound,
   Mail,
@@ -10,11 +11,18 @@ import {
   User,
   Sparkles,
   CheckCircle2,
-  LogIn
+  LogIn,
+  BookOpen,
+  ArrowLeft
 } from 'lucide-react'
-import { ROLES } from '../constants/roles'
+import { ROLES, getRoleLandingRoute } from '../constants/roles'
 
 const GOOGLE_AUTH_ENABLED = import.meta.env?.VITE_GOOGLE_AUTH_ENABLED !== 'false'
+
+const resolvePostLoginRoute = (profile, userTenants = []) =>
+  getRoleLandingRoute(profile?.role || ROLES.KASIR, {
+    tenantCount: Array.isArray(userTenants) ? userTenants.length : 1
+  })
 
 const GoogleIcon = () => (
   <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
@@ -26,17 +34,43 @@ const GoogleIcon = () => (
 )
 
 const Login = () => {
-  const { login, registerTenantOwner, loginWithGoogle, oauthError, clearOAuthError } = useAuth()
+  const {
+    login,
+    registerTenantOwner,
+    loginWithGoogle,
+    oauthError,
+    clearOAuthError,
+    user,
+    profile,
+    userTenants,
+    loading: authLoading
+  } = useAuth()
   const { currentTheme } = useAppTheme()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   // 'login' | 'register'
-  const [activeTab, setActiveTab] = useState('login')
+  const [activeTab, setActiveTab] = useState(() =>
+    searchParams.get('mode') === 'register' ? 'register' : 'login'
+  )
+
+  useEffect(() => {
+    if (searchParams.get('mode') === 'register') {
+      setActiveTab('register')
+    }
+  }, [searchParams])
   const [showManualRegister, setShowManualRegister] = useState(false)
 
   // Single Login state (Owner, Co-Owner, Admin, Kasir, Super Admin)
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
+  const [tenantSlug, setTenantSlug] = useState(() => {
+    try {
+      return localStorage.getItem('relaypos_last_tenant_slug') || ''
+    } catch {
+      return ''
+    }
+  })
 
   // Self-registration (Owner Onboarding) form state
   const [regNama, setRegNama] = useState('')
@@ -55,6 +89,12 @@ const Login = () => {
     }
   }, [oauthError])
 
+  useEffect(() => {
+    if (!authLoading && user && profile && !loading && !successMsg && !oauthError) {
+      navigate(resolvePostLoginRoute(profile, userTenants), { replace: true })
+    }
+  }, [authLoading, user, profile, userTenants, loading, successMsg, oauthError, navigate])
+
   const switchTab = (tab) => {
     setActiveTab(tab)
     setError('')
@@ -63,19 +103,7 @@ const Login = () => {
   }
 
   const routeAfterLogin = (res) => {
-    const userRole = res.profile?.role || res.user?.role || res.user?.user_metadata?.role || ROLES.KASIR
-    if (userRole === ROLES.SUPER_ADMIN) {
-      navigate('/founder', { replace: true })
-    } else if (userRole === ROLES.OWNER) {
-      const tenantCount = (res.userTenants && res.userTenants.length) || 1
-      if (tenantCount > 1) {
-        navigate('/konsolidasi', { replace: true })
-      } else {
-        navigate('/dashboard', { replace: true })
-      }
-    } else {
-      navigate('/pos', { replace: true })
-    }
+    navigate(resolvePostLoginRoute(res.profile, res.userTenants), { replace: true })
   }
 
   const handleLoginSubmit = async (e) => {
@@ -85,15 +113,18 @@ const Login = () => {
     setLoading(true)
 
     const cleanIdentifier = (identifier || '').trim()
-    const cleanPass = (password || '').trim()
 
-    if (!cleanIdentifier || !cleanPass) {
+    if (!cleanIdentifier || !password) {
       setError('Username atau email serta kata sandi wajib diisi.')
       setLoading(false)
       return
     }
 
-    const res = await login(cleanIdentifier, cleanPass, null)
+    const effectiveSlug = (api.isCloud && !cleanIdentifier.includes('@') && !cleanIdentifier.includes('.'))
+      ? (tenantSlug.trim() || null)
+      : null
+
+    const res = await login(cleanIdentifier, password, effectiveSlug)
     if (!res.success) {
       setError(res.error || 'Gagal masuk. Periksa kembali kredensial Anda.')
     } else {
@@ -114,8 +145,8 @@ const Login = () => {
       return
     }
 
-    if (regPassword.length < 6) {
-      setError('Kata sandi minimal 6 karakter.')
+    if (regPassword.length < 8) {
+      setError('Kata sandi minimal 8 karakter.')
       setLoading(false)
       return
     }
@@ -280,7 +311,8 @@ const Login = () => {
                     id="login-identifier"
                     name="identifier"
                     type="text"
-                    placeholder="owner@tokoanda.com atau kasir1"
+                    autoComplete="username"
+                    placeholder="owner@tokoanda.com atau kasir1.kode-toko"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm font-mono"
@@ -307,6 +339,7 @@ const Login = () => {
                     id="login-password"
                     name="password"
                     type="password"
+                    autoComplete="current-password"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -315,6 +348,27 @@ const Login = () => {
                   />
                 </div>
               </div>
+
+              {api.isCloud && identifier.trim() && !identifier.includes('@') && !identifier.includes('.') && (
+                <div>
+                  <label htmlFor="login-tenant-slug" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                    Kode Toko (Khusus Staf Tanpa Email)
+                  </label>
+                  <div className="relative">
+                    <Building2 className="absolute left-3.5 top-3 text-slate-500" size={16} />
+                    <input
+                      id="login-tenant-slug"
+                      name="tenantSlug"
+                      type="text"
+                      autoComplete="organization"
+                      placeholder="Misal: berkah-auto-wash"
+                      value={tenantSlug}
+                      onChange={(e) => setTenantSlug(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm font-mono"
+                    />
+                  </div>
+                </div>
+              )}
 
               <button
                 type="submit"
@@ -343,6 +397,7 @@ const Login = () => {
                 <input
                   id="reg-tenant-name"
                   type="text"
+                  autoComplete="organization"
                   placeholder="Contoh: Berkah Auto & Cafe"
                   value={regTenantName}
                   onChange={(e) => setRegTenantName(e.target.value)}
@@ -429,6 +484,7 @@ const Login = () => {
                     <input
                       id="reg-nama"
                       type="text"
+                      autoComplete="name"
                       placeholder="Budi Santoso"
                       value={regNama}
                       onChange={(e) => setRegNama(e.target.value)}
@@ -447,6 +503,7 @@ const Login = () => {
                     <input
                       id="reg-email"
                       type="email"
+                      autoComplete="email"
                       placeholder="budi@autoclean.com"
                       value={regEmail}
                       onChange={(e) => setRegEmail(e.target.value)}
@@ -458,13 +515,15 @@ const Login = () => {
 
                 <div>
                   <label htmlFor="reg-password" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                    Kata Sandi (Min. 6 Karakter)
+                    Kata Sandi (Min. 8 Karakter)
                   </label>
                   <div className="relative">
                     <KeyRound className="absolute left-3.5 top-3 text-slate-500" size={16} />
                     <input
                       id="reg-password"
                       type="password"
+                      autoComplete="new-password"
+                      minLength={8}
                       placeholder="••••••••"
                       value={regPassword}
                       onChange={(e) => setRegPassword(e.target.value)}
@@ -489,10 +548,21 @@ const Login = () => {
             )}
 
             <p className="text-[10px] text-slate-500 text-center mt-2">
-              Otomatis mendapatkan lisensi Trial 14 Hari dan Chart of Accounts (COA) siap pakai.
+              Otomatis mendapatkan lisensi Trial Beta 30 Hari dan Chart of Accounts (COA) siap pakai.
             </p>
           </form>
         )}
+
+        <div className="mt-5 pt-4 border-t border-slate-800/80 flex items-center justify-between gap-2 text-[11px] font-semibold text-slate-400">
+          <Link to="/welcome" className="inline-flex items-center gap-1.5 hover:text-white transition-colors">
+            <ArrowLeft size={13} strokeWidth={1.75} />
+            <span>Beranda Produk</span>
+          </Link>
+          <Link to="/panduan" className="inline-flex items-center gap-1.5 text-cyan-300 hover:text-cyan-200 transition-colors">
+            <BookOpen size={13} strokeWidth={1.75} />
+            <span>Panduan Pengguna</span>
+          </Link>
+        </div>
       </div>
     </div>
   )

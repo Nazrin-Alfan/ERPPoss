@@ -173,4 +173,17 @@ describe('3-Tier RBAC Architecture (Owner, Admin, Kasir)', () => {
     expect(loginData.user.role).toBe('Owner')
     expect(loginData.user.email).toBe('budi.test@autoclean.com')
   })
+
+  it('8. should support Admin Pusat multi-branch single-tenant role management via fn_manage_tenant_staff', async () => {
+    const reg = await db.auth.signUp({
+      email: 'pusat.staff@relaypos.com',
+      password: 'password123',
+      options: { data: { nama: 'Admin Pusat Test', role: 'Admin Pusat' } },
+    })
+    expect(reg.error).toBeNull()
+    expect(reg.data.user.role).toBe('Admin Pusat')
+
+    const { data: profiles } = await db.from('profiles').select('*')
+    expect(profiles.some((p) => p.role === 'Admin Pusat' && p.email === 'pusat.staff@relaypos.com')).toBe(true)
+  })
 })

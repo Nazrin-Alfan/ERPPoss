@@ -8,8 +8,148 @@
 import realSeedData from './syntheticSeedData.json' with { type: 'json' }
 import { DEFAULT_TENANT_ID, DEFAULT_BRANCH_ID } from '../constants/erpConfig.js'
 import { GeneralLedgerService, calculateMovingAverageCost } from './generalLedgerService.js'
-import { DEFAULT_CARWASH_PACKAGES } from '../utils/carwashHelpers.js'
+import { DEFAULT_CARWASH_PACKAGES, calculateCarwashPriceAndCommission } from '../utils/carwashHelpers.js'
 import { resolveAccountForPaymentMethod } from '../constants/transactionConstants.js'
+
+const POSTGRES_UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+/** Check whether a value conforms to strict RFC 4122 PostgreSQL UUID syntax. */
+export const isValidPostgresUuid = (val) =>
+  typeof val === 'string' && POSTGRES_UUID_REGEX.test(val)
+
+/** Generate a RFC 4122 v4 UUID compatible with PostgreSQL `uuid` columns. */
+export const generateLocalUuid = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
+const POSTGRES_UUID_PK_TABLES = new Set([
+  'carwash_packages',
+  'daftar_harga_menu',
+  'stok_barang',
+  'resep',
+  'pengeluaran',
+  'barang_masuk',
+])
+
+/** Exact live Supabase column whitelists per table for strict parity checks. */
+export const POSTGRES_SCHEMA_COLUMNS = {
+  pengeluaran: new Set([
+    'id', 'tenant_id', 'branch_id', 'id_cashflow', 'tanggal', 'jam',
+    'nama_pengeluaran', 'jenis', 'kategori', 'nominal', 'id_bahan_baku',
+    'karyawan_id', 'qty', 'apakah_stok', 'created_at', 'pos', 'id_pengeluaran', 'no',
+  ]),
+  barang_masuk: new Set([
+    'id', 'tenant_id', 'branch_id', 'id_bahan_baku', 'tanggal',
+    'nama_bahan_baku', 'jumlah_masuk', 'harga_beli', 'total_biaya',
+    'created_at', 'id_barang', 'nama_barang', 'harga_satuan',
+    'total_harga', 'id_masuk', 'id_pengeluaran', 'id_cashflow', 'nama_produk',
+  ]),
+  carwash_packages: new Set([
+    'id', 'tenant_id', 'branch_id', 'name', 'price', 'description',
+    'sort_order', 'is_active', 'created_at', 'nama_paket', 'tarif',
+    'komisi_skema', 'komisi_value', 'commission_amount', 'komisi',
+    'keterangan', 'tarif_matrix',
+  ]),
+  daftar_harga_menu: new Set([
+    'id', 'tenant_id', 'branch_id', 'daftar_menu', 'harga', 'kategori',
+    'deskripsi', 'foto_url', 'is_bundling', 'is_active', 'updated_at',
+    'id_menu', 'nama_item', 'nama_menu', 'nama',
+  ]),
+  stok_barang: new Set([
+    'id', 'tenant_id', 'branch_id', 'nama_produk', 'satuan', 'stok',
+    'harga_satuan', 'min_stok', 'updated_at', 'nama_barang', 'kategori',
+    'gudang', 'harga_beli', 'harga_jual', 'id_bahan_baku', 'id_barang',
+    'stok_akhir', 'sub_kategori', 'keterangan', 'is_active', 'icon',
+    'emoji', 'foto_url',
+  ]),
+  resep: new Set([
+    'id', 'tenant_id', 'id_menu', 'id_bahan_baku', 'nama_menu',
+    'nama_bahan', 'jumlah', 'satuan', 'created_at', 'id_resep',
+    'jumlah_dibutuhkan', 'daftar_menu', 'nama_bahan_baku', 'jumlah_pemakaian',
+    'stok_barang_id', 'menu_id', 'carwash_package_id',
+  ]),
+}
+
+const buildDefaultTarifMatrix = (basePrice) => ({
+  Small: { Regular: basePrice, 'Body only': Math.max(0, basePrice - 15000) },
+  Medium: { Regular: basePrice + 5000, 'Body only': Math.max(0, basePrice - 10000) },
+  Large: { Regular: basePrice + 10000, 'Body only': Math.max(0, basePrice - 5000) },
+  'Extra Large': { Regular: basePrice + 30000, 'Body only': basePrice + 30000 },
+})
+
+const deriveAutoStockSku = (stockName, gudang, idx) => {
+  const upper = String(stockName || '').toUpperCase()
+  const pad2 = String(idx).padStart(2, '0')
+  const pad3 = String(idx).padStart(3, '0')
+  if (upper.includes('KOPI')) return `BB-KOPI-${pad2}`
+  if (upper.includes('SUSU')) return `BB-SUSU-${pad2}`
+  if (upper.includes('SHAMPOO') || upper.includes('SAMPO')) return `BB-SHM-${pad2}`
+  if (gudang === 'CARWASH') return `CW-${pad3}`
+  if (gudang === 'MERCHANDISE') return `MRC-${pad3}`
+  return `BB-${pad3}`
+}
+
+const STARTER_STOCK_TEMPLATES = [
+  { sku: 'BB-KOPI', nama: 'Biji Kopi House Blend', satuan: 'kg', stok: 100, harga: 150000, minStok: 5, gudang: 'CAFE' },
+  { sku: 'BB-SUSU', nama: 'Susu Segar UHT', satuan: 'liter', stok: 100, harga: 22000, minStok: 10, gudang: 'CAFE' },
+  { sku: 'BB-ROTI', nama: 'Roti Tawar Tebal', satuan: 'porsi', stok: 100, harga: 5000, minStok: 10, gudang: 'CAFE' },
+  { sku: 'BB-KENTANG', nama: 'Kentang Shoestring', satuan: 'kg', stok: 50, harga: 32000, minStok: 5, gudang: 'CAFE' },
+  { sku: 'BB-SHM', nama: 'Shampoo Carwash Touchless', satuan: 'liter', stok: 200, harga: 35000, minStok: 20, gudang: 'CARWASH' },
+]
+
+const STARTER_CAFE_MENUS = [
+  { nama: 'Kopi Susu Aren', harga: 18000, kategori: 'Kopi' },
+  { nama: 'Americano Dingin', harga: 15000, kategori: 'Kopi' },
+  { nama: 'Roti Bakar Cokelat', harga: 15000, kategori: 'Makanan' },
+  { nama: 'Kentang Goreng Crispy', harga: 16000, kategori: 'Snack' },
+]
+
+const STARTER_CAFE_RECIPES = [
+  { menu: 'Kopi Susu Aren', sku: 'BB-KOPI', bahan: 'Biji Kopi House Blend', jumlah: 0.02, satuan: 'kg' },
+  { menu: 'Kopi Susu Aren', sku: 'BB-SUSU', bahan: 'Susu Segar UHT', jumlah: 0.15, satuan: 'liter' },
+  { menu: 'Americano Dingin', sku: 'BB-KOPI', bahan: 'Biji Kopi House Blend', jumlah: 0.02, satuan: 'kg' },
+  { menu: 'Roti Bakar Cokelat', sku: 'BB-ROTI', bahan: 'Roti Tawar Tebal', jumlah: 1, satuan: 'porsi' },
+  { menu: 'Kentang Goreng Crispy', sku: 'BB-KENTANG', bahan: 'Kentang Shoestring', jumlah: 0.2, satuan: 'kg' },
+]
+
+const seedStarterStockForTenant = (store, tenantId, branchId, businessType = 'HYBRID') => {
+  const stockTable = store.getTable('stok_barang')
+  if (stockTable.some((s) => s.tenant_id === tenantId)) return
+  const bType = String(businessType || 'HYBRID').toUpperCase()
+  const now = new Date().toISOString()
+  STARTER_STOCK_TEMPLATES.filter((tpl) => {
+    if (bType === 'CAFE') return tpl.gudang === 'CAFE'
+    if (bType === 'CARWASH') return tpl.gudang === 'CARWASH'
+    return true
+  }).forEach((tpl) => {
+    stockTable.push({
+      id: generateLocalUuid(),
+      tenant_id: tenantId,
+      branch_id: branchId,
+      id_barang: tpl.sku,
+      id_bahan_baku: tpl.sku,
+      nama_produk: tpl.nama,
+      nama_barang: tpl.nama,
+      satuan: tpl.satuan,
+      stok: tpl.stok,
+      stok_akhir: tpl.stok,
+      harga_satuan: tpl.harga,
+      harga_beli: tpl.harga,
+      min_stok: tpl.minStok,
+      gudang: tpl.gudang,
+      kategori: 'Bahan Baku',
+      is_active: true,
+      updated_at: now,
+    })
+  })
+}
 
 const STORAGE_KEY = 'relaypos_real_sandbox_v2'
 const AUTH_STORAGE_KEY = 'relaypos_real_auth_v2'
@@ -135,6 +275,7 @@ export const INITIAL_SEED_DATA = {
       created_at: new Date().toISOString()
     }
   ],
+  beta_feedback: [],
   branches: [
     {
       id: DEFAULT_BRANCH_ID,
@@ -340,11 +481,16 @@ export class LocalDatabaseStore {
     this.authSession = this.loadAuth()
     this.provisionedTenants = new Set([DEFAULT_TENANT_ID])
     this.syncStrukToCashflow = false // Standar ERP: Omzet direkap saat Tutup Kasir / EOD, bukan per-struk
+    this.strictPostgresParity = false
     this.ensureInitialized()
   }
 
   setSyncStrukToCashflow(enabled) {
     this.syncStrukToCashflow = Boolean(enabled)
+  }
+
+  setStrictPostgresParity(enabled) {
+    this.strictPostgresParity = Boolean(enabled)
   }
 
   ensureInitialized() {
@@ -553,6 +699,7 @@ export class LocalDatabaseStore {
       this.data.cashflow = []
     }
     this.provisionedTenants = new Set([DEFAULT_TENANT_ID])
+    this.strictPostgresParity = false
     this.saveToStorage(true)
     return this.data
   }
@@ -637,9 +784,14 @@ export class LocalDatabaseStore {
       if (!hasCwPkg) {
         hasMutations = true
         DEFAULT_CARWASH_PACKAGES.forEach((pkg, idx) => {
+          const basePrice = typeof pkg.tarif === 'number' ? pkg.tarif : (pkg.tarif?.Small?.Regular || 50000)
           tableCwPkg.push({
             ...pkg,
-            id: `pkg_${tenantId}_${idx + 1}`,
+            id: generateLocalUuid(),
+            name: pkg.nama_paket,
+            description: pkg.keterangan || '',
+            price: basePrice,
+            tarif_matrix: typeof pkg.tarif === 'object' ? pkg.tarif : null,
             sort_order: idx + 1,
             tenant_id: tenantId,
             branch_id: `branch_${tenantId}_main`
@@ -648,19 +800,47 @@ export class LocalDatabaseStore {
       }
     }
 
-    // 7. Master Menu Cafe Awal (jika tipe Cafe / Hybrid)
+    // 7. Master Menu & Resep Cafe Awal (jika tipe Cafe / Hybrid)
     if (businessType !== 'CARWASH') {
       const tableMenu = this.getTable('daftar_harga_menu')
       const hasMenu = tableMenu.some(m => m.tenant_id === tenantId)
       if (!hasMenu) {
         hasMutations = true
-        const sampleMenus = (realSeedData.daftar_harga_menu || []).slice(0, 10)
-        sampleMenus.forEach((m, idx) => {
+        STARTER_CAFE_MENUS.forEach((m) => {
           tableMenu.push({
-            ...m,
-            id_menu: `menu_${tenantId}_${idx + 1}`,
+            id: generateLocalUuid(),
+            id_menu: m.nama,
+            daftar_menu: m.nama,
+            nama_menu: m.nama,
+            harga: m.harga,
+            kategori: m.kategori,
+            is_active: true,
             tenant_id: tenantId,
-            branch_id: `branch_${tenantId}_main`
+            branch_id: `branch_${tenantId}_main`,
+            updated_at: new Date().toISOString(),
+          })
+        })
+      }
+
+      const tableResep = this.getTable('resep')
+      const hasResep = tableResep.some(r => r.tenant_id === tenantId)
+      if (!hasResep) {
+        hasMutations = true
+        STARTER_CAFE_RECIPES.forEach((r) => {
+          tableResep.push({
+            id: generateLocalUuid(),
+            tenant_id: tenantId,
+            id_menu: r.menu,
+            id_bahan_baku: r.sku,
+            daftar_menu: r.menu,
+            nama_menu: r.menu,
+            nama_bahan: r.bahan,
+            nama_bahan_baku: r.bahan,
+            jumlah: r.jumlah,
+            jumlah_dibutuhkan: r.jumlah,
+            jumlah_pemakaian: r.jumlah,
+            satuan: r.satuan,
+            created_at: new Date().toISOString(),
           })
         })
       }
@@ -672,6 +852,35 @@ export class LocalDatabaseStore {
   }
 
   getTable(tableName) {
+    if (tableName === 'v_pocket_balances') {
+      const pockets = this.data.pos_balances || []
+      const cashflows = this.data.cashflow || []
+      return pockets.map((pb) => {
+        let totalIn = 0
+        let totalOut = 0
+        let txCount = 0
+        cashflows.forEach((cf) => {
+          if (cf.tenant_id !== pb.tenant_id) return
+          const matchedById = cf.pocket_id && cf.pocket_id === pb.id
+          const matchedByPos = !cf.pocket_id && cf.pos && pb.pos && String(cf.pos).trim().toUpperCase() === String(pb.pos).trim().toUpperCase()
+          if (matchedById || matchedByPos) {
+            totalIn += parseFloat(cf.pemasukan || 0)
+            totalOut += parseFloat(cf.pengeluaran || 0)
+            txCount += 1
+          }
+        })
+        const opening = parseFloat(pb.balance || 0)
+        return {
+          ...pb,
+          opening_balance: opening,
+          total_in: totalIn,
+          total_out: totalOut,
+          current_balance: opening + (totalIn - totalOut),
+          tx_count: txCount,
+          balance_source: 'ERP_BOOK',
+        }
+      })
+    }
     if (!this.data[tableName]) {
       this.data[tableName] = []
     }
@@ -748,6 +957,56 @@ export class LocalQueryBuilder {
     this.payload = null
     this.explicitTenantFilter = false
     this.bypassTenantIsolation = false
+    this.parityError = null
+  }
+
+  _buildUuidSyntaxError(val) {
+    return {
+      code: '22P02',
+      message: `invalid input syntax for type uuid: "${val}"`,
+    }
+  }
+
+  _validateFilterUuid(column, value) {
+    if (!this.store.strictPostgresParity || this.parityError) return
+    const isUuidCol =
+      (column === 'id' && POSTGRES_UUID_PK_TABLES.has(this.tableName)) ||
+      (this.tableName === 'pengeluaran' && column === 'id_bahan_baku')
+    if (!isUuidCol || value === null || value === undefined) return
+    if (!isValidPostgresUuid(value)) {
+      this.parityError = this._buildUuidSyntaxError(value)
+    }
+  }
+
+  _validateMutationPayloads(records) {
+    if (!this.store.strictPostgresParity) return null
+    if (this.parityError) return this.parityError
+
+    const allowedCols = POSTGRES_SCHEMA_COLUMNS[this.tableName]
+    for (const item of records) {
+      if (!item || typeof item !== 'object') continue
+      if (allowedCols) {
+        for (const key of Object.keys(item)) {
+          if (!allowedCols.has(key)) {
+            return {
+              code: 'PGRST204',
+              message: `Could not find the '${key}' column of '${this.tableName}' in the schema cache`,
+            }
+          }
+        }
+      }
+      if (POSTGRES_UUID_PK_TABLES.has(this.tableName) && item.id !== undefined && item.id !== null) {
+        if (!isValidPostgresUuid(item.id)) {
+          return this._buildUuidSyntaxError(item.id)
+        }
+      }
+      if (this.tableName === 'pengeluaran' && item.id_bahan_baku !== undefined && item.id_bahan_baku !== null) {
+        if (!isValidPostgresUuid(item.id_bahan_baku)) {
+          return this._buildUuidSyntaxError(item.id_bahan_baku)
+        }
+      }
+    }
+    return null
   }
 
   bypassTenant() {
@@ -790,6 +1049,7 @@ export class LocalQueryBuilder {
     if (column.startsWith('id_') || column === 'id') {
       this.hasSpecificIdFilter = true
     }
+    this._validateFilterUuid(column, value)
     this.filters.push((row) => this._getValue(row, column) === value)
     return this
   }
@@ -832,12 +1092,18 @@ export class LocalQueryBuilder {
   }
 
   in(column, values) {
+    if (Array.isArray(values)) {
+      values.forEach((v) => this._validateFilterUuid(column, v))
+    }
     this.filters.push((row) => Array.isArray(values) && values.includes(this._getValue(row, column)))
     return this
   }
 
   is(column, value) {
-    this.filters.push((row) => this._getValue(row, column) === value)
+    this.filters.push((row) => {
+      const val = this._getValue(row, column)
+      return value === null ? (val === null || val === undefined) : val === value
+    })
     return this
   }
 
@@ -913,6 +1179,9 @@ export class LocalQueryBuilder {
 
   // Execute SELECT
   async _executeSelect() {
+    if (this.parityError) {
+      return { data: null, error: this.parityError }
+    }
     const activeTenantId = getActiveTenantId()
     
     // Auto-provision master data untuk tenant baru HANYA jika belum pernah di-provision (0ms check)
@@ -931,6 +1200,11 @@ export class LocalQueryBuilder {
       // Lookup profil pengguna spesifik berbasis ID (autentikasi & session) tidak boleh terblokir tenant isolation
       if (this.tableName === 'profiles' && this.hasSpecificIdFilter) {
         // Izinkan identity lookup
+      } else if (this.tableName === 'tenant_memberships') {
+        const authUid = actor?.userId || this.store.getAuth()?.user?.id || null
+        if ((!hasActor || actor.role !== 'Super Admin') && authUid) {
+          filteredResults = filteredResults.filter((row) => row.user_id === authUid)
+        }
       } else if (hasActor && actor.role !== 'Super Admin' && actor.tenant_id) {
         // Strict multi-tenant isolation under active actor context
         filteredResults = filteredResults.filter((row) => row.tenant_id === actor.tenant_id)
@@ -946,7 +1220,7 @@ export class LocalQueryBuilder {
     const totalCount = filteredResults.length
     let results = [...filteredResults]
 
-    // PR-3: RBAC & Granular Branch Scoping Parity
+    // PR-3 & RBAC Branch Scoping Parity
     if (actor && actor.role === 'Kasir') {
       const sensitiveTables = [
         'journal_entries',
@@ -955,6 +1229,7 @@ export class LocalQueryBuilder {
         'karyawan_cuci',
         'karyawan_kantor',
         'pos_balances',
+        'v_pocket_balances',
         'cashflow',
         'intelligence_daily_snapshots'
       ]
@@ -983,6 +1258,31 @@ export class LocalQueryBuilder {
           }
           return true
         })
+      }
+    } else if (actor && actor.role === 'Admin' && actor.branchId) {
+      // Admin Cabang: strictly scoped to own branch across finance & operational tables (no NULL bypass)
+      const strictBranchTables = [
+        'pos_balances',
+        'v_pocket_balances',
+        'cashflow',
+        'pengeluaran',
+        'struk',
+        'cafe',
+        'carwash',
+        'stok_barang',
+        'barang_masuk',
+        'barang_keluar',
+        'karyawan_cuci',
+        'karyawan_kantor',
+        'intelligence_daily_snapshots',
+        'cashier_shift_closings',
+        'crm_loyalty_logs',
+        'customer_reward_claims',
+      ]
+      if (strictBranchTables.includes(this.tableName)) {
+        results = results.filter((row) => row.branch_id === actor.branchId)
+      } else if (this.tableName === 'profiles' && !this.hasSpecificIdFilter) {
+        results = results.filter((row) => row.id === actor.userId || row.branch_id === actor.branchId)
       }
     }
 
@@ -1083,6 +1383,10 @@ export class LocalQueryBuilder {
   // Execute INSERT
   async _executeInsert() {
     const records = Array.isArray(this.payload) ? this.payload : [this.payload]
+    const parityErr = this._validateMutationPayloads(records)
+    if (parityErr) {
+      return { data: null, error: parityErr }
+    }
     const table = this.store.getTable(this.tableName)
     const inserted = []
     const activeTenantId = getActiveTenantId()
@@ -1111,9 +1415,25 @@ export class LocalQueryBuilder {
         }
       }
     }
+    if (actorInsert && actorInsert.role === 'Admin' && actorInsert.branchId) {
+      const branchLockedTables = ['pos_balances', 'cashflow', 'pengeluaran', 'struk', 'cafe', 'carwash', 'stok_barang', 'barang_masuk', 'barang_keluar']
+      if (branchLockedTables.includes(this.tableName)) {
+        for (const item of records) {
+          if (item.branch_id !== undefined && item.branch_id !== actorInsert.branchId) {
+            return {
+              data: null,
+              error: new Error('[FORBIDDEN_BRANCH_OPERATION] Admin Cabang dilarang membuat data untuk cabang lain.')
+            }
+          }
+        }
+      }
+    }
     for (const item of records) {
       const effectiveTenant = item.tenant_id || (isMultiTenantTable(this.tableName) ? activeTenantId : undefined)
-      const effectiveBranch = item.branch_id || (effectiveTenant === DEFAULT_TENANT_ID ? DEFAULT_BRANCH_ID : `branch_${effectiveTenant || 'main'}_main`)
+      const effectiveBranch =
+        item.branch_id !== undefined
+          ? item.branch_id
+          : (effectiveTenant === DEFAULT_TENANT_ID ? DEFAULT_BRANCH_ID : `branch_${effectiveTenant || 'main'}_main`)
 
       // Validasi integritas kapabilitas bisnis model tenant (Defense-in-Depth)
       if (effectiveTenant) {
@@ -1149,7 +1469,57 @@ export class LocalQueryBuilder {
         ...(effectiveTenant ? { tenant_id: effectiveTenant } : {}),
       }
 
-      if (!record.id && !record.id_struk && !record.id_detail && !record.id_transaksi && !record.id_pengeluaran && !record.id_cashflow && !record.id_bahan_baku && !record.id_menu && !record.id_resep) {
+      if (this.tableName === 'pos_balances') {
+        const dup = table.find(
+          (p) =>
+            p.tenant_id === record.tenant_id &&
+            (p.branch_id ?? null) === (record.branch_id ?? null) &&
+            String(p.pos || '').trim().toUpperCase() === String(record.pos || '').trim().toUpperCase()
+        )
+        if (dup) {
+          return {
+            data: null,
+            error: Object.assign(new Error(`23505: Kantong "${record.pos}" sudah ada pada cabang ini.`), { code: '23505' }),
+          }
+        }
+      }
+
+      if (this.tableName === 'cashflow') {
+        const pockets = this.store.getTable('pos_balances')
+        if (record.pocket_id) {
+          const match = pockets.find((p) => p.tenant_id === record.tenant_id && p.id === record.pocket_id)
+          if (!match) {
+            return {
+              data: null,
+              error: Object.assign(new Error('23503: FOREIGN_KEY_VIOLATION pocket_id tidak valid untuk tenant ini.'), { code: '23503' }),
+            }
+          }
+          record.pos = match.pos
+        } else if (record.pos) {
+          const normPos = String(record.pos).trim().toUpperCase()
+          let match = pockets.find(
+            (p) =>
+              p.tenant_id === record.tenant_id &&
+              String(p.pos || '').trim().toUpperCase() === normPos &&
+              (p.branch_id ?? null) === (record.branch_id ?? null)
+          ) || pockets.find(
+            (p) => p.tenant_id === record.tenant_id && String(p.pos || '').trim().toUpperCase() === normPos
+          )
+          if (!match && ['SALDO REKENING (N)', 'SALDO REKENING OPERASIONAL', 'SALDO REKENING N'].includes(normPos)) {
+            match =
+              pockets.find((p) => p.tenant_id === record.tenant_id && p.pos === 'SALDO REKENING Y') ||
+              pockets.find((p) => p.tenant_id === record.tenant_id && String(p.tipe || 'BANK').toUpperCase() === 'BANK')
+          }
+          if (match) {
+            record.pocket_id = match.id
+            record.pos = match.pos
+          }
+        }
+      }
+
+      if (POSTGRES_UUID_PK_TABLES.has(this.tableName) && !record.id) {
+        record.id = generateLocalUuid()
+      } else if (!record.id && !record.id_struk && !record.id_detail && !record.id_transaksi && !record.id_pengeluaran && !record.id_cashflow && !record.id_bahan_baku && !record.id_menu && !record.id_resep) {
         record.id = `id_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
       }
 
@@ -1164,6 +1534,10 @@ export class LocalQueryBuilder {
 
   // Execute UPDATE
   async _executeUpdate() {
+    const parityErr = this._validateMutationPayloads([this.payload])
+    if (parityErr) {
+      return { data: null, error: parityErr }
+    }
     const table = this.store.getTable(this.tableName)
     const updated = []
     const activeTenantId = getActiveTenantId()
@@ -1223,6 +1597,10 @@ export class LocalQueryBuilder {
   async _executeUpsert() {
     const table = this.store.getTable(this.tableName)
     const records = Array.isArray(this.payload) ? this.payload : [this.payload]
+    const parityErr = this._validateMutationPayloads(records)
+    if (parityErr) {
+      return { data: null, error: parityErr }
+    }
     const upserted = []
 
     const actorUpsert = getActiveActorContext()
@@ -1264,6 +1642,9 @@ export class LocalQueryBuilder {
           created_at: new Date().toISOString(),
           ...item,
         }
+        if (POSTGRES_UUID_PK_TABLES.has(this.tableName) && !newRecord.id) {
+          newRecord.id = generateLocalUuid()
+        }
         table.push(newRecord)
         upserted.push(newRecord)
         this._applyTriggersOnInsert(newRecord)
@@ -1276,6 +1657,9 @@ export class LocalQueryBuilder {
 
   // Execute DELETE
   async _executeDelete() {
+    if (this.parityError) {
+      return { data: null, error: this.parityError }
+    }
     const table = this.store.getTable(this.tableName)
     const remaining = []
     const deleted = []
@@ -1297,6 +1681,22 @@ export class LocalQueryBuilder {
         return {
           data: null,
           error: new Error('[IMMUTABLE_POSTED_JOURNAL] Jurnal akuntansi berstatus POSTED bersifat immutable.')
+        }
+      }
+    }
+    if (this.tableName === 'pos_balances') {
+      const cashflows = this.store.getTable('cashflow')
+      const candidateRows = table.filter((row) => this.filters.every((f) => f(row)))
+      const referenced = candidateRows.find((pb) =>
+        cashflows.some((cf) => cf.tenant_id === pb.tenant_id && cf.pocket_id === pb.id)
+      )
+      if (referenced) {
+        return {
+          data: null,
+          error: Object.assign(
+            new Error(`23503: FOREIGN_KEY_VIOLATION Kantong "${referenced.label || referenced.pos}" masih digunakan oleh transaksi cashflow dan tidak dapat dihapus permanen.`),
+            { code: '23503' }
+          ),
         }
       }
     }
@@ -1337,7 +1737,8 @@ export class LocalQueryBuilder {
     if (this.tableName === 'cafe') {
       const recipes = this.store.getTable('resep').filter((r) => 
         (r.tenant_id ? r.tenant_id === effectiveTenant : true) &&
-        r.nama_menu === record.nama_menu
+        ((record.menu_id && r.menu_id === record.menu_id) ||
+         (!r.menu_id && r.nama_menu === record.nama_menu))
       )
       const stockTable = this.store.getTable('stok_barang')
       const bkTable = this.store.getTable('barang_keluar')
@@ -1350,7 +1751,7 @@ export class LocalQueryBuilder {
             tenant_id: effectiveTenant,
             branch_id: record.branch_id || DEFAULT_BRANCH_ID,
             id_detail: record.id_detail,
-            id_bahan_baku: rec.id_bahan_baku,
+            id_bahan_baku: rec.stok_barang_id || rec.id_bahan_baku,
             nama_bahan_baku: rec.nama_bahan,
             jumlah_keluar: qtyOut,
             tanggal: new Date().toISOString().split('T')[0],
@@ -1359,7 +1760,8 @@ export class LocalQueryBuilder {
 
           const stockItem = stockTable.find((s) => 
             (s.tenant_id ? s.tenant_id === effectiveTenant : true) &&
-            s.id_bahan_baku === rec.id_bahan_baku
+            ((rec.stok_barang_id && s.id === rec.stok_barang_id) ||
+             s.id_bahan_baku === rec.id_bahan_baku)
           )
           if (stockItem) {
             stockItem.stok = (parseFloat(stockItem.stok) || 0) - qtyOut
@@ -1523,6 +1925,42 @@ export class LocalQueryBuilder {
 
     if (this.tableName === 'carwash' && newRow.status === 'Batal' && oldRow.status !== 'Batal') {
       this._restoreCarwashStock(newRow)
+    }
+
+    if (this.tableName === 'daftar_harga_menu') {
+      const newMenuName = newRow.daftar_menu || newRow.nama_menu
+      const oldMenuName = oldRow.daftar_menu || oldRow.nama_menu
+      if (newMenuName && newMenuName !== oldMenuName && newRow.id) {
+        this.store.getTable('resep').forEach((r) => {
+          if (r.menu_id === newRow.id && (!r.tenant_id || r.tenant_id === newRow.tenant_id)) {
+            r.nama_menu = newMenuName
+            r.daftar_menu = newMenuName
+          }
+        })
+      }
+    }
+
+    if (this.tableName === 'stok_barang') {
+      const newStockName = newRow.nama_produk || newRow.nama_barang
+      const oldStockName = oldRow.nama_produk || oldRow.nama_barang
+      if (newStockName && newStockName !== oldStockName && newRow.id) {
+        this.store.getTable('resep').forEach((r) => {
+          if (r.stok_barang_id === newRow.id && (!r.tenant_id || r.tenant_id === newRow.tenant_id)) {
+            r.nama_bahan = newStockName
+            r.nama_bahan_baku = newStockName
+          }
+        })
+      }
+    }
+
+    if (this.tableName === 'pos_balances') {
+      if (newRow.pos && newRow.pos !== oldRow.pos && newRow.id) {
+        this.store.getTable('cashflow').forEach((cf) => {
+          if (cf.pocket_id === newRow.id && (!cf.tenant_id || cf.tenant_id === newRow.tenant_id)) {
+            cf.pos = newRow.pos
+          }
+        })
+      }
     }
   }
 
@@ -1748,7 +2186,11 @@ export class LocalQueryBuilder {
     if (!rawItemId) return
 
     const stockTable = this.store.getTable('stok_barang')
-    const stockItem = stockTable.find((s) => s.id_barang === rawItemId || s.id_bahan_baku === rawItemId)
+    const stockItem = stockTable.find(
+      (s) =>
+        (!exp.tenant_id || !s.tenant_id || s.tenant_id === exp.tenant_id) &&
+        (s.id === rawItemId || s.id_barang === rawItemId || s.id_bahan_baku === rawItemId)
+    )
     if (!stockItem) return
 
     const qty = parseFloat(exp.qty || exp.jumlah || 1)
@@ -1804,7 +2246,10 @@ export class LocalQueryBuilder {
 }
 
 // Client Factory compatible with Supabase Interface
-export const createLocalClient = () => {
+export const createLocalClient = (options = {}) => {
+  if (options && typeof options.strictPostgresParity === 'boolean') {
+    localDbStore.setStrictPostgresParity(options.strictPostgresParity)
+  }
   const authListeners = []
 
   const glService = new GeneralLedgerService(localDbStore)
@@ -2009,57 +2454,12 @@ export const createLocalClient = () => {
 
         const existing = profiles.find((p) => p.email?.toLowerCase() === normalizedEmail)
         if (existing) {
-          // Smart Co-Owner Re-Bind:
-          // Jika mendaftarkan Owner (Co-Owner) dan akun tersebut hanya berada di tenant trial kosong (0 struk, <=1 profil)
-          // akibat salah klik Google Login sebelumnya, pindahkan ke targetTenantId dan hapus tenant kosongnya.
-          const requestedRole = options.data?.role
-          if (requestedRole === 'Owner' && existing.role !== 'Super Admin' && existing.tenant_id !== targetTenantId) {
-            const oldTenant = tenants.find((t) => t.id === existing.tenant_id)
-            const strukTable = localDbStore.getTable('struk') || []
-            const oldTxCount = strukTable.filter((s) => s.tenant_id === existing.tenant_id).length
-            const oldProfCount = profiles.filter((p) => p.tenant_id === existing.tenant_id).length
-
-            if (String(oldTenant?.plan || '').toUpperCase() === 'TRIAL' && oldTxCount === 0 && oldProfCount <= 1) {
-              const oldTenantId = existing.tenant_id
-              existing.tenant_id = targetTenantId
-              existing.branch_id = targetBranchId
-              existing.role = 'Owner'
-              existing.is_active = true
-              existing.nama = (options.data?.nama || existing.nama || username).trim().toUpperCase()
-
-              // Remove empty accidental trial tenant, branches, and licenses
-              const tIdx = tenants.findIndex((t) => t.id === oldTenantId)
-              if (tIdx !== -1) tenants.splice(tIdx, 1)
-
-              const branches = localDbStore.getTable('branches') || []
-              for (let i = branches.length - 1; i >= 0; i--) {
-                if (branches[i].tenant_id === oldTenantId) branches.splice(i, 1)
-              }
-              const licenses = localDbStore.getTable('tenant_licenses') || []
-              for (let i = licenses.length - 1; i >= 0; i--) {
-                if (licenses[i].tenant_id === oldTenantId) licenses.splice(i, 1)
-              }
-
-              localDbStore.saveToStorage()
-              const reboundUser = {
-                id: existing.id,
-                email: existing.email,
-                username,
-                nama: existing.nama,
-                role: 'Owner',
-                tenant_id: existing.tenant_id,
-                branch_id: existing.branch_id,
-                user_metadata: { nama: existing.nama, username, role: 'Owner', tenant_id: existing.tenant_id },
-              }
-              return { data: { user: reboundUser }, error: null }
-            }
-          }
           return { data: { user: null }, error: new Error('Email/Username sudah terdaftar.') }
         }
 
         const newUserId = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
         const cleanNama = (options.data?.nama || username).trim().toUpperCase()
-        const allowedStaffRoles = ['Kasir', 'Admin', 'Owner', 'Staff Kantor', 'Karyawan Cuci']
+        const allowedStaffRoles = ['Kasir', 'Admin', 'Admin Pusat', 'Owner', 'Staff Kantor', 'Karyawan Cuci']
         const role = allowedStaffRoles.includes(options.data?.role) ? options.data.role : 'Kasir'
 
         const salt = DEFAULT_SALT
@@ -2146,8 +2546,8 @@ export const createLocalClient = () => {
         if (!email || !String(email).trim()) {
           return { data: { user: null, session: null }, error: new Error('Email wajib diisi.') }
         }
-        if (!password || !String(password).trim() || password.length < 6) {
-          return { data: { user: null, session: null }, error: new Error('Password minimal 6 karakter.') }
+        if (!password || !String(password).trim() || password.length < 8) {
+          return { data: { user: null, session: null }, error: new Error('Password minimal 8 karakter.') }
         }
         if (!tenantName || !String(tenantName).trim()) {
           return { data: { user: null, session: null }, error: new Error('Nama toko/usaha wajib diisi.') }
@@ -2193,6 +2593,7 @@ export const createLocalClient = () => {
 
         // 3. Inisialisasi master data otomatis untuk tenant baru
         localDbStore.ensureTenantMasterData(newTenantId, cleanType)
+        seedStarterStockForTenant(localDbStore, newTenantId, newBranchId, cleanType)
 
         // 4. Buat profile owner
         const newUserId = `usr_${Date.now()}`
@@ -2211,24 +2612,32 @@ export const createLocalClient = () => {
           created_at: new Date().toISOString(),
         }
         localDbStore.getTable('profiles').push(ownerProfile)
+        localDbStore.getTable('tenant_memberships').push({
+          user_id: newUserId,
+          tenant_id: newTenantId,
+          branch_id: newBranchId,
+          role: 'Owner',
+          is_default: true,
+          created_at: new Date().toISOString(),
+        })
 
-        // 4b. Buat lisensi uji coba 14 hari (Trial Otomatis)
-        const trialExpiry = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+        // 4b. Buat lisensi uji coba 30 hari (Beta Trial Otomatis)
+        const trialExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
         localDbStore.getTable('tenant_licenses').push({
           id: `lic_${Date.now()}`,
           tenant_id: newTenantId,
           license_key: `RLPOS-TRL-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-          tier: 'TRIAL_14D',
+          tier: 'TRIAL_30D',
           plan: 'trial',
-          tier_name: 'RelayPOS Trial (14 Hari)',
+          tier_name: 'RelayPOS Beta Trial (30 Hari)',
           status: 'ACTIVE',
           started_at: new Date().toISOString(),
           expires_at: trialExpiry,
           valid_until: trialExpiry,
           max_branches: 1,
           max_devices: 3,
-          features: { trial: true, duration_days: 14 },
-          notes: 'Trial Otomatis 14 Hari Pendaftaran Mandiri',
+          features: { trial: true, duration_days: 30, trial_days: 30 },
+          notes: 'Trial Beta Otomatis 30 Hari Pendaftaran Mandiri',
           created_at: new Date().toISOString()
         })
 
@@ -2275,6 +2684,12 @@ export const createLocalClient = () => {
         let tenant = null
 
         if (profile) {
+          if (profile.is_active === false) {
+            return {
+              data: { user: null, session: null },
+              error: new Error('ACCOUNT_INACTIVE: Akun staf ini telah dinonaktifkan oleh Owner.'),
+            }
+          }
           // Akun sudah ada -> login langsung
           tenant = localDbStore.getTable('tenants').find((t) => t.id === profile.tenant_id)
         } else {
@@ -2373,8 +2788,8 @@ export const createLocalClient = () => {
         }
 
         if (password) {
-          if (password.length < 6) {
-            return { data: { user: null }, error: new Error('Kata sandi baru minimal 6 karakter.') }
+          if (password.length < 8) {
+            return { data: { user: null }, error: new Error('Kata sandi baru minimal 8 karakter.') }
           }
           const salt = profile.salt || DEFAULT_SALT
           const password_hash = await hashPassword(password, salt)
@@ -2389,6 +2804,50 @@ export const createLocalClient = () => {
 
         localDbStore.saveToStorage()
         return { data: { user: session.user }, error: null }
+      },
+
+      async forgotPassword(email) {
+        const cleanEmail = String(email || '').trim().toLowerCase()
+        const profiles = localDbStore.getTable('profiles') || []
+        const found = profiles.find((p) => (p.email || '').toLowerCase() === cleanEmail)
+        if (!found) {
+          return { success: true, emailSent: true }
+        }
+        const token = `rst_${generateLocalUuid().slice(0, 12)}`
+        localDbStore.getTable('password_reset_tokens').push({
+          token,
+          user_id: found.id,
+          email: cleanEmail,
+          expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+        })
+        localDbStore.saveToStorage()
+        return { success: true, emailSent: true, token }
+      },
+
+      async resetPassword({ newPassword, token = null }) {
+        if (!newPassword || newPassword.length < 8) {
+          throw new Error('Kata sandi baru minimal 8 karakter.')
+        }
+        const profiles = localDbStore.getTable('profiles') || []
+        let targetProfile = null
+        if (token) {
+          const tokens = localDbStore.getTable('password_reset_tokens') || []
+          const entry = tokens.find((t) => t.token === token && new Date(t.expires_at).getTime() > Date.now())
+          if (!entry) throw new Error('Token reset password tidak valid atau sudah kadaluarsa.')
+          targetProfile = profiles.find((p) => p.id === entry.user_id)
+        } else {
+          const session = localDbStore.getAuth()
+          if (session?.user?.id) {
+            targetProfile = profiles.find((p) => p.id === session.user.id)
+          }
+        }
+        if (!targetProfile) throw new Error('Akun pengguna tidak ditemukan.')
+        const salt = targetProfile.salt || DEFAULT_SALT
+        targetProfile.password_hash = await hashPassword(newPassword, salt)
+        targetProfile.salt = salt
+        targetProfile.updated_at = new Date().toISOString()
+        localDbStore.saveToStorage()
+        return { success: true }
       },
 
       async changePassword({ currentPassword, newPassword }) {
@@ -2408,8 +2867,8 @@ export const createLocalClient = () => {
           return { success: false, error: 'Kata sandi saat ini wajib diisi.' }
         }
 
-        if (!newPassword || newPassword.length < 6) {
-          return { success: false, error: 'Kata sandi baru minimal 6 karakter.' }
+        if (!newPassword || newPassword.length < 8) {
+          return { success: false, error: 'Kata sandi baru minimal 8 karakter.' }
         }
 
         // Verifikasi kata sandi lama
@@ -2435,6 +2894,12 @@ export const createLocalClient = () => {
     erp: {
       resetDatabase() {
         return localDbStore.resetDatabase()
+      },
+      setStrictPostgresParity(enabled) {
+        return localDbStore.setStrictPostgresParity(enabled)
+      },
+      getStrictPostgresParity() {
+        return Boolean(localDbStore.strictPostgresParity)
       },
       exportJson() {
         return JSON.stringify(localDbStore.data, null, 2)
@@ -2569,7 +3034,7 @@ export const createLocalClient = () => {
           if (actor.is_active === false) {
             throw new Error('UNAUTHORIZED_OR_INACTIVE')
           }
-          const allowedRoles = ['Super Admin', 'Owner', 'Admin', 'Kasir']
+          const allowedRoles = ['Super Admin', 'Owner', 'Admin Pusat', 'Admin', 'Kasir']
           if (actor.role && !allowedRoles.includes(actor.role)) {
             throw new Error('FORBIDDEN_CALLER_ROLE')
           }
@@ -2716,7 +3181,7 @@ export const createLocalClient = () => {
         const callerRole = actor?.role || 'Owner'
         const callerTenant = actor?.tenant_id || getActiveTenantId() || DEFAULT_TENANT_ID
 
-        if (!['Super Admin', 'Owner', 'Admin'].includes(callerRole)) {
+        if (!['Super Admin', 'Owner', 'Admin Pusat', 'Admin'].includes(callerRole)) {
           return {
             data: null,
             error: new Error(`FORBIDDEN: Role "${callerRole}" tidak memiliki izin untuk mengelola akun staf.`),
@@ -2736,13 +3201,35 @@ export const createLocalClient = () => {
           }
         }
 
-        // Co-Owner Protection: Owner / Admin cannot mutate another Owner or Super Admin
+        // Co-Owner Protection: Owner / Admin Pusat / Admin cannot mutate another Owner or Super Admin
         if (['Owner', 'Super Admin'].includes(target.role) && callerRole !== 'Super Admin') {
           return {
             data: null,
             error: new Error(
               `FORBIDDEN_MUTATE_CO_OWNER: Akun dengan role "${target.role}" dilindungi dan tidak dapat diubah atau dinonaktifkan oleh sesama Owner/Admin.`
             ),
+          }
+        }
+
+        if (callerRole === 'Admin Pusat' && target.role === 'Admin Pusat' && target.id !== actor?.userId) {
+          return {
+            data: null,
+            error: new Error('FORBIDDEN_ROLE_ESCALATION: Admin Pusat tidak dapat memodifikasi akun Admin Pusat lain.'),
+          }
+        }
+
+        if (callerRole === 'Admin') {
+          if (['Admin Pusat', 'Admin'].includes(target.role) && target.id !== actor?.userId) {
+            return {
+              data: null,
+              error: new Error('FORBIDDEN_ROLE_ESCALATION: Admin Cabang tidak dapat memodifikasi akun Admin atau Admin Pusat.'),
+            }
+          }
+          if (actor?.branchId && target.branch_id && target.branch_id !== actor.branchId) {
+            return {
+              data: null,
+              error: new Error('BRANCH_FORBIDDEN: Admin Cabang hanya dapat mengelola staf pada cabangnya sendiri.'),
+            }
           }
         }
 
@@ -2753,16 +3240,22 @@ export const createLocalClient = () => {
         const kkTable = localDbStore.getTable('karyawan_kantor') || []
 
         if (cleanAction === 'UPDATE_ROLE') {
-          if (!['Super Admin', 'Owner'].includes(callerRole)) {
+          if (!['Super Admin', 'Owner', 'Admin Pusat'].includes(callerRole)) {
             return {
               data: null,
-              error: new Error('FORBIDDEN_ROLE_ESCALATION: Hanya Owner yang dapat mengubah role akun staf.'),
+              error: new Error('FORBIDDEN_ROLE_ESCALATION: Hanya Owner atau Admin Pusat yang dapat mengubah role akun staf.'),
             }
           }
-          const allowedRoles = ['Kasir', 'Admin', 'Staff Kantor', 'Karyawan Cuci', 'Owner']
+          const allowedRoles = ['Kasir', 'Admin', 'Admin Pusat', 'Staff Kantor', 'Karyawan Cuci', 'Owner']
           const cleanRole = String(p_new_role || '').trim()
           if (!allowedRoles.includes(cleanRole)) {
             return { data: null, error: new Error(`INVALID_ROLE: Peran baru "${cleanRole}" tidak valid.`) }
+          }
+          if (callerRole === 'Admin Pusat' && ['Owner', 'Admin Pusat'].includes(cleanRole)) {
+            return {
+              data: null,
+              error: new Error('FORBIDDEN_ROLE_ESCALATION: Admin Pusat hanya dapat menetapkan role Admin Cabang atau staf operasional.'),
+            }
           }
 
           target.role = cleanRole
@@ -2771,22 +3264,30 @@ export const createLocalClient = () => {
           kkTable.forEach((kk) => {
             if (
               kk.tenant_id === target.tenant_id &&
-              ((kk.email && kk.email.toLowerCase() === targetEmailLower) ||
-                (kk.nama || '').trim().toUpperCase() === targetNamaUpper)
+              (kk.profile_id === target.id ||
+                (!kk.profile_id &&
+                  ((kk.email && kk.email.toLowerCase() === targetEmailLower) ||
+                    (kk.nama || '').trim().toUpperCase() === targetNamaUpper)))
             ) {
               kk.role = cleanRole
+              kk.profile_id = kk.profile_id || target.id
             }
           })
 
           const existingKasir = kasirTable.find(
-            (k) => k.tenant_id === target.tenant_id && (k.nama || '').trim().toUpperCase() === targetNamaUpper
+            (k) =>
+              k.tenant_id === target.tenant_id &&
+              (k.profile_id === target.id ||
+                (!k.profile_id && (k.nama || '').trim().toUpperCase() === targetNamaUpper))
           )
           if (cleanRole === 'Kasir' && target.is_active !== false) {
             if (existingKasir) {
               existingKasir.is_active = true
+              existingKasir.profile_id = existingKasir.profile_id || target.id
             } else {
               kasirTable.push({
                 nama: targetNamaUpper,
+                profile_id: target.id,
                 tenant_id: target.tenant_id,
                 branch_id: target.branch_id,
                 is_active: true,
@@ -2795,6 +3296,7 @@ export const createLocalClient = () => {
             }
           } else if (existingKasir) {
             existingKasir.is_active = false
+            existingKasir.profile_id = existingKasir.profile_id || target.id
           }
 
           localDbStore.saveToStorage()
@@ -2816,19 +3318,27 @@ export const createLocalClient = () => {
           target.updated_at = new Date().toISOString()
 
           kasirTable.forEach((k) => {
-            if (k.tenant_id === target.tenant_id && (k.nama || '').trim().toUpperCase() === targetNamaUpper) {
+            if (
+              k.tenant_id === target.tenant_id &&
+              (k.profile_id === target.id ||
+                (!k.profile_id && (k.nama || '').trim().toUpperCase() === targetNamaUpper))
+            ) {
               k.is_active = false
+              k.profile_id = k.profile_id || target.id
             }
           })
 
           kkTable.forEach((kk) => {
             if (
               kk.tenant_id === target.tenant_id &&
-              ((kk.email && kk.email.toLowerCase() === targetEmailLower) ||
-                (kk.nama || '').trim().toUpperCase() === targetNamaUpper)
+              (kk.profile_id === target.id ||
+                (!kk.profile_id &&
+                  ((kk.email && kk.email.toLowerCase() === targetEmailLower) ||
+                    (kk.nama || '').trim().toUpperCase() === targetNamaUpper)))
             ) {
               kk.is_active = false
               kk.status = 'Nonaktif'
+              kk.profile_id = kk.profile_id || target.id
             }
           })
 
@@ -2852,13 +3362,18 @@ export const createLocalClient = () => {
 
           if (target.role === 'Kasir') {
             const existingKasir = kasirTable.find(
-              (k) => k.tenant_id === target.tenant_id && (k.nama || '').trim().toUpperCase() === targetNamaUpper
+              (k) =>
+                k.tenant_id === target.tenant_id &&
+                (k.profile_id === target.id ||
+                  (!k.profile_id && (k.nama || '').trim().toUpperCase() === targetNamaUpper))
             )
             if (existingKasir) {
               existingKasir.is_active = true
+              existingKasir.profile_id = existingKasir.profile_id || target.id
             } else {
               kasirTable.push({
                 nama: targetNamaUpper,
+                profile_id: target.id,
                 tenant_id: target.tenant_id,
                 branch_id: target.branch_id,
                 is_active: true,
@@ -2870,11 +3385,14 @@ export const createLocalClient = () => {
           kkTable.forEach((kk) => {
             if (
               kk.tenant_id === target.tenant_id &&
-              ((kk.email && kk.email.toLowerCase() === targetEmailLower) ||
-                (kk.nama || '').trim().toUpperCase() === targetNamaUpper)
+              (kk.profile_id === target.id ||
+                (!kk.profile_id &&
+                  ((kk.email && kk.email.toLowerCase() === targetEmailLower) ||
+                    (kk.nama || '').trim().toUpperCase() === targetNamaUpper)))
             ) {
               kk.is_active = true
               kk.status = 'Aktif'
+              kk.profile_id = kk.profile_id || target.id
             }
           })
 
@@ -2946,6 +3464,12 @@ export const createLocalClient = () => {
         const profiles = localDbStore.getTable('profiles')
         const existing = profiles.find((p) => p.id === uid || p.email?.toLowerCase() === session.user.email?.toLowerCase())
         if (existing) {
+          if (existing.is_active === false) {
+            return {
+              data: { status: 'INACTIVE', message: 'ACCOUNT_INACTIVE: Akun staf ini telah dinonaktifkan oleh Owner.' },
+              error: null,
+            }
+          }
           return { data: { status: 'EXISTING_USER', tenant_id: existing.tenant_id, role: existing.role }, error: null }
         }
         const mode = String(params?.p_mode || 'login').trim().toLowerCase()
@@ -2982,6 +3506,22 @@ export const createLocalClient = () => {
           created_at: new Date().toISOString(),
         })
         localDbStore.ensureTenantMasterData(newTenantId, businessType)
+        seedStarterStockForTenant(localDbStore, newTenantId, newBranchId, businessType)
+        const trialExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        localDbStore.getTable('tenant_licenses').push({
+          id: `lic_${Date.now()}`,
+          tenant_id: newTenantId,
+          license_key: `RLPOS-TRL-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+          tier: 'TRIAL_30D',
+          plan: 'trial',
+          status: 'ACTIVE',
+          expires_at: trialExpiry,
+          valid_until: trialExpiry,
+          max_branches: 1,
+          max_users: 10,
+          features: { trial: true, trial_days: 30, duration_days: 30 },
+          created_at: new Date().toISOString(),
+        })
         profiles.push({
           id: uid,
           tenant_id: newTenantId,
@@ -2990,6 +3530,14 @@ export const createLocalClient = () => {
           email: session.user.email,
           role: 'Owner',
           provider: 'google',
+          created_at: new Date().toISOString(),
+        })
+        localDbStore.getTable('tenant_memberships').push({
+          user_id: uid,
+          tenant_id: newTenantId,
+          branch_id: newBranchId,
+          role: 'Owner',
+          is_default: true,
           created_at: new Date().toISOString(),
         })
         localDbStore.saveToStorage()
@@ -3074,16 +3622,29 @@ export const createLocalClient = () => {
           const pkgTable = localDbStore.getTable('carwash_packages')
           for (const pkg of payload.carwash_packages) {
             const pkgName = String(pkg.nama_paket || pkg.name || '').trim().toUpperCase()
-            const pkgPrice = Math.max(0, parseFloat(pkg.tarif ?? pkg.price ?? 0) || 0)
+            const rawPrice = typeof pkg.tarif === 'object'
+              ? (pkg.tarif?.Small?.Regular ?? pkg.price ?? 0)
+              : (pkg.tarif ?? pkg.price ?? 0)
+            const pkgPrice = Math.max(0, parseFloat(rawPrice) || 0)
+            const pkgDesc = String(pkg.keterangan || pkg.description || 'Layanan cuci kendaraan').trim()
+            const pkgMatrix = (pkg.tarif_matrix && typeof pkg.tarif_matrix === 'object')
+              ? pkg.tarif_matrix
+              : (pkg.tarif && typeof pkg.tarif === 'object')
+              ? pkg.tarif
+              : buildDefaultTarifMatrix(pkgPrice)
             if (pkgName) {
               pkgTable.push({
-                id: `pkg_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+                id: generateLocalUuid(),
                 tenant_id: tenantId,
                 branch_id: mainBranch?.id || null,
                 name: pkgName,
                 nama_paket: pkgName,
+                description: pkgDesc,
+                keterangan: pkgDesc,
                 price: pkgPrice,
                 tarif: pkgPrice,
+                tarif_matrix: pkgMatrix,
+                komisi_skema: pkg.komisi_skema || 'TIERED',
                 is_active: true,
                 created_at: new Date().toISOString(),
               })
@@ -3099,7 +3660,7 @@ export const createLocalClient = () => {
             const menuCat = String(menu.kategori || 'Minuman').trim()
             if (menuName) {
               menuTable.push({
-                id: `menu_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+                id: generateLocalUuid(),
                 tenant_id: tenantId,
                 branch_id: mainBranch?.id || null,
                 daftar_menu: menuName,
@@ -3115,19 +3676,25 @@ export const createLocalClient = () => {
 
         if (Array.isArray(payload.stock_items)) {
           const stockTable = localDbStore.getTable('stok_barang')
+          let stockIdx = 0
           for (const item of payload.stock_items) {
             const itemName = String(item.nama_barang || item.nama_produk || '').trim()
             if (itemName) {
+              stockIdx += 1
               const qty = Math.max(0, parseFloat(item.stok ?? 0) || 0)
               const cost = Math.max(0, parseFloat(item.harga_satuan ?? item.harga_beli ?? 0) || 0)
               const minStok = Math.max(0, parseFloat(item.min_stok ?? 5) || 5)
               const gudang = ['CAFE', 'CARWASH', 'MERCHANDISE'].includes(String(item.gudang || '').toUpperCase())
                 ? String(item.gudang).toUpperCase()
                 : 'CAFE'
+              const rawSku = String(item.id_barang || item.id_bahan_baku || item.sku || '').trim()
+              const stockSku = rawSku || deriveAutoStockSku(itemName, gudang, stockIdx)
               stockTable.push({
-                id: `stk_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+                id: generateLocalUuid(),
                 tenant_id: tenantId,
                 branch_id: mainBranch?.id || null,
+                id_barang: stockSku,
+                id_bahan_baku: stockSku,
                 nama_produk: itemName,
                 nama_barang: itemName,
                 satuan: String(item.satuan || 'pcs').trim(),
@@ -3157,8 +3724,694 @@ export const createLocalClient = () => {
         }
       }
 
+      if (name === 'fn_switch_active_tenant') {
+        const targetTenantId = params?.p_tenant_id
+        const session = localDbStore.getAuth()
+        const uid = session?.user?.id
+        const profiles = localDbStore.getTable('profiles') || []
+        const caller = profiles.find((p) => p.id === uid)
+        if (!caller) return { data: null, error: new Error('UNAUTHORIZED: Sesi tidak ditemukan.') }
+        const tenants = localDbStore.getTable('tenants') || []
+        const targetTenant = tenants.find((t) => t.id === targetTenantId)
+        if (!targetTenant) return { data: null, error: new Error('TENANT_NOT_FOUND') }
+        if (caller.role !== 'Super Admin') {
+          if (caller.role !== 'Owner') {
+            return { data: null, error: new Error('FORBIDDEN: Hanya Owner atau Super Admin yang dapat berpindah outlet.') }
+          }
+          const memberships = localDbStore.getTable('tenant_memberships') || []
+          const isMember = memberships.some((m) => m.user_id === uid && m.tenant_id === targetTenantId) ||
+            (targetTenant.owner_email && caller.email && targetTenant.owner_email.toLowerCase() === caller.email.toLowerCase()) ||
+            caller.tenant_id === targetTenantId
+          if (!isMember) {
+            return { data: null, error: new Error('TENANT_FORBIDDEN: Anda tidak memiliki akses ke outlet ini.') }
+          }
+        }
+        const branches = localDbStore.getTable('branches') || []
+        const targetBranch = branches.find((b) => b.tenant_id === targetTenantId && b.is_active !== false)
+        caller.tenant_id = targetTenantId
+        caller.branch_id = targetBranch?.id || null
+        setActiveTenantId(targetTenantId)
+        localDbStore.saveToStorage()
+        return { data: { success: true, tenant_id: targetTenantId, branch_id: caller.branch_id }, error: null }
+      }
+
+      if (name === 'fn_update_tenant_receipt_config') {
+        const { p_tenant_id, p_config } = params || {}
+        const tenants = localDbStore.getTable('tenants') || []
+        const target = tenants.find((t) => t.id === p_tenant_id)
+        if (!target) return { data: null, error: new Error('TENANT_NOT_FOUND') }
+        target.receipt_config = p_config || {}
+        target.updated_at = new Date().toISOString()
+        localDbStore.saveToStorage()
+        return { data: { success: true, tenant_id: p_tenant_id, receipt_config: target.receipt_config }, error: null }
+      }
+
+      const computeLocalCashierShiftMetrics = ({ tenantId, branchId = null, tanggal }) => {
+        const matchBranch = (row) => !branchId || !row.branch_id || row.branch_id === branchId
+        const strukRows = (localDbStore.getTable('struk') || []).filter((s) => {
+          if (s.tenant_id !== tenantId || !matchBranch(s)) return false
+          if (!['Selesai', 'Lunas', 'Paid'].includes(s.status_bayar)) return false
+          const settleDate = s.waktu_dibayar ? new Date(s.waktu_dibayar).toLocaleDateString('en-CA') : null
+          return s.tanggal === tanggal || settleDate === tanggal
+        })
+        let cashSales = 0
+        let digitalSales = 0
+        strukRows.forEach((s) => {
+          const m = String(s.metode_bayar || '').toUpperCase()
+          if (m === 'SPLIT') {
+            cashSales += parseFloat(s.nominal_cash || 0)
+            digitalSales += parseFloat(s.nominal_qris || 0) + parseFloat(s.nominal_transfer || 0)
+          } else if (m === 'CASH' || m === 'TUNAI') {
+            cashSales += parseFloat(s.total_tagihan || 0)
+          } else {
+            digitalSales += parseFloat(s.total_tagihan || 0)
+          }
+        })
+        const expRows = (localDbStore.getTable('pengeluaran') || []).filter(
+          (e) =>
+            e.tenant_id === tenantId &&
+            matchBranch(e) &&
+            e.tanggal === tanggal &&
+            (!e.pos || String(e.pos).toUpperCase().includes('CASH'))
+        )
+        const expenses = expRows.reduce((sum, e) => sum + parseFloat(e.nominal || 0), 0)
+        const exchangeRows = (localDbStore.getTable('cashflow') || []).filter(
+          (c) =>
+            c.tenant_id === tenantId &&
+            matchBranch(c) &&
+            c.tanggal === tanggal &&
+            c.kategori === 'Tukar Uang' &&
+            String(c.pos || '').toUpperCase().includes('CASH')
+        )
+        const exchangeCashOut = exchangeRows.reduce((sum, c) => sum + parseFloat(c.pengeluaran || 0), 0)
+        return { cashSales, digitalSales, expenses, exchangeCashOut }
+      }
+
+      if (name === 'fn_get_cashier_shift_preview') {
+        const {
+          p_tenant_id,
+          p_branch_id = null,
+          p_tanggal = new Date().toLocaleDateString('en-CA'),
+        } = params || {}
+        const session = localDbStore.getAuth()
+        const uid = session?.user?.id
+        const caller = uid ? (localDbStore.getTable('profiles') || []).find((p) => p.id === uid) : null
+        if (caller) {
+          if (caller.is_active === false) {
+            return { data: null, error: new Error('USER_INACTIVE: Akun tidak aktif.') }
+          }
+          if (caller.role !== 'Super Admin' && caller.tenant_id !== p_tenant_id) {
+            const memberships = localDbStore.getTable('tenant_memberships') || []
+            const hasAccess = memberships.some((m) => m.user_id === uid && m.tenant_id === p_tenant_id)
+            if (!hasAccess) {
+              return { data: null, error: new Error('TENANT_FORBIDDEN: Akses rekap kasir lintas tenant ditolak.') }
+            }
+          }
+          const effectiveBranch = p_branch_id || caller.branch_id || null
+          if (caller.role === 'Kasir' && caller.branch_id && effectiveBranch !== caller.branch_id) {
+            return { data: null, error: new Error('BRANCH_FORBIDDEN: Kasir hanya dapat melihat rekap shift cabangnya sendiri.') }
+          }
+        }
+        const effectiveBranch = p_branch_id || caller?.branch_id || null
+        const metrics = computeLocalCashierShiftMetrics({
+          tenantId: p_tenant_id,
+          branchId: effectiveBranch,
+          tanggal: p_tanggal,
+        })
+        return {
+          data: {
+            success: true,
+            tanggal: p_tanggal,
+            branch_id: effectiveBranch,
+            cash_sales: metrics.cashSales,
+            digital_sales: metrics.digitalSales,
+            expenses: metrics.expenses,
+            exchange_cash_out: metrics.exchangeCashOut,
+          },
+          error: null,
+        }
+      }
+
+      if (name === 'fn_close_cashier_shift') {
+        const {
+          p_tenant_id,
+          p_branch_id = null,
+          p_kasir = 'KASIR',
+          p_tanggal = new Date().toLocaleDateString('en-CA'),
+          p_modal_awal = 0,
+          p_kas_fisik = 0,
+          p_catatan = '',
+        } = params || {}
+        const session = localDbStore.getAuth()
+        const uid = session?.user?.id
+        const caller = uid ? (localDbStore.getTable('profiles') || []).find((p) => p.id === uid) : null
+        if (caller) {
+          if (caller.is_active === false) {
+            return { data: null, error: new Error('USER_INACTIVE: Akun tidak aktif.') }
+          }
+          if (!['Super Admin', 'Owner', 'Admin', 'Kasir'].includes(caller.role)) {
+            return { data: null, error: new Error('FORBIDDEN: Peran ini tidak berwenang menutup shift kasir.') }
+          }
+          if (caller.role !== 'Super Admin' && caller.tenant_id !== p_tenant_id) {
+            const memberships = localDbStore.getTable('tenant_memberships') || []
+            const hasAccess = memberships.some((m) => m.user_id === uid && m.tenant_id === p_tenant_id)
+            if (!hasAccess) {
+              return { data: null, error: new Error('TENANT_FORBIDDEN: Akses tutup kasir lintas tenant ditolak.') }
+            }
+          }
+          const effectiveBranch = p_branch_id || caller.branch_id || null
+          if (caller.role === 'Kasir' && caller.branch_id && effectiveBranch !== caller.branch_id) {
+            return { data: null, error: new Error('BRANCH_FORBIDDEN: Kasir hanya dapat menutup shift pada cabangnya sendiri.') }
+          }
+        }
+        const effectiveBranch = p_branch_id || caller?.branch_id || null
+        const { cashSales, digitalSales, expenses, exchangeCashOut } = computeLocalCashierShiftMetrics({
+          tenantId: p_tenant_id,
+          branchId: effectiveBranch,
+          tanggal: p_tanggal,
+        })
+        const expected = Number(p_modal_awal || 0) + cashSales - expenses - exchangeCashOut
+        const physical = Number(p_kas_fisik || 0)
+        const discrepancy = physical - expected
+        const closingId = generateLocalUuid()
+        localDbStore.getTable('cashier_shift_closings').push({
+          id: closingId,
+          tenant_id: p_tenant_id,
+          branch_id: effectiveBranch,
+          tanggal: p_tanggal,
+          kasir: String(p_kasir || 'KASIR').toUpperCase(),
+          modal_awal: Number(p_modal_awal || 0),
+          penjualan_tunai: cashSales,
+          penjualan_digital: digitalSales,
+          pengeluaran_kasir: expenses,
+          tukar_uang_keluar: exchangeCashOut,
+          ekspektasi_kas: expected,
+          kas_fisik: physical,
+          selisih: discrepancy,
+          catatan: p_catatan,
+          closed_at: new Date().toISOString(),
+        })
+        localDbStore.saveToStorage()
+        return {
+          data: {
+            success: true,
+            closing_id: closingId,
+            tanggal: p_tanggal,
+            kasir: String(p_kasir || 'KASIR').toUpperCase(),
+            modal_awal: Number(p_modal_awal || 0),
+            penjualan_tunai: cashSales,
+            penjualan_digital: digitalSales,
+            pengeluaran_kasir: expenses,
+            tukar_uang_keluar: exchangeCashOut,
+            ekspektasi_kas: expected,
+            kas_fisik: physical,
+            selisih: discrepancy,
+          },
+          error: null,
+        }
+      }
+
+      if (name === 'fn_create_owner_outlet') {
+        const session = localDbStore.getAuth()
+        const uid = session?.user?.id
+        const profiles = localDbStore.getTable('profiles') || []
+        const caller = profiles.find((p) => p.id === uid)
+        if (!caller || !['Owner', 'Super Admin'].includes(caller.role)) {
+          return { data: null, error: new Error('FORBIDDEN: Hanya Owner yang dapat menambah outlet baru.') }
+        }
+        const cleanName = String(params?.p_store_name || '').trim()
+        if (!cleanName) return { data: null, error: new Error('INVALID_STORE_NAME') }
+        const bType = ['HYBRID', 'CAFE', 'CARWASH'].includes(String(params?.p_business_type || '').toUpperCase())
+          ? String(params.p_business_type).toUpperCase()
+          : 'HYBRID'
+        const newTenantId = generateLocalUuid()
+        const newBranchId = generateLocalUuid()
+        const slug = `${cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Math.random().toString(36).slice(2, 6)}`
+        const newTenant = {
+          id: newTenantId,
+          nama: cleanName,
+          slug,
+          owner_name: caller.nama,
+          owner_email: caller.email,
+          business_type: bType,
+          plan: 'trial',
+          status: 'active',
+          onboarding_completed: true,
+          created_at: new Date().toISOString(),
+        }
+        localDbStore.getTable('tenants').push(newTenant)
+        localDbStore.getTable('branches').push({
+          id: newBranchId,
+          tenant_id: newTenantId,
+          nama: 'Cabang Utama',
+          kode: 'MAIN',
+          alamat: params?.p_alamat || '-',
+          telepon: params?.p_telepon || '-',
+          is_main: true,
+          is_active: true,
+          created_at: new Date().toISOString(),
+        })
+        localDbStore.ensureTenantMasterData(newTenantId, bType)
+        seedStarterStockForTenant(localDbStore, newTenantId, newBranchId, bType)
+        const trialExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        localDbStore.getTable('tenant_licenses').push({
+          id: generateLocalUuid(),
+          tenant_id: newTenantId,
+          license_key: `RLPOS-TRL-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+          tier: 'TRIAL_30D',
+          plan: 'trial',
+          status: 'ACTIVE',
+          expires_at: trialExpiry,
+          valid_until: trialExpiry,
+          features: { trial: true, trial_days: 30 },
+          created_at: new Date().toISOString(),
+        })
+        localDbStore.getTable('tenant_memberships').push({
+          user_id: uid,
+          tenant_id: newTenantId,
+          branch_id: newBranchId,
+          role: caller.role,
+          is_default: false,
+          created_at: new Date().toISOString(),
+        })
+        localDbStore.saveToStorage()
+        return { data: { success: true, tenant: newTenant, branch_id: newBranchId }, error: null }
+      }
+
+      if (name === 'fn_execute_checkout') {
+        const {
+          p_tenant_id,
+          p_branch_id = null,
+          p_struk_payload,
+          p_cafe_items = [],
+          p_carwash_payload = null,
+        } = params || {}
+
+        const session = localDbStore.getAuth()
+        const uid = session?.user?.id
+        const profiles = localDbStore.getTable('profiles') || []
+        const caller = profiles.find((p) => p.id === uid)
+        if (!uid || !caller) {
+          return { data: null, error: new Error('UNAUTHORIZED: Sesi pengguna diperlukan.') }
+        }
+        if (caller.is_active === false) {
+          return { data: null, error: new Error('USER_INACTIVE: Keanggotaan aktif diperlukan.') }
+        }
+        if (!p_tenant_id || caller.tenant_id !== p_tenant_id) {
+          return { data: null, error: new Error('TENANT_FORBIDDEN: Akses transaksi lintas tenant ditolak.') }
+        }
+        const callerRole = String(caller.role || '').trim().toLowerCase()
+        if (!['owner', 'admin', 'kasir'].includes(callerRole)) {
+          return { data: null, error: new Error('FORBIDDEN: Peran pengguna tidak diizinkan melakukan checkout.') }
+        }
+
+        const effectiveBranchId = p_branch_id || caller.branch_id || null
+        const strukPayload = p_struk_payload || {}
+        const idStruk = String(strukPayload.id_struk || `STRUK-${Date.now()}`).trim()
+        const tanggal = strukPayload.tanggal || new Date().toLocaleDateString('en-CA')
+        const jam = strukPayload.jam || new Date().toTimeString().split(' ')[0]
+
+        let totalCafe = 0
+        if (Array.isArray(p_cafe_items)) {
+          const menus = localDbStore.getTable('daftar_harga_menu') || []
+          for (const item of p_cafe_items) {
+            const namaMenu = String(item.nama_menu || '').trim()
+            const qtyMenu = parseFloat(item.qty ?? 1) || 1
+            const hargaMenu = parseFloat(item.harga_satuan ?? item.harga ?? 0) || 0
+            if (!namaMenu || qtyMenu <= 0) {
+              return { data: null, error: new Error('INVALID_ITEM: Nama menu dan kuantitas wajib valid.') }
+            }
+            const menuLookupId = item.menu_id || (isValidPostgresUuid(item.id_menu) ? item.id_menu : null)
+            const catalogMenu = menus.find(
+              (m) =>
+                m.tenant_id === p_tenant_id &&
+                ((menuLookupId && m.id === menuLookupId) ||
+                  String(m.nama_menu || '').trim().toLowerCase() === namaMenu.toLowerCase() ||
+                  String(m.daftar_menu || '').trim().toLowerCase() === namaMenu.toLowerCase())
+            )
+            if (catalogMenu && hargaMenu !== parseFloat(catalogMenu.harga)) {
+              return {
+                data: null,
+                error: new Error(
+                  `PRICE_TAMPERING_DETECTED: Harga menu "${namaMenu}" tidak sesuai katalog (Katalog: ${catalogMenu.harga}, Dikirim: ${hargaMenu}).`
+                ),
+              }
+            }
+            totalCafe += hargaMenu * qtyMenu
+          }
+        }
+
+        let totalCarwash = 0
+        if (p_carwash_payload && Object.keys(p_carwash_payload).length > 0) {
+          const cwPaket = String(p_carwash_payload.paket || '').trim()
+          const cwUkuran = String(p_carwash_payload.ukuran || 'Medium').trim() || 'Medium'
+          const cwVariant = String(p_carwash_payload.variant || 'Regular').trim() || 'Regular'
+          const cwHarga = parseFloat(p_carwash_payload.harga ?? p_carwash_payload.tarif ?? 0) || 0
+          if (cwHarga < 0) {
+            return { data: null, error: new Error('INVALID_PRICE: Tarif carwash tidak boleh negatif.') }
+          }
+
+          if (cwPaket) {
+            const cwPkg = (localDbStore.getTable('carwash_packages') || []).find(
+              (p) =>
+                p.tenant_id === p_tenant_id &&
+                (String(p.nama_paket || '').trim().toLowerCase() === cwPaket.toLowerCase() ||
+                  String(p.name || '').trim().toLowerCase() === cwPaket.toLowerCase())
+            )
+            if (cwPkg && cwUkuran.toLowerCase() !== 'custom') {
+              const { harga: matrixPrice } = calculateCarwashPriceAndCommission({
+                packageItem: cwPkg,
+                ukuran: cwUkuran,
+                variant: cwVariant,
+              })
+              const basePrice = parseFloat(cwPkg.tarif ?? cwPkg.price ?? 0) || 0
+              const expectedPrice = matrixPrice > 0 ? matrixPrice : basePrice
+              if (expectedPrice > 0 && cwHarga !== expectedPrice && cwHarga !== basePrice) {
+                return {
+                  data: null,
+                  error: new Error(
+                    `PRICE_TAMPERING_DETECTED: Harga paket carwash "${cwPaket}" tidak sesuai katalog (Katalog: ${expectedPrice}, Dikirim: ${cwHarga}).`
+                  ),
+                }
+              }
+            }
+          }
+          totalCarwash = cwHarga
+        }
+
+        const diskon = Math.max(0, parseFloat(strukPayload.diskon || 0) || 0)
+        const pajak = Math.max(0, parseFloat(strukPayload.pajak || 0) || 0)
+        const subtotal = totalCafe + totalCarwash
+        const totalTagihan = Math.max(0, subtotal - diskon + pajak)
+        const statusBayar = strukPayload.status_bayar || 'Selesai'
+        const metodeBayar = String(strukPayload.metode_bayar || 'CASH').toUpperCase()
+
+        localDbStore.getTable('struk').push({
+          id: generateLocalUuid(),
+          tenant_id: p_tenant_id,
+          branch_id: effectiveBranchId,
+          id_struk: idStruk,
+          tanggal,
+          jam,
+          kasir: strukPayload.kasir || caller.nama || 'Kasir',
+          nama_pelanggan: strukPayload.nama_pelanggan || 'Pelanggan Umum',
+          status_bayar: statusBayar,
+          status_pembayaran: statusBayar,
+          metode_bayar: metodeBayar,
+          total_tagihan: totalTagihan,
+          nominal_bayar: totalTagihan,
+          nominal_cash: metodeBayar === 'CASH' ? totalTagihan : parseFloat(strukPayload.nominal_cash || 0),
+          nominal_qris: metodeBayar === 'QRIS' ? totalTagihan : parseFloat(strukPayload.nominal_qris || 0),
+          nominal_transfer: metodeBayar === 'TRANSFER' ? totalTagihan : parseFloat(strukPayload.nominal_transfer || 0),
+          created_at: new Date().toISOString(),
+        })
+
+        if (Array.isArray(p_cafe_items) && p_cafe_items.length > 0) {
+          p_cafe_items.forEach((item) => {
+            const h = parseFloat(item.harga_satuan ?? item.harga ?? 0) || 0
+            const q = parseFloat(item.qty ?? 1) || 1
+            localDbStore.getTable('cafe').push({
+              id: generateLocalUuid(),
+              tenant_id: p_tenant_id,
+              branch_id: effectiveBranchId,
+              id_struk: idStruk,
+              tanggal,
+              jam,
+              menu_id: item.menu_id || (isValidPostgresUuid(item.id_menu) ? item.id_menu : null),
+              stok_barang_id: item.stok_barang_id || null,
+              nama_menu: item.nama_menu,
+              qty: q,
+              harga_satuan: h,
+              subtotal: h * q,
+              status: statusBayar,
+              created_at: new Date().toISOString(),
+            })
+          })
+        }
+
+        if (p_carwash_payload && Object.keys(p_carwash_payload).length > 0) {
+          localDbStore.getTable('carwash').push({
+            id: generateLocalUuid(),
+            tenant_id: p_tenant_id,
+            branch_id: effectiveBranchId,
+            id_struk: idStruk,
+            tanggal,
+            jam,
+            plat: p_carwash_payload.plat || '-',
+            model: p_carwash_payload.model || 'Mobil',
+            variant: p_carwash_payload.variant || 'Regular',
+            ukuran: p_carwash_payload.ukuran || 'Medium',
+            paket: p_carwash_payload.paket || 'PAKET CUCI BIASA',
+            harga: totalCarwash,
+            anggota_1: p_carwash_payload.anggota_1 || null,
+            anggota_2: p_carwash_payload.anggota_2 || null,
+            anggota_1_id: p_carwash_payload.anggota_1_id || null,
+            anggota_2_id: p_carwash_payload.anggota_2_id || null,
+            status: statusBayar,
+            created_at: new Date().toISOString(),
+          })
+        }
+
+        localDbStore.saveToStorage()
+        return {
+          data: {
+            success: true,
+            status: 'COMPLETED',
+            id_struk: idStruk,
+            total_tagihan: totalTagihan,
+          },
+          error: null,
+        }
+      }
+
+      if (name === 'fn_record_cashier_money_exchange') {
+        const {
+          p_tenant_id,
+          p_branch_id = null,
+          p_kasir = 'KASIR',
+          p_cash_out = 0,
+          p_qris_in = 0,
+          p_customer = 'Umum',
+          p_tanggal = new Date().toLocaleDateString('en-CA'),
+        } = params || {}
+
+        const session = localDbStore.getAuth()
+        const uid = session?.user?.id
+        const profiles = localDbStore.getTable('profiles') || []
+        const caller = profiles.find((p) => p.id === uid)
+        if (!uid || !caller) {
+          return { data: null, error: new Error('UNAUTHORIZED: Sesi pengguna diperlukan.') }
+        }
+        if (caller.is_active === false) {
+          return { data: null, error: new Error('USER_INACTIVE: Akun staf tidak aktif.') }
+        }
+        const callerRole = String(caller.role || '').trim().toLowerCase()
+        const memberships = localDbStore.getTable('tenant_memberships') || []
+        const isMember = memberships.some((m) => m.user_id === uid && m.tenant_id === p_tenant_id)
+        if (callerRole !== 'super admin' && caller.tenant_id !== p_tenant_id && !isMember) {
+          return { data: null, error: new Error('TENANT_FORBIDDEN: Akses mutasi kas lintas tenant ditolak.') }
+        }
+        if (!['super admin', 'owner', 'admin pusat', 'admin', 'kasir'].includes(callerRole)) {
+          return { data: null, error: new Error('FORBIDDEN: Peran pengguna tidak diizinkan mencatat tukar uang.') }
+        }
+
+        const cashOut = Math.round((Number(p_cash_out) || 0) * 100) / 100
+        const qrisIn = Math.round((Number(p_qris_in) || 0) * 100) / 100
+        if (cashOut <= 0 || qrisIn <= 0) {
+          return { data: null, error: new Error('INVALID_EXCHANGE_AMOUNT: Nominal uang tunai dan transfer QRIS wajib lebih dari 0.') }
+        }
+
+        const effectiveBranchId = p_branch_id || caller.branch_id || null
+        if (['kasir', 'admin'].includes(callerRole) && caller.branch_id && effectiveBranchId !== caller.branch_id) {
+          return { data: null, error: new Error('BRANCH_FORBIDDEN: Peran ini hanya dapat mencatat mutasi pada cabangnya sendiri.') }
+        }
+        const balances = localDbStore.getTable('pos_balances')
+        let cashRow = balances.find((b) => b.tenant_id === p_tenant_id && b.pos === 'SALDO CASH')
+        if (!cashRow) {
+          cashRow = {
+            id: generateLocalUuid(),
+            tenant_id: p_tenant_id,
+            branch_id: effectiveBranchId,
+            pos: 'SALDO CASH',
+            label: 'Kas Tunai Laci Kasir',
+            tipe: 'CASH',
+            balance: 0,
+            color: 'emerald',
+            is_active: true,
+          }
+          balances.push(cashRow)
+        }
+
+        let bankRow =
+          balances.find((b) => b.tenant_id === p_tenant_id && b.pos === 'SALDO REKENING Y') ||
+          balances.find((b) => b.tenant_id === p_tenant_id && b.pos === 'SALDO REKENING OPERASIONAL') ||
+          balances.find((b) => b.tenant_id === p_tenant_id && b.tipe === 'BANK')
+        if (!bankRow) {
+          bankRow = {
+            id: generateLocalUuid(),
+            tenant_id: p_tenant_id,
+            branch_id: effectiveBranchId,
+            pos: 'SALDO REKENING Y',
+            label: 'Rekening QRIS & Transfer Utama',
+            tipe: 'BANK',
+            balance: 0,
+            color: 'blue',
+            is_active: true,
+          }
+          balances.push(bankRow)
+        }
+
+        const adminFee = qrisIn - cashOut
+        const txRef = `EXCH-${Date.now()}`
+        const cust = String(p_customer || 'Umum').trim() || 'Umum'
+        const kasirName = String(p_kasir || 'KASIR').trim().toUpperCase() || 'KASIR'
+        const nowIso = new Date().toISOString()
+        const cashflowTable = localDbStore.getTable('cashflow')
+
+        cashflowTable.push(
+          {
+            id: generateLocalUuid(),
+            id_cashflow: `${txRef}-CASH`,
+            id_sumber: txRef,
+            tenant_id: p_tenant_id,
+            branch_id: effectiveBranchId,
+            pocket_id: cashRow.id,
+            tanggal: p_tanggal,
+            jenis: 'Pindah',
+            kategori: 'Tukar Uang',
+            pos: cashRow.pos,
+            pemasukan: 0,
+            pengeluaran: cashOut,
+            keterangan_transaksi: `Tukar Uang Cash Keluar (${kasirName}) - Cust: ${cust}`,
+            apakah_stok: false,
+            created_at: nowIso,
+          },
+          {
+            id: generateLocalUuid(),
+            id_cashflow: `${txRef}-BANK`,
+            id_sumber: txRef,
+            tenant_id: p_tenant_id,
+            branch_id: effectiveBranchId,
+            pocket_id: bankRow.id,
+            tanggal: p_tanggal,
+            jenis: 'Pindah',
+            kategori: 'Tukar Uang',
+            pos: bankRow.pos,
+            pemasukan: cashOut,
+            pengeluaran: 0,
+            keterangan_transaksi: `Tukar Uang QRIS Masuk (${kasirName}) - Cust: ${cust}`,
+            apakah_stok: false,
+            created_at: nowIso,
+          }
+        )
+
+        if (adminFee > 0) {
+          cashflowTable.push({
+            id: generateLocalUuid(),
+            id_cashflow: `${txRef}-FEE`,
+            id_sumber: txRef,
+            tenant_id: p_tenant_id,
+            branch_id: effectiveBranchId,
+            pocket_id: bankRow.id,
+            tanggal: p_tanggal,
+            jenis: 'Pemasukan',
+            kategori: 'Pendapatan Lain-lain',
+            pos: bankRow.pos,
+            pemasukan: adminFee,
+            pengeluaran: 0,
+            keterangan_transaksi: `Biaya Admin Tukar Uang (${kasirName}) - Cust: ${cust}`,
+            apakah_stok: false,
+            created_at: nowIso,
+          })
+        }
+
+        // Derive live book balances from opening_balance + cashflow (never mutate pos_balances.balance)
+        const computePocketBalance = (pocket) => {
+          const net = cashflowTable
+            .filter((cf) => cf.tenant_id === p_tenant_id && (cf.pocket_id === pocket.id || (!cf.pocket_id && cf.pos === pocket.pos)))
+            .reduce((sum, cf) => sum + (parseFloat(cf.pemasukan) || 0) - (parseFloat(cf.pengeluaran) || 0), 0)
+          return (parseFloat(pocket.balance) || 0) + net
+        }
+
+        const newCashBalance = computePocketBalance(cashRow)
+        const newBankBalance = computePocketBalance(bankRow)
+        localDbStore.saveToStorage()
+
+        return {
+          data: {
+            success: true,
+            reference_id: txRef,
+            cash_out: cashOut,
+            qris_in: qrisIn,
+            admin_fee: adminFee,
+            cash_pocket_id: cashRow.id,
+            bank_pocket_id: bankRow.id,
+            cash_balance: newCashBalance,
+            bank_balance: newBankBalance,
+            bank_pos: bankRow.pos,
+          },
+          error: null,
+        }
+      }
+
+      if (name === 'fn_get_owner_consolidated_summary') {
+        const startDate = params?.p_start_date || null
+        const endDate = params?.p_end_date || null
+        const session = localDbStore.getAuth()
+        const uid = session?.user?.id
+        const caller = uid ? (localDbStore.getTable('profiles') || []).find((p) => p.id === uid) : null
+        const memberships = localDbStore.getTable('tenant_memberships') || []
+        const allActiveTenants = (localDbStore.getTable('tenants') || []).filter(
+          (t) => String(t.status || '').toUpperCase() !== 'ARCHIVED'
+        )
+        const tenants =
+          !caller || caller.role === 'Super Admin'
+            ? allActiveTenants
+            : allActiveTenants.filter(
+                (t) =>
+                  t.id === caller.tenant_id ||
+                  memberships.some((m) => m.user_id === caller.id && m.tenant_id === t.id) ||
+                  (t.owner_email && caller.email && t.owner_email.toLowerCase() === caller.email.toLowerCase())
+              )
+        const struk = localDbStore.getTable('struk') || []
+        const pengeluaran = localDbStore.getTable('pengeluaran') || []
+        const pocketBalances = localDbStore.getTable('v_pocket_balances') || []
+        const outlets = tenants.map((t) => {
+          const tStruk = struk.filter(
+            (s) =>
+              s.tenant_id === t.id &&
+              ['Selesai', 'Lunas', 'Paid'].includes(s.status_bayar) &&
+              (!startDate || s.tanggal >= startDate) &&
+              (!endDate || s.tanggal <= endDate)
+          )
+          const tExp = pengeluaran.filter(
+            (e) =>
+              e.tenant_id === t.id &&
+              (!startDate || e.tanggal >= startDate) &&
+              (!endDate || e.tanggal <= endDate)
+          )
+          const tBal = pocketBalances.filter((b) => b.tenant_id === t.id && b.is_active !== false)
+          return {
+            tenant_id: t.id,
+            tenant_name: t.nama,
+            business_type: t.business_type,
+            plan: t.plan,
+            status: t.status,
+            revenue: tStruk.reduce((sum, s) => sum + parseFloat(s.total_tagihan || 0), 0),
+            transactions_count: tStruk.length,
+            expenses: tExp.reduce((sum, e) => sum + parseFloat(e.nominal || 0), 0),
+            cash_balance: tBal.reduce((sum, b) => sum + parseFloat(b.current_balance ?? b.balance ?? 0), 0),
+          }
+        })
+        return { data: { success: true, outlets }, error: null }
+      }
+
       throw new Error(`RPC ${name} not supported on local client`)
     },
+
+    setActiveTenantId,
+    setActiveActorContext,
+    resetActiveActorContext,
 
     channel(name) {
       const channelObj = {

@@ -11,7 +11,7 @@ import {
 import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
-import { isPayrollDeductionCategory, isWorkerNameMatch } from '../utils/payrollHelpers'
+import { aggregateCarwashWages } from '../utils/payrollHelpers'
 import { 
   UserPlus, 
   Users, 
@@ -31,12 +31,12 @@ import { formatRupiah } from '../utils/helpers'
 import {
   syncStaffToKaryawanKantor,
   getRoleBadgeConfig,
-  calculateCarwashWorkerWage,
   getPayrollPeriod,
-  formatStaffLoginHandle
+  formatStaffLoginHandle,
+  isValidUUID
 } from '../utils/staffHelpers'
 import { getTenantFeatures } from '../utils/businessCapabilities'
-import { ROLES } from '../constants/roles'
+import { ROLES, isTenantWideManager } from '../constants/roles'
 import InteractiveCalendar from '../components/InteractiveCalendar'
 import { useSearchParams } from 'react-router-dom'
 
@@ -73,10 +73,11 @@ const Karyawan = () => {
   const [pengeluaranList, setPengeluaranList] = useState([])
   const [showPayModal, setShowPayModal] = useState(false)
   const [payForm, setPayForm] = useState({
+    workerId: null,
     workerName: '',
     calculatedOutstanding: 0,
     amountToPay: 0,
-    fundSource: 'REKENING Y',
+    fundSource: 'SALDO REKENING Y',
     note: ''
   })
 
@@ -97,8 +98,11 @@ const Karyawan = () => {
     email: '',
     password: '',
     nama: '',
-    role: ROLES.KASIR
+    role: ROLES.KASIR,
+    branchId: ''
   })
+  const [tenantBranches, setTenantBranches] = useState([])
+  const [pocketOptions, setPocketOptions] = useState([])
 
   // Custom Alert / Confirm Modal State
   const [customAlert, setCustomAlert] = useState(null)
@@ -168,6 +172,32 @@ const Karyawan = () => {
         console.warn('profiles read error:', e)
       }
 
+      // 3B. Fetch Daftar Cabang & Kantong Saldo Aktif (untuk pendaftaran staf & sumber dana gaji)
+      try {
+        const tid = activeTenant?.id || profile?.tenant_id
+        let brQ = supabase.from('branches').select('id, nama, kode, is_active').order('created_at', { ascending: true })
+        if (tid) brQ = brQ.eq('tenant_id', tid)
+        const { data: brData } = await brQ
+        setTenantBranches((brData || []).filter(b => b.is_active !== false))
+      } catch (e) {
+        console.warn('branches read error:', e)
+      }
+      try {
+        const tid = activeTenant?.id || profile?.tenant_id
+        let pkQ = supabase.from('v_pocket_balances').select('id, pos, label, tipe, is_active')
+        if (tid) pkQ = pkQ.eq('tenant_id', tid)
+        let { data: pkData, error: pkErr } = await pkQ
+        if (pkErr || !Array.isArray(pkData)) {
+          let fbQ = supabase.from('pos_balances').select('id, pos, label, tipe, is_active')
+          if (tid) fbQ = fbQ.eq('tenant_id', tid)
+          const fbRes = await fbQ
+          pkData = fbRes.data
+        }
+        setPocketOptions((pkData || []).filter(p => p.is_active !== false))
+      } catch (e) {
+        console.warn('pockets read error:', e)
+      }
+
       // 4. Sinkronisasi Otomatis: Karyawan Kantor otomatis terisi jika ada data dari Daftar Staf Baru
       const { mergedList, newRecordsToInsert } = syncStaffToKaryawanKantor({
         staffProfiles: registeredStaff,
@@ -177,13 +207,13 @@ const Karyawan = () => {
       // Simpan record baru ke tabel karyawan_kantor agar tersimpan permanen
       if (newRecordsToInsert.length > 0) {
         try {
-          const isValidUUID = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val)
           for (const newRec of newRecordsToInsert) {
             const recToSave = { ...newRec }
-            // Cegah error 22P02 pada cloud database jika branch_id / tenant_id berupa string mock
+            // Cegah error 22P02 pada cloud database jika branch_id / tenant_id / profile_id berupa string mock
             if (!supabase.isLocal) {
               if (!isValidUUID(recToSave.branch_id)) delete recToSave.branch_id
               if (!isValidUUID(recToSave.tenant_id)) delete recToSave.tenant_id
+              if (!isValidUUID(recToSave.profile_id)) delete recToSave.profile_id
             }
             await supabase.from('karyawan_kantor').insert(recToSave)
           }
@@ -253,175 +283,38 @@ const Karyawan = () => {
     }
   }, [activeTab, wagesStartDate, wagesEndDate])
 
-  // Wages Report Aggregation logic
+  // Wages Report Aggregation logic (merujuk pada ID karyawan cuci terlebih dahulu)
   const wagesSummary = useMemo(() => {
-    const summary = {}
-    const activeWorkers = karyawanCuciList.length > 0 
-      ? karyawanCuciList.map(k => k.nama.toUpperCase().trim()) 
-      : []
-    
-    activeWorkers.forEach(w => {
-      summary[w] = { 
-        name: w, 
-        totalCars: 0, 
-        totalWage: 0, 
-        totalWithdrawals: 0, 
-        netWage: 0, 
-        details: [], 
-        withdrawalsList: [] 
-      }
+    return aggregateCarwashWages({
+      karyawanCuciList,
+      carwashWagesList,
+      pengeluaranList,
+      cashflowList
     })
-
-    // 1. Process carwash wages (Gross)
-    carwashWagesList.forEach(item => {
-      let hargaCuci = parseFloat(item.harga_cuci) || 0
-      let hargaPaket = parseFloat(item.harga_paket) || 0
-      
-      if (hargaCuci === 0 && hargaPaket === 0) {
-        if (!item.paket || item.paket.trim() === "") {
-          hargaCuci = parseFloat(item.harga) || 0
-        } else {
-          const size = item.ukuran || 'Large'
-          const variant = item.variant || 'Regular'
-          
-          const basicWashPrices = {
-            Small: { Regular: 50000, 'Body only': 35000 },
-            Medium: { Regular: 55000, 'Body only': 40000 },
-            Large: { Regular: 60000, 'Body only': 45000 },
-            'Extra Large': { Regular: 80000, 'Body only': 80000 },
-            Custom: { Regular: 80000, 'Body only': 80000 }
-          }
-          
-          const basicSize = basicWashPrices[size] ? size : 'Large'
-          const basicVar = variant === 'Body only' ? 'Body only' : 'Regular'
-          hargaCuci = basicWashPrices[basicSize][basicVar]
-          hargaPaket = Math.max(0, (parseFloat(item.harga) || 0) - hargaCuci)
-        }
-      }
-      
-      const w1 = item.anggota_1 ? item.anggota_1.trim().toUpperCase() : ''
-      const w2 = item.anggota_2 ? item.anggota_2.trim().toUpperCase() : ''
-      
-      const isSplit = w2 !== '' && w2 !== w1
-      
-      const { washWagePerPerson, packageWagePerPerson, totalSharePerPerson: share } = calculateCarwashWorkerWage({
-        hargaCuci,
-        hargaPaket,
-        isSplit
-      })
-
-      if (w1) {
-        if (!summary[w1]) {
-          summary[w1] = { name: w1, totalCars: 0, totalWage: 0, totalWithdrawals: 0, netWage: 0, details: [], withdrawalsList: [] }
-        }
-        summary[w1].totalCars += 1
-        summary[w1].totalWage += share
-        summary[w1].details.push({
-          id: item.id_transaksi || item.id,
-          tanggal: item.tanggal,
-          jam: item.jam,
-          created_at: item.created_at,
-          platNomor: item.plat,
-          paket: item.paket,
-          variant: item.variant,
-          ukuran: item.ukuran,
-          totalHarga: item.harga,
-          shareWage: share,
-          split: isSplit ? 'Split 50%' : 'Solo 100%',
-          rawItem: item
-        })
-      }
-
-      if (isSplit && w2) {
-        if (!summary[w2]) {
-          summary[w2] = { name: w2, totalCars: 0, totalWage: 0, totalWithdrawals: 0, netWage: 0, details: [], withdrawalsList: [] }
-        }
-        summary[w2].totalCars += 1
-        summary[w2].totalWage += share
-        summary[w2].details.push({
-          id: item.id_transaksi || item.id,
-          tanggal: item.tanggal,
-          jam: item.jam,
-          created_at: item.created_at,
-          platNomor: item.plat,
-          paket: item.paket,
-          variant: item.variant,
-          ukuran: item.ukuran,
-          totalHarga: item.harga,
-          shareWage: share,
-          split: isSplit ? 'Split 50%' : 'Solo 100%',
-          rawItem: item
-        })
-      }
-    })
-
-    const processedExpIds = new Set()
-
-    // 3. Process pengeluaran deductions (cashier withdrawals/kasbon only)
-    pengeluaranList.forEach(exp => {
-      if (!isPayrollDeductionCategory(exp.kategori, exp.jenis)) return
-      const desc = (exp.nama_pengeluaran || '').toUpperCase()
-      const amt = parseFloat(exp.nominal) || 0
-      if (amt > 0) {
-        Object.keys(summary).forEach(wName => {
-          if (isWorkerNameMatch(desc, wName)) {
-            processedExpIds.add(exp.id_pengeluaran)
-            summary[wName].totalWithdrawals += amt
-            summary[wName].withdrawalsList.push({
-              id: exp.id_pengeluaran,
-              tanggal: exp.tanggal,
-              keterangan: exp.nama_pengeluaran,
-              nominal: amt,
-              pos: 'SALDO CASH (Laci Kasir)'
-            })
-          }
-        })
-      }
-    })
-
-    // 4. Process cashflow deductions (payroll/kasbon categories only, skipping ones already matched via id_sumber)
-    cashflowList.forEach(cf => {
-      if (cf.id_sumber && processedExpIds.has(cf.id_sumber)) return
-      if (!isPayrollDeductionCategory(cf.kategori, cf.jenis)) return
-
-      const desc = (cf.keterangan_transaksi || '').toUpperCase()
-      const amt = parseFloat(cf.pengeluaran) || 0
-      if (amt > 0) {
-        Object.keys(summary).forEach(wName => {
-          if (isWorkerNameMatch(desc, wName)) {
-            summary[wName].totalWithdrawals += amt
-            summary[wName].withdrawalsList.push({
-              id: cf.id_cashflow,
-              tanggal: cf.tanggal,
-              keterangan: cf.keterangan_transaksi,
-              nominal: amt,
-              pos: cf.pos
-            })
-          }
-        })
-      }
-    })
-
-    // 5. Calculate net wages
-    Object.keys(summary).forEach(wName => {
-      summary[wName].netWage = summary[wName].totalWage - summary[wName].totalWithdrawals
-    })
-
-    return Object.values(summary).sort((a, b) => b.totalWage - a.totalWage)
   }, [carwashWagesList, cashflowList, pengeluaranList, karyawanCuciList])
 
-  const selectedWorkerDetails = selectedWageWorker ? wagesSummary.find(w => w.name === selectedWageWorker) : null
+  const selectedWorkerDetails = selectedWageWorker
+    ? wagesSummary.find(w => w.key === selectedWageWorker || w.name === selectedWageWorker)
+    : null
 
   const handleOpenPayModal = (workerItem = null) => {
-    const targetWorker = workerItem || (selectedWageWorker ? wagesSummary.find(w => w.name === selectedWageWorker) : null)
+    const isWorkerObj = workerItem && typeof workerItem === 'object' && 'name' in workerItem
+    const targetWorker = isWorkerObj
+      ? workerItem
+      : (selectedWageWorker ? wagesSummary.find(w => w.key === selectedWageWorker || w.name === selectedWageWorker) : null)
     if (!targetWorker) return
 
-    setSelectedWageWorker(targetWorker.name)
+    setSelectedWageWorker(targetWorker.key)
+    const defaultBankPocket =
+      pocketOptions.find(p => p.pos === 'SALDO REKENING Y') ||
+      pocketOptions.find(p => p.tipe === 'BANK') ||
+      pocketOptions[0]
     setPayForm({
+      workerId: targetWorker.id || null,
       workerName: targetWorker.name,
       calculatedOutstanding: targetWorker.netWage || 0,
       amountToPay: targetWorker.netWage || 0,
-      fundSource: 'REKENING Y',
+      fundSource: defaultBankPocket?.pos || 'SALDO REKENING Y',
       note: `Pelunasan Gaji ${targetWorker.name}`
     })
     setShowPayModal(true)
@@ -433,6 +326,7 @@ const Karyawan = () => {
     setError('')
     setSuccess('')
     try {
+      const matchedPocket = pocketOptions.find(p => p.pos === payForm.fundSource)
       const { error: err } = await supabase
         .from('cashflow')
         .insert({
@@ -443,7 +337,9 @@ const Karyawan = () => {
           kategori: 'Gaji Karyawan',
           pemasukan: 0,
           pengeluaran: parseFloat(payForm.amountToPay) || 0,
-          pos: payForm.fundSource
+          pos: payForm.fundSource,
+          ...(matchedPocket?.id && (supabase.isLocal || isValidUUID(matchedPocket.id)) ? { pocket_id: matchedPocket.id } : {}),
+          ...(isValidUUID(payForm.workerId) ? { karyawan_id: payForm.workerId } : {})
         })
       if (err) throw err
       
@@ -543,8 +439,9 @@ const Karyawan = () => {
     const cleanName = (name || '').trim().toUpperCase()
     const matchedStaff = staffList.find(
       (s) =>
+        (item?.profile_id && s.id === item.profile_id) ||
         (item?.email && s.email && s.email.toLowerCase() === item.email.toLowerCase()) ||
-        (s.nama || '').trim().toUpperCase() === cleanName
+        (!item?.profile_id && (s.nama || '').trim().toUpperCase() === cleanName)
     )
     const effectiveRole = item?.role || matchedStaff?.role || ''
     const isCallerSuperAdmin = profile?.role === ROLES.SUPER_ADMIN
@@ -571,9 +468,10 @@ const Karyawan = () => {
         if (!res.success) throw new Error(res.error)
         setSuccess(`Akun staf & karyawan kantor "${name}" berhasil dinonaktifkan secara terpadu (Opsi A)!`)
       } else {
+        const targetId = item?.id || id
         let err = null
-        if (id) {
-          const res = await supabase.from('karyawan_kantor').delete().eq('id', id)
+        if (targetId) {
+          const res = await supabase.from('karyawan_kantor').delete().eq('id', targetId)
           err = res.error
         } else {
           const res = await supabase.from('karyawan_kantor').delete().eq('nama', name)
@@ -671,34 +569,77 @@ const Karyawan = () => {
     if (!staffForm.email || !staffForm.password || !staffForm.nama) {
       return setError('Semua form wajib diisi.')
     }
+    if (staffForm.password.length < 8) {
+      return setError('Kata sandi minimal 8 karakter.')
+    }
 
     try {
       setLoading(true)
       const cleanNama = staffForm.nama.trim().toUpperCase()
-      const res = await registerKasir(staffForm.email, staffForm.password, cleanNama, staffForm.role)
+      const selectedBranchId = isTenantWideManager(profile?.role) && staffForm.branchId ? staffForm.branchId : null
+      const res = await registerKasir(staffForm.email, staffForm.password, cleanNama, staffForm.role, null, selectedBranchId)
       if (!res.success) throw new Error(res.error)
 
-      // 1. Jika role Kasir, masukkan ke tabel kasir untuk master dropdown kasir di POS
+      const createdProfileId = isValidUUID(res?.user?.id) ? res.user.id : null
+
+      // 1. Jika role Kasir, pastikan tertaut via profile_id ke tabel kasir untuk dropdown POS
       if (staffForm.role === ROLES.KASIR) {
-        const { error: kasirErr } = await supabase
-          .from('kasir')
-          .insert({ nama: cleanNama, is_active: true })
-        if (kasirErr) {
-          console.warn('Gagal otomatis menambahkan ke tabel kasir:', kasirErr)
+        let existingKasir = null
+        if (createdProfileId) {
+          const { data: kByProf } = await supabase
+            .from('kasir')
+            .select('id')
+            .eq('profile_id', createdProfileId)
+            .maybeSingle()
+          existingKasir = kByProf
+        }
+        if (!existingKasir) {
+          const { data: kByName } = await supabase
+            .from('kasir')
+            .select('id, profile_id')
+            .eq('nama', cleanNama)
+            .maybeSingle()
+          existingKasir = kByName
+        }
+
+        if (!existingKasir) {
+          const { error: kasirErr } = await supabase
+            .from('kasir')
+            .insert({
+              nama: cleanNama,
+              is_active: true,
+              ...(createdProfileId ? { profile_id: createdProfileId } : {})
+            })
+          if (kasirErr) {
+            console.warn('Gagal otomatis menambahkan ke tabel kasir:', kasirErr)
+          }
         }
       }
 
-      // 2. ARSITEKTUR SINKRONISASI: Otomatis tambahkan juga ke tabel karyawan_kantor
+      // 2. ARSITEKTUR SINKRONISASI: Otomatis tambahkan juga ke tabel karyawan_kantor (tautkan profile_id)
       try {
-        const { data: existingKk } = await supabase
-          .from('karyawan_kantor')
-          .select('id')
-          .eq('nama', cleanNama)
-          .maybeSingle()
+        let existingKk = null
+        if (createdProfileId) {
+          const { data: kkByProf } = await supabase
+            .from('karyawan_kantor')
+            .select('id')
+            .eq('profile_id', createdProfileId)
+            .maybeSingle()
+          existingKk = kkByProf
+        }
+        if (!existingKk) {
+          const { data: kkByName } = await supabase
+            .from('karyawan_kantor')
+            .select('id')
+            .eq('nama', cleanNama)
+            .maybeSingle()
+          existingKk = kkByName
+        }
 
         if (!existingKk) {
           await supabase.from('karyawan_kantor').insert({
             id_karyawan: `kk_auto_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            ...(createdProfileId ? { profile_id: createdProfileId } : {}),
             nama: cleanNama,
             role: staffForm.role,
             email: staffForm.email.trim(),
@@ -711,7 +652,7 @@ const Karyawan = () => {
       }
 
       setSuccess(`Staf baru "${cleanNama}" (${staffForm.role}) berhasil didaftarkan dan otomatis tercatat di section Karyawan Kantor!`)
-      setStaffForm({ email: '', password: '', nama: '', role: ROLES.KASIR })
+      setStaffForm({ email: '', password: '', nama: '', role: ROLES.KASIR, branchId: '' })
       
       // Muat ulang data agar tampilan Karyawan Kantor dan Staf langsung ter-update
       await loadKaryawanData()
@@ -858,9 +799,9 @@ const Karyawan = () => {
                   <tbody className="divide-y divide-[#26272d]">
                     {wagesSummary.map((item) => (
                       <tr 
-                        key={item.name} 
+                        key={item.key} 
                         className={`hover:bg-[#26272d]/10 transition-colors ${
-                          selectedWageWorker === item.name ? 'bg-[#00ffff]/5' : ''
+                          selectedWageWorker === item.key ? 'bg-[#00ffff]/5' : ''
                         }`}
                       >
                         <td className="p-4 font-bold text-white text-sm">{item.name}</td>
@@ -882,7 +823,7 @@ const Karyawan = () => {
                               <span>Bayar Gaji</span>
                             </button>
                             <button
-                              onClick={() => setSelectedWageWorker(item.name)}
+                              onClick={() => setSelectedWageWorker(item.key)}
                               className="px-2.5 py-1 bg-[#18181c] hover:bg-[#26272d] border border-[#26272d] text-[#bbcbb2] hover:text-white font-bold rounded-lg text-[11px] transition-all cursor-pointer"
                             >
                               Rincian
@@ -896,16 +837,16 @@ const Karyawan = () => {
               </TableContainer>
 
               {/* Rincian Riwayat di Bawah (Full Width) */}
-              {selectedWageWorker && (
+              {selectedWageWorker && selectedWorkerDetails && (
                 <div id="print-area" className="bg-[#121215] border border-[#26272d] p-6 rounded-xl border border-[#26272d] space-y-6 animate-fade-in">
                   <div className="border-b border-[#26272d] pb-3 flex justify-between items-center">
                     <div>
-                      <h4 className="font-extrabold text-base text-white">Detail Riwayat Pekerjaan: {selectedWageWorker}</h4>
+                      <h4 className="font-extrabold text-base text-white">Detail Riwayat Pekerjaan: {selectedWorkerDetails.name}</h4>
                       <p className="text-xs text-[#6b7367] mt-0.5 font-medium">Rincian upah lengkap pada periode {wagesStartDate} s/d {wagesEndDate}</p>
                     </div>
                     <div className="flex gap-2">
                       <button 
-                        onClick={handleOpenPayModal}
+                        onClick={() => handleOpenPayModal(selectedWorkerDetails)}
                         disabled={loading || (selectedWorkerDetails?.netWage || 0) <= 0}
                         className="px-3 py-1.5 bg-[#00ffff] hover:bg-[#00ffff]/90 disabled:opacity-50 text-slate-950 text-xs font-bold rounded-lg transition-all active:scale-[0.98] flex items-center gap-1.5"
                       >
@@ -930,7 +871,7 @@ const Karyawan = () => {
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 p-4 rounded-xl bg-[#18181c]/60 border border-[#26272d] text-xs">
                     <div>
                       <span className="text-[10px] uppercase tracking-wider text-[#6b7367] block font-bold">Nama Pekerja</span>
-                      <span className="text-sm font-bold text-white">{selectedWageWorker}</span>
+                      <span className="text-sm font-bold text-white">{selectedWorkerDetails.name}</span>
                     </div>
                     <div>
                       <span className="text-[10px] uppercase tracking-wider text-[#6b7367] block font-bold">Total Pekerjaan</span>
@@ -1388,6 +1329,9 @@ const Karyawan = () => {
                     className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-blue font-mono"
                     required
                   />
+                  <p className="text-[11px] text-[#6b7367] mt-1">
+                    Jika mengisi username tanpa email, staf login memakai format <span className="font-mono text-slate-300">username.kode-toko</span> yang tampil di daftar sebelah kanan.
+                  </p>
                 </div>
 
                 <div>
@@ -1396,7 +1340,9 @@ const Karyawan = () => {
                   </label>
                   <input
                     type="password"
-                    placeholder="Minimal 6 karakter"
+                    placeholder="Minimal 8 karakter"
+                    minLength={8}
+                    autoComplete="new-password"
                     value={staffForm.password}
                     onChange={(e) => setStaffForm(prev => ({ ...prev, password: e.target.value }))}
                     className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-blue font-mono"
@@ -1413,11 +1359,39 @@ const Karyawan = () => {
                     onChange={(e) => setStaffForm(prev => ({ ...prev, role: e.target.value }))}
                     className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-blue"
                   >
-                    <option value="Kasir">Kasir (Akses Transaksi POS & Antrean)</option>
-                    <option value="Admin">Admin (Supervisor Operasional & Logistik Toko)</option>
-                    <option value="Owner">Owner (Akses Penuh Seluruh Modul & Finansial)</option>
+                    <option value="Kasir">Kasir (Akses Transaksi POS &amp; Antrean Cabang)</option>
+                    <option value="Staff Kantor">Staff Kantor (Gudang &amp; Stok Cabang)</option>
+                    {isTenantWideManager(profile?.role) && (
+                      <option value="Admin">Admin Cabang (Supervisor Terbatas 1 Cabang)</option>
+                    )}
+                    {(profile?.role === ROLES.OWNER || profile?.role === ROLES.SUPER_ADMIN) && (
+                      <>
+                        <option value="Admin Pusat">Admin Pusat (Semua Cabang dalam 1 Tenant)</option>
+                        <option value="Owner">Owner (Akses Penuh Seluruh Modul &amp; Finansial)</option>
+                      </>
+                    )}
                   </select>
                 </div>
+
+                {isTenantWideManager(profile?.role) && tenantBranches.length > 1 && (
+                  <div>
+                    <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
+                      Penempatan Cabang
+                    </label>
+                    <select
+                      value={staffForm.branchId}
+                      onChange={(e) => setStaffForm(prev => ({ ...prev, branchId: e.target.value }))}
+                      className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-blue"
+                    >
+                      <option value="">Cabang Utama (Default)</option>
+                      {tenantBranches.map((br) => (
+                        <option key={br.id} value={br.id}>
+                          {br.nama}{br.kode ? ` (${br.kode})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <button
                   type="submit"
@@ -1465,12 +1439,16 @@ const Karyawan = () => {
                         const badge = getRoleBadgeConfig(staf.role)
                         const isActive = staf.is_active !== false
                         const isOwnerRow = staf.role === ROLES.OWNER || staf.role === ROLES.SUPER_ADMIN
+                        const isCallerOwnerOrSuper = profile?.role === ROLES.OWNER || profile?.role === ROLES.SUPER_ADMIN
+                        const isCallerAdminPusat = profile?.role === ROLES.ADMIN_PUSAT
                         const canManageRole =
-                          (profile?.role === ROLES.OWNER || profile?.role === ROLES.SUPER_ADMIN) &&
-                          (!isOwnerRow || profile?.role === ROLES.SUPER_ADMIN)
+                          (isCallerOwnerOrSuper && (!isOwnerRow || profile?.role === ROLES.SUPER_ADMIN)) ||
+                          (isCallerAdminPusat && !isOwnerRow && staf.role !== ROLES.ADMIN_PUSAT)
                         const canToggleStatus =
-                          (profile?.role === ROLES.OWNER || profile?.role === ROLES.SUPER_ADMIN || profile?.role === ROLES.ADMIN) &&
-                          (!isOwnerRow || profile?.role === ROLES.SUPER_ADMIN)
+                          (isCallerOwnerOrSuper || isCallerAdminPusat || profile?.role === ROLES.ADMIN) &&
+                          (!isOwnerRow || profile?.role === ROLES.SUPER_ADMIN) &&
+                          !(isCallerAdminPusat && staf.role === ROLES.ADMIN_PUSAT) &&
+                          !(profile?.role === ROLES.ADMIN && (staf.role === ROLES.ADMIN || staf.role === ROLES.ADMIN_PUSAT))
 
                         return (
                           <tr
@@ -1493,7 +1471,10 @@ const Karyawan = () => {
                                   className="bg-[#18181c] border border-[#26272d] hover:border-brand-blue/40 rounded-lg py-1 px-2 text-xs font-semibold text-white focus:outline-none focus:border-brand-blue"
                                 >
                                   <option value="Kasir">Kasir</option>
-                                  <option value="Admin">Admin</option>
+                                  <option value="Admin">Admin Cabang (1 Cabang)</option>
+                                  {isCallerOwnerOrSuper && (
+                                    <option value="Admin Pusat">Admin Pusat (Semua Cabang)</option>
+                                  )}
                                   <option value="Staff Kantor">Staff Kantor</option>
                                 </select>
                               ) : (
@@ -1605,9 +1586,18 @@ const Karyawan = () => {
                   onChange={(e) => setPayForm(prev => ({ ...prev, fundSource: e.target.value }))}
                   className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-xs font-bold focus:outline-none focus:border-brand-blue"
                 >
-                  <option value="REKENING Y">REKENING Y (Transfer Bank Y)</option>
-                  <option value="REKENING N">REKENING N (Transfer Bank N)</option>
-                  <option value="SALDO CASH">SALDO CASH (Dipotong dari Laci Kasir POS)</option>
+                  {pocketOptions.length > 0 ? (
+                    pocketOptions.map((pk) => (
+                      <option key={pk.id || pk.pos} value={pk.pos}>
+                        {pk.label || pk.pos} ({pk.pos})
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="SALDO REKENING Y">SALDO REKENING Y (Transfer Bank)</option>
+                      <option value="SALDO CASH">SALDO CASH (Laci Kasir POS)</option>
+                    </>
+                  )}
                 </select>
               </div>
 

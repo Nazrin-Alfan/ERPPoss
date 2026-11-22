@@ -12,6 +12,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import { getTenantFeatures } from '../utils/businessCapabilities'
+import { isOwnerOrSuperAdmin } from '../constants/roles'
 import { EXPENSE_CATEGORIES } from '../constants/transactionConstants'
 import { 
   DollarSign, 
@@ -66,6 +67,7 @@ import OwnerWithdrawalModal from '../components/finance/OwnerWithdrawalModal'
 const Finance = () => {
   const { activeTenant, profile } = useAuth()
   const features = getTenantFeatures(activeTenant?.business_type)
+  const canWithdrawOwnerPrive = isOwnerOrSuperAdmin(profile?.role)
 
   // Navigation & Loading States
   const [activeTab, setActiveTab] = useState('cashflow') // 'cashflow' | 'carwash' | 'cafe' | 'expenses'
@@ -123,6 +125,7 @@ const Finance = () => {
   const [masterCategories, setMasterCategories] = useState([])
   const [stokBahan, setStokBahan] = useState([])
   const [karyawanOptions, setKaryawanOptions] = useState([])
+  const [karyawanDirectory, setKaryawanDirectory] = useState([])
   const [summary, setSummary] = useState({ totalIncome: 0, totalExpense: 0, totalBalance: 0 })
 
   // Modal States
@@ -141,7 +144,8 @@ const Finance = () => {
     pos: 'SALDO CASH',
     keterangan: '',
     total_harga: '',
-    karyawan: ''
+    karyawan: '',
+    karyawan_id: ''
   })
   const [incomeForm, setIncomeForm] = useState({
     tanggal: new Date().toLocaleDateString('en-CA'),
@@ -764,8 +768,15 @@ const Finance = () => {
       let kkQuery = supabase.from('karyawan_kantor').select('*')
       if (targetTenantId) kkQuery = kkQuery.eq('tenant_id', targetTenantId)
 
-      let pbQuery = supabase.from('pos_balances').select('*')
-      if (targetTenantId) pbQuery = pbQuery.eq('tenant_id', targetTenantId)
+      const fetchPockets = async () => {
+        let viewQ = supabase.from('v_pocket_balances').select('*')
+        if (targetTenantId) viewQ = viewQ.eq('tenant_id', targetTenantId)
+        const viewRes = await viewQ
+        if (!viewRes?.error && Array.isArray(viewRes?.data)) return viewRes
+        let pbQ = supabase.from('pos_balances').select('*')
+        if (targetTenantId) pbQ = pbQ.eq('tenant_id', targetTenantId)
+        return pbQ
+      }
 
       // 2-6. Fetch Cashflow, Carwash, Cafe, Expenses, Master Categories, Stok Barang, & POS Balances secara paralel
       const [
@@ -787,7 +798,7 @@ const Finance = () => {
         sbQuery,
         kcQuery,
         kkQuery,
-        pbQuery
+        fetchPockets()
       ])
 
       const mcData = resMc?.data
@@ -797,10 +808,26 @@ const Finance = () => {
         setPosAccountList(resPb.data)
       }
 
-      const cuciNames = (resKc?.data || []).map(k => k.nama.toUpperCase().trim()).filter(Boolean)
-      const kantorNames = (resKk?.data || []).map(k => k.nama.toUpperCase().trim()).filter(Boolean)
-      const combinedStaff = Array.from(new Set([...cuciNames, ...kantorNames]))
-      setKaryawanOptions(combinedStaff)
+      const cuciRows = (resKc?.data || []).map(k => ({
+        id: k.id || null,
+        nama: (k.nama || '').toUpperCase().trim(),
+        source: 'cuci'
+      })).filter(k => k.nama)
+      const kantorRows = (resKk?.data || []).map(k => ({
+        id: k.id || null,
+        nama: (k.nama || '').toUpperCase().trim(),
+        source: 'kantor'
+      })).filter(k => k.nama)
+
+      const dirMap = new Map()
+      ;[...cuciRows, ...kantorRows].forEach(row => {
+        if (!dirMap.has(row.nama)) {
+          dirMap.set(row.nama, row)
+        }
+      })
+      const directory = Array.from(dirMap.values())
+      setKaryawanDirectory(directory)
+      setKaryawanOptions(directory.map(k => k.nama))
 
       setCashflowList(cfData || [])
       setCarwashList(cwData || [])
@@ -812,6 +839,9 @@ const Finance = () => {
       }
 
       const formattedStok = sbData?.length ? sbData.map(b => ({
+        id: b.id,
+        id_barang: b.id_barang || null,
+        branch_id: b.branch_id || null,
         id_bahan_baku: b.id_bahan_baku || b.id || b.id_barang,
         nama_bahan: b.nama_produk || b.nama_barang || b.id_bahan_baku,
         nama_produk: b.nama_produk || b.nama_barang || b.id_bahan_baku,
@@ -954,13 +984,14 @@ const Finance = () => {
     }
   }, [cashflowList])
 
-  // Saldo Fisik & Rekening Real-time (All-time per masing-masing POS)
+  // Saldo Fisik & Rekening Real-time (All-time per masing-masing POS / pocket_id)
   const posAllTimeBalances = useMemo(() => {
     let cash = 0
     let rekY = 0
     let rekN = 0
     let rekR = 0
     const byPos = {}
+    const byPocketId = {}
 
     cashflowList.forEach(item => {
       const p = parseFloat(item.pemasukan || 0)
@@ -969,6 +1000,9 @@ const Finance = () => {
       const posKey = item.pos || 'SALDO CASH'
 
       byPos[posKey] = (byPos[posKey] || 0) + net
+      if (item.pocket_id) {
+        byPocketId[item.pocket_id] = (byPocketId[item.pocket_id] || 0) + net
+      }
 
       if (posKey === 'SALDO CASH') cash += net
       else if (posKey === 'SALDO REKENING Y') rekY += net
@@ -976,21 +1010,26 @@ const Finance = () => {
       else if (posKey === 'SALDO REKENING R') rekR += net
     })
 
-    return { cash, rekY, rekN, rekR, byPos }
+    return { cash, rekY, rekN, rekR, byPos, byPocketId }
   }, [cashflowList])
 
   const dynamicPosAccounts = useMemo(() => {
     if (posAccountList && posAccountList.length > 0) {
-      return posAccountList.map(acc => {
-        const net = posAllTimeBalances.byPos?.[acc.pos] ?? 0
-        const initialBal = parseFloat(acc.balance || 0)
-        return {
-          ...acc,
-          type: acc.tipe || acc.type || 'BANK',
-          label: acc.label || acc.nama_pos || acc.nama_bank || acc.pos,
-          currentBalance: initialBal + net
-        }
-      })
+      return posAccountList
+        .filter(acc => acc.is_active !== false)
+        .map(acc => {
+          const hasViewBal = acc.current_balance !== undefined && acc.current_balance !== null
+          const net = acc.id && posAllTimeBalances.byPocketId?.[acc.id] !== undefined
+            ? posAllTimeBalances.byPocketId[acc.id]
+            : (posAllTimeBalances.byPos?.[acc.pos] ?? 0)
+          const initialBal = parseFloat(acc.opening_balance ?? acc.balance ?? 0)
+          return {
+            ...acc,
+            type: acc.tipe || acc.type || 'BANK',
+            label: acc.label || acc.nama_pos || acc.nama_bank || acc.pos,
+            currentBalance: hasViewBal ? parseFloat(acc.current_balance) : (initialBal + net)
+          }
+        })
     }
     return [
       { pos: 'SALDO CASH', label: 'Kas Laci Kasir', type: 'CASH', tipe: 'CASH', currentBalance: posAllTimeBalances.cash }
@@ -1012,6 +1051,9 @@ const Finance = () => {
     let rekNNet = 0
     let rekRNet = 0
 
+    const pocketNetById = new Map()
+    const pocketNetByPos = new Map()
+
     filteredCashflow.forEach(item => {
       const p = parseFloat(item.pemasukan || 0)
       const k = parseFloat(item.pengeluaran || 0)
@@ -1025,10 +1067,29 @@ const Finance = () => {
 
       // Mutasi per dompet kas (Laci Cash & Rekening Bank) tetap mencatat perpindahan fisik
       const net = p - k
+      if (item.pocket_id) {
+        pocketNetById.set(item.pocket_id, (pocketNetById.get(item.pocket_id) || 0) + net)
+      }
+      if (item.pos) {
+        pocketNetByPos.set(item.pos, (pocketNetByPos.get(item.pos) || 0) + net)
+      }
       if (item.pos === 'SALDO CASH') cashNet += net
       else if (item.pos === 'SALDO REKENING Y') rekYNet += net
       else if (item.pos === 'SALDO REKENING N') rekNNet += net
       else if (item.pos === 'SALDO REKENING R') rekRNet += net
+    })
+
+    const pocketNets = dynamicPosAccounts.map((acc) => {
+      const net = acc.id && pocketNetById.has(acc.id)
+        ? pocketNetById.get(acc.id)
+        : (pocketNetByPos.get(acc.pos) || 0)
+      return {
+        id: acc.id || acc.pos,
+        pos: acc.pos,
+        label: acc.label || acc.pos,
+        type: acc.type || 'BANK',
+        net
+      }
     })
 
     return {
@@ -1039,9 +1100,10 @@ const Finance = () => {
       rekYNet,
       rekNNet,
       rekRNet,
-      bankNet: rekYNet + rekNNet + rekRNet
+      bankNet: pocketNets.filter(p => p.type !== 'CASH').reduce((sum, p) => sum + p.net, 0),
+      pocketNets
     }
-  }, [filteredCashflow])
+  }, [filteredCashflow, dynamicPosAccounts])
 
   // ==========================================
   // TAB 2: CARWASH FILTERED & KPIS
@@ -1369,6 +1431,10 @@ const Finance = () => {
         isRestockDetail
       })
 
+      const matchedExpPocket = dynamicPosAccounts.find(a => a.pos === expenseForm.pos)
+      if (matchedExpPocket?.id) {
+        payload.cashflow.pocket_id = matchedExpPocket.id
+      }
       const { error: cfErr } = await supabase.from('cashflow').insert(payload.cashflow)
       if (cfErr) throw cfErr
 
@@ -1393,7 +1459,8 @@ const Finance = () => {
         total_harga: '',
         keterangan: '',
         pos: 'SALDO CASH',
-        karyawan: ''
+        karyawan: '',
+        karyawan_id: ''
       })
       setIsCustomExpenseJenis(false)
       setIsCustomExpenseKategori(false)
@@ -1432,6 +1499,10 @@ const Finance = () => {
         timestamp
       })
 
+      const matchedIncPocket = dynamicPosAccounts.find(a => a.pos === incomeForm.pos)
+      if (matchedIncPocket?.id) {
+        payload.pocket_id = matchedIncPocket.id
+      }
       const { error: cfErr } = await supabase.from('cashflow').insert(payload)
       if (cfErr) throw cfErr
 
@@ -1480,6 +1551,9 @@ const Finance = () => {
       const timestamp = new Date().toISOString()
       const ket = transferForm.keterangan?.trim() || `Pindah Saldo dari ${transferForm.pos_asal} ke ${transferForm.pos_tujuan}`
 
+      const asalPocket = dynamicPosAccounts.find(a => a.pos === transferForm.pos_asal)
+      const tujuanPocket = dynamicPosAccounts.find(a => a.pos === transferForm.pos_tujuan)
+
       const insertions = [
         // 1. Pengeluaran dari Pos Asal
         {
@@ -1488,6 +1562,7 @@ const Finance = () => {
           jenis: 'Pindah',
           kategori: 'Pindah',
           pos: transferForm.pos_asal,
+          ...(asalPocket?.id ? { pocket_id: asalPocket.id } : {}),
           pemasukan: 0,
           pengeluaran: nom,
           keterangan_transaksi: ket,
@@ -1500,6 +1575,7 @@ const Finance = () => {
           jenis: 'Pindah',
           kategori: 'Pindah',
           pos: transferForm.pos_tujuan,
+          ...(tujuanPocket?.id ? { pocket_id: tujuanPocket.id } : {}),
           pemasukan: nom,
           pengeluaran: 0,
           keterangan_transaksi: ket,
@@ -1529,13 +1605,15 @@ const Finance = () => {
     }
   }
 
+  const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+
   // 3. Open Edit Modal
   const handleOpenEdit = (item, type) => {
     setEditingItem(item)
     if (type === 'cashflow') {
       setEditForm({
         table: 'cashflow',
-        id: item.id_cashflow,
+        id: item.id || item.id_cashflow,
         tanggal: item.tanggal || '',
         jam: '',
         keterangan: item.keterangan_transaksi || '',
@@ -1548,35 +1626,35 @@ const Finance = () => {
     } else if (type === 'carwash') {
       setEditForm({
         table: 'carwash',
-        id: item.id_carwash,
+        id: item.id,
         tanggal: item.tanggal || '',
         jam: item.jam || '',
-        keterangan: `${item.plat_nomor} - ${item.model}`,
-        plat_nomor: item.plat_nomor,
-        model: item.model,
-        layanan: item.layanan,
+        keterangan: `${item.plat_nomor || item.plat || ''} - ${item.model || ''}`,
+        plat_nomor: item.plat_nomor || item.plat || '',
+        model: item.model || 'Mobil',
+        layanan: item.layanan || item.paket || '',
         harga: parseFloat(item.harga) || 0,
         diskon: parseFloat(item.diskon) || 0,
-        metode_bayar: item.metode_bayar || 'CASH',
+        metode_bayar: item.metode_bayar || item.metode || 'CASH',
         status: item.status || 'Selesai'
       })
     } else if (type === 'cafe') {
       setEditForm({
         table: 'cafe',
-        id: item.id_detail,
-        tanggal: item.struk?.tanggal || '',
-        jam: item.struk?.jam || '',
-        nama_item: item.nama_item || '',
+        id: item.id || item.id_detail,
+        tanggal: item.struk?.tanggal || item.tanggal || '',
+        jam: item.struk?.jam || item.jam || '',
+        nama_item: item.nama_item || item.nama_menu || '',
         kategori: item.kategori || '',
-        jumlah: item.jumlah || 1,
+        jumlah: item.jumlah || item.qty || 1,
         harga_satuan: item.harga_satuan || 0,
-        total_harga: item.total_harga || 0,
+        total_harga: item.total_harga || item.subtotal || 0,
         diskon: item.diskon || 0
       })
     } else if (type === 'expenses') {
       setEditForm({
         table: 'pengeluaran',
-        id: item.id_pengeluaran,
+        id: item.id || item.id_pengeluaran,
         tanggal: item.tanggal || '',
         jam: item.jam || '',
         keterangan: item.nama_pengeluaran || item.keterangan || '',
@@ -1615,7 +1693,7 @@ const Finance = () => {
             pemasukan: parseFloat(editForm.pemasukan) || 0,
             pengeluaran: parseFloat(editForm.pengeluaran) || 0
           })
-          .eq('id_cashflow', editForm.id)
+          .eq(isUuid(editForm.id) ? 'id' : 'id_cashflow', editForm.id)
         if (updErr) throw updErr
       } else if (editForm.table === 'carwash') {
         const { error: updErr } = await supabase
@@ -1623,28 +1701,35 @@ const Finance = () => {
           .update({
             tanggal: editForm.tanggal,
             jam: editForm.jam,
+            plat: editForm.plat_nomor,
             plat_nomor: editForm.plat_nomor,
             model: editForm.model,
+            paket: editForm.layanan,
             layanan: editForm.layanan,
             harga: parseFloat(editForm.harga) || 0,
             diskon: parseFloat(editForm.diskon) || 0,
             metode_bayar: editForm.metode_bayar,
             status: editForm.status
           })
-          .eq('id_carwash', editForm.id)
+          .eq('id', editForm.id)
         if (updErr) throw updErr
       } else if (editForm.table === 'cafe') {
+        const qtyVal = parseFloat(editForm.jumlah) || 1
+        const totalVal = parseFloat(editForm.total_harga) || 0
         const { error: updErr } = await supabase
           .from('cafe')
           .update({
             nama_item: editForm.nama_item,
+            nama_menu: editForm.nama_item,
             kategori: editForm.kategori,
-            jumlah: parseFloat(editForm.jumlah) || 1,
+            jumlah: qtyVal,
+            qty: qtyVal,
             harga_satuan: parseFloat(editForm.harga_satuan) || 0,
-            total_harga: parseFloat(editForm.total_harga) || 0,
+            total_harga: totalVal,
+            subtotal: totalVal,
             diskon: parseFloat(editForm.diskon) || 0
           })
-          .eq('id_detail', editForm.id)
+          .eq(isUuid(editForm.id) ? 'id' : 'id_detail', editForm.id)
         if (updErr) throw updErr
       } else if (editForm.table === 'pengeluaran') {
         const { error: updErr } = await supabase
@@ -1658,7 +1743,7 @@ const Finance = () => {
             pos: editForm.pos,
             nominal: parseFloat(editForm.nominal) || 0
           })
-          .eq('id_pengeluaran', editForm.id)
+          .eq(isUuid(editForm.id) ? 'id' : 'id_pengeluaran', editForm.id)
         if (updErr) throw updErr
       }
 
@@ -1677,8 +1762,8 @@ const Finance = () => {
   // 5. Delete Action
   const handleDeleteItem = async (item, type) => {
     const label = type === 'cashflow' ? item.keterangan_transaksi :
-                  type === 'carwash' ? `${item.plat_nomor} (${item.layanan})` :
-                  type === 'cafe' ? `${item.nama_item} (ID: ${item.id_detail})` :
+                  type === 'carwash' ? `${item.plat_nomor || item.plat || ''} (${item.layanan || item.paket || ''})` :
+                  type === 'cafe' ? `${item.nama_item || item.nama_menu} (ID: ${item.id_detail || item.id})` :
                   (item.nama_pengeluaran || item.keterangan)
 
     const confirmed = await showConfirm(`Apakah Anda yakin ingin menghapus data: "${label}"?`, `Hapus Data ${type.toUpperCase()}`)
@@ -1689,17 +1774,31 @@ const Finance = () => {
     setSuccess('')
     try {
       if (type === 'cashflow') {
-        const { error: delErr } = await supabase.from('cashflow').delete().eq('id_cashflow', item.id_cashflow)
+        const cfKey = item.id || item.id_cashflow
+        const { error: delErr } = await supabase
+          .from('cashflow')
+          .delete()
+          .eq(isUuid(item.id) ? 'id' : 'id_cashflow', cfKey)
         if (delErr) throw delErr
-        await supabase.from('barang_masuk').delete().eq('id_cashflow', item.id_cashflow)
+        if (item.id_cashflow) {
+          await supabase.from('barang_masuk').delete().eq('id_cashflow', item.id_cashflow)
+        }
       } else if (type === 'carwash') {
-        const { error: delErr } = await supabase.from('carwash').delete().eq('id_carwash', item.id_carwash)
+        const { error: delErr } = await supabase.from('carwash').delete().eq('id', item.id)
         if (delErr) throw delErr
       } else if (type === 'cafe') {
-        const { error: delErr } = await supabase.from('cafe').delete().eq('id_detail', item.id_detail)
+        const cafeKey = item.id || item.id_detail
+        const { error: delErr } = await supabase
+          .from('cafe')
+          .delete()
+          .eq(isUuid(item.id) ? 'id' : 'id_detail', cafeKey)
         if (delErr) throw delErr
       } else if (type === 'expenses') {
-        const { error: delErr } = await supabase.from('pengeluaran').delete().eq('id_pengeluaran', item.id_pengeluaran)
+        const expKey = item.id || item.id_pengeluaran
+        const { error: delErr } = await supabase
+          .from('pengeluaran')
+          .delete()
+          .eq(isUuid(item.id) ? 'id' : 'id_pengeluaran', expKey)
         if (delErr) throw delErr
       }
 
@@ -1716,8 +1815,9 @@ const Finance = () => {
 
   // Stock Material Helpers
   const addBarangMasukItem = () => {
-    const defaultBahan = stokBahan[0]?.id_bahan_baku || ''
-    const defaultSatuan = stokBahan[0]?.satuan || 'Gram'
+    const first = stokBahan[0]
+    const defaultBahan = first ? (first.id || first.id_bahan_baku || '') : ''
+    const defaultSatuan = first?.satuan || 'Gram'
     setBarangMasukList(prev => [
       ...prev,
       { id_bahan_baku: defaultBahan, jumlah: '', harga_satuan: '', satuan: defaultSatuan }
@@ -1732,7 +1832,9 @@ const Finance = () => {
         if (i === index) {
           const updated = { ...item, [field]: value }
           if (field === 'id_bahan_baku') {
-            const match = stokBahan.find(b => b.id_bahan_baku === value || b.nama_bahan === value || b.nama_produk === value)
+            const match = stokBahan.find(
+              b => b.id === value || b.id_bahan_baku === value || b.nama_bahan === value || b.nama_produk === value
+            )
             if (match) updated.satuan = match.satuan
           }
           return updated
@@ -1793,14 +1895,16 @@ const Finance = () => {
             <RotateCcw size={14} />
             ⇄ Pindah Saldo
           </button>
-          <button
-            onClick={() => setShowWithdrawalModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-sm transition-all text-xs active:scale-[0.98]"
-            title="Tarik Prive Pemilik / Dividen tanpa merusak EBITDA"
-          >
-            <Wallet size={14} />
-            Tarik Prive Owner
-          </button>
+          {canWithdrawOwnerPrive && (
+            <button
+              onClick={() => setShowWithdrawalModal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-sm transition-all text-xs active:scale-[0.98]"
+              title="Tarik Prive Pemilik / Dividen tanpa merusak EBITDA"
+            >
+              <Wallet size={14} />
+              Tarik Prive Owner
+            </button>
+          )}
         </div>
       </div>
 
@@ -2049,36 +2153,26 @@ const Finance = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <div className="p-3 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
               <span className="text-[10px] text-[#6b7367] font-bold uppercase">Pemasukan Periode</span>
-              <p className="text-sm md:text-base font-black text-primary mt-1">{formatRupiah(cashflowKpis.totalInc)}</p>
+              <p className="text-sm md:text-base font-black font-mono tabular-nums text-primary mt-1">{formatRupiah(cashflowKpis.totalInc)}</p>
             </div>
             <div className="p-3 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
               <span className="text-[10px] text-[#6b7367] font-bold uppercase">Pengeluaran Periode</span>
-              <p className="text-sm md:text-base font-black text-rose-400 mt-1">{formatRupiah(cashflowKpis.totalExp)}</p>
+              <p className="text-sm md:text-base font-black font-mono tabular-nums text-rose-400 mt-1">{formatRupiah(cashflowKpis.totalExp)}</p>
             </div>
-            <div className="p-3 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
-              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Net Laci Cash</span>
-              <p className={`text-sm md:text-base font-black mt-1 ${cashflowKpis.cashNet >= 0 ? 'text-white' : 'text-rose-400'}`}>
-                {formatRupiah(cashflowKpis.cashNet)}
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
-              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Net Rekening Y</span>
-              <p className={`text-sm md:text-base font-black mt-1 ${cashflowKpis.rekYNet >= 0 ? 'text-primary' : 'text-rose-400'}`}>
-                {formatRupiah(cashflowKpis.rekYNet)}
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
-              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Net Rekening N</span>
-              <p className={`text-sm md:text-base font-black mt-1 ${cashflowKpis.rekNNet >= 0 ? 'text-[#00ffff]' : 'text-rose-400'}`}>
-                {formatRupiah(cashflowKpis.rekNNet)}
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
-              <span className="text-[10px] text-[#6b7367] font-bold uppercase">Net Rekening R</span>
-              <p className={`text-sm md:text-base font-black mt-1 ${cashflowKpis.rekRNet >= 0 ? 'text-purple-400' : 'text-rose-400'}`}>
-                {formatRupiah(cashflowKpis.rekRNet)}
-              </p>
-            </div>
+            {cashflowKpis.pocketNets.map((pk) => (
+              <div key={pk.id} className="p-3 rounded-xl bg-[#18181c]/80 border border-[#26272d]">
+                <span className="text-[10px] text-[#6b7367] font-bold uppercase block truncate" title={`Net ${pk.label}`}>
+                  Net {pk.label}
+                </span>
+                <p
+                  className={`text-sm md:text-base font-black font-mono tabular-nums mt-1 ${
+                    pk.net < 0 ? 'text-rose-400' : pk.type === 'CASH' ? 'text-white' : 'text-[#00ffff]'
+                  }`}
+                >
+                  {formatRupiah(pk.net)}
+                </p>
+              </div>
+            ))}
           </div>
 
           {/* Cashflow Table Section */}
@@ -3121,8 +3215,11 @@ const Finance = () => {
                   </div>
                 </div>
 
-                {/* Input Karyawan Penerima Kasbon jika kategori terkait Casbon */}
-                {(String(expenseForm.kategori || '').toLowerCase().includes('casbon') || String(expenseForm.jenis || '').toLowerCase().includes('casbon')) && (
+                {/* Input Karyawan Penerima Kasbon jika kategori terkait Casbon / Kasbon */}
+                {(String(expenseForm.kategori || '').toLowerCase().includes('casbon') ||
+                  String(expenseForm.kategori || '').toLowerCase().includes('kasbon') ||
+                  String(expenseForm.jenis || '').toLowerCase().includes('casbon') ||
+                  String(expenseForm.jenis || '').toLowerCase().includes('kasbon')) && (
                   <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2">
                     <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider">
                       Pilih Karyawan Penerima Kasbon
@@ -3130,9 +3227,11 @@ const Finance = () => {
                     <CustomSelect
                       value={expenseForm.karyawan}
                       onChange={(val) => {
+                        const matched = karyawanDirectory.find(k => k.nama === val)
                         setExpenseForm(prev => ({
                           ...prev,
                           karyawan: val,
+                          karyawan_id: matched?.id || '',
                           keterangan: prev.keterangan || (val ? `Casbon ${val}` : '')
                         }))
                       }}
@@ -3203,7 +3302,7 @@ const Finance = () => {
                           } else if (stokBahan.length > 0 && barangMasukList.length === 0) {
                             const first = stokBahan[0]
                             setBarangMasukList([{
-                              id_bahan_baku: first.id_bahan_baku,
+                              id_bahan_baku: first.id || first.id_bahan_baku,
                               nama_bahan: first.nama_produk,
                               satuan: first.satuan || 'Pcs',
                               jumlah: 1,
@@ -3246,11 +3345,14 @@ const Finance = () => {
                               onChange={(e) => updateBarangMasukItem(idx, 'id_bahan_baku', e.target.value)}
                               className="w-full bg-[#18181c] border border-[#26272d] rounded py-1.5 px-2 text-white text-xs font-semibold focus:outline-none focus:border-brand-rose"
                             >
-                              {stokBahan.map(b => (
-                                <option key={b.id_bahan_baku} value={b.id_bahan_baku}>
-                                  {b.nama_produk} ({b.satuan})
-                                </option>
-                              ))}
+                              {stokBahan.map(b => {
+                                const optionVal = b.id || b.id_bahan_baku
+                                return (
+                                  <option key={optionVal} value={optionVal}>
+                                    {b.nama_produk} ({b.satuan})
+                                  </option>
+                                )
+                              })}
                             </select>
                           </div>
                           <div className="w-20">
@@ -3673,15 +3775,17 @@ const Finance = () => {
       )}
 
       {/* MODAL PENARIKAN SALDO / PRIVE OWNER */}
-      <OwnerWithdrawalModal
-        isOpen={showWithdrawalModal}
-        onClose={() => setShowWithdrawalModal(false)}
-        onSuccess={() => {
-          setSuccess('Penarikan dana prive pemilik berhasil dicatat!')
-          fetchFinanceData()
-        }}
-        currentBalances={dynamicPosAccounts}
-      />
+      {canWithdrawOwnerPrive && (
+        <OwnerWithdrawalModal
+          isOpen={showWithdrawalModal}
+          onClose={() => setShowWithdrawalModal(false)}
+          onSuccess={() => {
+            setSuccess('Penarikan dana prive pemilik berhasil dicatat!')
+            fetchFinanceData()
+          }}
+          currentBalances={dynamicPosAccounts}
+        />
+      )}
 
       {/* MODAL 3: EDIT TRANSAKSI (UNIVERSAL) */}
       {showEditModal && editForm.id && (

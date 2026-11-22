@@ -22,12 +22,19 @@ import {
   UserCheck,
   Boxes,
   Building2,
-  KeyRound
+  KeyRound,
+  MessageSquarePlus,
+  BookOpen
 } from 'lucide-react'
 
 import { getTenantFeatures } from '../utils/businessCapabilities'
-import { ROLES, ROLE_PERMISSIONS } from '../constants/roles'
+import { ROLES, ROLE_PERMISSIONS, getRoleDisplayLabel } from '../constants/roles'
 import ChangePasswordModal from './auth/ChangePasswordModal'
+import FeedbackModal from './common/FeedbackModal'
+
+const ENABLE_FOUNDER_CONSOLE =
+  import.meta.env?.VITE_ENABLE_FOUNDER_CONSOLE === 'true' ||
+  import.meta.env?.MODE === 'test'
 
 const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const location = useLocation()
@@ -35,6 +42,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const [showMobileNav, setShowMobileNav] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false)
   const profileMenuRef = useRef(null)
   const currentRole = profile?.role || 'Kasir'
   const currentBusinessType = activeTenant?.business_type || 'HYBRID'
@@ -73,9 +81,12 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
   const getRoleBadgeStyle = (role) => {
     if (role === ROLES.OWNER) return 'bg-[#ffc71f]/15 text-[#ffc71f] border border-[#ffc71f]/30'
-    if (role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) return 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30'
+    if (role === ROLES.ADMIN_PUSAT || role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) {
+      return 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30'
+    }
     return 'bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/20'
   }
+  const currentRoleLabel = getRoleDisplayLabel(currentRole)
 
   const navSections = [
     {
@@ -157,18 +168,20 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           icon: Settings,
           allowedRoles: ROLE_PERMISSIONS.CAN_MANAGE_STORE_SETTINGS
         },
-        {
-          name: 'Console Founder',
-          path: '/founder',
-          icon: ShieldAlert,
-          allowedRoles: ROLE_PERMISSIONS.CAN_MANAGE_TENANTS
-        },
-        {
-          name: 'Database Master (Dev)',
-          path: '/database',
-          icon: Database,
-          allowedRoles: ROLE_PERMISSIONS.CAN_MANAGE_TENANTS
-        }
+        ...(ENABLE_FOUNDER_CONSOLE ? [
+          {
+            name: 'Console Founder',
+            path: '/founder',
+            icon: ShieldAlert,
+            allowedRoles: ROLE_PERMISSIONS.CAN_MANAGE_TENANTS
+          },
+          {
+            name: 'Database Master (Dev)',
+            path: '/database',
+            icon: Database,
+            allowedRoles: ROLE_PERMISSIONS.CAN_MANAGE_TENANTS
+          }
+        ] : [])
       ]
     }
   ]
@@ -221,7 +234,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                 <div className="overflow-hidden min-w-0">
                   <p className="font-semibold text-xs truncate text-white">{profile?.nama || 'Pengguna'}</p>
                   <span className={`text-[8px] px-2 py-0.5 rounded font-bold uppercase inline-block mt-0.5 ${getRoleBadgeStyle(currentRole)}`}>
-                    {currentRole}
+                    {currentRoleLabel}
                   </span>
                 </div>
               </div>
@@ -263,6 +276,25 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
               )
             })}
             <div className="h-[1px] w-full bg-[#26272d] my-1"></div>
+            <Link
+              to="/panduan"
+              onClick={() => setShowMobileNav(false)}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs text-cyan-300 hover:bg-[#1b1b1d] hover:text-cyan-200 transition-colors w-full text-left font-semibold"
+            >
+              <BookOpen size={15} />
+              <span>Panduan Pengguna</span>
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                setShowMobileNav(false)
+                setShowFeedbackModal(true)
+              }}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs text-amber-300 hover:bg-[#1b1b1d] hover:text-amber-200 transition-colors w-full text-left font-semibold cursor-pointer"
+            >
+              <MessageSquarePlus size={15} className="text-amber-400" />
+              <span>Beri Masukan Beta</span>
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -387,7 +419,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                   <div className="overflow-hidden animate-fade-in text-left min-w-0">
                     <h2 className="font-semibold text-xs truncate text-white">{profile?.nama || 'Pengguna'}</h2>
                     <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase inline-block mt-0.5 ${getRoleBadgeStyle(currentRole)}`}>
-                      {currentRole}
+                      {currentRoleLabel}
                     </span>
                   </div>
                 </div>
@@ -413,7 +445,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                   <p className="text-xs font-bold text-white truncate mt-0.5">{profile?.nama || 'Pengguna'}</p>
                   <div className="flex items-center gap-1.5 mt-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#00ffff]"></span>
-                    <span className="text-[10px] text-[#bbcbb2] font-medium">{currentRole} • Sesi Aktif</span>
+                    <span className="text-[10px] text-[#bbcbb2] font-medium">{currentRoleLabel} • Sesi Aktif</span>
                   </div>
                 </div>
 
@@ -513,12 +545,43 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
             })}
           </nav>
         </div>
+
+        {/* Footer Bantuan & Masukan Beta */}
+        <div className="p-2.5 border-t border-[#26272d] shrink-0 space-y-1.5">
+          <Link
+            to="/panduan"
+            title={isCollapsed ? 'Panduan Pengguna (User Manual)' : ''}
+            className={`flex items-center ${
+              isCollapsed ? 'w-10 h-10 mx-auto justify-center px-0' : 'w-full gap-2.5 px-3 py-2'
+            } rounded-lg text-xs font-semibold text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 transition-all active:scale-[0.98]`}
+          >
+            <BookOpen size={15} strokeWidth={1.75} className="shrink-0 text-cyan-400" />
+            {!isCollapsed && <span className="truncate">Panduan Pengguna</span>}
+          </Link>
+          <button
+            type="button"
+            onClick={() => setShowFeedbackModal(true)}
+            title={isCollapsed ? 'Beri Masukan Beta' : ''}
+            className={`flex items-center ${
+              isCollapsed ? 'w-10 h-10 mx-auto justify-center px-0' : 'w-full gap-2.5 px-3 py-2'
+            } rounded-lg text-xs font-semibold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition-all active:scale-[0.98] cursor-pointer`}
+          >
+            <MessageSquarePlus size={15} strokeWidth={1.75} className="shrink-0 text-amber-400" />
+            {!isCollapsed && <span className="truncate">Beri Masukan</span>}
+          </button>
+        </div>
       </aside>
 
       {/* Modal Ubah Kata Sandi Akun */}
       <ChangePasswordModal 
         isOpen={showChangePasswordModal} 
         onClose={() => setShowChangePasswordModal(false)} 
+      />
+
+      {/* Modal Masukan Beta */}
+      <FeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
       />
     </>
   )

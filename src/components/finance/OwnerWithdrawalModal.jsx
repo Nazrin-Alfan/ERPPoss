@@ -10,21 +10,24 @@ import { isValidUUID } from '../../utils/staffHelpers'
 export default function OwnerWithdrawalModal({ isOpen, onClose, onSuccess, currentBalances = [] }) {
   const { profile, activeTenant } = useAuth()
   const [nominal, setNominal] = useState('')
-  const [sumberDana, setSumberDana] = useState('SALDO CASH') // 'SALDO CASH' | 'SALDO REKENING OPERASIONAL'
+  const activePockets = (currentBalances || []).filter(b => b.is_active !== false)
+  const [sumberDana, setSumberDana] = useState(() => activePockets[0]?.pos || 'SALDO CASH')
   const [keterangan, setKeterangan] = useState('Penarikan Prive Pemilik Toko')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const selectedBalance = (() => {
-    if (!currentBalances || currentBalances.length === 0) return null
-    if (sumberDana === 'SALDO CASH') {
-      const match = currentBalances.find(b => b.pos === 'SALDO CASH' || b.type === 'CASH')
-      return match ? (match.currentBalance ?? match.saldo ?? 0) : null
-    } else {
-      const match = currentBalances.find(b => b.pos === 'SALDO REKENING Y' || b.pos === 'SALDO REKENING OPERASIONAL' || b.type === 'BANK')
-      return match ? (match.currentBalance ?? match.saldo ?? 0) : null
-    }
+  const selectedPocket = (() => {
+    if (activePockets.length === 0) return null
+    return (
+      activePockets.find(b => b.pos === sumberDana) ||
+      (sumberDana === 'SALDO CASH'
+        ? activePockets.find(b => b.pos === 'SALDO CASH' || b.type === 'CASH' || b.tipe === 'CASH')
+        : activePockets.find(b => b.type === 'BANK' || b.tipe === 'BANK')) ||
+      activePockets[0]
+    )
   })()
+
+  const selectedBalance = selectedPocket ? (selectedPocket.currentBalance ?? selectedPocket.current_balance ?? selectedPocket.saldo ?? 0) : null
 
   if (!isOpen) return null
 
@@ -45,7 +48,9 @@ export default function OwnerWithdrawalModal({ isOpen, onClose, onSuccess, curre
       // On Cloud Supabase, avoid sending mock string IDs (like 'branch_medan_main') to UUID columns
       const tenantId = (!supabase.isLocal && !isValidUUID(rawTenantId)) ? null : rawTenantId
       const branchId = (!supabase.isLocal && !isValidUUID(rawBranchId)) ? null : rawBranchId
-      const creditAccount = sumberDana === 'SALDO CASH' ? 'acc_1001' : 'acc_1002'
+      const resolvedPos = selectedPocket?.pos || sumberDana
+      const isCashPocket = selectedPocket ? (selectedPocket.tipe === 'CASH' || selectedPocket.type === 'CASH') : resolvedPos === 'SALDO CASH'
+      const creditAccount = isCashPocket ? 'acc_1001' : 'acc_1002'
 
       // 1. Catat ke Cashflow
       const cashflowEntry = {
@@ -56,7 +61,8 @@ export default function OwnerWithdrawalModal({ isOpen, onClose, onSuccess, curre
         kategori: 'Prive / Penarikan Owner',
         pemasukan: 0.0,
         pengeluaran: amount,
-        pos: sumberDana,
+        pos: resolvedPos,
+        ...(selectedPocket?.id && (supabase.isLocal || isValidUUID(selectedPocket.id)) ? { pocket_id: selectedPocket.id } : {}),
         created_at: new Date().toISOString()
       }
       if (tenantId) cashflowEntry.tenant_id = tenantId
@@ -139,30 +145,57 @@ export default function OwnerWithdrawalModal({ isOpen, onClose, onSuccess, curre
                 Sumber Dana Penarikan <span className="text-rose-400">*</span>
               </label>
               <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSumberDana('SALDO CASH')}
-                  className={`p-3 rounded-xl border text-left transition-all ${
-                    sumberDana === 'SALDO CASH'
-                      ? 'bg-emerald-500/15 border-emerald-500 text-white shadow-sm'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <div className="text-xs font-bold">Kas Laci Kasir</div>
-                  <div className="text-[10px] text-slate-500 font-mono">Uang Tunai Fisik</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSumberDana('SALDO REKENING OPERASIONAL')}
-                  className={`p-3 rounded-xl border text-left transition-all ${
-                    sumberDana === 'SALDO REKENING OPERASIONAL'
-                      ? 'bg-blue-500/15 border-blue-500 text-white shadow-sm'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <div className="text-xs font-bold">Rekening Bank</div>
-                  <div className="text-[10px] text-slate-500 font-mono">QRIS / Transfer</div>
-                </button>
+                {activePockets.length > 0 ? (
+                  activePockets.map((acc) => {
+                    const isSelected = (selectedPocket?.pos || sumberDana) === acc.pos
+                    const isCash = acc.tipe === 'CASH' || acc.type === 'CASH'
+                    const pocketLabel = acc.label || (isCash ? 'Kas Laci Kasir' : 'Rekening Bank')
+                    return (
+                      <button
+                        key={acc.id || acc.pos}
+                        type="button"
+                        onClick={() => setSumberDana(acc.pos)}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          isSelected
+                            ? (isCash ? 'bg-emerald-500/15 border-emerald-500 text-white shadow-sm' : 'bg-blue-500/15 border-blue-500 text-white shadow-sm')
+                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        <div className="text-xs font-bold truncate">{pocketLabel}</div>
+                        <div className="text-[10px] text-slate-400 font-mono tabular-nums mt-0.5">
+                          {formatRupiah(acc.currentBalance ?? acc.current_balance ?? 0)}
+                        </div>
+                      </button>
+                    )
+                  })
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setSumberDana('SALDO CASH')}
+                      className={`p-3 rounded-xl border text-left transition-all ${
+                        sumberDana === 'SALDO CASH'
+                          ? 'bg-emerald-500/15 border-emerald-500 text-white shadow-sm'
+                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <div className="text-xs font-bold">Kas Laci Kasir</div>
+                      <div className="text-[10px] text-slate-500 font-mono">Uang Tunai Fisik</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSumberDana('SALDO REKENING Y')}
+                      className={`p-3 rounded-xl border text-left transition-all ${
+                        sumberDana !== 'SALDO CASH'
+                          ? 'bg-blue-500/15 border-blue-500 text-white shadow-sm'
+                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <div className="text-xs font-bold">Rekening Bank</div>
+                      <div className="text-[10px] text-slate-500 font-mono">QRIS / Transfer</div>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 

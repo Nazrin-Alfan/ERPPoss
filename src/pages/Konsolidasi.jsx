@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../supabaseClient'
+import { supabase, isCloudBackend } from '../supabaseClient'
 import {
   calculateConsolidatedMetrics,
   calculateOutletBreakdown,
-  calculateRevenueContribution
+  calculateRevenueContribution,
+  filterTenantScopedRecords
 } from '../services/consolidationService'
 import { formatRupiah } from '../utils/helpers'
 import {
@@ -44,12 +45,37 @@ export default function Konsolidasi() {
   const [expenses, setExpenses] = useState([])
   const [cashAccounts, setCashAccounts] = useState([])
   const [branches, setBranches] = useState([])
+  const [cloudOutletsSummary, setCloudOutletsSummary] = useState(null)
   const [lastRefreshed, setLastRefreshed] = useState(new Date())
 
   // Muat data dari seluruh tenant milik owner yang berhak diakses
   const loadConsolidatedData = async () => {
     setIsLoading(true)
     try {
+      const allowedTenantIds = new Set((userTenants || []).map(t => t.id))
+
+      if (isCloudBackend && typeof supabase.rpc === 'function') {
+        const now = new Date()
+        const todayStr = now.toLocaleDateString('en-CA')
+        const monthStart = `${todayStr.slice(0, 7)}-01`
+        const pStart = selectedPeriod === 'TODAY' ? todayStr : selectedPeriod === 'THIS_MONTH' ? monthStart : null
+        const pEnd = selectedPeriod === 'TODAY' || selectedPeriod === 'THIS_MONTH' ? todayStr : null
+
+        const [{ data: rpcRes, error: rpcErr }, { data: activeBranches }] = await Promise.all([
+          supabase.rpc('fn_get_owner_consolidated_summary', {
+            p_start_date: pStart,
+            p_end_date: pEnd
+          }),
+          supabase.from('branches').select('*').eq('is_active', true)
+        ])
+        if (!rpcErr && rpcRes?.outlets) {
+          setCloudOutletsSummary(rpcRes.outlets)
+          setBranches(filterTenantScopedRecords(activeBranches, allowedTenantIds))
+          setLastRefreshed(new Date())
+          return
+        }
+      }
+
       const [{ data: allStruk }, { data: allTx }, { data: allExp }, { data: allAcc }, { data: allBranches }] = await Promise.all([
         supabase.from('struk').select('*'),
         supabase.from('transaksi').select('*'),
@@ -59,11 +85,11 @@ export default function Konsolidasi() {
       ])
 
       const sourceTx = Array.isArray(allStruk) && allStruk.length > 0 ? allStruk : (allTx || [])
-      const allowedTenantIds = new Set((userTenants || []).map(t => t.id))
-      const myTx = sourceTx.filter(t => allowedTenantIds.has(t.tenant_id) || (allowedTenantIds.size === 0))
-      const myExp = (allExp || []).filter(e => allowedTenantIds.has(e.tenant_id) || (allowedTenantIds.size === 0))
-      const myAcc = (allAcc || []).filter(a => allowedTenantIds.has(a.tenant_id) || (allowedTenantIds.size === 0))
-      const myBranches = (allBranches || []).filter(b => allowedTenantIds.has(b.tenant_id) || (allowedTenantIds.size === 0))
+      const myTx = filterTenantScopedRecords(sourceTx, allowedTenantIds)
+      const myExp = filterTenantScopedRecords(allExp, allowedTenantIds)
+        .map(e => ({ ...e, jumlah: e.jumlah ?? e.nominal ?? 0 }))
+      const myAcc = filterTenantScopedRecords(allAcc, allowedTenantIds)
+      const myBranches = filterTenantScopedRecords(allBranches, allowedTenantIds)
 
       setTransactions(myTx)
       setExpenses(myExp)
@@ -79,22 +105,22 @@ export default function Konsolidasi() {
 
   useEffect(() => {
     loadConsolidatedData()
-  }, [userTenants])
+  }, [userTenants, selectedPeriod])
 
-  // Filter waktu transaksi & pengeluaran
+  // Filter waktu transaksi & pengeluaran (zona waktu lokal toko)
   const filteredData = useMemo(() => {
     const now = new Date()
-    const todayStr = now.toISOString().slice(0, 10)
-    const currentYearMonth = now.toISOString().slice(0, 7)
+    const todayStr = now.toLocaleDateString('en-CA')
+    const currentYearMonth = todayStr.slice(0, 7)
 
     let tx = transactions
     let exp = expenses
 
     if (selectedPeriod === 'TODAY') {
-      tx = transactions.filter(t => (t.created_at || '').startsWith(todayStr))
+      tx = transactions.filter(t => (t.tanggal || t.created_at || '').startsWith(todayStr))
       exp = expenses.filter(e => (e.tanggal || '').startsWith(todayStr))
     } else if (selectedPeriod === 'THIS_MONTH') {
-      tx = transactions.filter(t => (t.created_at || '').startsWith(currentYearMonth))
+      tx = transactions.filter(t => (t.tanggal || t.created_at || '').startsWith(currentYearMonth))
       exp = expenses.filter(e => (e.tanggal || '').startsWith(currentYearMonth))
     }
 
@@ -103,6 +129,25 @@ export default function Konsolidasi() {
 
   // Agregasi Finansial dengan Parameter userRole untuk Zero-Trust RBAC Gate
   const metrics = useMemo(() => {
+    if (Array.isArray(cloudOutletsSummary) && cloudOutletsSummary.length > 0) {
+      const baseAuth = calculateConsolidatedMetrics({ userRole: currentRole, tenants: userTenants, transactions: [], expenses: [], cashAccounts: [] })
+      if (!baseAuth.isAuthorized) return baseAuth
+      const totalRevenue = cloudOutletsSummary.reduce((s, o) => s + Number(o.revenue || 0), 0)
+      const totalExpenses = cloudOutletsSummary.reduce((s, o) => s + Number(o.expenses || 0), 0)
+      const totalCashBalance = cloudOutletsSummary.reduce((s, o) => s + Number(o.cash_balance || 0), 0)
+      const totalTransactionsCount = cloudOutletsSummary.reduce((s, o) => s + Number(o.transactions_count || 0), 0)
+      const netProfit = totalRevenue - totalExpenses
+      return {
+        isAuthorized: true,
+        totalRevenue,
+        totalExpenses,
+        netProfit,
+        netMarginPercentage: totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0,
+        totalCashBalance,
+        totalTransactionsCount,
+        totalOutlets: cloudOutletsSummary.length
+      }
+    }
     return calculateConsolidatedMetrics({
       userRole: currentRole,
       tenants: userTenants,
@@ -110,9 +155,34 @@ export default function Konsolidasi() {
       expenses: filteredData.exp,
       cashAccounts
     })
-  }, [currentRole, userTenants, filteredData, cashAccounts])
+  }, [currentRole, userTenants, filteredData, cashAccounts, cloudOutletsSummary])
 
   const breakdown = useMemo(() => {
+    if (Array.isArray(cloudOutletsSummary) && cloudOutletsSummary.length > 0) {
+      return cloudOutletsSummary.map((o) => {
+        const rev = Number(o.revenue || 0)
+        const exp = Number(o.expenses || 0)
+        const netProfit = rev - exp
+        const marginPercentage = rev > 0 ? (netProfit / rev) * 100 : 0
+        return {
+          tenantId: o.tenant_id,
+          tenantName: o.tenant_name || 'Outlet',
+          businessType: o.business_type || 'HYBRID',
+          revenue: rev,
+          expenses: exp,
+          netProfit,
+          marginPercentage,
+          cashBalance: Number(o.cash_balance || 0),
+          transactionCount: Number(o.transactions_count || 0),
+          healthLabel: rev === 0 ? 'Baru' : marginPercentage >= 20 ? 'Sehat' : 'Perlu Pantauan',
+          healthColor: rev === 0
+            ? 'bg-slate-800 text-slate-300 border-slate-700'
+            : marginPercentage >= 20
+            ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+            : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+        }
+      })
+    }
     return calculateOutletBreakdown({
       userRole: currentRole,
       tenants: userTenants,
@@ -120,19 +190,33 @@ export default function Konsolidasi() {
       expenses: filteredData.exp,
       cashAccounts
     })
-  }, [currentRole, userTenants, filteredData, cashAccounts])
+  }, [currentRole, userTenants, filteredData, cashAccounts, cloudOutletsSummary])
 
   const contributions = useMemo(() => {
+    if (Array.isArray(cloudOutletsSummary) && cloudOutletsSummary.length > 0) {
+      const totalRev = cloudOutletsSummary.reduce((s, o) => s + Number(o.revenue || 0), 0)
+      return cloudOutletsSummary.map((o) => {
+        const rev = Number(o.revenue || 0)
+        const pct = totalRev > 0 ? (rev / totalRev) * 100 : 0
+        return {
+          tenantId: o.tenant_id,
+          tenantName: o.tenant_name || 'Outlet',
+          revenue: rev,
+          percentage: pct,
+          sharePercentage: pct
+        }
+      })
+    }
     return calculateRevenueContribution({
       userRole: currentRole,
       tenants: userTenants,
       transactions: filteredData.tx
     })
-  }, [currentRole, userTenants, filteredData])
+  }, [currentRole, userTenants, filteredData, cloudOutletsSummary])
 
   // Aksi berpindah tenant & langsung masuk ke operasional toko tersebut
-  const handleJumpToTenant = (tenantId) => {
-    switchTenant(tenantId)
+  const handleJumpToTenant = async (tenantId) => {
+    await switchTenant(tenantId)
     navigate('/dashboard')
   }
 
@@ -600,7 +684,7 @@ export default function Konsolidasi() {
                       {idx + 1}. {c.tenantName}
                     </span>
                     <span className="font-mono text-slate-400 font-semibold shrink-0">
-                      {c.percentage.toFixed(1)}% ({formatRupiah(c.revenue)})
+                      {Number(c.percentage ?? c.sharePercentage ?? 0).toFixed(1)}% ({formatRupiah(c.revenue)})
                     </span>
                   </div>
                   {/* Progress bar */}
@@ -613,7 +697,7 @@ export default function Konsolidasi() {
                             ? 'bg-gradient-to-r from-cyan-500 to-blue-400' 
                             : 'bg-gradient-to-r from-purple-500 to-indigo-400'
                       }`}
-                      style={{ width: `${Math.max(c.percentage, 4)}%` }}
+                      style={{ width: `${Math.max(Number(c.percentage ?? c.sharePercentage ?? 0), 4)}%` }}
                     />
                   </div>
                 </div>
