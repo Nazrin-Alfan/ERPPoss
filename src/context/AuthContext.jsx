@@ -530,6 +530,9 @@ export const AuthProvider = ({ children }) => {
             }
 
             if (isMounted) {
+              if (api.isCloud && typeof supabase.rpc === 'function') {
+                await Promise.resolve(supabase.rpc('fn_claim_pending_co_owner_invitations')).catch(() => null)
+              }
               const finalProfile = p || {
                 id: session.user.id,
                 email: session.user.email,

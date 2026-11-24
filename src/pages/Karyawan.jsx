@@ -38,6 +38,7 @@ import {
 import { getTenantFeatures } from '../utils/businessCapabilities'
 import { ROLES, isTenantWideManager } from '../constants/roles'
 import InteractiveCalendar from '../components/InteractiveCalendar'
+import CoOwnerInviteCard from '../components/karyawan/CoOwnerInviteCard'
 import { useSearchParams } from 'react-router-dom'
 
 const Karyawan = () => {
@@ -1258,6 +1259,8 @@ const Karyawan = () => {
       {/* CONTENT TAB 4: Registrasi Staff */}
       {activeTab === 'staff' && (
         <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
+          <CoOwnerInviteCard activeTenant={activeTenant} profile={profile} />
+
           {/* Header & Banner Penjelas Integrasi */}
           <div className="bg-[#121215] border border-[#26272d] p-6 rounded-2xl border border-[#26272d] space-y-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
