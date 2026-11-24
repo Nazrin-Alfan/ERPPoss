@@ -22,6 +22,7 @@ import {
   UserCheck,
   Boxes,
   Building2,
+  Crown,
   KeyRound,
   MessageSquarePlus,
   BookOpen
@@ -245,6 +246,21 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
               <TenantSwitcher isCollapsed={false} />
             </div>
 
+            {/* Mobile Quick Bridge ke Console Founder (Khusus Super Admin) */}
+            {(currentRole === ROLES.SUPER_ADMIN || profile?.is_super_admin) && ENABLE_FOUNDER_CONSOLE && (
+              <Link
+                to="/founder"
+                onClick={() => setShowMobileNav(false)}
+                className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#ffc71f]/15 hover:bg-[#ffc71f]/25 border border-[#ffc71f]/40 text-xs font-bold text-[#ffc71f] transition-all active:scale-[0.98]"
+              >
+                <span className="flex items-center gap-2">
+                  <Crown size={14} strokeWidth={2} />
+                  <span>Console Founder</span>
+                </span>
+                <ChevronRight size={13} />
+              </Link>
+            )}
+
             {navSections.map((section, sIdx) => {
               const visibleItems = section.items.filter(isItemVisible)
               if (visibleItems.length === 0) return null
@@ -358,6 +374,41 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           className="flex-1 min-h-0 overflow-y-auto overflow-x-visible overscroll-contain px-3 pt-3 pb-24 space-y-3 select-none touch-pan-y"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
+          {/* Jembatan Cepat ke Console Founder (Khusus Super Admin) */}
+          {(currentRole === ROLES.SUPER_ADMIN || profile?.is_super_admin) && ENABLE_FOUNDER_CONSOLE && (
+            <Link
+              to="/founder"
+              data-testid="founder-quick-bridge"
+              className={`rounded-xl bg-[#ffc71f]/12 hover:bg-[#ffc71f]/20 border border-[#ffc71f]/35 hover:border-[#ffc71f]/60 text-left flex items-center ${
+                isCollapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full p-2.5 justify-between'
+              } transition-all group shadow-xs tap-tactile active:scale-[0.98]`}
+              title="Buka Console Founder (Super Admin)"
+            >
+              {isCollapsed ? (
+                <div className="w-6 h-6 rounded-lg bg-[#ffc71f]/15 text-[#ffc71f] flex items-center justify-center font-bold shrink-0 border border-[#ffc71f]/30">
+                  <Crown size={13} strokeWidth={2} />
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-6 h-6 rounded-lg bg-[#ffc71f]/15 text-[#ffc71f] flex items-center justify-center font-bold shrink-0 border border-[#ffc71f]/30">
+                      <Crown size={13} strokeWidth={2} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-bold text-[#ffc71f] group-hover:text-white transition-colors truncate">
+                        Console Founder
+                      </p>
+                      <p className="text-[9px] text-[#bbcbb2] font-medium uppercase tracking-wider">
+                        Platform Super Admin
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight size={13} strokeWidth={1.75} className="text-[#ffc71f] group-hover:translate-x-0.5 transition-transform shrink-0" />
+                </>
+              )}
+            </Link>
+          )}
+
           {/* Jembatan Cepat Kembali ke Portal Eksekutif HQ (Hanya untuk Owner & Super Admin) */}
           {(currentRole === 'Owner' || currentRole === 'Super Admin') && (
             <Link

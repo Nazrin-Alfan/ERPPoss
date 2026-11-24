@@ -4,17 +4,24 @@ import { useAppTheme } from '../../context/ThemeContext'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Building2,
+  Crown,
   LogOut,
   ChevronRight,
   ShieldCheck,
   Store,
   ArrowRight
 } from 'lucide-react'
+import { ROLES } from '../../constants/roles'
+
+const ENABLE_FOUNDER_CONSOLE =
+  import.meta.env?.VITE_ENABLE_FOUNDER_CONSOLE === 'true' ||
+  import.meta.env?.MODE === 'test'
 
 export default function ExecutiveLayout({ children }) {
   const { profile, activeTenant, userTenants, switchTenant, logout } = useAuth()
   const { currentTheme } = useAppTheme()
   const navigate = useNavigate()
+  const isSuperAdmin = profile?.role === ROLES.SUPER_ADMIN || profile?.is_super_admin
 
   const handleEnterStore = (tenantId = null) => {
     if (tenantId) {
@@ -48,7 +55,19 @@ export default function ExecutiveLayout({ children }) {
         </div>
 
         {/* Action Controls & Profil Pemilik */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Tombol Kembali ke Console Founder (Khusus Super Admin) */}
+          {isSuperAdmin && ENABLE_FOUNDER_CONSOLE && (
+            <Link
+              to="/founder"
+              className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-md bg-[#ffc71f]/15 hover:bg-[#ffc71f]/25 border border-[#ffc71f]/40 text-xs font-bold text-[#ffc71f] transition-all shadow-xs group cursor-pointer active:scale-[0.98]"
+              title="Buka Console Founder (Super Admin)"
+            >
+              <Crown size={14} strokeWidth={2} className="shrink-0" />
+              <span>Console Founder</span>
+            </Link>
+          )}
+
           {/* Tombol Cepat Beralih Masuk ke Operasional Toko */}
           <button
             onClick={() => handleEnterStore(activeTenant?.id)}
@@ -67,9 +86,9 @@ export default function ExecutiveLayout({ children }) {
                 {profile?.nama || 'Pemilik Usaha'}
               </p>
               <div className="flex items-center justify-end gap-1.5 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#ff9821]"></span>
-                <span className="text-[10px] text-[#ff9821] font-bold uppercase tracking-wider">
-                  Owner
+                <span className={`w-1.5 h-1.5 rounded-full ${isSuperAdmin ? 'bg-[#00ffff]' : 'bg-[#ff9821]'}`}></span>
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${isSuperAdmin ? 'text-[#00ffff]' : 'text-[#ff9821]'}`}>
+                  {isSuperAdmin ? 'Super Admin' : 'Owner'}
                 </span>
               </div>
             </div>
