@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const DAYS_OF_WEEK = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
@@ -8,9 +8,44 @@ const MONTH_NAMES = [
 ]
 
 const InteractiveCalendar = ({ startDate, endDate, onChange, onClose }) => {
-  const today = new Date()
-  const [currentYear, setCurrentYear] = useState(today.getFullYear())
-  const [currentMonth, setCurrentMonth] = useState(today.getMonth())
+  const calendarRef = useRef(null)
+  const initialDate = useMemo(() => {
+    if (startDate) {
+      const parsed = new Date(`${startDate}T00:00:00`)
+      if (!Number.isNaN(parsed.getTime())) return parsed
+    }
+    return new Date()
+  }, [startDate])
+
+  const [currentYear, setCurrentYear] = useState(initialDate.getFullYear())
+  const [currentMonth, setCurrentMonth] = useState(initialDate.getMonth())
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && onClose) {
+        onClose()
+      }
+    }
+
+    const handlePointerDownOutside = (event) => {
+      if (!calendarRef.current) return
+      const anchorGroup = calendarRef.current.parentElement?.parentElement
+      const containerToCheck = anchorGroup || calendarRef.current
+      if (!containerToCheck.contains(event.target) && onClose) {
+        onClose()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('mousedown', handlePointerDownOutside)
+    document.addEventListener('touchstart', handlePointerDownOutside, { passive: true })
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('mousedown', handlePointerDownOutside)
+      document.removeEventListener('touchstart', handlePointerDownOutside)
+    }
+  }, [onClose])
 
   const parsedStart = useMemo(() => startDate ? new Date(startDate) : null, [startDate])
   const parsedEnd = useMemo(() => endDate ? new Date(endDate) : null, [endDate])
@@ -39,7 +74,8 @@ const InteractiveCalendar = ({ startDate, endDate, onChange, onClose }) => {
       })
     }
 
-    const remaining = 42 - list.length
+    const totalCells = Math.ceil((firstDayIndex + totalDays) / 7) * 7
+    const remaining = Math.max(0, totalCells - list.length)
     for (let i = 1; i <= remaining; i++) {
       list.push({
         dayNum: i,
@@ -72,7 +108,7 @@ const InteractiveCalendar = ({ startDate, endDate, onChange, onClose }) => {
   const handleDayClick = (dayNum, isCurrentMonth) => {
     if (!isCurrentMonth) return
     const clickedDateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`
-    
+
     if (!startDate || (startDate && endDate)) {
       onChange(clickedDateStr, '')
     } else {
@@ -88,89 +124,96 @@ const InteractiveCalendar = ({ startDate, endDate, onChange, onClose }) => {
   }
 
   return (
-    <div className="bg-[#121215]/95 border border-[#26272d] rounded-2xl p-4 sm:p-5 shadow-2xl w-full max-w-[320px] sm:w-80 text-xs text-zinc-200 font-sans select-none backdrop-blur-xl">
+    <div
+      ref={calendarRef}
+      role="dialog"
+      aria-label="Pilih rentang tanggal"
+      className="bg-[#121215]/95 border border-[#26272d] rounded-xl p-3 sm:p-3.5 shadow-2xl w-64 sm:w-[272px] max-w-[calc(100vw-1.5rem)] text-xs text-zinc-200 font-sans select-none backdrop-blur-xl"
+    >
       {/* Month Header Navigation */}
-      <div className="flex justify-between items-center mb-5 px-1">
+      <div className="flex justify-between items-center mb-2.5 px-0.5">
         <button
           type="button"
           onClick={handlePrevMonth}
-          className="text-slate-400 hover:text-brand-emerald transition-colors p-1"
+          aria-label="Bulan sebelumnya"
+          className="text-[#bbcbb2] hover:text-[#00ffff] hover:bg-[#18181c] rounded-lg transition-all p-1.5 cursor-pointer active:scale-[0.98]"
         >
-          <ChevronLeft size={16} />
+          <ChevronLeft size={15} />
         </button>
-        <span className="font-bold text-sm text-white font-sans tracking-wide">
+        <span className="font-bold text-xs sm:text-[13px] text-white font-sans tracking-tight">
           {MONTH_NAMES[currentMonth]} {currentYear}
         </span>
         <button
           type="button"
           onClick={handleNextMonth}
-          className="text-slate-400 hover:text-brand-emerald transition-colors p-1"
+          aria-label="Bulan berikutnya"
+          className="text-[#bbcbb2] hover:text-[#00ffff] hover:bg-[#18181c] rounded-lg transition-all p-1.5 cursor-pointer active:scale-[0.98]"
         >
-          <ChevronRight size={16} />
+          <ChevronRight size={15} />
         </button>
       </div>
 
       {/* Days of Week Header */}
-      <div className="grid grid-cols-7 gap-1 text-center font-semibold text-slate-500 mb-2">
+      <div className="grid grid-cols-7 gap-0.5 text-center font-semibold text-[#6b7367] mb-1">
         {DAYS_OF_WEEK.map(d => (
-          <div key={d} className="py-1 text-xs">{d}</div>
+          <div key={d} className="py-0.5 text-[10px] uppercase tracking-wider">{d}</div>
         ))}
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5">
         {calendarDays.map((day, idx) => {
           const isSelectedStart = parsedStart && day.dateString === startDate
           const isSelectedEnd = parsedEnd && day.dateString === endDate
           const isInRange = parsedStart && parsedEnd && day.dateString > startDate && day.dateString < endDate
 
-          let dayStyle = 'text-slate-600 opacity-20 cursor-default'
+          let dayStyle = 'text-zinc-600/35 cursor-default'
           if (day.isCurrentMonth) {
-            if (isSelectedStart) {
-              dayStyle = 'bg-brand-emerald text-slate-950 font-black shadow-[0_0_12px_rgba(16,185,129,0.45)] rounded-xl'
-            } else if (isSelectedEnd) {
-              dayStyle = 'bg-brand-blue text-slate-950 font-black shadow-[0_0_12px_rgba(6,182,212,0.45)] rounded-xl'
+            if (isSelectedStart || isSelectedEnd) {
+              dayStyle = 'bg-[#00ffff] text-[#0f0f0f] font-bold rounded-lg shadow-xs active:scale-[0.98] cursor-pointer'
             } else if (isInRange) {
-              dayStyle = 'bg-brand-emerald/10 text-brand-emerald font-bold rounded-lg'
+              dayStyle = 'bg-[#00ffff]/15 text-[#00ffff] font-semibold rounded-md active:scale-[0.98] cursor-pointer'
             } else {
-              dayStyle = 'text-slate-200 hover:bg-slate-800 hover:text-white rounded-lg cursor-pointer'
+              dayStyle = 'text-zinc-200 hover:bg-[#18181c] hover:text-white rounded-lg active:scale-[0.98] cursor-pointer'
             }
           }
 
           return (
-            <div
+            <button
               key={`${day.dayNum}-${idx}`}
+              type="button"
+              disabled={!day.isCurrentMonth}
+              data-calendar-day={day.dateString || 'outside'}
               onClick={() => handleDayClick(day.dayNum, day.isCurrentMonth)}
-              className={`aspect-square flex items-center justify-center transition-all duration-150 ${dayStyle}`}
-              style={{ height: '2.4rem', width: '2.4rem' }}
+              className={`h-8 w-8 mx-auto flex items-center justify-center transition-all duration-150 font-mono tabular-nums text-[11px] ${dayStyle}`}
             >
-              <span className="text-xs font-semibold">{day.dayNum}</span>
-            </div>
+              <span>{day.dayNum}</span>
+            </button>
           )
         })}
       </div>
 
       {/* Selection Footer */}
-      <div className="flex justify-between items-center text-[10px] mt-4 pt-3 border-t border-slate-900 text-slate-500">
-        <div>
+      <div className="flex justify-between items-center text-[10px] mt-2.5 pt-2.5 border-t border-[#26272d] text-[#6b7367]">
+        <div className="font-mono tabular-nums truncate pr-2">
           {startDate ? (
-            <span className="text-brand-emerald font-bold">{startDate}</span>
+            <span className="text-[#00ffff] font-bold">{startDate}</span>
           ) : (
-            <span>Mulai</span>
+            <span>Pilih tanggal</span>
           )}
           {endDate && (
             <>
-              <span className="mx-1">s/d</span>
-              <span className="text-brand-blue font-bold">{endDate}</span>
+              <span className="mx-1 text-[#6b7367]">–</span>
+              <span className="text-[#00ffff] font-bold">{endDate}</span>
             </>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           {(startDate || endDate) && (
             <button
               type="button"
               onClick={() => onChange('', '')}
-              className="text-slate-500 hover:text-slate-350 font-semibold"
+              className="px-2 py-1 rounded-md text-[#bbcbb2] hover:text-white hover:bg-[#18181c] font-semibold transition-all cursor-pointer active:scale-[0.98]"
             >
               Reset
             </button>
@@ -178,7 +221,7 @@ const InteractiveCalendar = ({ startDate, endDate, onChange, onClose }) => {
           <button
             type="button"
             onClick={onClose}
-            className="text-brand-emerald hover:text-white font-bold"
+            className="px-2.5 py-1 rounded-md bg-[#00ffff]/15 hover:bg-[#00ffff]/25 text-[#00ffff] border border-[#00ffff]/30 font-bold transition-all cursor-pointer active:scale-[0.98]"
           >
             Done
           </button>

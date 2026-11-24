@@ -470,7 +470,7 @@ const Reports = () => {
             </button>
 
             {timeRange === 'custom' && showCustomCalendar && (
-              <div className="absolute right-0 top-full mt-2 z-50">
+              <div className="absolute left-0 lg:left-auto lg:right-0 top-full mt-2 z-50">
                 <InteractiveCalendar
                   startDate={startDate}
                   endDate={endDate}

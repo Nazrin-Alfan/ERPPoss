@@ -766,7 +766,7 @@ const Karyawan = () => {
                   </button>
 
                   {showWagesCalendar && (
-                    <div className="absolute right-0 top-full mt-2 z-50">
+                    <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 z-50">
                       <InteractiveCalendar
                         startDate={wagesStartDate}
                         endDate={wagesEndDate}
