@@ -10,6 +10,7 @@ import {
 } from '../components/ui/Table'
 import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
+import { staffService } from '../services/staffService'
 import { useAuth } from '../context/AuthContext'
 import { aggregateCarwashWages } from '../utils/payrollHelpers'
 import { 
@@ -233,43 +234,22 @@ const Karyawan = () => {
 
   useEffect(() => {
     loadKaryawanData()
-  }, [])
+  }, [activeTenant?.id])
 
   // Fetch Carwash Wages and Cashflow Deductions
   const fetchCarwashWages = async () => {
     setLoading(true)
     setError('')
     try {
-      // 1. Fetch Carwash transactions
-      const { data: cwData, error: cwErr } = await supabase
-        .from('carwash')
-        .select('*')
-        .neq('status', 'Batal')
-        .gte('tanggal', wagesStartDate)
-        .lte('tanggal', wagesEndDate)
-      
-      if (cwErr) throw cwErr
-      setCarwashWagesList(cwData || [])
-
-      // 2. Fetch Cashflow entries for deductions
-      const { data: cfData, error: cfErr } = await supabase
-        .from('cashflow')
-        .select('*')
-        .gte('tanggal', wagesStartDate)
-        .lte('tanggal', wagesEndDate)
-      
-      if (cfErr) throw cfErr
-      setCashflowList(cfData || [])
-
-      // 3. Fetch Pengeluaran entries for deductions
-      const { data: expData, error: expErr } = await supabase
-        .from('pengeluaran')
-        .select('*')
-        .gte('tanggal', wagesStartDate)
-        .lte('tanggal', wagesEndDate)
-      
-      if (expErr) throw expErr
-      setPengeluaranList(expData || [])
+      const { carwashWagesList: cwData, cashflowList: cfData, pengeluaranList: expData } =
+        await staffService.fetchCarwashWagesData({
+          tenantId: activeTenant?.id || profile?.tenant_id || null,
+          startDate: wagesStartDate,
+          endDate: wagesEndDate
+        })
+      setCarwashWagesList(cwData)
+      setCashflowList(cfData)
+      setPengeluaranList(expData)
     } catch (err) {
       console.error('Error fetching carwash wages/deductions:', err)
       setError('Gagal memuat data upah & potongan.')
@@ -282,7 +262,7 @@ const Karyawan = () => {
     if (activeTab === 'wages') {
       fetchCarwashWages()
     }
-  }, [activeTab, wagesStartDate, wagesEndDate])
+  }, [activeTab, wagesStartDate, wagesEndDate, activeTenant?.id])
 
   // Wages Report Aggregation logic (merujuk pada ID karyawan cuci terlebih dahulu)
   const wagesSummary = useMemo(() => {

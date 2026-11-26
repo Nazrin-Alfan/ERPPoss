@@ -1022,19 +1022,15 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
     try {
       const todayDate = new Date().toLocaleDateString('en-CA')
 
-      const { data: exRes, error: exErr } = await supabase.rpc('fn_record_cashier_money_exchange', {
-        p_tenant_id: effectiveTenantId,
-        p_branch_id: profile?.branch_id || null,
-        p_kasir: selectedCashier || profile?.nama || 'KASIR',
-        p_cash_out: cashOut,
-        p_qris_in: qrisIn,
-        p_customer: exchangeCustomer || 'Umum',
-        p_tanggal: todayDate
+      await posService.recordMoneyExchange({
+        tenantId: effectiveTenantId,
+        branchId: profile?.branch_id || null,
+        kasir: selectedCashier || profile?.nama || 'KASIR',
+        cashOut,
+        qrisIn,
+        customer: exchangeCustomer || 'Umum',
+        tanggal: todayDate
       })
-      if (exErr) throw exErr
-      if (exRes && exRes.success === false) {
-        throw new Error(exRes.message || 'Gagal mencatat mutasi tukar uang.')
-      }
 
       await showAlert(`Transaksi Tukar Uang berhasil dicatat sebagai Perpindahan Saldo!\n\n• Uang tunai keluar dari Laci Kasir: ${formatRupiah(cashOut)}\n• Transfer masuk ke Rekening QRIS: ${formatRupiah(qrisIn)}${adminFee > 0 ? `\n• Pendapatan Biaya Admin: ${formatRupiah(adminFee)}` : ''}\n\n*Transaksi ini tidak dicatat sebagai beban pengeluaran operasional.`, 'Sukses')
       setExchangeCash('')
@@ -1237,32 +1233,11 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
     setError('')
     setSuccess(false)
     try {
-      if (isCloudBackend && typeof supabase.rpc === 'function') {
-        const { error: voidErr } = await supabase.rpc('fn_void_or_cancel_receipt', {
-          p_tenant_id: effectiveTenantId,
-          p_id_struk: idStruk,
-          p_reason: reason || 'Dibatalkan oleh Kasir/Owner'
-        })
-        if (voidErr) throw voidErr
-      } else {
-        const { error: strukErr } = await supabase
-          .from('struk')
-          .update({ status_bayar: 'Batal', catatan: reason })
-          .eq('id_struk', idStruk)
-        if (strukErr) throw strukErr
-
-        const { error: cafeErr } = await supabase
-          .from('cafe')
-          .update({ status: 'Batal' })
-          .eq('id_struk', idStruk)
-        if (cafeErr) throw cafeErr
-
-        const { error: cwErr } = await supabase
-          .from('carwash')
-          .update({ status: 'Batal', gaji_anggota: 0, gaji_pencuci: 0 })
-          .eq('id_struk', idStruk)
-        if (cwErr) throw cwErr
-      }
+      await posService.voidTransaction({
+        tenantId: effectiveTenantId,
+        idStruk,
+        reason: reason || 'Dibatalkan oleh Kasir/Owner'
+      })
 
       setSuccess(true)
       await fetchTodayTransactions()
@@ -1280,61 +1255,8 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
   const fetchPendingBills = async () => {
     try {
-      const { data, error } = await supabase
-        .from('struk')
-        .select(`
-          id_struk,
-          tanggal,
-          jam,
-          kasir,
-          total_tagihan,
-          subtotal,
-          diskon,
-          diskon_cafe,
-          diskon_carwash,
-          pajak,
-          metode_bayar,
-          created_at,
-          cafe (nama_menu, qty, harga_satuan),
-          carwash (paket, plat, harga, model, no_telepon, kehadiran)
-        `)
-        .eq('status_bayar', 'Pending')
-        .order('tanggal', { ascending: false })
-
-      if (error) throw error
-
-      if (data) {
-        const formatted = data.map(item => ({
-          id: item.id_struk,
-          tanggal: item.tanggal,
-          jam: item.jam,
-          created_at: item.created_at || `${item.tanggal}T${item.jam || '00:00:00'}`,
-          kasir: item.kasir || 'Kasir',
-          total_harga: item.total_tagihan || 0,
-          subtotal: item.subtotal || 0,
-          diskon: item.diskon || 0,
-          diskon_cafe: item.diskon_cafe || 0,
-          diskon_carwash: item.diskon_carwash || 0,
-          pajak: item.pajak || 0,
-          metode_bayar: item.metode_bayar || 'CASH',
-          cafe: (item.cafe || []).map(c => ({
-            nama_menu: c.nama_menu,
-            jumlah: c.qty,
-            harga_satuan: c.harga_satuan
-          })),
-          carwash: (item.carwash || []).map(cw => ({
-            paket: cw.paket,
-            plat_nomor: cw.plat,
-            harga: cw.harga,
-            merk_mobil: cw.model,
-            no_telepon: cw.no_telepon,
-            kehadiran: cw.kehadiran
-          }))
-        }))
-        setPendingBills(formatted)
-      } else {
-        setPendingBills([])
-      }
+      const formatted = await posService.getPendingBills({ tenantId: effectiveTenantId })
+      setPendingBills(formatted)
     } catch (err) {
       console.error('Error fetching pending bills:', err)
     }
@@ -1343,12 +1265,11 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
   const checkTodayStartingCapital = async () => {
     try {
       const todayDate = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD
-      const capitalKey = `starting_capital_${effectiveTenantId}_${todayDate}`
-      const localCapital = localStorage.getItem(capitalKey)
+      const savedCapital = posService.getTodayStartingCapital(effectiveTenantId, todayDate)
 
-      if (localCapital !== null) {
+      if (savedCapital !== null) {
         setHasStartingCapital(true)
-        setTodayStartingCapital(parseFloat(localCapital) || 0)
+        setTodayStartingCapital(savedCapital)
       } else {
         setHasStartingCapital(false)
         setShowModalModal(true)
@@ -1368,8 +1289,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
     setError('')
     try {
       const todayDate = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD
-      const capitalKey = `starting_capital_${effectiveTenantId}_${todayDate}`
-      localStorage.setItem(capitalKey, amount.toString())
+      posService.saveTodayStartingCapital(effectiveTenantId, amount, todayDate)
 
       setHasStartingCapital(true)
       setShowModalModal(false)
@@ -1391,16 +1311,15 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
   const handleConfirmShiftClose = async (recapData) => {
     const todayDate = new Date().toLocaleDateString('en-CA')
-    const { error: closeErr } = await supabase.rpc('fn_close_cashier_shift', {
-      p_tenant_id: effectiveTenantId,
-      p_branch_id: profile?.branch_id || null,
-      p_kasir: selectedCashier || profile?.nama || 'KASIR',
-      p_tanggal: todayDate,
-      p_modal_awal: Number(recapData.startingCapital || 0),
-      p_kas_fisik: Number(recapData.physicalCash || 0),
-      p_catatan: recapData.notes || ''
+    await posService.closeCashierShift({
+      tenantId: effectiveTenantId,
+      branchId: profile?.branch_id || null,
+      kasir: selectedCashier || profile?.nama || 'KASIR',
+      tanggal: todayDate,
+      modalAwal: Number(recapData.startingCapital || 0),
+      kasFisik: Number(recapData.physicalCash || 0),
+      catatan: recapData.notes || ''
     })
-    if (closeErr) throw closeErr
   }
 
   const handleOpenCrewCommissionModal = async () => {
@@ -1580,34 +1499,11 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
     setError('')
     setSuccess(false)
     try {
-      if (isCloudBackend && typeof supabase.rpc === 'function') {
-        const { error: voidErr } = await supabase.rpc('fn_void_or_cancel_receipt', {
-          p_tenant_id: effectiveTenantId,
-          p_id_struk: billId,
-          p_reason: 'Bon Pending dibatalkan oleh Kasir/Owner'
-        })
-        if (voidErr) throw voidErr
-      } else {
-        // 1. Update status_bayar di struk menjadi 'Batal'
-        const { error: strukErr } = await supabase
-          .from('struk')
-          .update({ status_bayar: 'Batal' })
-          .eq('id_struk', billId)
-
-        if (strukErr) throw strukErr
-
-        // 2. Update status di carwash (jika ada) menjadi 'Batal'
-        await supabase
-          .from('carwash')
-          .update({ status: 'Batal' })
-          .eq('id_struk', billId)
-
-        // 3. Update status di cafe (jika ada) menjadi 'Batal'
-        await supabase
-          .from('cafe')
-          .update({ status: 'Batal' })
-          .eq('id_struk', billId)
-      }
+      await posService.voidTransaction({
+        tenantId: effectiveTenantId,
+        idStruk: billId,
+        reason: 'Bon Pending dibatalkan oleh Kasir/Owner'
+      })
 
       setSuccess(true)
       await fetchPendingBills()

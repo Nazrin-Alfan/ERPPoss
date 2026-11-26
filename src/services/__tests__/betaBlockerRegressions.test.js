@@ -255,8 +255,13 @@ describe('Public Beta Blocker Regression Suite (TDD)', () => {
     expect(String(breachRes.error?.message || '')).toMatch(/TENANT_FORBIDDEN/i)
 
     const posSrc = fs.readFileSync(path.join(ROOT, 'src/pages/pos/HybridPOSPage.jsx'), 'utf8')
-    expect(posSrc).toContain('fn_record_cashier_money_exchange')
-    expect(posSrc).toContain('starting_capital_${effectiveTenantId}_')
+    const posServiceSrc = fs.readFileSync(path.join(ROOT, 'src/services/posService.js'), 'utf8')
+    const apiAdapterSrc = fs.readFileSync(path.join(ROOT, 'src/services/apiAdapter.js'), 'utf8')
+    expect(posSrc).toContain('posService.recordMoneyExchange')
+    expect(posSrc).toContain('posService.getTodayStartingCapital(effectiveTenantId')
+    expect(apiAdapterSrc).toContain('fn_record_cashier_money_exchange')
+    expect(posServiceSrc).toContain('storageAdapter.getItem(tenantId')
+    expect(posServiceSrc).toContain('starting_capital_${tenantId}_${resolvedDate}')
   })
 
   it('TC_BB_06: Playwright CI E2E login selectors & Trial copy/WhatsApp config are consistent', () => {

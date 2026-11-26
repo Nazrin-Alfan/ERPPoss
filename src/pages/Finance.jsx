@@ -10,6 +10,7 @@ import {
 } from '../components/ui/Table'
 import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
+import { financeService } from '../services/financeService'
 import { useAuth } from '../context/AuthContext'
 import { getTenantFeatures } from '../utils/businessCapabilities'
 import { isOwnerOrSuperAdmin } from '../constants/roles'
@@ -212,19 +213,20 @@ const Finance = () => {
 
   const defaultIncomeKategoriOptions = ['Omzet Penjualan', 'Modal Awal', 'Pemasukan Lain-lain']
 
-  // Custom Options State (from localStorage)
-  const [customJenisList, setCustomJenisList] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('jb_custom_jenis_list') || '[]') } catch { return [] }
-  })
-  const [customKategoriList, setCustomKategoriList] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('jb_custom_kategori_list') || '[]') } catch { return [] }
-  })
-  const [customIncomeJenisList, setCustomIncomeJenisList] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('jb_custom_income_jenis_list') || '[]') } catch { return [] }
-  })
-  const [customIncomeKategoriList, setCustomIncomeKategoriList] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('jb_custom_income_kategori_list') || '[]') } catch { return [] }
-  })
+  // Custom Options State (tenant-scoped via financeService -> storageAdapter)
+  const initialCustomOpts = financeService.getCustomFinanceOptions(activeTenant?.id)
+  const [customJenisList, setCustomJenisList] = useState(initialCustomOpts.customJenisList)
+  const [customKategoriList, setCustomKategoriList] = useState(initialCustomOpts.customKategoriList)
+  const [customIncomeJenisList, setCustomIncomeJenisList] = useState(initialCustomOpts.customIncomeJenisList)
+  const [customIncomeKategoriList, setCustomIncomeKategoriList] = useState(initialCustomOpts.customIncomeKategoriList)
+
+  useEffect(() => {
+    const next = financeService.getCustomFinanceOptions(activeTenant?.id)
+    setCustomJenisList(next.customJenisList)
+    setCustomKategoriList(next.customKategoriList)
+    setCustomIncomeJenisList(next.customIncomeJenisList)
+    setCustomIncomeKategoriList(next.customIncomeKategoriList)
+  }, [activeTenant?.id])
 
   // Mode Custom input toggles
   const [isCustomExpenseJenis, setIsCustomExpenseJenis] = useState(false)
@@ -234,42 +236,17 @@ const Finance = () => {
 
   const saveCustomOption = (type, val) => {
     if (!val || typeof val !== 'string' || !val.trim()) return
-    if (type === 'jenis') {
-      const norm = normalizeJenis(val)
-      if (!norm || defaultJenisOptions.some(d => d.toLowerCase() === norm.toLowerCase())) return
-      setCustomJenisList(prev => {
-        if (prev.some(p => p.toLowerCase() === norm.toLowerCase())) return prev
-        const updated = [...prev, norm]
-        try { localStorage.setItem('jb_custom_jenis_list', JSON.stringify(updated)) } catch {}
-        return updated
-      })
-    } else if (type === 'kategori') {
-      const norm = normalizeCategory(val)
-      if (!norm || defaultKategoriOptions.some(d => d.toLowerCase() === norm.toLowerCase())) return
-      setCustomKategoriList(prev => {
-        if (prev.some(p => p.toLowerCase() === norm.toLowerCase())) return prev
-        const updated = [...prev, norm]
-        try { localStorage.setItem('jb_custom_kategori_list', JSON.stringify(updated)) } catch {}
-        return updated
-      })
-    } else if (type === 'income_jenis') {
-      const norm = normalizeJenis(val)
-      if (!norm || defaultIncomeJenisOptions.some(d => d.toLowerCase() === norm.toLowerCase())) return
-      setCustomIncomeJenisList(prev => {
-        if (prev.some(p => p.toLowerCase() === norm.toLowerCase())) return prev
-        const updated = [...prev, norm]
-        try { localStorage.setItem('jb_custom_income_jenis_list', JSON.stringify(updated)) } catch {}
-        return updated
-      })
-    } else if (type === 'income_kategori') {
-      const norm = normalizeCategory(val)
-      if (!norm || defaultIncomeKategoriOptions.some(d => d.toLowerCase() === norm.toLowerCase())) return
-      setCustomIncomeKategoriList(prev => {
-        if (prev.some(p => p.toLowerCase() === norm.toLowerCase())) return prev
-        const updated = [...prev, norm]
-        try { localStorage.setItem('jb_custom_income_kategori_list', JSON.stringify(updated)) } catch {}
-        return updated
-      })
+    const configByType = {
+      jenis: { defaults: defaultJenisOptions, normalizer: normalizeJenis, setter: setCustomJenisList },
+      kategori: { defaults: defaultKategoriOptions, normalizer: normalizeCategory, setter: setCustomKategoriList },
+      income_jenis: { defaults: defaultIncomeJenisOptions, normalizer: normalizeJenis, setter: setCustomIncomeJenisList },
+      income_kategori: { defaults: defaultIncomeKategoriOptions, normalizer: normalizeCategory, setter: setCustomIncomeKategoriList }
+    }
+    const cfg = configByType[type]
+    if (!cfg) return
+    const updated = financeService.saveCustomFinanceOption(activeTenant?.id, type, val, cfg.defaults, cfg.normalizer)
+    if (updated) {
+      cfg.setter(updated)
     }
   }
 

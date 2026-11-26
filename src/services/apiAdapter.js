@@ -382,6 +382,76 @@ export const api = {
 
       return { success: true, deleted_menu: cleanMenuName }
     },
+
+    async replaceCarwashPackageRecipes({
+      savedPkgId = null,
+      packageName,
+      previousPackageName = null,
+      resepBahan = [],
+      stokBahan = []
+    }) {
+      const isUuid = (val) =>
+        typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+      const pkgIsUuid = isUuid(savedPkgId)
+
+      if (pkgIsUuid) {
+        const { error: delPkgErr } = await supabase.from('resep').delete().eq('carwash_package_id', savedPkgId)
+        if (delPkgErr) throw delPkgErr
+
+        if (previousPackageName) {
+          const { error: delPrevErr } = await supabase
+            .from('resep')
+            .delete()
+            .is('carwash_package_id', null)
+            .eq('nama_menu', previousPackageName)
+          if (delPrevErr) throw delPrevErr
+        }
+
+        const { error: delCurrErr } = await supabase
+          .from('resep')
+          .delete()
+          .is('carwash_package_id', null)
+          .eq('nama_menu', packageName)
+        if (delCurrErr) throw delCurrErr
+      } else {
+        const { error: delNameErr } = await supabase.from('resep').delete().eq('nama_menu', packageName)
+        if (delNameErr) throw delNameErr
+      }
+
+      const validRows = (resepBahan || [])
+        .filter((b) => b?.nama_bahan && parseFloat(b.jumlah) > 0)
+        .map((b, idx) => {
+          const matchedBahan = (stokBahan || []).find(
+            (s) =>
+              (b.stok_barang_id && s.id === b.stok_barang_id) ||
+              s.nama_bahan === b.nama_bahan ||
+              s.nama_produk === b.nama_bahan ||
+              s.nama_barang === b.nama_bahan
+          )
+          const resolvedStokId = b.stok_barang_id || matchedBahan?.id || null
+          const qty = parseFloat(b.jumlah)
+          return {
+            id_resep: `rsp_cw_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
+            id_menu: packageName,
+            nama_menu: packageName,
+            daftar_menu: packageName,
+            ...(pkgIsUuid ? { carwash_package_id: savedPkgId } : {}),
+            ...(isUuid(resolvedStokId) ? { stok_barang_id: resolvedStokId } : {}),
+            id_bahan_baku: b.id_bahan_baku || matchedBahan?.id_bahan_baku || matchedBahan?.id_barang || null,
+            nama_bahan: b.nama_bahan,
+            jumlah: qty,
+            jumlah_dibutuhkan: qty,
+            satuan: b.satuan || 'Liter'
+          }
+        })
+
+      if (validRows.length > 0) {
+        const { error: insertErr } = await supabase.from('resep').insert(validRows)
+        if (insertErr) throw insertErr
+      }
+
+      return { success: true, count: validRows.length }
+    },
   },
 
   // 3. TRANSAKSI
@@ -497,6 +567,117 @@ export const api = {
       const { data, error } = await query
       if (error) throw error
       return data || []
+    },
+
+    async voidTransaction({ tenant_id, id_struk, reason = 'Dibatalkan oleh Kasir/Owner', options = {} }) {
+      const useCloud = options?.isCloud !== undefined ? Boolean(options.isCloud) : isCloudBackend
+      if (useCloud && typeof supabase.rpc === 'function') {
+        const { data, error } = await supabase.rpc('fn_void_or_cancel_receipt', {
+          p_tenant_id: tenant_id,
+          p_id_struk: id_struk,
+          p_reason: reason || 'Dibatalkan oleh Kasir/Owner'
+        })
+        if (error) throw error
+        return data || { success: true }
+      }
+
+      const { error: strukErr } = await supabase
+        .from('struk')
+        .update({ status_bayar: 'Batal', catatan: reason })
+        .eq('id_struk', id_struk)
+      if (strukErr) throw strukErr
+
+      const { error: cafeErr } = await supabase
+        .from('cafe')
+        .update({ status: 'Batal' })
+        .eq('id_struk', id_struk)
+      if (cafeErr) throw cafeErr
+
+      const { error: cwErr } = await supabase
+        .from('carwash')
+        .update({ status: 'Batal', gaji_anggota: 0, gaji_pencuci: 0 })
+        .eq('id_struk', id_struk)
+      if (cwErr) throw cwErr
+
+      return { success: true, id_struk }
+    },
+
+    async closeCashierShift({
+      tenant_id,
+      branch_id = null,
+      kasir = 'KASIR',
+      tanggal,
+      modal_awal = 0,
+      kas_fisik = 0,
+      catatan = ''
+    }) {
+      const { data, error } = await supabase.rpc('fn_close_cashier_shift', {
+        p_tenant_id: tenant_id,
+        p_branch_id: branch_id || null,
+        p_kasir: kasir || 'KASIR',
+        p_tanggal: tanggal,
+        p_modal_awal: Number(modal_awal || 0),
+        p_kas_fisik: Number(kas_fisik || 0),
+        p_catatan: catatan || ''
+      })
+      if (error) throw error
+      return data || { success: true }
+    },
+
+    async recordMoneyExchange({
+      tenant_id,
+      branch_id = null,
+      kasir = 'KASIR',
+      cash_out = 0,
+      qris_in = 0,
+      customer = 'Umum',
+      tanggal
+    }) {
+      const { data, error } = await supabase.rpc('fn_record_cashier_money_exchange', {
+        p_tenant_id: tenant_id,
+        p_branch_id: branch_id || null,
+        p_kasir: kasir || 'KASIR',
+        p_cash_out: Number(cash_out || 0),
+        p_qris_in: Number(qris_in || 0),
+        p_customer: customer || 'Umum',
+        p_tanggal: tanggal
+      })
+      if (error) throw error
+      if (data && data.success === false) {
+        throw new Error(data.message || 'Gagal mencatat mutasi tukar uang.')
+      }
+      return data || { success: true }
+    },
+
+    async getPendingBills({ tenant_id = null } = {}) {
+      let query = supabase
+        .from('struk')
+        .select(`
+          id_struk,
+          tanggal,
+          jam,
+          kasir,
+          total_tagihan,
+          subtotal,
+          diskon,
+          diskon_cafe,
+          diskon_carwash,
+          pajak,
+          metode_bayar,
+          created_at,
+          cafe (nama_menu, qty, harga_satuan),
+          carwash (paket, plat, harga, model, no_telepon, kehadiran)
+        `)
+        .eq('status_bayar', 'Pending')
+        .order('tanggal', { ascending: false })
+
+      if (tenant_id && query && typeof query.eq === 'function') {
+        query = query.eq('tenant_id', tenant_id)
+      }
+
+      const { data, error } = await query
+      if (error) throw error
+      return Array.isArray(data) ? data : []
     },
   },
 }

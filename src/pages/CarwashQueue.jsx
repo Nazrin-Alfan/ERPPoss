@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
+import { subscribeCarwashQueueRealtime } from '../hooks/domain/useCarwashQueue'
 import { 
   Car, 
   Clock, 
@@ -47,7 +48,7 @@ const CarwashQueue = () => {
   const fetchQueue = useCallback(async () => {
     setLoading(true)
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('carwash')
         .select(`
           id,
@@ -76,7 +77,12 @@ const CarwashQueue = () => {
           )
         `)
         .eq('tanggal', selectedDate)
-        .order('jam', { ascending: true })
+
+      if (activeTenant?.id && query && typeof query.eq === 'function') {
+        query = query.eq('tenant_id', activeTenant.id)
+      }
+
+      const { data, error } = await query.order('jam', { ascending: true })
 
       if (error) {
         console.error('Error fetching carwash queue:', error)
@@ -126,39 +132,17 @@ const CarwashQueue = () => {
     } finally {
       setLoading(false)
     }
-  }, [selectedDate])
+  }, [selectedDate, activeTenant?.id])
 
-  // Real-time subscription with resilient fallback
+  // Real-time subscription scoped by tenant_id + 250ms debounce
   useEffect(() => {
     fetchQueue()
-
-    let channel = null
-    try {
-      if (typeof supabase?.channel === 'function') {
-        channel = supabase
-          .channel('carwash-queue-realtime')
-          .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'carwash' },
-            () => {
-              fetchQueue()
-            }
-          )
-          .subscribe()
-      }
-    } catch (err) {
-      console.warn('Realtime channel subscription skipped:', err)
-    }
-
-    return () => {
-      try {
-        if (channel && typeof supabase?.removeChannel === 'function') {
-          supabase.removeChannel(channel)
-        }
-      } catch {
-        // Safe ignore
-      }
-    }
+    return subscribeCarwashQueueRealtime({
+      client: supabase,
+      tenantId: activeTenant?.id || null,
+      onChange: fetchQueue,
+      debounceMs: 250
+    })
   }, [fetchQueue, activeTenant?.id])
 
   const isUuidVal = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)

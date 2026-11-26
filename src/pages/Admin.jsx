@@ -573,51 +573,14 @@ const Admin = () => {
         setSuccess(`Paket cuci baru "${pkgPayload.nama_paket}" berhasil ditambahkan!`)
       }
 
-      // Sinkronisasi resep bahan kimia cuci ke tabel resep berdasarkan carwash_package_id
-      if (isPostgresUuid(savedPkgId)) {
-        await supabase.from('resep').delete().eq('carwash_package_id', savedPkgId)
-        if (previousPkg?.nama_paket) {
-          await supabase
-            .from('resep')
-            .delete()
-            .is('carwash_package_id', null)
-            .eq('nama_menu', previousPkg.nama_paket)
-        }
-        await supabase
-          .from('resep')
-          .delete()
-          .is('carwash_package_id', null)
-          .eq('nama_menu', pkgPayload.nama_paket)
-      } else {
-        await supabase.from('resep').delete().eq('nama_menu', pkgPayload.nama_paket)
-      }
-
-      if (pkgPayload.resep_bahan && pkgPayload.resep_bahan.length > 0) {
-        for (const b of pkgPayload.resep_bahan) {
-          if (b.nama_bahan && parseFloat(b.jumlah) > 0) {
-            const matchedBahan = stokBahan.find(
-              s => (b.stok_barang_id && s.id === b.stok_barang_id) ||
-                   s.nama_bahan === b.nama_bahan ||
-                   s.nama_produk === b.nama_bahan ||
-                   s.nama_barang === b.nama_bahan
-            )
-            const resolvedStokId = b.stok_barang_id || matchedBahan?.id || null
-            await supabase.from('resep').insert({
-              id_resep: `rsp_cw_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-              id_menu: pkgPayload.nama_paket,
-              nama_menu: pkgPayload.nama_paket,
-              daftar_menu: pkgPayload.nama_paket,
-              ...(isPostgresUuid(savedPkgId) ? { carwash_package_id: savedPkgId } : {}),
-              ...(isPostgresUuid(resolvedStokId) ? { stok_barang_id: resolvedStokId } : {}),
-              id_bahan_baku: b.id_bahan_baku || matchedBahan?.id_bahan_baku || null,
-              nama_bahan: b.nama_bahan,
-              jumlah: parseFloat(b.jumlah),
-              jumlah_dibutuhkan: parseFloat(b.jumlah),
-              satuan: b.satuan || 'Liter'
-            })
-          }
-        }
-      }
+      // Sinkronisasi resep bahan kimia cuci ke tabel resep secara batch atomik melalui api.master
+      await api.master.replaceCarwashPackageRecipes({
+        savedPkgId,
+        packageName: pkgPayload.nama_paket,
+        previousPackageName: previousPkg?.nama_paket || null,
+        resepBahan: pkgPayload.resep_bahan || [],
+        stokBahan
+      })
 
       await loadAdminData()
     } catch (err) {

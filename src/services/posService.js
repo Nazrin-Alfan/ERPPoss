@@ -5,6 +5,7 @@
  */
 
 import { api } from './apiAdapter'
+import { storageAdapter } from './storageAdapter'
 
 export class PosCheckoutError extends Error {
   constructor(message, code, details = {}) {
@@ -358,6 +359,104 @@ export const posService = {
     if (tenantId && idStruk) {
       activeSettlementAttemptKeys.delete(`${tenantId}:${idStruk}`)
     }
+  },
+
+  async voidTransaction({ tenantId, idStruk, reason = 'Dibatalkan oleh Kasir/Owner', options = {} }) {
+    if (!tenantId) {
+      throw new PosCheckoutError('Tenant ID wajib disertakan untuk membatalkan transaksi.', 'MISSING_TENANT_ID')
+    }
+    if (!idStruk) {
+      throw new PosCheckoutError('Nomor struk tidak ditemukan.', 'MISSING_ID_STRUK')
+    }
+    return await api.transaksi.voidTransaction({
+      tenant_id: tenantId,
+      id_struk: idStruk,
+      reason,
+      options
+    })
+  },
+
+  async closeCashierShift({ tenantId, branchId = null, kasir = 'KASIR', tanggal, modalAwal = 0, kasFisik = 0, catatan = '' }) {
+    if (!tenantId) {
+      throw new PosCheckoutError('Tenant ID wajib disertakan untuk menutup shift kasir.', 'MISSING_TENANT_ID')
+    }
+    const resolvedDate = tanggal || new Date().toLocaleDateString('en-CA')
+    return await api.transaksi.closeCashierShift({
+      tenant_id: tenantId,
+      branch_id: branchId || null,
+      kasir: kasir || 'KASIR',
+      tanggal: resolvedDate,
+      modal_awal: modalAwal,
+      kas_fisik: kasFisik,
+      catatan
+    })
+  },
+
+  async recordMoneyExchange({ tenantId, branchId = null, kasir = 'KASIR', cashOut = 0, qrisIn = 0, customer = 'Umum', tanggal }) {
+    if (!tenantId) {
+      throw new PosCheckoutError('Tenant ID wajib disertakan untuk tukar uang kasir.', 'MISSING_TENANT_ID')
+    }
+    const resolvedDate = tanggal || new Date().toLocaleDateString('en-CA')
+    return await api.transaksi.recordMoneyExchange({
+      tenant_id: tenantId,
+      branch_id: branchId || null,
+      kasir: kasir || 'KASIR',
+      cash_out: cashOut,
+      qris_in: qrisIn,
+      customer,
+      tanggal: resolvedDate
+    })
+  },
+
+  async getPendingBills({ tenantId = null } = {}) {
+    const data = await api.transaksi.getPendingBills({ tenant_id: tenantId })
+    return (data || []).map((item) => ({
+      id: item.id_struk,
+      tanggal: item.tanggal,
+      jam: item.jam,
+      created_at: item.created_at || `${item.tanggal}T${item.jam || '00:00:00'}`,
+      kasir: item.kasir || 'Kasir',
+      total_harga: item.total_tagihan || 0,
+      subtotal: item.subtotal || 0,
+      diskon: item.diskon || 0,
+      diskon_cafe: item.diskon_cafe || 0,
+      diskon_carwash: item.diskon_carwash || 0,
+      pajak: item.pajak || 0,
+      metode_bayar: item.metode_bayar || 'CASH',
+      cafe: (item.cafe || []).map((c) => ({
+        nama_menu: c.nama_menu,
+        jumlah: c.qty,
+        harga_satuan: c.harga_satuan
+      })),
+      carwash: (item.carwash || []).map((cw) => ({
+        paket: cw.paket,
+        plat_nomor: cw.plat,
+        harga: cw.harga,
+        merk_mobil: cw.model,
+        no_telepon: cw.no_telepon,
+        kehadiran: cw.kehadiran
+      }))
+    }))
+  },
+
+  getTodayStartingCapital(tenantId, date = null) {
+    const resolvedDate = date || new Date().toLocaleDateString('en-CA')
+    const raw = storageAdapter.getItem(tenantId, `starting_capital_${resolvedDate}`, {
+      legacyKey: `starting_capital_${tenantId}_${resolvedDate}`
+    })
+    if (raw === null || raw === undefined || raw === '') return null
+    const parsed = parseFloat(raw)
+    return Number.isFinite(parsed) ? parsed : 0
+  },
+
+  saveTodayStartingCapital(tenantId, amount, date = null) {
+    const resolvedDate = date || new Date().toLocaleDateString('en-CA')
+    const numeric = parseFloat(amount)
+    if (!Number.isFinite(numeric) || numeric < 0) {
+      throw new Error('Modal awal harus berupa angka positif.')
+    }
+    storageAdapter.setItem(tenantId, `starting_capital_${resolvedDate}`, numeric.toString())
+    return numeric
   },
 
   /**

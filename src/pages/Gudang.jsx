@@ -27,6 +27,7 @@ import {
   Calculator
 } from 'lucide-react'
 import { supabase } from '../supabaseClient'
+import { inventoryService } from '../services/inventoryService'
 import { useAuth } from '../context/AuthContext'
 import { getTenantFeatures } from '../utils/businessCapabilities'
 import { formatRupiah } from '../utils/helpers'
@@ -106,58 +107,11 @@ export default function Gudang() {
     setLoading(true)
     setError('')
     try {
-      let rawData = null
-      // P1-05: Non-financial roles (e.g. Kasir) consume safe stock projection RPC without HPP
-      if (!canViewCost && typeof supabase.rpc === 'function') {
-        try {
-          const { data: rpcData, error: rpcErr } = await supabase.rpc('fn_get_pos_inventory_stock')
-          if (!rpcErr && rpcData) {
-            rawData = rpcData
-          }
-        } catch {
-          // Fallback to table query if RPC unavailable
-        }
-      }
-
-      if (!rawData) {
-        const { data, error: fetchErr } = await supabase
-          .from('stok_barang')
-          .select('*')
-          .order('nama_produk', { ascending: true })
-
-        if (fetchErr) throw fetchErr
-        rawData = data
-      }
-
-      if (rawData && rawData.length > 0) {
-        // Normalisasi data dengan gudang mapper jika belum ada properti gudang
-        const mapped = rawData.map(item => {
-          let determinedGudang = item.gudang
-          if (!determinedGudang) {
-            const namaLow = String(item.nama_produk || item.nama_barang || '').toLowerCase()
-            const katLow = String(item.kategori || '').toLowerCase()
-            if (katLow.includes('merchandise') || katLow.includes('retail') || namaLow.includes('parfum') || namaLow.includes('microfiber')) {
-              determinedGudang = 'MERCHANDISE'
-            } else if (katLow.includes('cuci') || namaLow.includes('shampo') || namaLow.includes('semir') || namaLow.includes('degreaser') || namaLow.includes('carwash')) {
-              determinedGudang = 'CARWASH'
-            } else {
-              determinedGudang = 'CAFE'
-            }
-          }
-          return {
-            ...item,
-            id_barang: item.id_barang || item.id_bahan_baku,
-            nama_barang: item.nama_produk || item.nama_barang,
-            gudang: determinedGudang,
-            harga_beli: canViewCost ? (item.harga_beli || item.harga_satuan || item.hpp || 0) : null,
-            harga_jual: item.harga_jual || item.harga || 0,
-            min_stok: item.min_stok !== undefined ? item.min_stok : 5
-          }
-        })
-        setInventory(mapped)
-      } else {
-        setInventory(DEFAULT_GUDANG_DATA)
-      }
+      const mapped = await inventoryService.fetchWarehouseInventory({
+        tenantId: activeTenant?.id || profile?.tenant_id || null,
+        canViewCost
+      })
+      setInventory(mapped.length > 0 ? mapped : DEFAULT_GUDANG_DATA)
     } catch (err) {
       console.warn('Fallback to local default warehouse data:', err)
       setInventory(DEFAULT_GUDANG_DATA)
@@ -168,7 +122,7 @@ export default function Gudang() {
 
   useEffect(() => {
     loadInventory()
-  }, [])
+  }, [activeTenant?.id, canViewCost])
 
   // Filter Items per Gudang Aktif
   const gudangItems = useMemo(() => {
