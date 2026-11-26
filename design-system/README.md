@@ -1,7 +1,10 @@
-# RelayPOS — Modern Fintech UI/UX Design System (v4.2)
+# RelayPOS — Modern Fintech UI/UX Design System (v5.0)
 
 > **Status:** Complete Wave 1 + Wave 2 + Wave 3 (`17/17 Frames` — Audited `APPROVED` by `@UIUX_Design_Auditor`)
-> **Referensi Gaya:** Modern Fintech (*LumenWave Direction* — Warm Alabaster `#F6F5F1`, Floating Cards, Deep Ink `#111113`, Signal Lime `#C8F31D`, Pill Geometry)
+> **Palet Disetujui (v5.0):**
+> - **Light Mode (Back-Office, Dashboard, Kanban, Login, Landing, SOP):** Cool Alabaster `#F4F6FA`, Floating `#FFFFFF` Cards, Deep Slate Ink `#0F172A`, **Fintech Cobalt Blue `#2563EB`** (`#FFFFFF` text/icons on primary CTA & active pills).
+> - **Dark Mode (POS Kasir & Founder Console — Opsi D1):** **Pure Carbon Obsidian `#09090B`**, Surface `#121215`, Subsurface `#1C1C21`, Crisp Cobalt `#2563EB` CTA, Focus `#3B82F6`, `#FFFFFF` Rupiah/KPI figures.
+> - **Logo Terkunci:** **B3 Ink Squircle Emblem — Opsi 1 (`Ink + Cobalt`)** (`#0F172A` Light / `#1C1C21` Dark + `#3B82F6` Relay Pill).
 > **Branch:** `chore/uiux-rebrand-plan`
 
 ---
@@ -10,12 +13,12 @@
 
 | Berkas | Deskripsi |
 | :--- | :--- |
-| [`RelayPOS-Rebrand.figcraft`](./RelayPOS-Rebrand.figcraft) | File sumber desain **FigCraft** lengkap (Page 1 & Page 2: **17 layar Modern Fintech v4.2**) |
-| [`MASTER.md`](./MASTER.md) | Spesifikasi token 3-lapis, blueprint matematis Logo B3, ikon vektor, tipografi & 4 *UI States* |
-| [`pages/pos.md`](./pages/pos.md) | Override spesifikasi khusus POS Kasir (`04A` & `04B`) dan Antrean Carwash (`05`) |
+| [`RelayPOS-Rebrand.figcraft`](./RelayPOS-Rebrand.figcraft) | File sumber desain **FigCraft** lengkap (Page 1 & Page 2: **17 layar Fintech Cobalt v5.0**) |
+| [`MASTER.md`](./MASTER.md) | Spesifikasi token 3-lapis, blueprint matematis Logo B3 Opsi 1, ikon vektor, tipografi & 4 *UI States* |
+| [`pages/pos.md`](./pages/pos.md) | Override spesifikasi khusus POS Kasir Opsi D1 (`04A` & `04B`) dan Antrean Carwash (`05`) |
 | [`pages/backoffice-and-platform.md`](./pages/backoffice-and-platform.md) | Spesifikasi lengkap Wave 2 Back-Office ERP (`06`–`11`) dan Wave 3 Public & Platform (`12`–`15`) |
-| [`assets/relaypos-logo-b3-light.svg`](./assets/relaypos-logo-b3-light.svg) | Logo SVG resmi **B3 Ink Squircle Emblem** (Light Header / App Tile) |
-| [`assets/relaypos-logo-b3-dark.svg`](./assets/relaypos-logo-b3-dark.svg) | Logo SVG resmi **B3 Ink Squircle Emblem** (Dark POS / Login / Founder) |
+| [`assets/relaypos-logo-b3-light.svg`](./assets/relaypos-logo-b3-light.svg) | Logo SVG resmi **B3 Opsi 1 Ink + Cobalt** (Light Header / App Tile) |
+| [`assets/relaypos-logo-b3-dark.svg`](./assets/relaypos-logo-b3-dark.svg) | Logo SVG resmi **B3 Opsi 1 Carbon + Cobalt/Sky** (Dark POS / Login / Founder) |
 
 ---
 
@@ -30,7 +33,7 @@
 ### 02 — Login & Co-Owner SSO Access
 ![02 Login & SSO](./fintech_frame02_login_sso.png)
 
-### 03 — Executive Cockpit Dashboard (Light Mode Default)
+### 03 — Executive Cockpit Dashboard (Light Mode Cobalt)
 ![03 Executive Cockpit Dashboard](./fintech_frame03_dashboard.png)
 
 ### 04A — Hybrid POS: Intake Kendaraan (`carwash` + CRM) & Pelunasan Tunai (`struk`)
