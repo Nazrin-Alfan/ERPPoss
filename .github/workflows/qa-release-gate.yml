@@ -2,7 +2,7 @@ name: QA Release Gate & Multi-Stage Verification
 
 on:
   push:
-    branches: [main]
+    branches: [main, chore/uiux-rebrand-plan]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -49,10 +49,10 @@ jobs:
           retention-days: 7
 
   # ===========================================================================
-  # STAGE 2: Vitest Unit, Integration, Double-Entry Ledger & Multi-Tenant RBAC
+  # STAGE 2: Vitest Unit, Contract, Schema Parity & Multi-Tenant RBAC Suite
   # ===========================================================================
   unit-and-integration-suite:
-    name: Vitest Unit & Integration Suite (429+ Tests)
+    name: Vitest Unit, Contract & Integration Suite
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -68,7 +68,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Full Vitest Unit & Contract Suite
+      - name: Run Phase 1.5 AST Contracts, SSR Smoke & DB Schema Parity Gate
+        run: npm run test:contracts
+
+      - name: Run Full Vitest Unit & Integration Suite
         run: npx vitest run
 
   # ===========================================================================
@@ -100,6 +103,12 @@ jobs:
 
       - name: Install Playwright Chromium Browser
         run: npx playwright install --with-deps chromium
+
+      - name: Run Phase 1.5 Playwright Field, Section & Modal DOM Gate (15 Checks)
+        env:
+          USE_DIST_PREVIEW: "true"
+          VITE_BACKEND_PROVIDER: local
+        run: node scripts/qa_phase1_5_field_section_e2e.mjs
 
       - name: Run Tahap 3 Playwright E2E Functional Journeys (9 Checks)
         env:

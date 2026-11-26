@@ -1,5 +1,8 @@
 # QA Project Context
 
+- **Team Maturity:** `growing`
+- **Last Audited:** `2026-11-27` (via `qa-project-bootstrap` on branch `chore/uiux-rebrand-plan`)
+
 ## Product
 
 - **Name:** RelayPOS / Jaya Bersama Enterprise SaaS ERP
@@ -42,11 +45,19 @@
 
 ## Test Stack
 
-### Unit & Integration
-- **Framework:** Vitest v4.1.11
-- **Config Location:** `vite.config.js`
-- **Test Directories:** `src/**/__tests__/`, `tests/`
-- **Current Coverage:** 70 test files, 422 passing tests (100% green)
+### Unit, Contract & Integration
+- **Framework:** Vitest v4.1.11 (`npx vitest run`) + Oxc AST (`vite`)
+- **Config Location:** `vite.config.js`, `package.json` (`test:ast-scope`, `test:contracts`, `test:e2e:fields`, `qa:phase1.5`)
+- **Test Directories:** `src/**/__tests__/`, `tests/`, `scripts/__tests__/`
+- **Current Coverage:** **97 test files, 647 passing tests** (100% green, 0 skipped) — mencakup Phase 1 Backend Shield (`src/hooks/domain/*`, `backendShield.test.js`), 47 AST Page/Modal/Mutation contract tests (`pageFieldContracts.test.js`), 20 SSR Smoke tests across all 18 pages + 5 critical modals (`pageIntegrity.test.jsx`), dan 25 SQL DDL ↔ form column parity tests (`schemaFormParity.test.js`)
+
+### Live Browser E2E, Static & CI Gates
+- **Playwright (Chromium headless `1.64.0`):**
+  - `scripts/qa_phase1_5_field_section_e2e.mjs` (15 checks across 14 Public + Owner routes, zero `waitForTimeout`)
+  - `scripts/qa_tahap3_playwright_e2e.mjs` (9 functional workflow checks)
+  - `scripts/qa_tahap4_a11y_perf_and_rbac_e2e.mjs` (7 WCAG 2.2 AA, Web Vitals & Kasir RBAC checks)
+- **Static AST & Lint:** `scripts/verifyNoUndeclaredVars.js` (hard-fail exit `1` across 72 pages/components/hooks) + `oxlint` (`0` errors)
+- **CI Pipeline:** `.github/workflows/qa-release-gate.yml` (3 stages: Static/Build → Vitest Contracts & Full Suite → 3 Playwright Chromium Suites)
 
 ### Database & Harnesses
 - **SQL Test Harnesses:**
@@ -56,6 +67,11 @@
   - `supabase/tests/pr4_reward_rpc_harness.sql`
   - `supabase/tests/pr6_release_gate_harness.sql`
 - **Runner Scripts:** `scripts/test_pr6_release_gate.sh`
+
+### Detailed References
+- Architecture Audit Report: `docs/QA_ARCHITECTURE_AUDIT.md`
+- Framework Walkthrough: `docs/QA_FRAMEWORK_WALKTHROUGH.md`
+- Master Field, Section, Modal & DB Parity Contract: `docs/PAGE_FIELD_SECTION_CONTRACT.md`
 
 ---
 
@@ -99,23 +115,24 @@ Top modified application files driving Probability scores:
 | **R-08** | **Multi-Tenant Onboarding, Founder Console & License Lockout** | `Founder.jsx`, `SuperAdmin.jsx`, `LicenseExpiredLockout.jsx`, `licenses` | 5 | 3 | **15** | **CRITICAL** | Automate fully + expired license lockout E2E + tenant provisioning isolation |
 | **R-09** | **Executive Dashboard & Multi-Branch Financial Consolidation** | `Dashboard.jsx`, `consolidationService.js` | 3 | 3 | **9** | **MEDIUM** | Automate happy path + cross-branch aggregation accuracy |
 | **R-10** | **Thermal Receipt Formatting & Bluetooth Printer Integration** | `bluetoothPrinter.js`, `receiptHelpers.js` | 2 | 2 | **4** | **LOW** | Unit happy path on formatting helpers; skip hardware E2E |
+| **R-11** | **Phase 3–4 UI/UX Rebranding Field, Modal, Contrast & Print Regression** | `HybridPOSPage.jsx`, `Finance.jsx`, `Admin.jsx`, `Reports.jsx`, 22 Subcomponents, `print-contracts.css` | 5 | 4 | **20** | **CRITICAL** | Enforce 5-layer Phase 1.5 AST/SSR/DB-Parity/Playwright gate after every page rewrite |
 
 ### 3. Risk Heatmap (5×5)
 
 ```text
                     PROBABILITY
-                    Rare(1)   Unlikely(2)  Possible(3)  Likely(4)         Frequent(5)
-                   +----------+-----------+-----------+-----------------+------------------+
-  Catastrophic(5)  |          |           | R-08(15)  | R-03(20)        | R-01(25),R-02(25)|
-                   +----------+-----------+-----------+-----------------+------------------+
-  Major(4)         |          |           | R-06(12)  | R-04,R-05,R-07  |                  |
-I                  +----------+-----------+-----------+-----------------+------------------+
-M  Moderate(3)     |          |           | R-09(9)   |                 |                  |
-P                  +----------+-----------+-----------+-----------------+------------------+
-A  Minor(2)        |          | R-10(4)   |           |                 |                  |
-C                  +----------+-----------+-----------+-----------------+------------------+
-T  Negligible(1)   |          |           |           |                 |                  |
-                   +----------+-----------+-----------+-----------------+------------------+
+                    Rare(1)   Unlikely(2)  Possible(3)  Likely(4)              Frequent(5)
+                   +----------+-----------+-----------+----------------------+------------------+
+  Catastrophic(5)  |          |           | R-08(15)  | R-03(20), R-11(20)   | R-01(25),R-02(25)|
+                   +----------+-----------+-----------+----------------------+------------------+
+  Major(4)         |          |           | R-06(12)  | R-04,R-05,R-07       |                  |
+I                  +----------+-----------+-----------+----------------------+------------------+
+M  Moderate(3)     |          |           | R-09(9)   |                      |                  |
+P                  +----------+-----------+-----------+----------------------+------------------+
+A  Minor(2)        |          | R-10(4)   |           |                      |                  |
+C                  +----------+-----------+-----------+----------------------+------------------+
+T  Negligible(1)   |          |           |           |                      |                  |
+                   +----------+-----------+-----------+----------------------+------------------+
 ```
 
 ### 4. Failure Mode Analysis (All Items Scoring ≥ 10)
@@ -213,6 +230,15 @@ Failure Mode 1: Replay attack or double-spend of customer loyalty stamps (`poin_
   Detection Method:   `pr4_reward_rpc_harness.sql` & `rbacPr4RewardRpc.test.js`
   Current Mitigation: `redeem_customer_reward` row locking + `customer_reward_claims.request_key` idempotency
   Gap:                Live DB execution of PR-4 reward harness assertions
+
+Feature/Component: R-11 Phase 3–4 UI/UX Rebranding Field, Modal, Contrast & Print Regression
+Risk Score: 20 (Impact 5 × Probability 4)
+Failure Mode 1: Silent omission of secondary tabs, `<input>` bindings, or modal triggers during Strangler-Fig JSX rewrite
+  Trigger:            Replacing legacy JSX using visual FigCraft frames (00–15) that only show primary tabs, leaving dead `useState` or unused `import`
+  Blast Radius:       Broken POS Exchange/Carwash intake, missing Admin master tabs, or SQL payload mismatch
+  Detection Method:   `astContractValidator.js` (`pageFieldContracts.test.js`), `pageIntegrity.test.jsx`, `schemaFormParity.test.js`, `qa_phase1_5_field_section_e2e.mjs`
+  Current Mitigation: 5-Layer Phase 1.5 Guard (AST JSX + 22 Subcomponent Contracts + 18-Page SSR + DB Parity + 14-Route Playwright DOM)
+  Gap:                Maintain `companionFiles` & add semantic `data-testid` progressively during Phase 3–4 page migrations
 ```
 
 ### 5. Coverage Gap Analysis Worksheet
@@ -227,8 +253,9 @@ Failure Mode 1: Replay attack or double-spend of customer loyalty stamps (`poin_
 | **R-07** | Staff Payroll, Kasbon & Carwash Crew | CRITICAL (16) | 90%+ / ✅ Covered (`staffHelpers.test.js`) | `fn_get_active_carwash_crew` / ⚠️ Needs Live DB check | Carwash Kanban / ⚠️ Needs E2E | **P1** | `@QA_ERP_Auditor` | Tahap 2 & 3 |
 | **R-08** | Multi-Tenant Onboarding & License Lockout | CRITICAL (15) | 90%+ / ✅ Covered (`licenseIntegration.test.js`) | Tenant isolation / ✅ Covered | Login & Lockout UI / ⚠️ Needs E2E | **P1** | `@QA_ERP_Auditor` | Tahap 3 |
 | **R-06** | CRM Loyalty & Atomic Reward Redemption | HIGH (12) | 80%+ / ✅ Covered (`rbacPr4RewardRpc.test.js`) | `redeem_customer_reward` / ⚠️ Needs Live DB check | CRM page / Spot check | **P1** | `@QA_ERP_Auditor` | Tahap 2 |
-| **R-09** | Executive Dashboard & Consolidation | MEDIUM (9) | 70%+ / ✅ Covered (`consolidationService.test.js`) | Happy path / ✅ Covered | Smoke check | **P2** | `@QA_ERP_Auditor` | Tahap 3 |
-| **R-10** | Thermal Receipt & Bluetooth Printer | LOW (4) | Basic / ✅ Covered (`bluetoothPrinter.test.js`) | None required | Skip (Hardware bound) | **P3** | `@QA_ERP_Auditor` | Deferred |
+| **R-09** | Executive Dashboard & Consolidation | MEDIUM (9) | 70%+ / ✅ Covered (`consolidationService.test.js`) | Happy path / ✅ Covered | Smoke check (`P15-05`, `E2E-03`) | **P2** | `@QA_ERP_Auditor` | Tahap 3 |
+| **R-10** | Thermal Receipt & Bluetooth Printer | LOW (4) | Basic / ✅ Covered (`bluetoothPrinter.test.js`) | Print wrapper SSR (`ThermalReceiptModal`) | Skip (Hardware bound) | **P3** | `@QA_ERP_Auditor` | Deferred |
+| **R-11** | Phase 3–4 UI/UX Rebranding Regression | CRITICAL (20) | 100% / ✅ Covered (47 AST contracts + 20 SSR smoke) | 25 DB column parity + 72 AST scope files | 14 routes / ✅ Covered (`P15-01..P15-15`) | **P0** | `@QA_ERP_Auditor` | Phase 1.5–4 |
 
 ### 6. Reassessment Triggers & Cadence
 - **Post-Incident (within 48 hours):** Re-score affected modules, inspect Supabase Postgres logs, and update the Gap Analysis Worksheet.

@@ -8,7 +8,11 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:ast-scope": "node scripts/verifyNoUndeclaredVars.js",
+    "test:contracts": "vitest run src/pages/__tests__/pageFieldContracts.test.js src/pages/__tests__/pageIntegrity.test.jsx src/services/__tests__/schemaFormParity.test.js scripts/__tests__/verifyNoUndeclaredVars.test.js",
+    "test:e2e:fields": "node scripts/qa_phase1_5_field_section_e2e.mjs",
+    "qa:phase1.5": "npm run test:ast-scope && npm run test:contracts && npm run lint && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.8",
