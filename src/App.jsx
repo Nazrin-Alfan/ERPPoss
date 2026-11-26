@@ -285,7 +285,7 @@ export const AppContent = () => {
           </>
         )}
 
-        <div className="relative z-10 flex-1 min-h-0">
+        <div className={`relative z-10 flex-1 min-h-0 ${showSidebar ? 'pb-20 md:pb-0' : ''}`}>
           <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <Routes>

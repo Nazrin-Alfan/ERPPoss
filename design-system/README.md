@@ -1,6 +1,6 @@
 # RelayPOS — Modern Fintech UI/UX Design System (v5.0)
 
-> **Status:** Complete Wave 1 + Wave 2 + Wave 3 (`17/17 Frames` — Audited `APPROVED` by `@UIUX_Design_Auditor`)
+> **Status:** Complete Wave 1 + Wave 2 + Wave 3 + Responsive Mobile & Tablet (`24/24 Frames: 17 Desktop + 7 Responsive` — Audited `APPROVED` by `@UIUX_Design_Auditor`)
 > **Palet Disetujui (v5.0):**
 > - **Light Mode (Back-Office, Dashboard, Kanban, Login, Landing, SOP):** Cool Alabaster `#F4F6FA`, Floating `#FFFFFF` Cards, Deep Slate Ink `#0F172A`, **Fintech Cobalt Blue `#2563EB`** (`#FFFFFF` text/icons on primary CTA & active pills).
 > - **Dark Mode (POS Kasir & Founder Console — Opsi D1):** **Pure Carbon Obsidian `#09090B`**, Surface `#121215`, Subsurface `#1C1C21`, Crisp Cobalt `#2563EB` CTA, Focus `#3B82F6`, `#FFFFFF` Rupiah/KPI figures.
@@ -13,10 +13,11 @@
 
 | Berkas | Deskripsi |
 | :--- | :--- |
-| [`RelayPOS-Rebrand.figcraft`](./RelayPOS-Rebrand.figcraft) | File sumber desain **FigCraft** lengkap (Page 1 & Page 2: **17 layar Fintech Cobalt v5.0**) |
+| [`RelayPOS-Rebrand.figcraft`](./RelayPOS-Rebrand.figcraft) | File sumber desain **FigCraft** lengkap (Page 1, Page 2: **17 layar Desktop**, Page 3: **7 layar Responsive Mobile & Tablet**) |
 | [`MASTER.md`](./MASTER.md) | Spesifikasi token 3-lapis, blueprint matematis Logo B3 Opsi 1, ikon vektor, tipografi & 4 *UI States* |
 | [`pages/pos.md`](./pages/pos.md) | Override spesifikasi khusus POS Kasir Opsi D1 (`04A` & `04B`) dan Antrean Carwash (`05`) |
 | [`pages/backoffice-and-platform.md`](./pages/backoffice-and-platform.md) | Spesifikasi lengkap Wave 2 Back-Office ERP (`06`–`11`) dan Wave 3 Public & Platform (`12`–`15`) |
+| [`pages/responsive-mobile-tablet.md`](./pages/responsive-mobile-tablet.md) | Kontrak breakpoint, Mobile Bottom Nav Bar (`64px`), POS Two-Step Sheet, Table-to-Card & specs Tablet (`M1`–`T2`) |
 | [`assets/relaypos-logo-b3-light.svg`](./assets/relaypos-logo-b3-light.svg) | Logo SVG resmi **B3 Opsi 1 Ink + Cobalt** (Light Header / App Tile) |
 | [`assets/relaypos-logo-b3-dark.svg`](./assets/relaypos-logo-b3-dark.svg) | Logo SVG resmi **B3 Opsi 1 Carbon + Cobalt/Sky** (Dark POS / Login / Founder) |
 
@@ -82,6 +83,31 @@
 
 ### 15 — Console Founder & SuperAdmin Platform (`/founder`)
 ![15 Founder & SuperAdmin Console](./fintech_frame15_founder_console.png)
+
+---
+
+## Galeri Pratinjau Responsive Mobile & Tablet (`M1`–`T2`)
+
+### M1 — Mobile Shell & Executive Dashboard (`390×844` Light)
+![M1 Mobile Dashboard](./responsive_m1_dashboard_mobile.png)
+
+### M2A — Hybrid POS Mobile: Katalog 2-Kolom & Sticky Cart Bar (`390×844` Carbon D1)
+![M2A Mobile POS Catalog](./responsive_m2a_pos_catalog_mobile.png)
+
+### M2B — Hybrid POS Mobile: Bottom-Sheet Cart & Split Payment Drawer (`390×844` Carbon D1)
+![M2B Mobile POS Cart Drawer](./responsive_m2b_pos_cart_drawer_mobile.png)
+
+### M3 — Carwash Queue Mobile Kru Lapangan (`390×844` Light)
+![M3 Mobile Queue](./responsive_m3_queue_mobile.png)
+
+### M4 — Finance & Inbox Mutasi Bank Mandiri Mobile (`390×844` Light)
+![M4 Mobile Finance](./responsive_m4_finance_mobile.png)
+
+### T1 — Hybrid POS Tablet 10" Landscape (`1024×768` Carbon D1, Split 58:42)
+![T1 Tablet POS 1024](./responsive_t1_pos_tablet_1024.png)
+
+### T2 — Executive Cockpit & Kanban Tablet Portrait (`768×1024` Light)
+![T2 Tablet BackOffice 768](./responsive_t2_backoffice_tablet_768.png)
 
 ---
 

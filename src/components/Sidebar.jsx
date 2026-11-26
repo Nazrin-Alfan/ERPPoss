@@ -41,6 +41,30 @@ const ENABLE_FOUNDER_CONSOLE =
   import.meta.env?.VITE_ENABLE_FOUNDER_CONSOLE === 'true' ||
   import.meta.env?.MODE === 'test'
 
+const MOBILE_BOTTOM_PRIORITY = [
+  '/dashboard',
+  '/pos',
+  '/queue',
+  '/finance',
+  '/gudang',
+  '/crm',
+  '/reports',
+  '/karyawan',
+  '/admin'
+]
+
+const MOBILE_BOTTOM_LABELS = {
+  '/dashboard': 'Home',
+  '/pos': 'POS',
+  '/queue': 'Antrean',
+  '/finance': 'Kas',
+  '/gudang': 'Gudang',
+  '/crm': 'CRM',
+  '/reports': 'Laporan',
+  '/karyawan': 'Staf',
+  '/admin': 'Admin'
+}
+
 const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const location = useLocation()
   const { profile, activeTenant, logout, licenseStatus } = useAuth()
@@ -196,6 +220,12 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const activeClass = 'bg-primary text-primary-foreground font-bold shadow-xs'
   const inactiveClass = 'text-muted hover:bg-subsurface hover:text-foreground border border-transparent'
 
+  const visibleNavItems = navSections.flatMap((section) => section.items.filter(isItemVisible))
+  const mobilePrimaryTabs = MOBILE_BOTTOM_PRIORITY
+    .map((priorityPath) => visibleNavItems.find((item) => item.path === priorityPath))
+    .filter(Boolean)
+    .slice(0, 4)
+
   return (
     <>
       {/* Mobile Top Bar */}
@@ -238,7 +268,12 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
         </div>
 
         {showMobileNav && (
-          <div className="absolute top-16 right-4 w-72 bg-surface border border-border rounded-2xl p-3 shadow-2xl z-40 animate-pop-in flex flex-col gap-2 max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain pb-6">
+          <>
+            <div
+              className="md:hidden fixed inset-0 top-14 bottom-16 bg-black/40 z-30"
+              onClick={() => setShowMobileNav(false)}
+            />
+            <div className="fixed top-14 right-3 w-72 bg-surface border border-border rounded-2xl p-3 shadow-2xl z-40 animate-pop-in flex flex-col gap-2 max-h-[calc(100dvh-8.5rem)] overflow-y-auto overscroll-contain pb-6">
             <div className="p-2.5 rounded-xl bg-subsurface border border-border flex items-center justify-between mb-1">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center text-muted shrink-0">
@@ -345,9 +380,70 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
               <LogOut size={16} strokeWidth={1.75} />
               <span>Keluar Aplikasi</span>
             </button>
-          </div>
+            </div>
+          </>
         )}
       </header>
+
+      {/* Mobile Bottom Navigation Bar (< 768px, RBAC-aware 4 priority routes + Menu trigger) */}
+      <nav
+        aria-label="Navigasi Mobile"
+        data-testid="mobile-bottom-nav"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-30 h-16 bg-surface/95 backdrop-blur-md border-t border-border px-2 flex items-center justify-around"
+      >
+        {mobilePrimaryTabs.map((item) => {
+          const Icon = item.icon
+          const isActive = location.pathname === item.path
+          const shortLabel = MOBILE_BOTTOM_LABELS[item.path] || item.name
+
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              onClick={() => setShowMobileNav(false)}
+              className="min-w-[56px] min-h-[44px] flex flex-col items-center justify-center gap-0.5 rounded-xl transition-all active:scale-[0.96]"
+            >
+              <span
+                className={`w-10 h-6 rounded-full flex items-center justify-center transition-colors ${
+                  isActive ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted'
+                }`}
+              >
+                <Icon size={17} strokeWidth={1.75} />
+              </span>
+              <span
+                className={`text-[10px] leading-tight ${
+                  isActive ? 'text-primary font-bold' : 'text-muted font-medium'
+                }`}
+              >
+                {shortLabel}
+              </span>
+            </Link>
+          )
+        })}
+
+        <button
+          type="button"
+          data-testid="mobile-bottom-nav-menu"
+          onClick={() => setShowMobileNav((prev) => !prev)}
+          aria-label="Buka Menu Navigasi"
+          className="min-w-[56px] min-h-[44px] flex flex-col items-center justify-center gap-0.5 rounded-xl transition-all active:scale-[0.96] cursor-pointer"
+        >
+          <span
+            className={`w-10 h-6 rounded-full flex items-center justify-center transition-colors ${
+              showMobileNav ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted'
+            }`}
+          >
+            {showMobileNav ? <X size={17} strokeWidth={1.75} /> : <Menu size={17} strokeWidth={1.75} />}
+          </span>
+          <span
+            className={`text-[10px] leading-tight ${
+              showMobileNav ? 'text-primary font-bold' : 'text-muted font-medium'
+            }`}
+          >
+            Menu
+          </span>
+        </button>
+      </nav>
 
       {/* Desktop & Tablet Sidebar (240px Expanded / 72px Vector Icon-Rail) */}
       <aside
