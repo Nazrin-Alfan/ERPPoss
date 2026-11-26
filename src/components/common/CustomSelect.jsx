@@ -115,82 +115,81 @@ export default function CustomSelect({
     setSearch('')
   }
 
-  // Color variants mapping (VRS_2026 Cyan Theme)
+  // Color variants mapping (RelayPOS v5.0 Dual-Mode Cobalt & Semantic Accents)
   const variantStyles = {
     emerald: {
-      borderActive: 'border-[#00ffff]',
-      activeItem: 'bg-[#00ffff]/15 text-[#00ffff] font-bold',
-      checkColor: 'text-[#00ffff]',
-      badge: 'bg-[#00ffff]/10 text-[#00ffff] border-[#00ffff]/20',
-      arrowColor: 'text-[#00ffff]'
+      borderActive: 'border-success ring-2 ring-success/20',
+      activeItem: 'bg-success-bg text-success font-bold',
+      checkColor: 'text-success',
+      badge: 'bg-success-bg text-success border-success/25',
+      arrowColor: 'text-success'
     },
     cyan: {
-      borderActive: 'border-[#00ffff]',
-      activeItem: 'bg-[#00ffff]/15 text-[#00ffff] font-bold',
-      checkColor: 'text-[#00ffff]',
-      badge: 'bg-[#00ffff]/10 text-[#00ffff] border-[#00ffff]/20',
-      arrowColor: 'text-[#00ffff]'
+      borderActive: 'border-ring ring-2 ring-ring/20',
+      activeItem: 'bg-primary-soft text-primary-soft-foreground font-bold',
+      checkColor: 'text-primary',
+      badge: 'bg-primary-soft text-primary-soft-foreground border-primary/25',
+      arrowColor: 'text-primary'
     },
     blue: {
-      borderActive: 'border-[#00ffff]',
-      activeItem: 'bg-[#00ffff]/15 text-[#00ffff] font-bold',
-      checkColor: 'text-[#00ffff]',
-      badge: 'bg-[#00ffff]/10 text-[#00ffff] border-[#00ffff]/20',
-      arrowColor: 'text-[#00ffff]'
+      borderActive: 'border-ring ring-2 ring-ring/20',
+      activeItem: 'bg-primary-soft text-primary-soft-foreground font-bold',
+      checkColor: 'text-primary',
+      badge: 'bg-primary-soft text-primary-soft-foreground border-primary/25',
+      arrowColor: 'text-primary'
     },
     rose: {
-      borderActive: 'border-[#ff5102]',
-      activeItem: 'bg-[#ff5102]/15 text-[#ff5102] font-bold',
-      checkColor: 'text-[#ff5102]',
-      badge: 'bg-[#ff5102]/10 text-[#ff5102] border-[#ff5102]/20',
-      arrowColor: 'text-[#ff5102]'
+      borderActive: 'border-destructive ring-2 ring-destructive/20',
+      activeItem: 'bg-destructive-bg text-destructive font-bold',
+      checkColor: 'text-destructive',
+      badge: 'bg-destructive-bg text-destructive border-destructive/25',
+      arrowColor: 'text-destructive'
     },
     amber: {
-      borderActive: 'border-[#ffc71f]',
-      activeItem: 'bg-[#ffc71f]/15 text-[#ffc71f] font-bold',
-      checkColor: 'text-[#ffc71f]',
-      badge: 'bg-[#ffc71f]/10 text-[#ffc71f] border-[#ffc71f]/20',
-      arrowColor: 'text-[#ffc71f]'
+      borderActive: 'border-warning ring-2 ring-warning/20',
+      activeItem: 'bg-warning-bg text-warning font-bold',
+      checkColor: 'text-warning',
+      badge: 'bg-warning-bg text-warning border-warning/25',
+      arrowColor: 'text-warning'
     },
     purple: {
-      borderActive: 'border-[#f57733]',
-      activeItem: 'bg-[#f57733]/15 text-[#f57733] font-bold',
-      checkColor: 'text-[#f57733]',
-      badge: 'bg-[#f57733]/10 text-[#f57733] border-[#f57733]/20',
-      arrowColor: 'text-[#f57733]'
+      borderActive: 'border-ring ring-2 ring-ring/20',
+      activeItem: 'bg-primary-soft text-primary-soft-foreground font-bold',
+      checkColor: 'text-primary',
+      badge: 'bg-primary-soft text-primary-soft-foreground border-primary/25',
+      arrowColor: 'text-primary'
     },
     slate: {
-      borderActive: 'border-[#3f414a]',
-      activeItem: 'bg-[#1b1b1d] text-white font-bold',
-      checkColor: 'text-white',
-      badge: 'bg-[#1b1b1d] text-[#bbcbb2] border-[#26272d]',
-      arrowColor: 'text-[#bbcbb2]'
+      borderActive: 'border-border-hover',
+      activeItem: 'bg-subsurface text-foreground font-bold',
+      checkColor: 'text-foreground',
+      badge: 'bg-subsurface text-muted border-border',
+      arrowColor: 'text-muted'
     }
   }
 
-  const currentVariant = variantStyles[variant] || variantStyles.cyan
+  const currentVariant = variantStyles[variant] || variantStyles.blue
 
-  // Sizing styles mapping (VRS_2026 compact radius 0.25rem)
   const sizeStyles = {
-    xs: 'py-1 px-2.5 text-[11px] rounded-sm',
-    sm: 'py-1.5 px-3 text-xs rounded-sm',
-    md: 'py-2 px-3 text-xs md:text-sm rounded-sm',
-    lg: 'py-2.5 px-3.5 text-sm rounded-sm'
+    xs: 'min-h-[34px] py-1 px-2.5 text-[11px] rounded-lg',
+    sm: 'min-h-[38px] py-1.5 px-3 text-xs rounded-xl',
+    md: 'min-h-[44px] py-2 px-3.5 text-sm rounded-xl',
+    lg: 'min-h-[48px] py-2.5 px-4 text-base rounded-full'
   }
 
   const iconSizes = {
     xs: 12,
-    sm: 13,
+    sm: 14,
     md: 15,
     lg: 16
   }
 
-  const chevronSize = iconSizes[size] || 13
+  const chevronSize = iconSizes[size] || 14
 
   return (
     <div className={`relative inline-block text-left ${className}`} ref={containerRef} onKeyDown={handleKeyDown}>
       {label && (
-        <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
+        <label className="block text-[11px] font-semibold text-muted uppercase tracking-wider mb-1.5">
           {label}
         </label>
       )}
@@ -200,12 +199,12 @@ export default function CustomSelect({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full bg-[#1b1b1d] border text-left flex items-center justify-between gap-2 transition-all outline-none cursor-pointer select-none font-semibold ${
+        className={`w-full bg-subsurface border text-left flex items-center justify-between gap-2 transition-all outline-none cursor-pointer select-none font-semibold ${
           sizeStyles[size] || sizeStyles.sm
         } ${
           isOpen
             ? currentVariant.borderActive
-            : 'border-[#26272d] hover:border-[#3f414a] hover:bg-[#242428]'
+            : 'border-border hover:border-border-hover hover:bg-surface'
         } ${
           disabled ? 'opacity-50 cursor-not-allowed' : ''
         }`}
@@ -213,11 +212,11 @@ export default function CustomSelect({
         <div className="flex items-center gap-2 truncate">
           {icon && <span className="shrink-0">{icon}</span>}
           {selectedOption?.icon && <span className="shrink-0">{selectedOption.icon}</span>}
-          <span className={`truncate ${selectedOption ? 'text-white' : 'text-[#6b7367] font-normal'}`}>
+          <span className={`truncate ${selectedOption ? 'text-foreground' : 'text-muted-dark font-normal'}`}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
           {selectedOption?.badge && (
-            <span className={`text-[10px] px-1.5 py-0.2 rounded-sm font-mono font-bold shrink-0 border ${currentVariant.badge}`}>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold shrink-0 border ${currentVariant.badge}`}>
               {selectedOption.badge}
             </span>
           )}
@@ -226,7 +225,7 @@ export default function CustomSelect({
         <ChevronDown
           size={chevronSize}
           className={`shrink-0 transition-transform duration-200 ${currentVariant.arrowColor} ${
-            isOpen ? 'rotate-180' : 'text-[#6b7367]'
+            isOpen ? 'rotate-180' : 'text-muted-dark'
           }`}
         />
       </button>
@@ -234,39 +233,37 @@ export default function CustomSelect({
       {/* Custom Floating Popover Menu */}
       {isOpen && (
         <div
-          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} top-full mt-1.5 z-[100] min-w-[180px] max-w-xs w-max bg-[#0f0f0f] border border-[#26272d] rounded-md shadow-2xl p-1.5 space-y-1 backdrop-blur-xl animate-pop-in ${menuClassName}`}
+          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} top-full mt-1.5 z-[100] min-w-[180px] max-w-xs w-max bg-surface border border-border rounded-xl shadow-2xl p-1.5 space-y-1 backdrop-blur-xl animate-pop-in ${menuClassName}`}
           style={{ minWidth: '100%' }}
         >
-          {/* Optional Search Box */}
           {searchable && (
-            <div className="p-1 pb-1.5 border-b border-[#26272d]">
+            <div className="p-1 pb-1.5 border-b border-border">
               <div className="relative">
-                <Search size={12} className="absolute left-2.5 top-2 text-[#6b7367]" />
+                <Search size={13} className="absolute left-2.5 top-2.5 text-muted-dark" />
                 <input
                   ref={searchInputRef}
                   type="text"
                   placeholder={searchPlaceholder}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-[#1b1b1d] border border-[#26272d] rounded-sm pl-7 pr-6 py-1 text-xs text-white placeholder-[#6b7367] focus:outline-none focus:border-[#00ffff] font-normal"
+                  className="w-full bg-subsurface border border-border rounded-lg pl-8 pr-7 py-1.5 text-xs text-foreground placeholder:text-muted-dark focus:outline-none focus:border-ring font-normal"
                 />
                 {search && (
                   <button
                     type="button"
                     onClick={() => setSearch('')}
-                    className="absolute right-2 top-1.5 text-[#6b7367] hover:text-white"
+                    className="absolute right-2 top-2 text-muted-dark hover:text-foreground"
                   >
-                    <X size={11} />
+                    <X size={12} />
                   </button>
                 )}
               </div>
             </div>
           )}
 
-          {/* Options List */}
           <div className="max-h-60 overflow-y-auto space-y-0.5 pr-0.5 custom-dropdown-scrollbar">
             {filteredOptions.length === 0 ? (
-              <div className="p-3 text-center text-xs text-[#6b7367] font-normal">
+              <div className="p-3 text-center text-xs text-muted-dark font-normal">
                 Tidak ada pilihan ditemukan
               </div>
             ) : (
@@ -278,10 +275,10 @@ export default function CustomSelect({
                     type="button"
                     disabled={opt.disabled}
                     onClick={() => handleSelect(opt.value)}
-                    className={`w-full text-left px-2.5 py-1.5 rounded-sm text-xs flex items-center justify-between gap-2 transition-all cursor-pointer select-none ${
+                    className={`w-full text-left px-2.5 py-2 rounded-lg text-xs flex items-center justify-between gap-2 transition-all cursor-pointer select-none ${
                       isSelected
                         ? currentVariant.activeItem
-                        : 'text-[#bbcbb2] hover:bg-[#1b1b1d] hover:text-white'
+                        : 'text-muted hover:bg-subsurface hover:text-foreground'
                     } ${opt.disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
                   >
                     <div className="flex items-center gap-2 truncate">
@@ -289,7 +286,7 @@ export default function CustomSelect({
                       <div>
                         <span className="font-semibold block truncate">{opt.label}</span>
                         {opt.subtitle && (
-                          <span className="text-[10px] text-[#6b7367] block truncate font-normal">
+                          <span className="text-[10px] text-muted-dark block truncate font-normal">
                             {opt.subtitle}
                           </span>
                         )}
@@ -298,7 +295,7 @@ export default function CustomSelect({
 
                     <div className="flex items-center gap-1.5 shrink-0">
                       {opt.badge && (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded-sm font-mono font-bold bg-[#1b1b1d] text-[#bbcbb2] border border-[#26272d]">
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full font-mono font-bold bg-subsurface text-muted border border-border">
                           {opt.badge}
                         </span>
                       )}

@@ -177,7 +177,7 @@ describe('Phase 1.5: AST Page, Section, Field & Subcomponent Regression Contract
     it('covers every primary <Route path="..."> in src/App.jsx inside PAGE_FIELD_CONTRACTS', () => {
       const appSrc = fs.readFileSync(path.join(ROOT, 'src/App.jsx'), 'utf-8')
       const routePaths = Array.from(appSrc.matchAll(/<Route\s+path="([^"]+)"/g)).map((m) => m[1])
-      const excludedRedirectAliases = new Set(['/', '/manual', '/inventory', '*'])
+      const excludedRedirectAliases = new Set(['/', '/manual', '/inventory', '/ui-kit', '*'])
       const primaryRoutes = routePaths.filter((p) => !excludedRedirectAliases.has(p))
       const contractedRoutes = new Set(PAGE_FIELD_CONTRACTS.map((c) => c.route))
 

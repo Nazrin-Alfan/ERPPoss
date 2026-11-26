@@ -1,15 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useAppTheme } from '../context/ThemeContext'
 import TenantSwitcher from './TenantSwitcher'
-import { 
-  LayoutDashboard, 
-  ShoppingCart, 
-  Car, 
-  DollarSign, 
-  Settings, 
+import RelayLogo from './brand/RelayLogo'
+import {
+  LayoutDashboard,
+  ShoppingCart,
+  Car,
+  DollarSign,
+  Settings,
   ShieldAlert,
-  LogOut, 
+  LogOut,
   User,
   ChevronLeft,
   ChevronRight,
@@ -25,7 +27,9 @@ import {
   Crown,
   KeyRound,
   MessageSquarePlus,
-  BookOpen
+  BookOpen,
+  Sun,
+  Moon
 } from 'lucide-react'
 
 import { getTenantFeatures } from '../utils/businessCapabilities'
@@ -40,6 +44,9 @@ const ENABLE_FOUNDER_CONSOLE =
 const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const location = useLocation()
   const { profile, activeTenant, logout, licenseStatus } = useAuth()
+  const themeCtx = useAppTheme() || {}
+  const resolvedMode = themeCtx.resolvedMode || 'dark'
+  const toggleSurfaceMode = themeCtx.toggleSurfaceMode || (() => {})
   const [showMobileNav, setShowMobileNav] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
@@ -49,7 +56,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const currentBusinessType = activeTenant?.business_type || 'HYBRID'
   const features = getTenantFeatures(currentBusinessType)
 
-  // Close profile dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
@@ -81,11 +87,11 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   }
 
   const getRoleBadgeStyle = (role) => {
-    if (role === ROLES.OWNER) return 'bg-[#ffc71f]/15 text-[#ffc71f] border border-[#ffc71f]/30'
+    if (role === ROLES.OWNER) return 'bg-warning-bg text-warning border border-warning/30'
     if (role === ROLES.ADMIN_PUSAT || role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) {
-      return 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30'
+      return 'bg-primary-soft text-primary-soft-foreground border border-primary/30'
     }
-    return 'bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/20'
+    return 'bg-subsurface text-muted border border-border'
   }
   const currentRoleLabel = getRoleDisplayLabel(currentRole)
 
@@ -187,77 +193,81 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     }
   ]
 
-  const activeClass = 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-xs'
-  const inactiveClass = 'text-[#bbcbb2] hover:bg-[#1b1b1d] hover:text-white border border-transparent'
+  const activeClass = 'bg-primary text-primary-foreground font-bold shadow-xs'
+  const inactiveClass = 'text-muted hover:bg-subsurface hover:text-foreground border border-transparent'
 
   return (
     <>
       {/* Mobile Top Bar */}
-      <header className="md:hidden sticky top-0 left-0 right-0 h-14 bg-[#000000] border-b border-[#26272d] flex items-center justify-between px-4 z-30 animate-fade-in">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-md bg-[#1b1b1d] border border-[#26272d] flex items-center justify-center shrink-0">
-            <span className="font-bold text-sm text-[#00ffff]">R</span>
-          </div>
+      <header className="md:hidden sticky top-0 left-0 right-0 h-14 bg-surface border-b border-border flex items-center justify-between px-4 z-30 animate-fade-in">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <RelayLogo size="sm" />
           <div className="min-w-0">
-            <h1 className="font-bold text-xs tracking-wider text-white truncate uppercase">
+            <h1 className="font-bold text-xs tracking-wider text-foreground truncate uppercase">
               RELAYPOS
             </h1>
-            <p className="text-[9px] text-[#bbcbb2] font-semibold uppercase tracking-wider truncate max-w-[150px]">
+            <p className="text-[9px] text-muted font-semibold uppercase tracking-wider truncate max-w-[150px]">
               {activeTenant?.nama || 'Cloud POS & ERP'}
             </p>
           </div>
         </div>
 
-        {/* Mobile Header Buttons */}
         <div className="flex items-center gap-2">
-          <button 
+          <button
+            type="button"
+            onClick={toggleSurfaceMode}
+            className="w-10 h-10 rounded-full bg-subsurface border border-border text-muted hover:text-foreground flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+            title={resolvedMode === 'dark' ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'}
+            aria-label="Ubah mode tema"
+          >
+            {resolvedMode === 'dark' ? <Sun size={16} strokeWidth={1.75} /> : <Moon size={16} strokeWidth={1.75} />}
+          </button>
+
+          <button
+            type="button"
             onClick={() => setShowMobileNav(!showMobileNav)}
-            className={`p-2 rounded-lg border transition-all active:scale-95 flex items-center justify-center cursor-pointer ${
-              showMobileNav 
-                ? 'bg-[#00ffff]/20 border-[#00ffff] text-[#00ffff]' 
-                : 'bg-[#1b1b1d] border-[#26272d] text-[#bbcbb2] hover:text-white'
+            className={`w-10 h-10 rounded-full border transition-all active:scale-95 flex items-center justify-center cursor-pointer ${
+              showMobileNav
+                ? 'bg-primary border-transparent text-primary-foreground'
+                : 'bg-subsurface border-border text-muted hover:text-foreground'
             }`}
             title="Menu Navigasi"
           >
-            {showMobileNav ? <X size={16} strokeWidth={1.75} /> : <Menu size={16} strokeWidth={1.75} />}
+            {showMobileNav ? <X size={18} strokeWidth={1.75} /> : <Menu size={18} strokeWidth={1.75} />}
           </button>
         </div>
 
-        {/* Mobile Nav Dropdown Popover */}
         {showMobileNav && (
-          <div className="absolute top-16 right-4 w-64 bg-[#121215] border border-[#26272d] rounded-2xl p-3 shadow-2xl z-40 animate-pop-in flex flex-col gap-2 max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain pb-6">
-            {/* Mobile User Profile Header */}
-            <div className="p-2.5 rounded-xl bg-[#18181c] border border-[#26272d] flex items-center justify-between mb-1">
+          <div className="absolute top-16 right-4 w-72 bg-surface border border-border rounded-2xl p-3 shadow-2xl z-40 animate-pop-in flex flex-col gap-2 max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain pb-6">
+            <div className="p-2.5 rounded-xl bg-subsurface border border-border flex items-center justify-between mb-1">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-[#26272d] border border-[#3f414a] flex items-center justify-center text-[#bbcbb2] shrink-0">
+                <div className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center text-muted shrink-0">
                   <User size={15} />
                 </div>
                 <div className="overflow-hidden min-w-0">
-                  <p className="font-semibold text-xs truncate text-white">{profile?.nama || 'Pengguna'}</p>
-                  <span className={`text-[8px] px-2 py-0.5 rounded font-bold uppercase inline-block mt-0.5 ${getRoleBadgeStyle(currentRole)}`}>
+                  <p className="font-semibold text-xs truncate text-foreground">{profile?.nama || 'Pengguna'}</p>
+                  <span className={`text-[8px] px-2 py-0.5 rounded-full font-bold uppercase inline-block mt-0.5 ${getRoleBadgeStyle(currentRole)}`}>
                     {currentRoleLabel}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Mobile Tenant Switcher */}
             <div className="mb-2">
               <TenantSwitcher isCollapsed={false} />
             </div>
 
-            {/* Mobile Quick Bridge ke Console Founder (Khusus Super Admin) */}
             {(currentRole === ROLES.SUPER_ADMIN || profile?.is_super_admin) && ENABLE_FOUNDER_CONSOLE && (
               <Link
                 to="/founder"
                 onClick={() => setShowMobileNav(false)}
-                className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#ffc71f]/15 hover:bg-[#ffc71f]/25 border border-[#ffc71f]/40 text-xs font-bold text-[#ffc71f] transition-all active:scale-[0.98]"
+                className="flex items-center justify-between min-h-[44px] px-3.5 py-2 rounded-full bg-warning-bg hover:opacity-90 border border-warning/35 text-xs font-bold text-warning transition-all active:scale-[0.98]"
               >
                 <span className="flex items-center gap-2">
-                  <Crown size={14} strokeWidth={2} />
+                  <Crown size={15} strokeWidth={2} />
                   <span>Console Founder</span>
                 </span>
-                <ChevronRight size={13} />
+                <ChevronRight size={14} />
               </Link>
             )}
 
@@ -267,7 +277,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
               return (
                 <div key={section.title || sIdx} className="space-y-1">
-                  <p className="text-[9px] text-[#6b7367] font-bold uppercase tracking-wider px-2 pt-1">{section.title}</p>
+                  <p className="text-[9px] text-muted-dark font-bold uppercase tracking-wider px-2.5 pt-1">{section.title}</p>
                   {visibleItems.map((item) => {
                     const Icon = item.icon
                     const isActive = location.pathname === item.path
@@ -277,27 +287,29 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                         key={item.name}
                         to={item.path}
                         onClick={() => setShowMobileNav(false)}
-                        className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs transition-all active:scale-[0.98] ${
-                          isActive 
-                            ? 'bg-[#00ffff] text-[#0f0f0f] font-bold' 
-                            : 'text-[#bbcbb2] hover:bg-[#1b1b1d] hover:text-white'
+                        className={`flex items-center justify-between min-h-[44px] px-3.5 py-2 rounded-full text-xs transition-all active:scale-[0.98] ${
+                          isActive ? activeClass : inactiveClass
                         }`}
                       >
-                        <Icon size={15} />
-                        <span>{item.name}</span>
+                        <span className="flex items-center gap-2.5">
+                          <Icon size={17} strokeWidth={1.75} />
+                          <span>{item.name}</span>
+                        </span>
+                        {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#93C5FD] shrink-0" />}
                       </Link>
                     )
                   })}
                 </div>
               )
             })}
-            <div className="h-[1px] w-full bg-[#26272d] my-1"></div>
+
+            <div className="h-[1px] w-full bg-border my-1" />
             <Link
               to="/panduan"
               onClick={() => setShowMobileNav(false)}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs text-cyan-300 hover:bg-[#1b1b1d] hover:text-cyan-200 transition-colors w-full text-left font-semibold"
+              className="flex items-center gap-2.5 min-h-[44px] px-3.5 py-2 rounded-full text-xs text-primary-soft-foreground bg-primary-soft hover:opacity-90 transition-colors w-full text-left font-semibold"
             >
-              <BookOpen size={15} />
+              <BookOpen size={16} strokeWidth={1.75} />
               <span>Panduan Pengguna</span>
             </Link>
             <button
@@ -306,9 +318,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                 setShowMobileNav(false)
                 setShowFeedbackModal(true)
               }}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs text-amber-300 hover:bg-[#1b1b1d] hover:text-amber-200 transition-colors w-full text-left font-semibold cursor-pointer"
+              className="flex items-center gap-2.5 min-h-[44px] px-3.5 py-2 rounded-full text-xs text-warning bg-warning-bg hover:opacity-90 transition-colors w-full text-left font-semibold cursor-pointer"
             >
-              <MessageSquarePlus size={15} className="text-amber-400" />
+              <MessageSquarePlus size={16} strokeWidth={1.75} />
               <span>Beri Masukan Beta</span>
             </button>
             <button
@@ -317,186 +329,186 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                 setShowMobileNav(false)
                 setShowChangePasswordModal(true)
               }}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs text-slate-300 hover:bg-[#1b1b1d] hover:text-white transition-colors w-full text-left font-semibold cursor-pointer"
+              className="flex items-center gap-2.5 min-h-[44px] px-3.5 py-2 rounded-full text-xs text-foreground hover:bg-subsurface transition-colors w-full text-left font-semibold cursor-pointer"
             >
-              <KeyRound size={15} className="text-[#00ffff]" />
+              <KeyRound size={16} strokeWidth={1.75} className="text-primary" />
               <span>Ganti Kata Sandi</span>
             </button>
             <button
+              type="button"
               onClick={() => {
                 setShowMobileNav(false)
                 logout()
               }}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs text-[#ff5102] hover:bg-[#ff5102]/10 transition-colors w-full text-left font-bold cursor-pointer"
+              className="flex items-center gap-2.5 min-h-[44px] px-3.5 py-2 rounded-full text-xs text-destructive hover:bg-destructive-bg transition-colors w-full text-left font-bold cursor-pointer"
             >
-              <LogOut size={15} />
+              <LogOut size={16} strokeWidth={1.75} />
               <span>Keluar Aplikasi</span>
             </button>
           </div>
         )}
-
       </header>
 
-      {/* Sidebar untuk Desktop & Tablet */}
-      <aside className={`hidden md:flex flex-col ${isCollapsed ? 'w-[72px]' : 'w-64'} h-full shrink-0 bg-[#000000] border-r border-[#26272d] text-white z-30 transition-[width] duration-200 ease-in-out`}>
+      {/* Desktop & Tablet Sidebar (240px Expanded / 72px Vector Icon-Rail) */}
+      <aside
+        className={`hidden md:flex flex-col ${
+          isCollapsed ? 'w-[72px]' : 'w-60'
+        } h-full shrink-0 bg-surface border-r border-border text-foreground z-30 transition-[width] duration-200 ease-in-out`}
+      >
         {/* Logo/Header */}
-        <div className={`p-3.5 border-b border-[#26272d] flex items-center ${isCollapsed ? 'justify-center' : 'justify-between gap-3'} relative shrink-0`}>
-          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2.5'}`}>
-            <div className="w-8 h-8 rounded-md bg-[#1b1b1d] border border-[#26272d] flex items-center justify-center shrink-0 shadow-xs">
-              <span className="font-bold text-sm text-[#00ffff]">R</span>
-            </div>
+        <div
+          className={`p-3.5 border-b border-border flex items-center ${
+            isCollapsed ? 'justify-center' : 'justify-between gap-2.5'
+          } relative shrink-0`}
+        >
+          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2.5 min-w-0'}`}>
+            <RelayLogo size={isCollapsed ? 'sm' : 'md'} />
             {!isCollapsed && (
               <div className="min-w-0 animate-fade-in">
-                <h1 className="font-bold text-xs tracking-wider text-white truncate uppercase">
+                <h1 className="font-extrabold text-xs tracking-wider text-foreground truncate uppercase">
                   RELAYPOS
                 </h1>
-                <p className="text-[10px] text-[#bbcbb2] font-medium uppercase tracking-wider truncate max-w-[130px] mt-0.5">
+                <p className="text-[10px] text-muted font-medium uppercase tracking-wider truncate max-w-[125px] mt-0.5">
                   {activeTenant?.nama || 'Cloud POS & ERP'}
                 </p>
               </div>
             )}
           </div>
+
           <button
+            type="button"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className={`p-1.5 rounded-md bg-[#1b1b1d] border border-[#26272d] text-[#bbcbb2] hover:text-white transition-all hover:bg-[#242428] cursor-pointer ${
-              isCollapsed 
-                ? 'absolute -right-3 top-3.5 z-50 shadow-md bg-[#1b1b1d] border-[#3f414a] text-[#00ffff]' 
-                : ''
+            className={`w-8 h-8 rounded-full bg-subsurface border border-border text-muted hover:text-foreground hover:border-border-hover flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+              isCollapsed ? 'absolute -right-3.5 top-4 z-50 shadow-md bg-surface border-border-hover text-primary' : ''
             }`}
             title={isCollapsed ? 'Perlebar Sidebar (Expand)' : 'Perkecil Sidebar (Collapse)'}
           >
-            {isCollapsed ? <ChevronRight size={14} strokeWidth={1.75} /> : <ChevronLeft size={14} strokeWidth={1.75} />}
+            {isCollapsed ? <ChevronRight size={14} strokeWidth={2} /> : <ChevronLeft size={14} strokeWidth={2} />}
           </button>
         </div>
 
-        {/* Konten Scrollable: Profil Interaktif, Navigasi, & Switcher Tema */}
-        <div 
-          className="flex-1 min-h-0 overflow-y-auto overflow-x-visible overscroll-contain px-3 pt-3 pb-24 space-y-3 select-none touch-pan-y"
+        {/* Scrollable Content */}
+        <div
+          className="flex-1 min-h-0 overflow-y-auto overflow-x-visible overscroll-contain px-3 pt-3 pb-24 space-y-3 select-none touch-pan-y custom-scrollbar"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          {/* Jembatan Cepat ke Console Founder (Khusus Super Admin) */}
+          {/* Console Founder Bridge (Super Admin Only) */}
           {(currentRole === ROLES.SUPER_ADMIN || profile?.is_super_admin) && ENABLE_FOUNDER_CONSOLE && (
             <Link
               to="/founder"
               data-testid="founder-quick-bridge"
-              className={`rounded-xl bg-[#ffc71f]/12 hover:bg-[#ffc71f]/20 border border-[#ffc71f]/35 hover:border-[#ffc71f]/60 text-left flex items-center ${
-                isCollapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full p-2.5 justify-between'
-              } transition-all group shadow-xs tap-tactile active:scale-[0.98]`}
+              className={`bg-warning-bg hover:opacity-90 border border-warning/35 text-left flex items-center transition-all group shadow-xs tap-tactile active:scale-[0.98] ${
+                isCollapsed ? 'w-12 h-12 mx-auto justify-center p-0 rounded-full' : 'w-full min-h-[44px] px-3 py-2 justify-between rounded-2xl'
+              }`}
               title="Buka Console Founder (Super Admin)"
             >
               {isCollapsed ? (
-                <div className="w-6 h-6 rounded-lg bg-[#ffc71f]/15 text-[#ffc71f] flex items-center justify-center font-bold shrink-0 border border-[#ffc71f]/30">
-                  <Crown size={13} strokeWidth={2} />
-                </div>
+                <Crown size={20} strokeWidth={1.75} className="text-warning" />
               ) : (
                 <>
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-6 h-6 rounded-lg bg-[#ffc71f]/15 text-[#ffc71f] flex items-center justify-center font-bold shrink-0 border border-[#ffc71f]/30">
-                      <Crown size={13} strokeWidth={2} />
+                    <div className="w-7 h-7 rounded-full bg-surface text-warning flex items-center justify-center shrink-0 border border-warning/30">
+                      <Crown size={14} strokeWidth={2} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[11px] font-bold text-[#ffc71f] group-hover:text-white transition-colors truncate">
+                      <p className="text-[11px] font-bold text-warning truncate">
                         Console Founder
                       </p>
-                      <p className="text-[9px] text-[#bbcbb2] font-medium uppercase tracking-wider">
+                      <p className="text-[9px] text-muted font-medium uppercase tracking-wider">
                         Platform Super Admin
                       </p>
                     </div>
                   </div>
-                  <ChevronRight size={13} strokeWidth={1.75} className="text-[#ffc71f] group-hover:translate-x-0.5 transition-transform shrink-0" />
+                  <ChevronRight size={14} strokeWidth={1.75} className="text-warning group-hover:translate-x-0.5 transition-transform shrink-0" />
                 </>
               )}
             </Link>
           )}
 
-          {/* Jembatan Cepat Kembali ke Portal Eksekutif HQ (Hanya untuk Owner & Super Admin) */}
+          {/* Holding HQ Consolidation Bridge */}
           {(currentRole === 'Owner' || currentRole === 'Super Admin') && (
             <Link
               to="/konsolidasi"
-              className={`rounded-xl bg-[#121215] hover:bg-[#18181c] border border-[#26272d] hover:border-[#3f414a] text-left flex items-center ${
-                isCollapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full p-2.5 justify-between'
-              } transition-all group shadow-xs tap-tactile`}
+              className={`bg-subsurface hover:bg-surface-hover border border-border hover:border-border-hover text-left flex items-center transition-all group shadow-xs tap-tactile ${
+                isCollapsed ? 'w-12 h-12 mx-auto justify-center p-0 rounded-full' : 'w-full min-h-[44px] px-3 py-2 justify-between rounded-2xl'
+              }`}
               title="Kembali ke Portal Eksekutif Holding HQ"
             >
               {isCollapsed ? (
-                <div className="w-6 h-6 rounded-lg bg-[#18181c] text-[#00ffff] flex items-center justify-center font-bold shrink-0 border border-[#26272d]">
-                  <Building2 size={12} strokeWidth={1.75} />
-                </div>
+                <Building2 size={20} strokeWidth={1.75} className="text-primary" />
               ) : (
                 <>
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-6 h-6 rounded-lg bg-[#18181c] text-[#00ffff] flex items-center justify-center font-bold shrink-0 border border-[#26272d]">
-                      <Building2 size={12} strokeWidth={1.75} />
+                    <div className="w-7 h-7 rounded-full bg-primary-soft text-primary-soft-foreground flex items-center justify-center shrink-0 border border-primary/20">
+                      <Building2 size={14} strokeWidth={1.75} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[11px] font-semibold text-white group-hover:text-[#00ffff] transition-colors truncate">
+                      <p className="text-[11px] font-semibold text-foreground group-hover:text-primary transition-colors truncate">
                         Portal Holding HQ
                       </p>
-                      <p className="text-[9px] text-[#bbcbb2] font-medium uppercase tracking-wider">
+                      <p className="text-[9px] text-muted font-medium uppercase tracking-wider">
                         Konsolidasi Multi-Outlet
                       </p>
                     </div>
                   </div>
-                  <ChevronRight size={13} strokeWidth={1.75} className="text-[#bbcbb2] group-hover:translate-x-0.5 transition-transform shrink-0" />
+                  <ChevronRight size={14} strokeWidth={1.75} className="text-muted group-hover:translate-x-0.5 transition-transform shrink-0" />
                 </>
               )}
             </Link>
           )}
 
-          {/* Info Profil Interaktif (Klik untuk membuka menu Keluar Aplikasi) */}
+          {/* Profile Card */}
           <div className="relative shrink-0" ref={profileMenuRef}>
             <button
+              type="button"
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className={`rounded-xl bg-[#121215] border transition-all duration-150 flex items-center cursor-pointer tap-tactile ${
-                isCollapsed 
-                  ? 'w-10 h-10 mx-auto justify-center p-0' 
-                  : 'w-full p-2.5 justify-between'
+              className={`bg-subsurface border transition-all duration-150 flex items-center cursor-pointer tap-tactile ${
+                isCollapsed
+                  ? 'w-12 h-12 mx-auto justify-center p-0 rounded-full'
+                  : 'w-full min-h-[44px] px-3 py-2 justify-between rounded-2xl'
               } ${
-                showProfileMenu 
-                  ? 'border-[#00ffff] bg-[#18181c]' 
-                  : 'border-[#26272d] hover:border-[#3f414a] hover:bg-[#18181c]'
+                showProfileMenu
+                  ? 'border-ring bg-selected-surface'
+                  : 'border-border hover:border-border-hover'
               }`}
               title={isCollapsed ? `${profile?.nama || 'Pengguna'} (${currentRole}) - Klik untuk Keluar` : 'Klik profil untuk opsi akun / keluar'}
             >
               {isCollapsed ? (
-                <div className="w-7 h-7 rounded-full bg-[#18181c] border border-[#26272d] flex items-center justify-center text-[#bbcbb2] shrink-0">
-                  <User size={14} strokeWidth={1.75} />
-                </div>
+                <User size={20} strokeWidth={1.75} className="text-muted" />
               ) : (
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-7 h-7 rounded-full bg-[#18181c] border border-[#26272d] flex items-center justify-center text-[#bbcbb2] shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-ink text-ink-foreground flex items-center justify-center shrink-0">
                     <User size={14} strokeWidth={1.75} />
                   </div>
                   <div className="overflow-hidden animate-fade-in text-left min-w-0">
-                    <h2 className="font-semibold text-xs truncate text-white">{profile?.nama || 'Pengguna'}</h2>
-                    <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase inline-block mt-0.5 ${getRoleBadgeStyle(currentRole)}`}>
+                    <h2 className="font-bold text-xs truncate text-foreground">{profile?.nama || 'Pengguna'}</h2>
+                    <span className={`text-[9px] px-2 py-0.2 rounded-full font-bold uppercase inline-block mt-0.5 ${getRoleBadgeStyle(currentRole)}`}>
                       {currentRoleLabel}
                     </span>
                   </div>
                 </div>
               )}
               {!isCollapsed && (
-                <ChevronDown 
-                  size={13} 
+                <ChevronDown
+                  size={14}
                   strokeWidth={1.75}
-                  className={`text-[#bbcbb2] transition-transform duration-150 shrink-0 ${showProfileMenu ? 'rotate-180 text-[#00ffff]' : ''}`} 
+                  className={`text-muted transition-transform duration-150 shrink-0 ${showProfileMenu ? 'rotate-180 text-primary' : ''}`}
                 />
               )}
             </button>
 
-            {/* Profile Dropdown Popover */}
             {showProfileMenu && (
-              <div className={`absolute z-50 bg-[#121215] border border-[#26272d] rounded-xl p-2 shadow-2xl animate-pop-in ${
-                isCollapsed 
-                  ? 'left-full top-0 ml-2 w-56' 
-                  : 'top-full left-0 right-0 mt-2'
-              }`}>
-                <div className="p-2 border-b border-[#26272d] mb-1">
-                  <p className="text-[9px] text-[#6b7367] font-bold uppercase tracking-wider">Akun Terhubung</p>
-                  <p className="text-xs font-bold text-white truncate mt-0.5">{profile?.nama || 'Pengguna'}</p>
+              <div
+                className={`absolute z-50 bg-surface border border-border rounded-2xl p-2 shadow-2xl animate-pop-in ${
+                  isCollapsed ? 'left-full top-0 ml-2 w-56' : 'top-full left-0 right-0 mt-2'
+                }`}
+              >
+                <div className="p-2 border-b border-border mb-1">
+                  <p className="text-[9px] text-muted-dark font-bold uppercase tracking-wider">Akun Terhubung</p>
+                  <p className="text-xs font-bold text-foreground truncate mt-0.5">{profile?.nama || 'Pengguna'}</p>
                   <div className="flex items-center gap-1.5 mt-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#00ffff]"></span>
-                    <span className="text-[10px] text-[#bbcbb2] font-medium">{currentRoleLabel} • Sesi Aktif</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span className="text-[10px] text-muted font-medium">{currentRoleLabel} • Sesi Aktif</span>
                   </div>
                 </div>
 
@@ -506,18 +518,19 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                     setShowProfileMenu(false)
                     setShowChangePasswordModal(true)
                   }}
-                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all tap-tactile text-left cursor-pointer mb-1"
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-foreground hover:bg-subsurface transition-all tap-tactile text-left cursor-pointer mb-1"
                 >
-                  <KeyRound size={14} strokeWidth={1.75} className="text-[#00ffff]" />
+                  <KeyRound size={14} strokeWidth={1.75} className="text-primary" />
                   <span>Ganti Kata Sandi</span>
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => {
                     setShowProfileMenu(false)
                     logout()
                   }}
-                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-xs font-semibold text-[#ff5102] hover:bg-[#ff5102]/10 border border-transparent hover:border-[#ff5102]/30 transition-all tap-tactile text-left cursor-pointer"
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-destructive hover:bg-destructive-bg transition-all tap-tactile text-left cursor-pointer"
                 >
                   <LogOut size={14} strokeWidth={1.75} />
                   <span>Keluar Aplikasi</span>
@@ -526,47 +539,44 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
             )}
           </div>
 
-          {/* Tenant / Outlet Switcher */}
           <TenantSwitcher isCollapsed={isCollapsed} />
 
-          {/* Trial / Grace Status Pill */}
           {licenseStatus?.isTrial && !isCollapsed && (
-            <div className="mx-1 mb-2 px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[10px] flex items-center justify-between">
-              <span className="text-amber-400 font-medium">Trial {licenseStatus.daysRemaining} Hari</span>
-              <span className="text-[9px] px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 font-bold uppercase">Uji Coba</span>
+            <div className="px-3 py-1.5 rounded-full bg-warning-bg border border-warning/25 text-[10px] flex items-center justify-between">
+              <span className="text-warning font-semibold">Trial {licenseStatus.daysRemaining} Hari</span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-warning/15 text-warning font-bold uppercase">Uji Coba</span>
             </div>
           )}
 
-          {/* Build Version Indicator */}
           {!isCollapsed && (
             <div
-              className="mx-1 mb-2 px-2 py-1 rounded bg-[#18181c] border border-[#26272d] text-[9px] text-[#8e8e93] flex items-center justify-between font-mono"
+              className="px-2.5 py-1.5 rounded-full bg-subsurface border border-border text-[9px] text-muted flex items-center justify-between font-mono"
               title={`Build Time: ${import.meta.env.VITE_BUILD_TIME || 'Live'}`}
             >
-              <span className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span>RelayPOS Cloud</span>
               </span>
-              <span className="text-[#00ffff] font-semibold">
-                build {import.meta.env.VITE_BUILD_COMMIT || 'latest'}
+              <span className="text-primary-soft-foreground font-bold">
+                {import.meta.env.VITE_BUILD_COMMIT || 'latest'}
               </span>
             </div>
           )}
 
-          {/* Menu Navigasi Grouped */}
+          {/* Grouped Navigation */}
           <nav className="space-y-4 pt-1">
             {navSections.map((section, sIdx) => {
               const visibleItems = section.items.filter(isItemVisible)
               if (visibleItems.length === 0) return null
 
               return (
-                <div key={section.title || sIdx} className="space-y-0.5">
+                <div key={section.title || sIdx} className="space-y-1">
                   {!isCollapsed ? (
-                    <div className="px-3 py-1 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase flex items-center justify-between">
+                    <div className="px-3 py-1 text-[10px] font-bold tracking-wider text-muted-dark uppercase">
                       <span>{section.title}</span>
                     </div>
                   ) : (
-                    <div className="h-[1px] bg-zinc-800/80 my-2 mx-2"></div>
+                    <div className="h-[1px] bg-border my-2 mx-2" />
                   )}
 
                   {visibleItems.map((item) => {
@@ -577,17 +587,24 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                       <Link
                         key={item.name}
                         to={item.path}
-                        className={`flex items-center ${
-                          isCollapsed 
-                            ? 'w-10 h-10 mx-auto justify-center px-0' 
-                            : 'w-full gap-2.5 px-3 py-2'
-                        } rounded-lg text-xs transition-all duration-150 tap-tactile ${
-                          isActive ? activeClass : inactiveClass
-                        }`}
+                        className={`flex items-center transition-all duration-150 tap-tactile rounded-full ${
+                          isCollapsed
+                            ? 'w-12 h-12 mx-auto justify-center p-0'
+                            : 'w-full min-h-[44px] justify-between px-3.5 py-2 text-xs'
+                        } ${isActive ? activeClass : inactiveClass}`}
                         title={isCollapsed ? item.name : ''}
                       >
-                        <Icon size={15} strokeWidth={1.75} className="shrink-0" />
-                        {!isCollapsed && <span className="truncate">{item.name}</span>}
+                        {isCollapsed ? (
+                          <Icon size={20} strokeWidth={1.75} className="shrink-0" />
+                        ) : (
+                          <>
+                            <span className="flex items-center gap-2.5 min-w-0">
+                              <Icon size={18} strokeWidth={1.75} className="shrink-0" />
+                              <span className="truncate">{item.name}</span>
+                            </span>
+                            {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#93C5FD] shrink-0" />}
+                          </>
+                        )}
                       </Link>
                     )
                   })}
@@ -597,39 +614,57 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           </nav>
         </div>
 
-        {/* Footer Bantuan & Masukan Beta */}
-        <div className="p-2.5 border-t border-[#26272d] shrink-0 space-y-1.5">
+        {/* Footer Bantuan, Mode Tema & Masukan Beta */}
+        <div className="p-2.5 border-t border-border shrink-0 space-y-1.5 bg-surface">
+          <button
+            type="button"
+            onClick={toggleSurfaceMode}
+            title={resolvedMode === 'dark' ? 'Beralih ke Mode Terang (Light)' : 'Beralih ke Mode Gelap (Carbon D1)'}
+            className={`flex items-center rounded-full text-xs font-semibold text-muted hover:text-foreground bg-subsurface hover:bg-surface-hover border border-border transition-all active:scale-[0.98] cursor-pointer ${
+              isCollapsed ? 'w-11 h-11 mx-auto justify-center p-0' : 'w-full min-h-[40px] justify-between px-3.5 py-2'
+            }`}
+          >
+            <span className="flex items-center gap-2.5">
+              {resolvedMode === 'dark' ? <Sun size={16} strokeWidth={1.75} /> : <Moon size={16} strokeWidth={1.75} />}
+              {!isCollapsed && <span>{resolvedMode === 'dark' ? 'Mode Terang' : 'Mode Gelap'}</span>}
+            </span>
+            {!isCollapsed && (
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-surface border border-border text-muted">
+                {resolvedMode === 'dark' ? 'D1' : 'Light'}
+              </span>
+            )}
+          </button>
+
           <Link
             to="/panduan"
             title={isCollapsed ? 'Panduan Pengguna (User Manual)' : ''}
-            className={`flex items-center ${
-              isCollapsed ? 'w-10 h-10 mx-auto justify-center px-0' : 'w-full gap-2.5 px-3 py-2'
-            } rounded-lg text-xs font-semibold text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 transition-all active:scale-[0.98]`}
+            className={`flex items-center rounded-full text-xs font-semibold text-primary-soft-foreground bg-primary-soft hover:opacity-90 border border-primary/20 transition-all active:scale-[0.98] ${
+              isCollapsed ? 'w-11 h-11 mx-auto justify-center p-0' : 'w-full min-h-[40px] gap-2.5 px-3.5 py-2'
+            }`}
           >
-            <BookOpen size={15} strokeWidth={1.75} className="shrink-0 text-cyan-400" />
+            <BookOpen size={16} strokeWidth={1.75} className="shrink-0" />
             {!isCollapsed && <span className="truncate">Panduan Pengguna</span>}
           </Link>
+
           <button
             type="button"
             onClick={() => setShowFeedbackModal(true)}
             title={isCollapsed ? 'Beri Masukan Beta' : ''}
-            className={`flex items-center ${
-              isCollapsed ? 'w-10 h-10 mx-auto justify-center px-0' : 'w-full gap-2.5 px-3 py-2'
-            } rounded-lg text-xs font-semibold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition-all active:scale-[0.98] cursor-pointer`}
+            className={`flex items-center rounded-full text-xs font-semibold text-warning bg-warning-bg hover:opacity-90 border border-warning/25 transition-all active:scale-[0.98] cursor-pointer ${
+              isCollapsed ? 'w-11 h-11 mx-auto justify-center p-0' : 'w-full min-h-[40px] gap-2.5 px-3.5 py-2'
+            }`}
           >
-            <MessageSquarePlus size={15} strokeWidth={1.75} className="shrink-0 text-amber-400" />
+            <MessageSquarePlus size={16} strokeWidth={1.75} className="shrink-0" />
             {!isCollapsed && <span className="truncate">Beri Masukan</span>}
           </button>
         </div>
       </aside>
 
-      {/* Modal Ubah Kata Sandi Akun */}
-      <ChangePasswordModal 
-        isOpen={showChangePasswordModal} 
-        onClose={() => setShowChangePasswordModal(false)} 
+      <ChangePasswordModal
+        isOpen={showChangePasswordModal}
+        onClose={() => setShowChangePasswordModal(false)}
       />
 
-      {/* Modal Masukan Beta */}
       <FeedbackModal
         isOpen={showFeedbackModal}
         onClose={() => setShowFeedbackModal(false)}

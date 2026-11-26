@@ -3,23 +3,22 @@ import { useAuth } from '../../context/AuthContext'
 import { useAppTheme } from '../../context/ThemeContext'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  Building2,
   Crown,
   LogOut,
-  ChevronRight,
   ShieldCheck,
   Store,
   ArrowRight
 } from 'lucide-react'
 import { ROLES } from '../../constants/roles'
+import RelayLogo from '../brand/RelayLogo'
 
 const ENABLE_FOUNDER_CONSOLE =
   import.meta.env?.VITE_ENABLE_FOUNDER_CONSOLE === 'true' ||
   import.meta.env?.MODE === 'test'
 
 export default function ExecutiveLayout({ children }) {
-  const { profile, activeTenant, userTenants, switchTenant, logout } = useAuth()
-  const { currentTheme } = useAppTheme()
+  const { profile, activeTenant, switchTenant, logout } = useAuth()
+  const { currentTheme } = useAppTheme() || {}
   const navigate = useNavigate()
   const isSuperAdmin = profile?.role === ROLES.SUPER_ADMIN || profile?.is_super_admin
 
@@ -31,36 +30,31 @@ export default function ExecutiveLayout({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#000000] text-white flex flex-col selection:bg-[#00ffff] selection:text-[#0f0f0f]">
-      {/* Top Bar Mandiri Khusus Executive Portal HQ */}
-      <header className="sticky top-0 z-40 bg-[#000000]/95 backdrop-blur-sm border-b border-[#26272d] px-4 sm:px-8 py-2.5 flex items-center justify-between">
-        {/* Brand Group & Holding Badge */}
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-md bg-[#18181c] border border-[#26272d] flex items-center justify-center text-[#00ffff] shrink-0 shadow-xs">
-            <Building2 size={16} strokeWidth={1.75} />
-          </div>
-          <div>
+    <div className="min-h-screen bg-canvas text-foreground flex flex-col selection:bg-primary selection:text-primary-foreground">
+      {/* Top Bar Mandiri Khusus Executive Portal HQ (60px) */}
+      <header className="sticky top-0 z-40 min-h-[60px] bg-surface/95 backdrop-blur-sm border-b border-border px-4 sm:px-8 py-2.5 flex items-center justify-between">
+        <div className="flex items-center gap-3 min-w-0">
+          <RelayLogo size="md" />
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold tracking-wider text-white uppercase">
+              <span className="text-xs font-extrabold tracking-wider text-foreground uppercase">
                 RELAYPOS
               </span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#18181c] text-[#bbcbb2] font-semibold border border-[#26272d]">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-subsurface text-muted font-semibold border border-border">
                 Multi-Cabang
               </span>
             </div>
-            <p className="text-xs font-medium text-[#bbcbb2]">
-              {currentTheme?.brandName || 'Ringkasan Multi-Outlet'}
+            <p className="text-xs font-medium text-muted truncate">
+              {currentTheme?.brandName ? `${currentTheme.brandName} • Ringkasan Multi-Outlet` : 'Ringkasan Multi-Outlet'}
             </p>
           </div>
         </div>
 
-        {/* Action Controls & Profil Pemilik */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Tombol Kembali ke Console Founder (Khusus Super Admin) */}
           {isSuperAdmin && ENABLE_FOUNDER_CONSOLE && (
             <Link
               to="/founder"
-              className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-md bg-[#ffc71f]/15 hover:bg-[#ffc71f]/25 border border-[#ffc71f]/40 text-xs font-bold text-[#ffc71f] transition-all shadow-xs group cursor-pointer active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 sm:gap-2 min-h-[40px] px-3.5 py-1.5 rounded-full bg-warning-bg hover:opacity-90 border border-warning/35 text-xs font-bold text-warning transition-all shadow-xs group cursor-pointer active:scale-[0.98]"
               title="Buka Console Founder (Super Admin)"
             >
               <Crown size={14} strokeWidth={2} className="shrink-0" />
@@ -68,34 +62,34 @@ export default function ExecutiveLayout({ children }) {
             </Link>
           )}
 
-          {/* Tombol Cepat Beralih Masuk ke Operasional Toko */}
           <button
+            type="button"
             onClick={() => handleEnterStore(activeTenant?.id)}
-            className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#18181c] hover:bg-[#242428] border border-[#26272d] hover:border-[#3f414a] text-xs font-semibold text-white transition-all shadow-xs group cursor-pointer active:scale-[0.98]"
+            className="hidden sm:inline-flex items-center gap-2 min-h-[40px] px-4 py-1.5 rounded-full bg-primary hover:bg-primary-hover text-xs font-bold text-primary-foreground transition-all shadow-xs group cursor-pointer active:scale-[0.98]"
             title="Buka tampilan kasir & operasional toko"
           >
-            <Store size={14} strokeWidth={1.75} className="text-[#00ffff] group-hover:scale-105 transition-transform" />
+            <Store size={14} strokeWidth={1.75} className="shrink-0" />
             <span>Buka Kasir Toko ({activeTenant?.nama || 'Toko'})</span>
-            <ArrowRight size={13} strokeWidth={1.75} className="text-[#bbcbb2] group-hover:translate-x-0.5 transition-transform" />
+            <ArrowRight size={13} strokeWidth={1.75} className="group-hover:translate-x-0.5 transition-transform" />
           </button>
 
-          {/* Profil Owner Card & Tombol Keluar */}
-          <div className="flex items-center gap-3 pl-3 border-l border-[#26272d]">
+          <div className="flex items-center gap-3 pl-3 border-l border-border">
             <div className="hidden md:block text-right">
-              <p className="text-xs font-semibold text-white truncate max-w-[120px]">
+              <p className="text-xs font-bold text-foreground truncate max-w-[140px]">
                 {profile?.nama || 'Pemilik Usaha'}
               </p>
               <div className="flex items-center justify-end gap-1.5 mt-0.5">
-                <span className={`w-1.5 h-1.5 rounded-full ${isSuperAdmin ? 'bg-[#00ffff]' : 'bg-[#ff9821]'}`}></span>
-                <span className={`text-[10px] font-bold uppercase tracking-wider ${isSuperAdmin ? 'text-[#00ffff]' : 'text-[#ff9821]'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${isSuperAdmin ? 'bg-primary' : 'bg-warning'}`} />
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${isSuperAdmin ? 'text-primary-soft-foreground' : 'text-warning'}`}>
                   {isSuperAdmin ? 'Super Admin' : 'Owner'}
                 </span>
               </div>
             </div>
 
             <button
+              type="button"
               onClick={logout}
-              className="p-1.5 rounded-md bg-[#18181c] border border-[#26272d] hover:border-[#ff5102]/40 text-[#bbcbb2] hover:text-[#ff5102] transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+              className="w-10 h-10 rounded-full bg-subsurface border border-border hover:border-destructive/40 text-muted hover:text-destructive flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-[0.98]"
               title="Keluar dari akun"
             >
               <LogOut size={15} strokeWidth={1.75} />
@@ -104,19 +98,17 @@ export default function ExecutiveLayout({ children }) {
         </div>
       </header>
 
-      {/* Main Container Full-Width Khusus HQ */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 overflow-x-hidden">
         {children}
       </main>
 
-      {/* Footer Minimalis Executive HQ */}
-      <footer className="border-t border-[#26272d] py-3.5 px-4 sm:px-8 text-center text-xs text-[#6b7367] flex flex-col sm:flex-row items-center justify-between gap-2">
+      <footer className="border-t border-border py-3.5 px-4 sm:px-8 text-center text-xs text-muted-dark flex flex-col sm:flex-row items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <ShieldCheck size={14} className="text-[#00ffff]" />
-          <span>Sistem Konsolidasi Multi-Outlet Terisolasi & Terenkripsi Cloud</span>
+          <ShieldCheck size={14} className="text-primary" />
+          <span>Sistem Konsolidasi Multi-Outlet Terisolasi &amp; Terenkripsi Cloud</span>
         </div>
-        <div className="text-[11px] font-mono text-[#6b7367]">
-          RelayPOS Enterprise • VRS_2026
+        <div className="text-[11px] font-mono text-muted-dark">
+          RelayPOS Enterprise • Cobalt v5.0
         </div>
       </footer>
     </div>

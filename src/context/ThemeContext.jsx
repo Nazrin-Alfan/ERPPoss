@@ -1,103 +1,167 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 
+export const THEME_STORAGE_KEY = 'relaypos_theme_mode_v5'
+
+/**
+ * Operational routes that always default to Pure Carbon Obsidian Dark Mode (Opsi D1).
+ */
+export const DARK_DEFAULT_ROUTES = ['/pos', '/founder', '/super-admin']
+
+/**
+ * Strangler-Fig allowlist of routes migrated to Fintech Cobalt Blue Light Mode.
+ * During Phase 3 this starts with ['/ui-kit']; each migrated Phase 4 route is added here.
+ * Unmigrated routes stay in Pure Carbon D1 ('dark') so existing light text never turns white-on-white.
+ */
+export const MIGRATED_LIGHT_ROUTES = ['/ui-kit']
+
 export const themes = {
   1: {
     id: 1,
-    name: 'RelayPOS Obsidian & Deep Blue',
-    logo: '/relaypos-logo.svg',
-    subText: 'Estafet Service & POS',
+    mode: 'light',
+    name: 'RelayPOS Fintech Cobalt (Light)',
+    brandName: 'RelayPOS',
+    logo: '/relaypos-logo-b3-light.svg',
+    subText: 'Estafet Operations & Multi-Outlet ERP',
     colors: {
-      primary: '#2563eb', // Executive Deep Slate Blue (not overly bright)
-      secondary: '#1e40af', // Rich Sapphire Navy
-      bg: '#06090e', // Pure Obsidian Black
-      bgLight: '#0d131f', // Deep Midnight Slate
-      textAccent: '#60a5fa' // Soft Crisp Blue Accent
+      primary: '#2563EB',
+      secondary: '#1D4ED8',
+      bg: '#F4F6FA',
+      bgLight: '#FFFFFF',
+      textAccent: '#2563EB'
     }
   },
   2: {
     id: 2,
-    name: 'Luxury Gold & Espresso',
-    logo: '/logo_2.jpg',
-    subText: 'Carwash & Cafe',
+    mode: 'dark',
+    name: 'RelayPOS Pure Carbon Obsidian (D1)',
+    brandName: 'RelayPOS',
+    logo: '/relaypos-logo-b3-dark.svg',
+    subText: 'Pure Carbon POS & Console',
     colors: {
-      primary: '#ca8a04', // Rich Gold
-      secondary: '#92400e', // Warm Espresso Brown
-      bg: '#090706', // Velvet Obsidian
-      bgLight: '#181412', // Dark Espresso Ash
-      textAccent: '#f59e0b' // Champagne Gold
-    }
-  },
-  3: {
-    id: 3,
-    name: 'Classic Monochrome',
-    logo: '/logo_3.jpg',
-    subText: 'Carwash & Cafe',
-    colors: {
-      primary: '#cbd5e1', // Light Platinum
-      secondary: '#64748b', // Steel Slate
-      bg: '#09090b', // Carbon Black
-      bgLight: '#18181b', // Zinc Dark
-      textAccent: '#f8fafc' // Crisp White
-    }
-  },
-  4: {
-    id: 4,
-    name: 'Aqua Breeze',
-    logo: '/logo_4.jpg',
-    subText: 'Carwash & Cafe',
-    colors: {
-      primary: '#6366f1', // Royal Indigo
-      secondary: '#ec4899', // Electric Rose
-      bg: '#05030a', // Deep Cyber Violet
-      bgLight: '#110c22', // Amethyst Chamber
-      textAccent: '#c084fc' // Neon Lavender
+      primary: '#2563EB',
+      secondary: '#3B82F6',
+      bg: '#09090B',
+      bgLight: '#121215',
+      textAccent: '#60A5FA'
     }
   }
 }
 
+export function resolveSurfaceMode(pathname = '/', preference = 'auto') {
+  if (preference === 'light' || preference === 'dark') {
+    return preference
+  }
+
+  const normalized = String(pathname || '/').split('?')[0]
+  if (DARK_DEFAULT_ROUTES.some((prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`))) {
+    return 'dark'
+  }
+  if (MIGRATED_LIGHT_ROUTES.some((prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`))) {
+    return 'light'
+  }
+
+  // Strangler-Fig safety default for pages awaiting Phase 4 Light-mode migration
+  return 'dark'
+}
+
 const ThemeContext = createContext({
-  activeThemeId: 1,
-  currentTheme: themes[1],
+  themePreference: 'auto',
+  resolvedMode: 'dark',
+  isDark: true,
+  activeThemeId: 2,
+  currentTheme: themes[2],
+  setThemePreference: () => {},
+  setSurfaceMode: () => {},
+  toggleSurfaceMode: () => {},
+  setRoutePath: () => {},
   changeTheme: () => {}
 })
 
 export const ThemeProvider = ({ children }) => {
-  const [activeThemeId, setActiveThemeId] = useState(() => {
+  const [themePreference, setThemePreferenceState] = useState(() => {
     if (typeof window !== 'undefined' && window.localStorage) {
-      const saved = window.localStorage.getItem('jb_active_theme')
-      return saved ? parseInt(saved, 10) : 1
+      const saved = window.localStorage.getItem(THEME_STORAGE_KEY)
+      if (saved === 'light' || saved === 'dark' || saved === 'auto') {
+        return saved
+      }
     }
-    return 1
+    return 'auto'
   })
 
-  const currentTheme = themes[activeThemeId] || themes[1]
+  const [routePath, setRoutePath] = useState(() => {
+    if (typeof window !== 'undefined' && window.location) {
+      return window.location.pathname || '/'
+    }
+    return '/'
+  })
+
+  const resolvedMode = resolveSurfaceMode(routePath, themePreference)
+  const isDark = resolvedMode === 'dark'
+  const activeThemeId = isDark ? 2 : 1
+  const currentTheme = themes[activeThemeId] || themes[2]
 
   useEffect(() => {
     if (typeof document === 'undefined') return
-    // Apply colors as CSS variables to root element
     const root = document.documentElement
+    root.setAttribute('data-theme', resolvedMode)
+    root.classList.toggle('dark', isDark)
+    root.classList.toggle('light', !isDark)
+    root.style.colorScheme = resolvedMode
+
+    // Transitional CSS variable bridge for any legacy style consumer
     root.style.setProperty('--brand-primary', currentTheme.colors.primary)
     root.style.setProperty('--brand-secondary', currentTheme.colors.secondary)
     root.style.setProperty('--brand-bg', currentTheme.colors.bg)
     root.style.setProperty('--brand-bg-light', currentTheme.colors.bgLight)
     root.style.setProperty('--brand-text-accent', currentTheme.colors.textAccent)
+  }, [resolvedMode, isDark, currentTheme])
 
+  const setThemePreference = (nextPref) => {
+    const valid = nextPref === 'light' || nextPref === 'dark' || nextPref === 'auto' ? nextPref : 'auto'
+    setThemePreferenceState(valid)
     if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.setItem('jb_active_theme', activeThemeId.toString())
+      window.localStorage.setItem(THEME_STORAGE_KEY, valid)
     }
-  }, [activeThemeId, currentTheme])
+  }
+
+  const setSurfaceMode = (mode) => {
+    if (mode === 'light' || mode === 'dark' || mode === 'auto') {
+      setThemePreference(mode)
+    }
+  }
+
+  const toggleSurfaceMode = () => {
+    const next = resolvedMode === 'dark' ? 'light' : 'dark'
+    setThemePreference(next)
+  }
 
   const changeTheme = (id) => {
-    if (themes[id]) {
-      setActiveThemeId(id)
+    if (id === 1 || id === 'light') {
+      setThemePreference('light')
+    } else if (id === 2 || id === 'dark') {
+      setThemePreference('dark')
     }
   }
 
   return (
-    <ThemeContext.Provider value={{ activeThemeId, currentTheme, changeTheme }}>
+    <ThemeContext.Provider
+      value={{
+        themePreference,
+        setThemePreference,
+        resolvedMode,
+        isDark,
+        setSurfaceMode,
+        toggleSurfaceMode,
+        setRoutePath,
+        activeThemeId,
+        currentTheme,
+        changeTheme
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   )
 }
 
 export const useAppTheme = () => useContext(ThemeContext)
+export const useTheme = useAppTheme

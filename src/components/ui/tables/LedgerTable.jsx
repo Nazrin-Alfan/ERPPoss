@@ -3,16 +3,14 @@ import { TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, Tab
 
 /**
  * LedgerTable:
- * Dirancang khusus untuk modul Akuntansi & Keuangan (Jurnal Umum, Buku Besar, Neraca Saldo, Laba Rugi).
- * Sifat: Font mono rata kanan super ketat untuk nominal, zebra striping halus untuk audit,
- * baris penutup akuntansi wajib (<tfoot>) untuk membuktikan keseimbangan debit vs kredit.
+ * Accounting & General Ledger table with right-aligned tabular numerals and high-contrast TOTAL footer.
  */
 export function LedgerTable({
   columns = [],
   data = [],
   sortState = null,
   onSort = null,
-  footerTotals = null, // e.g. { debit: 1500000, kredit: 1500000, balance: true }
+  footerTotals = null,
   emptyMessage = 'Belum ada catatan jurnal pada periode ini',
   emptyIcon = null,
   className = '',
@@ -58,7 +56,7 @@ export function LedgerTable({
             data.map((row, rowIdx) => (
               <TableRow
                 key={keyExtractor(row, rowIdx)}
-                className="hover:bg-primary/5 transition-colors border-b border-border/50 text-xs"
+                className="hover:bg-primary-soft/40 transition-colors border-b border-border/50 text-xs"
               >
                 {columns.map((col, colIdx) => (
                   <TableCell
@@ -76,7 +74,7 @@ export function LedgerTable({
           )}
         </TableBody>
         {footerTotals && (
-          <tfoot className="bg-subsurface font-bold border-t-2 border-border text-xs">
+          <tfoot className="bg-ink text-ink-foreground dark:bg-subsurface dark:text-foreground font-bold border-t-2 border-border text-xs">
             <tr>
               {columns.map((col, idx) => {
                 const footerVal = footerTotals[col.key]
@@ -85,7 +83,7 @@ export function LedgerTable({
                     key={idx}
                     className={`py-3 px-3 ${
                       col.numeric || col.align === 'right' ? 'text-right font-mono tabular-nums' : 'text-left'
-                    } ${footerVal !== undefined ? 'text-foreground' : 'text-muted'}`}
+                    }`}
                   >
                     {footerVal !== undefined ? footerVal : idx === 0 ? 'TOTAL' : ''}
                   </td>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import { ThemeProvider } from './context/ThemeContext'
+import { ThemeProvider, useAppTheme } from './context/ThemeContext'
 import Sidebar from './components/Sidebar'
 import ErrorBoundary from './components/ErrorBoundary'
 import ExecutiveLayout from './components/layout/ExecutiveLayout'
@@ -23,6 +23,14 @@ const ENABLE_FOUNDER_CONSOLE =
   import.meta.env?.VITE_ENABLE_FOUNDER_CONSOLE === 'true' ||
   import.meta.env?.MODE === 'test'
 
+const ENABLE_UI_KIT_PREVIEW =
+  Boolean(import.meta.env?.DEV) ||
+  import.meta.env?.MODE === 'test'
+
+const UIKitPreview = ENABLE_UI_KIT_PREVIEW
+  ? lazy(() => import('./pages/dev/UIKitPreview'))
+  : () => null
+
 // Lazy load seluruh modul halaman ERP agar initial bundle ringan & cepat dimuat
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const CafePOS = lazy(() => import('./pages/CafePOS'))
@@ -39,9 +47,9 @@ const Founder = ENABLE_FOUNDER_CONSOLE ? lazy(() => import('./pages/Founder')) :
 const Database = ENABLE_FOUNDER_CONSOLE ? lazy(() => import('./pages/Database')) : () => null
 
 const PageLoader = () => (
-  <div className="min-h-[70vh] flex flex-col items-center justify-center text-slate-400">
-    <div className="w-10 h-10 border-3 border-brand-emerald border-t-transparent rounded-full animate-spin"></div>
-    <p className="mt-3 text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Memuat Halaman...</p>
+  <div className="min-h-[70vh] flex flex-col items-center justify-center text-muted">
+    <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+    <p className="mt-3 text-[11px] font-semibold tracking-wider text-muted uppercase">Memuat Halaman...</p>
   </div>
 )
 
@@ -51,9 +59,9 @@ const ProtectedRoute = ({ children, allowedRoles = null, ownerOnly = false, requ
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white">
-        <div className="w-12 h-12 border-4 border-brand-emerald border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-4 text-xs font-semibold text-slate-400 uppercase tracking-widest">Memvalidasi Akses...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-canvas text-foreground">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-xs font-semibold text-muted uppercase tracking-widest">Memvalidasi Akses...</p>
       </div>
     )
   }
@@ -111,9 +119,9 @@ const RootDispatcher = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white">
-        <div className="w-12 h-12 border-4 border-brand-emerald border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-4 text-xs font-semibold text-slate-400 uppercase tracking-widest">Menyiapkan Ruang Kerja...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-canvas text-foreground">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-xs font-semibold text-muted uppercase tracking-widest">Menyiapkan Ruang Kerja...</p>
       </div>
     )
   }
@@ -135,6 +143,9 @@ const RootDispatcher = () => {
 export const AppContent = () => {
   const { user, loading, profile, licenseStatus } = useAuth()
   const location = useLocation()
+  const themeCtx = useAppTheme() || {}
+  const resolvedMode = themeCtx.resolvedMode || 'dark'
+  const setRoutePath = themeCtx.setRoutePath
   const [showActivateModal, setShowActivateModal] = useState(false)
   const isSuperAdmin = profile?.role === ROLES.SUPER_ADMIN || profile?.is_super_admin
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
@@ -146,6 +157,10 @@ export const AppContent = () => {
     return false
   })
   const [slowLoading, setSlowLoading] = useState(false)
+
+  useEffect(() => {
+    setRoutePath?.(location.pathname)
+  }, [location.pathname, setRoutePath])
 
   useEffect(() => {
     let timer
@@ -166,7 +181,7 @@ export const AppContent = () => {
     }
   }
 
-  // Cek apakah sedang berada di Halaman Mandiri tanpa Sidebar (Landing, Panduan, Login, ForgotPassword, ResetPassword, Konsolidasi, Founder Cockpit)
+  // Cek apakah sedang berada di Halaman Mandiri tanpa Sidebar (Landing, Panduan, Login, ForgotPassword, ResetPassword, Konsolidasi, Founder Cockpit, UI Kit Preview)
   const isStandalonePage =
     (!user && location.pathname === '/') ||
     location.pathname === '/welcome' ||
@@ -176,22 +191,26 @@ export const AppContent = () => {
     location.pathname === '/forgot-password' ||
     location.pathname === '/reset-password' ||
     location.pathname === '/konsolidasi' ||
-    location.pathname === '/founder'
+    location.pathname === '/founder' ||
+    location.pathname === '/ui-kit'
   const showSidebar = !!user && !isStandalonePage
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#000000] text-white px-4">
-        <div className="w-12 h-12 border-4 border-[#00ffff] border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-4 text-xs font-semibold text-[#bbcbb2] uppercase tracking-widest">Memuat Sesi...</p>
+      <div
+        data-theme={resolvedMode}
+        className="min-h-screen flex flex-col items-center justify-center bg-canvas text-foreground px-4"
+      >
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-xs font-semibold text-muted uppercase tracking-widest">Memuat Sesi...</p>
         {slowLoading && (
           <div className="mt-5 flex flex-col items-center gap-2 text-center animate-fade-in">
-            <p className="text-[11px] text-zinc-400">Sinkronisasi memakan waktu lebih lama dari biasanya...</p>
+            <p className="text-[11px] text-muted">Sinkronisasi memakan waktu lebih lama dari biasanya...</p>
             <div className="flex gap-2 mt-1">
               <button
                 type="button"
                 onClick={() => window.location.reload()}
-                className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 border border-zinc-700 transition-all active:scale-[0.98]"
+                className="px-3.5 py-2 rounded-full bg-subsurface hover:bg-surface-hover text-xs font-medium text-foreground border border-border transition-all active:scale-[0.98]"
               >
                 Muat Ulang
               </button>
@@ -203,7 +222,7 @@ export const AppContent = () => {
                   } catch (_) {}
                   window.location.href = '/login'
                 }}
-                className="px-3 py-1.5 rounded-lg bg-[#00ffff]/20 hover:bg-[#00ffff]/30 text-[#00ffff] text-xs font-medium border border-[#00ffff]/40 transition-all active:scale-[0.98]"
+                className="px-3.5 py-2 rounded-full bg-primary-soft hover:opacity-90 text-primary-soft-foreground text-xs font-semibold border border-primary/30 transition-all active:scale-[0.98]"
               >
                 Ke Halaman Login
               </button>
@@ -215,27 +234,31 @@ export const AppContent = () => {
   }
 
   return (
-    <div className="h-[100dvh] w-full max-w-full bg-[#000000] text-white flex flex-col md:flex-row overflow-x-hidden">
+    <div
+      data-theme={resolvedMode}
+      className="h-[100dvh] w-full max-w-full bg-canvas text-foreground flex flex-col md:flex-row overflow-x-hidden"
+    >
       {/* Render Sidebar jika sudah login dan bukan di halaman mandiri */}
       {showSidebar && <Sidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={handleSetSidebarCollapsed} />}
 
       {/* Konten Utama Aplikasi */}
-      <main className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden bg-[#000000] relative flex flex-col">
+      <main className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden bg-canvas relative flex flex-col">
         {/* Trial Countdown & Expiry Banner */}
         {user && !isStandalonePage && !isSuperAdmin && !licenseStatus?.isExpired && (
           <>
             {licenseStatus?.isTrial && licenseStatus?.isActive && (
-              <div className="bg-[#121215] border-b border-[#26272d] px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0 z-20">
+              <div className="bg-surface border-b border-border px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0 z-20">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
-                  <span className="font-semibold text-white">Mode Uji Coba Beta:</span>
-                  <span className="text-[#bbcbb2]">
-                    Tersisa <strong className="text-amber-400 font-mono font-bold">{licenseStatus.daysRemaining} hari</strong> masa uji coba gratis.
+                  <span className="w-2 h-2 rounded-full bg-warning animate-pulse shrink-0"></span>
+                  <span className="font-semibold text-foreground">Mode Uji Coba Beta:</span>
+                  <span className="text-muted">
+                    Tersisa <strong className="text-warning font-mono font-bold">{licenseStatus.daysRemaining} hari</strong> masa uji coba gratis.
                   </span>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setShowActivateModal(true)}
-                  className="px-2.5 py-1 rounded bg-[#00ffff] hover:bg-[#00e5e5] text-black font-bold text-[11px] transition-all active:scale-[0.98] cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground font-bold text-[11px] transition-all active:scale-[0.98] cursor-pointer"
                 >
                   Aktivasi Lisensi Resmi
                 </button>
@@ -243,16 +266,17 @@ export const AppContent = () => {
             )}
 
             {licenseStatus?.isGracePeriod && (
-              <div className="bg-rose-950/40 border-b border-rose-500/30 px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs text-rose-300 shrink-0 z-20">
+              <div className="bg-destructive-bg border-b border-destructive/30 px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs text-destructive shrink-0 z-20">
                 <div className="flex items-center gap-2">
-                  <ShieldAlert size={14} className="text-rose-400 shrink-0" />
+                  <ShieldAlert size={14} className="text-destructive shrink-0" />
                   <span>
-                    <strong>Masa Aktif Habis!</strong> Tersisa tenggang <strong className="text-rose-400 font-mono">{licenseStatus.graceDaysRemaining} hari</strong> sebelum sistem terkunci.
+                    <strong>Masa Aktif Habis!</strong> Tersisa tenggang <strong className="font-mono">{licenseStatus.graceDaysRemaining} hari</strong> sebelum sistem terkunci.
                   </span>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setShowActivateModal(true)}
-                  className="px-2.5 py-1 rounded bg-rose-500 hover:bg-rose-600 text-white font-bold text-[11px] transition-all active:scale-[0.98] cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-full bg-destructive-solid hover:opacity-90 text-white font-bold text-[11px] transition-all active:scale-[0.98] cursor-pointer"
                 >
                   Perpanjang Sekarang
                 </button>
@@ -272,6 +296,9 @@ export const AppContent = () => {
               <Route path="/login" element={<Login />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              {ENABLE_UI_KIT_PREVIEW && (
+                <Route path="/ui-kit" element={<UIKitPreview />} />
+              )}
 
               {/* Rute Root Aplikasi: Smart Landing Dispatcher Berdasarkan Peran */}
               <Route path="/" element={<RootDispatcher />} />

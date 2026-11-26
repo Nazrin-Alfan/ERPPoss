@@ -1,17 +1,14 @@
 import React, { useState, useMemo } from 'react'
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
+import { cn } from '../../lib/cn'
 
 /**
- * Enterprise Semantic Table Suite (VRS_2026 Cyan Master)
+ * Enterprise Semantic Table Suite (RelayPOS v5.0 Dual-Mode)
  * Standardized data-dense tabular presentation for ERP & POS systems with interactive sorting.
- */
-
-/**
- * Hook Pembantu Sortir Data Otomatis (String, Number, Date)
  */
 export function useTableSort(data = [], defaultKey = '', defaultDirection = 'asc') {
   const [sortKey, setSortKey] = useState(defaultKey)
-  const [sortDirection, setSortDirection] = useState(defaultDirection) // 'asc' | 'desc' | null
+  const [sortDirection, setSortDirection] = useState(defaultDirection)
 
   const handleSort = (key) => {
     if (sortKey === key) {
@@ -36,19 +33,16 @@ export function useTableSort(data = [], defaultKey = '', defaultDirection = 'asc
       if (valA === undefined || valA === null) valA = ''
       if (valB === undefined || valB === null) valB = ''
 
-      // 1. Sort Number / Financials
       if (typeof valA === 'number' && typeof valB === 'number') {
         return sortDirection === 'asc' ? valA - valB : valB - valA
       }
 
-      // 2. Sort Date / String representation of number
       const numA = Number(valA)
       const numB = Number(valB)
       if (!isNaN(numA) && !isNaN(numB) && typeof valA !== 'boolean' && typeof valB !== 'boolean') {
         return sortDirection === 'asc' ? numA - numB : numB - numA
       }
 
-      // 3. Sort String
       const strA = String(valA).toLowerCase()
       const strB = String(valB).toLowerCase()
       if (strA < strB) return sortDirection === 'asc' ? -1 : 1
@@ -67,9 +61,6 @@ export function useTableSort(data = [], defaultKey = '', defaultDirection = 'asc
   }
 }
 
-/**
- * 1. TableContainer: Wrapper pelindung tabel
- */
 export function TableContainer({
   children,
   className = '',
@@ -77,7 +68,10 @@ export function TableContainer({
 }) {
   return (
     <div
-      className={`w-full max-w-full min-w-0 overflow-x-auto no-scrollbar overscroll-x-contain rounded-xl border border-border bg-surface ${className}`}
+      className={cn(
+        'w-full max-w-full min-w-0 overflow-x-auto no-scrollbar overscroll-x-contain rounded-xl border border-border bg-surface text-foreground',
+        className
+      )}
       {...props}
     >
       {children}
@@ -85,9 +79,6 @@ export function TableContainer({
   )
 }
 
-/**
- * 2. Table: Elemen table utama
- */
 export function Table({
   children,
   className = '',
@@ -97,7 +88,12 @@ export function Table({
 }) {
   return (
     <table
-      className={`w-full text-left text-xs border-collapse ${dense ? 'text-[11px]' : ''} ${striped ? '[&_tbody>tr:nth-child(even)]:bg-subsurface/30' : ''} ${className}`}
+      className={cn(
+        'w-full text-left text-xs border-collapse text-foreground',
+        dense && 'text-[11px]',
+        striped && '[&_tbody>tr:nth-child(even)]:bg-subsurface/40',
+        className
+      )}
       {...props}
     >
       {children}
@@ -105,9 +101,6 @@ export function Table({
   )
 }
 
-/**
- * 3. TableHeader: Wadah baris kepala tabel (thead)
- */
 export function TableHeader({
   children,
   className = '',
@@ -116,7 +109,11 @@ export function TableHeader({
 }) {
   return (
     <thead
-      className={`bg-subsurface/80 border-b border-border text-muted text-[10px] sm:text-xs font-bold uppercase tracking-wider ${sticky ? 'sticky top-0 z-10' : ''} backdrop-blur-xs ${className}`}
+      className={cn(
+        'bg-subsurface/90 border-b border-border text-muted text-[10px] sm:text-xs font-bold uppercase tracking-wider backdrop-blur-xs',
+        sticky && 'sticky top-0 z-10',
+        className
+      )}
       {...props}
     >
       {children}
@@ -124,9 +121,6 @@ export function TableHeader({
   )
 }
 
-/**
- * 4. TableBody: Wadah baris konten data (tbody)
- */
 export function TableBody({
   children,
   className = '',
@@ -135,7 +129,11 @@ export function TableBody({
 }) {
   return (
     <tbody
-      className={`divide-y divide-border/60 font-medium ${striped ? '[&>tr:nth-child(even)]:bg-subsurface/30' : ''} ${className}`}
+      className={cn(
+        'divide-y divide-border/70 font-medium',
+        striped && '[&>tr:nth-child(even)]:bg-subsurface/40',
+        className
+      )}
       {...props}
     >
       {children}
@@ -143,9 +141,6 @@ export function TableBody({
   )
 }
 
-/**
- * 5. TableRow: Baris tabel dengan efek hover halus
- */
 export function TableRow({
   children,
   className = '',
@@ -154,11 +149,11 @@ export function TableRow({
 }) {
   return (
     <tr
-      className={`transition-colors ${
-        selected
-          ? 'bg-primary/10 border-l-2 border-l-primary'
-          : 'hover:bg-subsurface/60'
-      } ${className}`}
+      className={cn(
+        'transition-colors',
+        selected ? 'bg-selected-surface border-l-2 border-l-primary' : 'hover:bg-subsurface/60',
+        className
+      )}
       {...props}
     >
       {children}
@@ -166,9 +161,6 @@ export function TableRow({
   )
 }
 
-/**
- * 6. TableHead: Sel kolom header (th) statis
- */
 export function TableHead({
   children,
   className = '',
@@ -179,12 +171,12 @@ export function TableHead({
     align === 'right'
       ? 'text-right'
       : align === 'center'
-      ? 'text-center'
-      : 'text-left'
+        ? 'text-center'
+        : 'text-left'
 
   return (
     <th
-      className={`px-3 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap ${alignClass} ${className}`}
+      className={cn('px-3 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap', alignClass, className)}
       {...props}
     >
       {children}
@@ -192,9 +184,6 @@ export function TableHead({
   )
 }
 
-/**
- * 7. TableSortHead: Sel kolom header interaktif dengan tombol sorting terintegrasi
- */
 export function TableSortHead({
   children,
   sortKey: currentKey,
@@ -213,20 +202,22 @@ export function TableSortHead({
     align === 'right'
       ? 'justify-end text-right'
       : align === 'center'
-      ? 'justify-center text-center'
-      : 'justify-start text-left'
+        ? 'justify-center text-center'
+        : 'justify-start text-left'
 
   return (
     <th
-      className={`px-3 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap select-none ${className}`}
+      className={cn('px-3 py-3 sm:px-4 sm:py-3.5 whitespace-nowrap select-none', className)}
       {...props}
     >
       <button
         type="button"
         onClick={() => onSort && onSort(currentKey)}
-        className={`group flex items-center gap-1.5 w-full font-bold uppercase tracking-wider transition-colors hover:text-white ${alignClass} ${
+        className={cn(
+          'group flex items-center gap-1.5 w-full font-bold uppercase tracking-wider transition-colors hover:text-foreground cursor-pointer',
+          alignClass,
           isSorted ? 'text-primary' : 'text-muted'
-        }`}
+        )}
       >
         <span>{children}</span>
         <span className="shrink-0 transition-transform">
@@ -243,9 +234,6 @@ export function TableSortHead({
   )
 }
 
-/**
- * 8. TableCell: Sel data tabel (td)
- */
 export function TableCell({
   children,
   className = '',
@@ -258,15 +246,15 @@ export function TableCell({
     align === 'right' || numeric
       ? 'text-right'
       : align === 'center'
-      ? 'text-center'
-      : 'text-left'
+        ? 'text-center'
+        : 'text-left'
 
   const fontClass = numeric ? 'font-mono tabular-nums font-bold' : ''
-  const colorClass = highlight ? 'text-primary' : 'text-slate-200'
+  const colorClass = highlight ? 'text-primary' : 'text-foreground'
 
   return (
     <td
-      className={`px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap ${alignClass} ${fontClass} ${colorClass} ${className}`}
+      className={cn('px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap', alignClass, fontClass, colorClass, className)}
       {...props}
     >
       {children}
@@ -274,9 +262,6 @@ export function TableCell({
   )
 }
 
-/**
- * 9. TableEmpty: Baris saat data kosong (Zero Data State)
- */
 export function TableEmpty({
   colSpan = 5,
   message = 'Belum ada data tersedia',
@@ -291,7 +276,7 @@ export function TableEmpty({
       >
         <div className="flex flex-col items-center justify-center space-y-1.5">
           {IconComponent && <IconComponent size={24} className="text-muted-dark mb-1" />}
-          <p className="font-bold text-slate-300 text-xs">{message}</p>
+          <p className="font-bold text-foreground text-xs">{message}</p>
           {subtitle && <p className="text-[11px] text-muted-dark">{subtitle}</p>}
         </div>
       </TableCell>

@@ -1,246 +1,294 @@
 @import "tailwindcss";
 @import "./styles/print-contracts.css";
 
-/* Custom utility layers with 21st.dev VRS_2026 Cyan Theme Palette */
-@theme {
-  --color-canvas: #000000;
-  --color-surface: #121215;
-  --color-subsurface: #18181c;
-  --color-border: #26272d;
-  --color-border-hover: #3f414a;
-  --color-border-active: #00ffff;
+/* =========================================================================
+   LAYER 1: PRIMITIVE DESIGN TOKENS (RelayPOS v5.0 Fintech Cobalt + Carbon D1)
+   ========================================================================= */
+:root {
+  --rp-blue-50: #EFF6FF;
+  --rp-blue-300: #93C5FD;
+  --rp-blue-400: #60A5FA;
+  --rp-blue-500: #3B82F6;
+  --rp-blue-600: #2563EB;
+  --rp-blue-700: #1D4ED8;
+  --rp-blue-950: #172554;
 
-  --color-primary: #00ffff;
-  --color-primary-foreground: #0f0f0f;
+  --rp-alabaster: #F4F6FA;
+  --rp-white: #FFFFFF;
+  --rp-slate-50: #F8FAFC;
+  --rp-slate-100: #F1F5F9;
+  --rp-slate-200: #E2E8F0;
+  --rp-slate-300: #CBD5E1;
+  --rp-slate-500: #64748B;
+  --rp-slate-600: #475569;
+  --rp-slate-900: #0F172A;
 
-  --color-muted: #bbcbb2;
-  --color-muted-dark: #6b7367;
+  --rp-carbon-950: #09090B;
+  --rp-carbon-900: #121215;
+  --rp-carbon-850: #1C1C21;
+  --rp-carbon-selected: #121722;
+  --rp-zinc-800: #27272A;
+  --rp-zinc-700: #3F3F46;
+  --rp-zinc-400: #A1A1AA;
+  --rp-zinc-300: #D4D4D8;
+  --rp-zinc-50: #FAFAFA;
 
-  --color-destructive: #ff5102;
-  --color-warning: #ffc71f;
-  --color-accent-amber: #ffc71f;
-  --color-accent-orange: #f57733;
+  --rp-green-50: #DCFCE7;
+  --rp-green-400: #4ADE80;
+  --rp-green-600: #16A34A;
+  --rp-green-700: #15803D;
+  --rp-green-950: #052E16;
 
-  /* Backward Compatibility Aliases for older components */
-  --color-brand-cyan: #00ffff;
-  --color-brand-emerald: #00ffff;
-  --color-brand-blue: #00ffff;
-  --color-brand-rose: #ff5102;
-  --color-brand-amber: #ffc71f;
-  --color-brand-dark: #000000;
-  --color-brand-dark-light: #121215;
-  --color-brand-surface: #121215;
-  --color-brand-border: #26272d;
-  --color-brand-muted: #bbcbb2;
+  --rp-amber-50: #FEF3C7;
+  --rp-amber-400: #FBBF24;
+  --rp-amber-700: #B45309;
+  --rp-amber-950: #451A03;
+
+  --rp-red-50: #FEE2E2;
+  --rp-red-400: #F87171;
+  --rp-red-700: #B91C1C;
+  --rp-red-950: #450A0A;
+
+  --radius: 0.75rem;
 }
 
 /* =========================================================================
-   SEMANTIC CONTAINER UTILITIES (VRS_2026 CYAN MASTER)
+   LAYER 2: SEMANTIC TOKENS — PURE CARBON OBSIDIAN DARK MODE (OPSI D1)
+   Default active surface for POS (/pos), Founder Console, and Strangler-Fig
+   unmigrated routes during Phase 3 -> Phase 4 rollout.
+   ========================================================================= */
+:root,
+[data-theme="dark"],
+.dark {
+  --color-scheme-mode: dark;
+  --calendar-indicator-filter: invert(0.85) brightness(100%);
+
+  --canvas: var(--rp-carbon-950);
+  --surface: var(--rp-carbon-900);
+  --surface-hover: #17171B;
+  --subsurface: var(--rp-carbon-850);
+  --selected-surface: var(--rp-carbon-selected);
+
+  --foreground: var(--rp-zinc-50);
+  --muted-foreground: var(--rp-zinc-400);
+  --subtle-foreground: #71717A;
+
+  --border: var(--rp-zinc-800);
+  --border-hover: var(--rp-zinc-700);
+  --border-active: var(--rp-blue-500);
+
+  --primary: var(--rp-blue-600);
+  --primary-hover: var(--rp-blue-700);
+  --primary-foreground: var(--rp-white);
+  --primary-soft: var(--rp-blue-950);
+  --primary-soft-foreground: var(--rp-blue-300);
+
+  --ink: var(--rp-zinc-50);
+  --ink-foreground: var(--rp-carbon-950);
+
+  --ring: var(--rp-blue-500);
+  --success: var(--rp-green-400);
+  --success-bg: var(--rp-green-950);
+  --warning: var(--rp-amber-400);
+  --warning-bg: var(--rp-amber-950);
+  --danger: var(--rp-red-400);
+  --danger-solid: var(--rp-red-700);
+  --danger-bg: var(--rp-red-950);
+
+  --overlay-backdrop: rgba(9, 9, 11, 0.82);
+  --surface-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.55);
+
+  /* Compatibility shadcn/radix variables */
+  --background: var(--canvas);
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --secondary: var(--subsurface);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--subsurface);
+  --accent: var(--subsurface);
+  --accent-foreground: var(--foreground);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--rp-white);
+  --input: var(--subsurface);
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--subsurface);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+
+  color-scheme: dark;
+}
+
+/* =========================================================================
+   LAYER 2B: SEMANTIC TOKENS — FINTECH COBALT BLUE LIGHT MODE (DEFAULT BACK-OFFICE)
+   ========================================================================= */
+[data-theme="light"],
+.light {
+  --color-scheme-mode: light;
+  --calendar-indicator-filter: none;
+
+  --canvas: var(--rp-alabaster);
+  --surface: var(--rp-white);
+  --surface-hover: var(--rp-slate-50);
+  --subsurface: var(--rp-slate-100);
+  --selected-surface: var(--rp-blue-50);
+
+  --foreground: var(--rp-slate-900);
+  --muted-foreground: var(--rp-slate-600);
+  --subtle-foreground: var(--rp-slate-500);
+
+  --border: var(--rp-slate-200);
+  --border-hover: var(--rp-slate-300);
+  --border-active: var(--rp-blue-500);
+
+  --primary: var(--rp-blue-600);
+  --primary-hover: var(--rp-blue-700);
+  --primary-foreground: var(--rp-white);
+  --primary-soft: var(--rp-blue-50);
+  --primary-soft-foreground: var(--rp-blue-700);
+
+  --ink: var(--rp-slate-900);
+  --ink-foreground: var(--rp-white);
+
+  --ring: var(--rp-blue-500);
+  --success: var(--rp-green-700);
+  --success-bg: var(--rp-green-50);
+  --warning: var(--rp-amber-700);
+  --warning-bg: var(--rp-amber-50);
+  --danger: var(--rp-red-700);
+  --danger-solid: var(--rp-red-700);
+  --danger-bg: var(--rp-red-50);
+
+  --overlay-backdrop: rgba(15, 23, 42, 0.45);
+  --surface-shadow: 0 2px 10px -2px rgba(15, 23, 42, 0.06);
+
+  /* Compatibility shadcn/radix variables */
+  --background: var(--canvas);
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --secondary: var(--subsurface);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--subsurface);
+  --accent: var(--subsurface);
+  --accent-foreground: var(--foreground);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--rp-white);
+  --input: var(--subsurface);
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--subsurface);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+
+  color-scheme: light;
+}
+
+/* =========================================================================
+   LAYER 3: TAILWIND CSS v4 SEMANTIC TOKEN UTILITIES + SAFE LEGACY ALIASES
+   ========================================================================= */
+@theme {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-subsurface: var(--subsurface);
+  --color-selected-surface: var(--selected-surface);
+
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted-foreground);
+  --color-muted-dark: var(--subtle-foreground);
+
+  --color-border: var(--border);
+  --color-border-hover: var(--border-hover);
+  --color-border-active: var(--border-active);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-foreground: var(--primary-soft-foreground);
+
+  --color-ink: var(--ink);
+  --color-ink-foreground: var(--ink-foreground);
+  --color-ring: var(--ring);
+
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-destructive: var(--danger);
+  --color-destructive-solid: var(--danger-solid);
+  --color-destructive-bg: var(--danger-bg);
+  --color-accent-amber: #F59E0B;
+  --color-accent-orange: #EA580C;
+
+  /* Transitional Strangler-Fig Aliases for unmigrated Phase 4 pages:
+     Kept WCAG-safe with existing dark text callers (text-slate-950 on bg-brand-emerald)
+     until all 18 pages switch to bg-primary text-primary-foreground. */
+  --color-brand-cyan: #3B82F6;
+  --color-brand-emerald: #10B981;
+  --color-brand-blue: #2563EB;
+  --color-brand-rose: #EF4444;
+  --color-brand-amber: #F59E0B;
+  --color-brand-dark: var(--canvas);
+  --color-brand-dark-light: var(--surface);
+  --color-brand-surface: var(--surface);
+  --color-brand-border: var(--border);
+  --color-brand-muted: var(--muted-foreground);
+}
+
+/* =========================================================================
+   SEMANTIC CONTAINER UTILITIES
    ========================================================================= */
 @utility container-canvas {
-  background-color: var(--color-canvas);
+  background-color: var(--canvas);
   min-height: 100vh;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   overflow-x: hidden;
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 @utility card-surface {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 0.75rem;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
   padding: 1rem;
-  color: #ffffff;
-  transition: border-color 0.15s ease;
+  color: var(--foreground);
+  box-shadow: var(--surface-shadow);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 @utility card-subsurface {
-  background-color: var(--color-subsurface);
-  border: 1px solid var(--color-border);
+  background-color: var(--subsurface);
+  border: 1px solid var(--border);
   border-radius: 0.75rem;
   padding: 0.75rem;
-  color: #ffffff;
+  color: var(--foreground);
   transition: all 0.15s ease;
 }
 
-:root, .dark {
-  --background: #000000;
-  --foreground: #ffffff;
-  --card: #121215;
-  --card-foreground: #ffffff;
-  --popover: #121215;
-  --popover-foreground: #ffffff;
-  --primary: #00ffff;
-  --primary-foreground: #0f0f0f;
-  --secondary: #2a2a2c;
-  --secondary-foreground: #ffffff;
-  --muted: #1a1a1e;
-  --muted-foreground: #bbcbb2;
-  --accent: #18181c;
-  --accent-foreground: #ffffff;
-  --destructive: #ff5102;
-  --destructive-foreground: #ffffff;
-  --border: #26272d;
-  --input: #18181c;
-  --ring: #00ffff;
-  --chart-1: #00ffff;
-  --chart-2: #ffc71f;
-  --chart-3: #f57733;
-  --chart-4: #ff5102;
-  --chart-5: #6b7367;
-  --radius: 0.75rem;
-  --sidebar: #000000;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #00ffff;
-  --sidebar-primary-foreground: #0f0f0f;
-  --sidebar-accent: #18181c;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #26272d;
-  --sidebar-ring: #00ffff;
-}
-
+html,
 body {
   margin: 0;
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: #000000;
-  color: #ffffff;
-  overflow: hidden;
+  background-color: var(--canvas);
+  color: var(--foreground);
   height: 100%;
   height: 100dvh;
+  overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color-scheme: dark;
-}
-
-html {
-  color-scheme: dark;
-  background-color: #000000;
-}
-
-/* =========================================================================
-   GLOBAL FORM CONTROLS & COMPONENT STYLING (VRS_2026 CYAN TOKENS)
-   ========================================================================= */
-
-/* 1. Global Select Dropdowns */
-select {
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  -moz-appearance: none !important;
-  background-color: #18181c !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2300ffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
-  background-repeat: no-repeat !important;
-  background-position: right 0.75rem center !important;
-  background-size: 1rem 1rem !important;
-  padding-right: 2.25rem !important;
-  border: 1px solid #26272d !important;
-  border-radius: 0.5rem !important;
-  color: #ffffff !important;
-  font-family: inherit !important;
-  font-size: 0.75rem !important;
-  font-weight: 500 !important;
-  transition: all 0.15s ease !important;
-  cursor: pointer !important;
-  color-scheme: dark !important;
-}
-
-select:hover {
-  border-color: #3f414a !important;
-  background-color: #202025 !important;
-}
-
-select:focus {
-  outline: none !important;
-  border-color: #00ffff !important;
-  box-shadow: 0 0 0 1px #00ffff !important;
-}
-
-select option,
-select optgroup {
-  background-color: #121215 !important;
-  color: #ffffff !important;
-  font-weight: 500 !important;
-  padding: 8px 12px !important;
-}
-
-select option:checked {
-  background-color: #26272d !important;
-  color: #00ffff !important;
-  font-weight: 600 !important;
-}
-
-/* 2. Global Date & Time Picker Inputs */
-input[type="date"],
-input[type="time"],
-input[type="datetime-local"] {
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  -moz-appearance: none !important;
-  background-color: #18181c !important;
-  border: 1px solid #26272d !important;
-  border-radius: 0.5rem !important;
-  color: #ffffff !important;
-  font-family: inherit !important;
-  font-size: 0.75rem !important;
-  font-weight: 500 !important;
-  padding: 0.45rem 0.75rem !important;
-  transition: all 0.15s ease !important;
-  cursor: pointer !important;
-  color-scheme: dark !important;
-}
-
-input[type="date"]:hover,
-input[type="time"]:hover,
-input[type="datetime-local"]:hover {
-  border-color: #3f414a !important;
-  background-color: #202025 !important;
-}
-
-input[type="date"]:focus,
-input[type="time"]:focus,
-input[type="datetime-local"]:focus {
-  outline: none !important;
-  border-color: #00ffff !important;
-  box-shadow: 0 0 0 1px #00ffff !important;
-}
-
-/* Custom Calendar & Clock Picker Icons */
-::-webkit-calendar-picker-indicator {
-  filter: invert(0.8) brightness(100%) !important;
-  cursor: pointer !important;
-  opacity: 0.75 !important;
-  padding: 3px !important;
-  border-radius: 4px !important;
-  transition: all 0.15s ease !important;
-}
-
-::-webkit-calendar-picker-indicator:hover {
-  opacity: 1 !important;
-}
-
-/* Remove default browser clear/spin buttons */
-::-webkit-inner-spin-button,
-::-webkit-clear-button {
-  display: none !important;
-}
-
-/* 3. Global Popup, Dialog & Modal Containers */
-.modal-overlay,
-.popup-overlay {
-  background-color: rgba(0, 0, 0, 0.88) !important;
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
-}
-
-.popup-panel,
-.dropdown-menu,
-.popover-container {
-  background: #121215 !important;
-  border: 1px solid #26272d !important;
-  border-radius: 0.75rem !important;
-  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.9) !important;
-  color: #ffffff !important;
 }
 
 #root {
@@ -249,54 +297,179 @@ input[type="datetime-local"]:focus {
   overflow: hidden;
 }
 
-/* Solid Clean Enterprise Surfaces - VRS_2026 */
+/* =========================================================================
+   GLOBAL FORM CONTROLS & COMPONENT SURFACES (THEME-AWARE LIGHT + CARBON D1)
+   ========================================================================= */
+select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-color: var(--subsurface) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.75rem center !important;
+  background-size: 1rem 1rem !important;
+  padding-right: 2.25rem !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 0.625rem !important;
+  color: var(--foreground) !important;
+  font-family: inherit !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease !important;
+  cursor: pointer !important;
+  color-scheme: var(--color-scheme-mode, dark) !important;
+}
+
+select:hover {
+  border-color: var(--border-hover) !important;
+}
+
+select:focus {
+  outline: none !important;
+  border-color: var(--ring) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ring) 25%, transparent) !important;
+}
+
+select option,
+select optgroup {
+  background-color: var(--surface) !important;
+  color: var(--foreground) !important;
+  font-weight: 500 !important;
+  padding: 8px 12px !important;
+}
+
+select option:checked {
+  background-color: var(--selected-surface) !important;
+  color: var(--primary) !important;
+  font-weight: 600 !important;
+}
+
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-color: var(--subsurface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 0.625rem !important;
+  color: var(--foreground) !important;
+  font-family: inherit !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  padding: 0.5rem 0.75rem !important;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease !important;
+  cursor: pointer !important;
+  color-scheme: var(--color-scheme-mode, dark) !important;
+}
+
+input[type="date"]:hover,
+input[type="time"]:hover,
+input[type="datetime-local"]:hover {
+  border-color: var(--border-hover) !important;
+}
+
+input[type="date"]:focus,
+input[type="time"]:focus,
+input[type="datetime-local"]:focus {
+  outline: none !important;
+  border-color: var(--ring) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ring) 25%, transparent) !important;
+}
+
+::-webkit-calendar-picker-indicator {
+  filter: var(--calendar-indicator-filter, invert(0.85) brightness(100%)) !important;
+  cursor: pointer !important;
+  opacity: 0.75 !important;
+  padding: 3px !important;
+  border-radius: 4px !important;
+  transition: opacity 0.15s ease !important;
+}
+
+::-webkit-calendar-picker-indicator:hover {
+  opacity: 1 !important;
+}
+
+::-webkit-inner-spin-button,
+::-webkit-clear-button {
+  display: none !important;
+}
+
+.modal-overlay,
+.popup-overlay {
+  background-color: var(--overlay-backdrop) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+.popup-panel,
+.dropdown-menu,
+.popover-container {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 0.875rem !important;
+  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.35) !important;
+  color: var(--foreground) !important;
+}
+
 .glass-panel {
-  background: #121215;
-  border: 1px solid #26272d;
-  border-radius: 0.75rem;
-  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.6);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  box-shadow: var(--surface-shadow);
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .glass-card {
-  background: #121215;
-  border: 1px solid #26272d;
-  border-radius: 0.75rem;
-  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.6);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  box-shadow: var(--surface-shadow);
   transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .glass-card:hover {
-  background: #16161a;
-  border-color: #3f414a;
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
 }
 
-/* Custom scrollbars */
+/* Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #000000 !important;
+  background: var(--canvas) !important;
 }
 ::-webkit-scrollbar-thumb {
-  background: #26272d !important;
+  background: var(--border) !important;
   border-radius: 9999px !important;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f414a !important;
+  background: var(--border-hover) !important;
 }
 .custom-scrollbar::-webkit-scrollbar-track,
 .custom-dropdown-scrollbar::-webkit-scrollbar-track {
-  background: #000000 !important;
+  background: transparent !important;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb,
 .custom-dropdown-scrollbar::-webkit-scrollbar-thumb {
-  background: #26272d !important;
+  background: var(--border) !important;
   border-radius: 9999px !important;
 }
 
-/* Custom Animations Utilities - 60fps GPU Accelerated without Blur Paint Cost */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* =========================================================================
+   60FPS GPU MICRO-ANIMATIONS & TACTILE ERGONOMICS
+   ========================================================================= */
 .animate-slide-up {
   animation: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   opacity: 0;
@@ -314,9 +487,8 @@ input[type="datetime-local"]:focus {
   will-change: transform, opacity;
 }
 
-/* Tactile Touch Utilities for Tablet Ergonomics (21st.dev Standard) */
 .tap-tactile {
-  transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.12s ease;
+  transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.12s ease, border-color 0.12s ease;
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
@@ -326,7 +498,6 @@ input[type="datetime-local"]:focus {
   transform: scale(0.98);
 }
 
-/* Staggered Delays */
 .delay-100 { animation-delay: 60ms; }
 .delay-200 { animation-delay: 120ms; }
 .delay-300 { animation-delay: 180ms; }
@@ -348,4 +519,4 @@ input[type="datetime-local"]:focus {
   100% { transform: scale(1); opacity: 1; }
 }
 
-/* Print & thermal receipt rules live in src/styles/print-contracts.css */
+/* Print & thermal receipt rules live exclusively in src/styles/print-contracts.css */
