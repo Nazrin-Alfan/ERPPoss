@@ -1,6 +1,6 @@
 # RelayPOS — Modern Fintech UI/UX Design System (v4.2)
 
-> **Status:** Approved (`@UIUX_Design_Auditor` — WCAG 2.2 AA, Anti-AI Slop, Database-Backed POS)
+> **Status:** Complete Wave 1 + Wave 2 + Wave 3 (`17/17 Frames` — Audited `APPROVED` by `@UIUX_Design_Auditor`)
 > **Referensi Gaya:** Modern Fintech (*LumenWave Direction* — Warm Alabaster `#F6F5F1`, Floating Cards, Deep Ink `#111113`, Signal Lime `#C8F31D`, Pill Geometry)
 > **Branch:** `chore/uiux-rebrand-plan`
 
@@ -10,15 +10,16 @@
 
 | Berkas | Deskripsi |
 | :--- | :--- |
-| [`RelayPOS-Rebrand.figcraft`](./RelayPOS-Rebrand.figcraft) | File sumber desain **FigCraft** lengkap (Page 1: Enterprise Navy & Page 2: **Modern Fintech v4.2**) |
+| [`RelayPOS-Rebrand.figcraft`](./RelayPOS-Rebrand.figcraft) | File sumber desain **FigCraft** lengkap (Page 1 & Page 2: **17 layar Modern Fintech v4.2**) |
 | [`MASTER.md`](./MASTER.md) | Spesifikasi token 3-lapis, blueprint matematis Logo B3, ikon vektor, tipografi & 4 *UI States* |
 | [`pages/pos.md`](./pages/pos.md) | Override spesifikasi khusus POS Kasir (`04A` & `04B`) dan Antrean Carwash (`05`) |
+| [`pages/backoffice-and-platform.md`](./pages/backoffice-and-platform.md) | Spesifikasi lengkap Wave 2 Back-Office ERP (`06`–`11`) dan Wave 3 Public & Platform (`12`–`15`) |
 | [`assets/relaypos-logo-b3-light.svg`](./assets/relaypos-logo-b3-light.svg) | Logo SVG resmi **B3 Ink Squircle Emblem** (Light Header / App Tile) |
-| [`assets/relaypos-logo-b3-dark.svg`](./assets/relaypos-logo-b3-dark.svg) | Logo SVG resmi **B3 Ink Squircle Emblem** (Dark POS / Login Panel) |
+| [`assets/relaypos-logo-b3-dark.svg`](./assets/relaypos-logo-b3-dark.svg) | Logo SVG resmi **B3 Ink Squircle Emblem** (Dark POS / Login / Founder) |
 
 ---
 
-## Galeri Pratinjau Wave 1 (Page 2 — Modern Fintech v4.2)
+## Galeri Pratinjau Wave 1 — Brand, UI Kit & Core Revenue (`00`–`05`)
 
 ### 00 — Brand Blueprint: Logo B3 & Dual-Mode Tokens
 ![00 Logo B3 Blueprint & Tokens](./fintech_frame00_logo_b3_blueprint.png)
@@ -43,9 +44,47 @@
 
 ---
 
+## Galeri Pratinjau Wave 2 — Back-Office ERP (`06`–`11`)
+
+### 06 — Keuangan & Inbox Mutasi Email Bank Mandiri (`/finance`)
+![06 Finance & Bank Mandiri Inbox](./fintech_frame06_finance_mandiri.png)
+
+### 07 — Gudang, Inventori BOM & Stock Opname (`/gudang`)
+![07 Gudang & Inventori BOM](./fintech_frame07_gudang_bom.png)
+
+### 08 — Laporan Laba Rugi & Buku Besar SAK EMKM (`/reports`)
+![08 Laporan SAK EMKM & Buku Besar](./fintech_frame08_reports_sak_emkm.png)
+
+### 09 — Karyawan, Payroll Komisi Cut-Off & Undangan Co-Owner (`/karyawan`)
+![09 Karyawan, Payroll & Co-Owner](./fintech_frame09_karyawan_payroll.png)
+
+### 10 — CRM Kendaraan, Stamp Loyalty & Retensi WhatsApp (`/crm`)
+![10 CRM Kendaraan & WA Retention](./fintech_frame10_crm_retention.png)
+
+### 11 — Admin Master, Resep BOM Atomik & Live Preview Struk 58mm (`/admin`)
+![11 Admin Master & Struk 58mm](./fintech_frame11_admin_master_thermal.png)
+
+---
+
+## Galeri Pratinjau Wave 3 — Multi-Cabang, Publik & Platform (`12`–`15`)
+
+### 12 — Konsolidasi Multi-Outlet & Matriks Profitabilitas Cabang (`/konsolidasi`)
+![12 Konsolidasi Multi-Outlet](./fintech_frame12_konsolidasi_cabang.png)
+
+### 13 — Public SaaS Landing Page (`/welcome`)
+![13 Public SaaS Landing Page](./fintech_frame13_landing_page.png)
+
+### 14 — Pusat Dokumentasi & SOP Operasional Interaktif (`/panduan`)
+![14 Buku Panduan & SOP](./fintech_frame14_user_manual_sop.png)
+
+### 15 — Console Founder & SuperAdmin Platform (`/founder`)
+![15 Founder & SuperAdmin Console](./fintech_frame15_founder_console.png)
+
+---
+
 ## Cara Membuka & Mengedit dari Perangkat Lain (Remote Access)
 
-1. **Lihat langsung di GitHub:** Semua dokumentasi token, aset SVG, dan 7 pratinjau layar PNG 2x di atas langsung tampil di browser desktop maupun HP melalui halaman folder `design-system/` ini.
+1. **Lihat langsung di GitHub:** Semua dokumentasi token, aset SVG, dan 17 pratinjau layar PNG 2x di atas langsung tampil di browser desktop maupun HP melalui halaman folder `design-system/` ini.
 2. **Edit ulang di FigCraft Desktop:**
    ```bash
    git fetch origin
