@@ -496,6 +496,25 @@ input[type="datetime-local"]:focus {
   will-change: transform, opacity;
 }
 
+.animate-chart-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: chart-draw 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: stroke-dashoffset;
+}
+
+.animate-chart-area {
+  opacity: 0;
+  animation: chart-area-in 0.5s ease-out forwards;
+  will-change: opacity;
+}
+
+.animate-bar-grow {
+  transform-origin: left center;
+  animation: bar-grow 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform;
+}
+
 .tap-tactile {
   transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.12s ease, border-color 0.12s ease;
   user-select: none;
@@ -526,6 +545,35 @@ input[type="datetime-local"]:focus {
 @keyframes pop-in {
   0% { transform: scale(0.96); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes chart-draw {
+  0% { stroke-dashoffset: 1; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes chart-area-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes bar-grow {
+  0% { transform: scaleX(0); }
+  100% { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-up,
+  .animate-fade-in,
+  .animate-pop-in,
+  .animate-chart-draw,
+  .animate-chart-area,
+  .animate-bar-grow {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    stroke-dashoffset: 0 !important;
+  }
 }
 
 /* Print & thermal receipt rules live exclusively in src/styles/print-contracts.css */

@@ -96,6 +96,23 @@ const fetchCafeRows = async (start = null, end = null, tenantId = null) => {
   return allData
 }
 
+const formatCompactRupiah = (val) => {
+  const num = Number(val) || 0
+  const abs = Math.abs(num)
+  const sign = num < 0 ? '-' : ''
+  if (abs >= 1_000_000_000) return `${sign}Rp ${(abs / 1_000_000_000).toFixed(1).replace(/\.0$/, '')}M`
+  if (abs >= 1_000_000) return `${sign}Rp ${(abs / 1_000_000).toFixed(1).replace(/\.0$/, '')}jt`
+  if (abs >= 1_000) return `${sign}Rp ${Math.round(abs / 1_000)}rb`
+  return `${sign}Rp ${Math.round(abs)}`
+}
+
+const formatTrendDateLabel = (dateStr) => {
+  if (!dateStr) return '-'
+  const parsed = parseDateSafe(dateStr)
+  if (!parsed || Number.isNaN(parsed.getTime())) return dateStr
+  return parsed.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
 const Dashboard = () => {
   const navigate = useNavigate()
   const { activeTenant, profile, user, refreshTenants } = useAuth()
@@ -129,7 +146,14 @@ const Dashboard = () => {
   const [showExpenseModal, setShowExpenseModal] = useState(false)
   const [selectedExpenseDivision, setSelectedExpenseDivision] = useState('CARWASH')
   const [activeInsightTab, setActiveInsightTab] = useState('sinergi') // 'sinergi', 'rekap', 'stok'
+  const [hoveredTrendIndex, setHoveredTrendIndex] = useState(null)
+  const [hoveredBreakdownKey, setHoveredBreakdownKey] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
+
+  useEffect(() => {
+    setHoveredTrendIndex(null)
+    setHoveredBreakdownKey(null)
+  }, [activeSection, timeRange])
 
   // Raw DB Data
   const [strukList, setStrukList] = useState([])
@@ -845,7 +869,150 @@ const Dashboard = () => {
     return combined.sort((a, b) => b.sales - a.sales).slice(0, 5)
   }, [activeSection, cafeAnalytics.topMenus, carwashAnalytics.topModels, carwashAnalytics.carwashAOV])
 
-  // Custom SVG Trend Line Chart
+  // Interactive Breakdown Segments (Chart 2 Stacked Bar + Hover Readout)
+  const breakdownConfig = useMemo(() => {
+    if (activeSection === 'CARWASH') {
+      const cwRev = carwashAnalytics.totalRevenue || 0
+      const cwExp = segmentedExpenses.carwashExp || 0
+      const cwNet = Math.max(segmentedExpenses.carwashNetProfit || 0, 0)
+      const base = Math.max(cwExp + cwNet, cwRev, 1)
+      return {
+        allZero: cwExp === 0 && cwNet === 0,
+        segments: [
+          {
+            key: 'cw_exp',
+            label: 'Beban Operasional & Chemical Cuci',
+            amount: cwExp,
+            percent: cwRev > 0 ? ((cwExp / cwRev) * 100).toFixed(1) : '0.0',
+            sharePercent: (cwExp / base) * 100,
+            barClass: 'bg-destructive-solid',
+            dotClass: 'bg-destructive-solid',
+            textClass: 'text-destructive',
+            detail: `Komisi ${formatRupiah(segmentedExpenses.carwashCommission)} • Bahan ${formatRupiah(segmentedExpenses.carwashBahan)} • Ops ${formatRupiah(segmentedExpenses.carwashOperasional)}`
+          },
+          {
+            key: 'cw_net',
+            label: 'Kas Bersih Divisi Carwash',
+            amount: segmentedExpenses.carwashNetProfit || 0,
+            percent: String(segmentedExpenses.carwashProfitMargin || '0.0'),
+            sharePercent: (cwNet / base) * 100,
+            barClass: 'bg-success',
+            dotClass: 'bg-success',
+            textClass: 'text-success',
+            detail: `Omzet ${formatRupiah(cwRev)} • ${carwashAnalytics.totalUnits} unit dicuci`
+          }
+        ],
+        extraRows: {
+          cw_cross: {
+            key: 'cw_cross',
+            label: 'Konversi Cross-Order ke Cafe',
+            amountText: `${advancedKPIs.crossCount} Mobil`,
+            percent: String(advancedKPIs.crossConversionRate || '0.0'),
+            dotClass: 'bg-warning',
+            textClass: 'text-warning',
+            detail: `${advancedKPIs.crossCount} dari ${advancedKPIs.totalCarwashStruks} transaksi cuci juga memesan F&B`
+          }
+        }
+      }
+    }
+
+    if (activeSection === 'CAFE') {
+      const cafeRev = cafeAnalytics.totalRevenue || 0
+      const cafeExp = segmentedExpenses.cafeExp || 0
+      const cafeNet = Math.max(segmentedExpenses.cafeNetProfit || 0, 0)
+      const base = Math.max(cafeExp + cafeNet, cafeRev, 1)
+      return {
+        allZero: cafeExp === 0 && cafeNet === 0,
+        segments: [
+          {
+            key: 'cafe_exp',
+            label: 'Beban Bahan Baku & Operasional F&B',
+            amount: cafeExp,
+            percent: cafeRev > 0 ? ((cafeExp / cafeRev) * 100).toFixed(1) : '0.0',
+            sharePercent: (cafeExp / base) * 100,
+            barClass: 'bg-destructive-solid',
+            dotClass: 'bg-destructive-solid',
+            textClass: 'text-destructive',
+            detail: `Bahan Baku ${formatRupiah(segmentedExpenses.cafeBahanBaku)} • Ops ${formatRupiah(segmentedExpenses.cafeOperasional)}`
+          },
+          {
+            key: 'cafe_net',
+            label: 'Kas Bersih Divisi Cafe & Resto',
+            amount: segmentedExpenses.cafeNetProfit || 0,
+            percent: String(segmentedExpenses.cafeProfitMargin || '0.0'),
+            sharePercent: (cafeNet / base) * 100,
+            barClass: 'bg-success',
+            dotClass: 'bg-success',
+            textClass: 'text-success',
+            detail: `Omzet ${formatRupiah(cafeRev)} • ${cafeAnalytics.totalItems} porsi terjual`
+          }
+        ],
+        extraRows: {
+          cafe_struk: {
+            key: 'cafe_struk',
+            label: 'Struk Pesanan F&B Diterbitkan',
+            amountText: `${cafeAnalytics.cafeStrukCount} Struk`,
+            percent: '100',
+            dotClass: 'bg-primary',
+            textClass: 'text-primary',
+            detail: `AOV F&B: ${formatRupiah(cafeAnalytics.cafeAOV)} • ${cafeAnalytics.totalItems} item pesanan`
+          }
+        }
+      }
+    }
+
+    const totalExp = segmentedExpenses.totalExpenses || 0
+    return {
+      allZero: totalExp === 0,
+      segments: [
+        {
+          key: 'carwash',
+          label: 'Pengeluaran Divisi Carwash',
+          amount: segmentedExpenses.carwashExp || 0,
+          percent: totalExp > 0 ? ((segmentedExpenses.carwashExp / totalExp) * 100).toFixed(1) : '0.0',
+          sharePercent: totalExp > 0 ? (segmentedExpenses.carwashExp / totalExp) * 100 : 0,
+          barClass: 'bg-primary',
+          dotClass: 'bg-primary',
+          textClass: 'text-primary',
+          detail: `Komisi ${formatRupiah(segmentedExpenses.carwashCommission)} • Bahan & Ops ${formatRupiah((segmentedExpenses.carwashBahan || 0) + (segmentedExpenses.carwashOperasional || 0))}`
+        },
+        {
+          key: 'cafe',
+          label: 'Pengeluaran Divisi Cafe',
+          amount: segmentedExpenses.cafeExp || 0,
+          percent: totalExp > 0 ? ((segmentedExpenses.cafeExp / totalExp) * 100).toFixed(1) : '0.0',
+          sharePercent: totalExp > 0 ? (segmentedExpenses.cafeExp / totalExp) * 100 : 0,
+          barClass: 'bg-warning',
+          dotClass: 'bg-warning',
+          textClass: 'text-warning',
+          detail: `Bahan Baku ${formatRupiah(segmentedExpenses.cafeBahanBaku)} • Ops ${formatRupiah(segmentedExpenses.cafeOperasional)}`
+        },
+        {
+          key: 'shared',
+          label: 'Pengeluaran Bersama (Holding)',
+          amount: segmentedExpenses.sharedExp || 0,
+          percent: totalExp > 0 ? ((segmentedExpenses.sharedExp / totalExp) * 100).toFixed(1) : '0.0',
+          sharePercent: totalExp > 0 ? (segmentedExpenses.sharedExp / totalExp) * 100 : 0,
+          barClass: 'bg-ink',
+          dotClass: 'bg-ink',
+          textClass: 'text-foreground',
+          detail: `Gaji ${formatRupiah(segmentedExpenses.bebanBersamaGaji)} • Utilitas ${formatRupiah(segmentedExpenses.bebanBersamaUtilitas)} • Lain ${formatRupiah(segmentedExpenses.bebanBersamaLain)}`
+        }
+      ],
+      extraRows: {}
+    }
+  }, [activeSection, segmentedExpenses, carwashAnalytics, cafeAnalytics, advancedKPIs])
+
+  const activeBreakdownItem = useMemo(() => {
+    if (!hoveredBreakdownKey) return null
+    return (
+      breakdownConfig.segments.find((s) => s.key === hoveredBreakdownKey) ||
+      breakdownConfig.extraRows[hoveredBreakdownKey] ||
+      null
+    )
+  }, [hoveredBreakdownKey, breakdownConfig])
+
+  // Custom SVG Trend Line Chart (Interactive Crosshair + DOM Numerical Tooltip)
   const renderTrendChart = () => {
     const data = financialAnalytics.trendData
     if (!data || data.length === 0) {
@@ -862,101 +1029,253 @@ const Dashboard = () => {
 
     const maxVal = Math.max(...data.map(d => Math.max(d[trendKey] || 0, d.pengeluaran)), 100000)
     const svgWidth = 600
-    const svgHeight = 180
-    const padding = 28
+    const svgHeight = 196
+    const padLeft = 56
+    const padRight = 22
+    const padTop = 24
+    const padBottom = 28
+    const plotWidth = svgWidth - padLeft - padRight
+    const plotHeight = svgHeight - padTop - padBottom
 
-    const pointsOmzet = data.map((d, i) => {
-      const x = padding + (i / Math.max(data.length - 1, 1)) * (svgWidth - padding * 2)
-      const y = svgHeight - padding - ((d[trendKey] || 0) / maxVal) * (svgHeight - padding * 2)
-      return `${x},${y}`
-    }).join(' ')
+    const chartPoints = data.map((d, i) => {
+      const x = data.length === 1
+        ? padLeft + plotWidth / 2
+        : padLeft + (i / (data.length - 1)) * plotWidth
+      const valOmzet = d[trendKey] || 0
+      const valExp = d.pengeluaran || 0
+      const yOmzet = padTop + plotHeight - (valOmzet / maxVal) * plotHeight
+      const yExp = padTop + plotHeight - (valExp / maxVal) * plotHeight
+      return {
+        index: i,
+        date: d.date,
+        dateLabel: d.date ? d.date.substring(5) : '',
+        valOmzet,
+        valExp,
+        netDaily: valOmzet - valExp,
+        x,
+        yOmzet,
+        yExp
+      }
+    })
 
-    const pointsExp = data.map((d, i) => {
-      const x = padding + (i / Math.max(data.length - 1, 1)) * (svgWidth - padding * 2)
-      const y = svgHeight - padding - (d.pengeluaran / maxVal) * (svgHeight - padding * 2)
-      return `${x},${y}`
-    }).join(' ')
+    const pointsOmzet = chartPoints.map((pt) => `${pt.x},${pt.yOmzet}`).join(' ')
+    const pointsExp = chartPoints.map((pt) => `${pt.x},${pt.yExp}`).join(' ')
+    const baselineY = padTop + plotHeight
+    const areaPointsOmzet = chartPoints.length > 1
+      ? `${chartPoints[0].x},${baselineY} ${pointsOmzet} ${chartPoints[chartPoints.length - 1].x},${baselineY}`
+      : ''
 
-    const firstX = padding
-    const lastX = padding + (Math.max(data.length - 1, 1) / Math.max(data.length - 1, 1)) * (svgWidth - padding * 2)
-    const areaPointsOmzet = `${firstX},${svgHeight - padding} ${pointsOmzet} ${lastX},${svgHeight - padding}`
+    const safeHoveredIdx =
+      hoveredTrendIndex !== null && hoveredTrendIndex >= 0 && hoveredTrendIndex < chartPoints.length
+        ? hoveredTrendIndex
+        : null
+    const activePoint = safeHoveredIdx !== null ? chartPoints[safeHoveredIdx] : null
+    const leftPercent = activePoint ? (activePoint.x / svgWidth) * 100 : 50
+    const tooltipTransform = leftPercent < 22 ? 'translateX(0)' : leftPercent > 78 ? 'translateX(-100%)' : 'translateX(-50%)'
 
     return (
-      <div className="w-full overflow-hidden">
-        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-44 overflow-visible">
+      <div className="w-full">
+        <div
+          className="relative w-full"
+          onMouseLeave={() => setHoveredTrendIndex(null)}
+        >
+          {activePoint && (
+            <div
+              data-testid="trend-chart-tooltip"
+              style={{ left: `${leftPercent}%`, transform: tooltipTransform }}
+              className="pointer-events-none absolute top-1 z-20 min-w-[188px] max-w-[236px] rounded-xl bg-surface border border-border shadow-xl p-2.5 text-xs animate-pop-in"
+            >
+              <p className="text-[11px] font-bold text-foreground mb-1.5 border-b border-border pb-1">
+                {formatTrendDateLabel(activePoint.date)}
+              </p>
+              <div className="space-y-1 font-mono tabular-nums text-[11px]">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-sans text-muted flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: lineColor }} />
+                    Omzet
+                  </span>
+                  <span className="font-bold text-foreground">{formatRupiah(activePoint.valOmzet)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-sans text-muted flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-destructive-solid shrink-0" />
+                    Beban
+                  </span>
+                  <span className="font-bold text-destructive">{formatRupiah(activePoint.valExp)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 pt-1 border-t border-border">
+                  <span className="font-sans text-muted font-semibold">Net</span>
+                  <span className={`font-bold ${activePoint.netDaily >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    {formatRupiah(activePoint.netDaily)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <svg
+            key={`${activeSection}-${timeRange}-${data.length}`}
+            viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+            className="w-full h-48 overflow-visible"
+          >
             <defs>
               <linearGradient id="omzetAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={lineColor} stopOpacity="0.2" />
+                <stop offset="0%" stopColor={lineColor} stopOpacity="0.22" />
                 <stop offset="100%" stopColor={lineColor} stopOpacity="0.0" />
               </linearGradient>
             </defs>
 
-            <line x1={padding} y1={padding} x2={svgWidth - padding} y2={padding} stroke="var(--border)" strokeDasharray="3 3" opacity="0.8" />
-            <line x1={padding} y1={svgHeight / 2} x2={svgWidth - padding} y2={svgHeight / 2} stroke="var(--border)" strokeDasharray="3 3" opacity="0.8" />
-            <line x1={padding} y1={svgHeight - padding} x2={svgWidth - padding} y2={svgHeight - padding} stroke="var(--border)" strokeWidth="1" />
+            {/* Horizontal Gridlines & Compact Y-Axis Labels */}
+            {[
+              { y: padTop, val: maxVal, dashed: true },
+              { y: padTop + plotHeight / 2, val: maxVal / 2, dashed: true },
+              { y: baselineY, val: 0, dashed: false }
+            ].map((tick, idx) => (
+              <g key={idx}>
+                <line
+                  x1={padLeft}
+                  y1={tick.y}
+                  x2={svgWidth - padRight}
+                  y2={tick.y}
+                  stroke="var(--border)"
+                  strokeDasharray={tick.dashed ? '3 3' : undefined}
+                  opacity={tick.dashed ? 0.8 : 1}
+                />
+                <text
+                  x={padLeft - 8}
+                  y={tick.y + 3}
+                  fontSize="9"
+                  fill="var(--muted-foreground)"
+                  textAnchor="end"
+                  className="font-mono tabular-nums"
+                >
+                  {formatCompactRupiah(tick.val)}
+                </text>
+              </g>
+            ))}
 
             {/* Translucent Area Gradient */}
-            <polygon
-              fill="url(#omzetAreaGrad)"
-              points={areaPointsOmzet}
-            />
+            {chartPoints.length > 1 && (
+              <polygon
+                fill="url(#omzetAreaGrad)"
+                points={areaPointsOmzet}
+                className="animate-chart-area"
+              />
+            )}
 
             {/* Omzet Curve */}
-            <polyline
-              fill="none"
-              stroke={lineColor}
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              points={pointsOmzet}
-            />
+            {chartPoints.length > 1 && (
+              <polyline
+                fill="none"
+                stroke={lineColor}
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                pathLength="1"
+                points={pointsOmzet}
+                className="animate-chart-draw"
+              />
+            )}
 
             {/* Expense Curve */}
-            <polyline
-              fill="none"
-              stroke="var(--danger)"
-              strokeWidth="2"
-              strokeDasharray="4 4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              points={pointsExp}
-            />
+            {chartPoints.length > 1 && (
+              <polyline
+                fill="none"
+                stroke="var(--danger)"
+                strokeWidth="2"
+                strokeDasharray="4 4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                points={pointsExp}
+                className="animate-chart-area"
+              />
+            )}
 
-            {data.map((d, i) => {
-              const labelInterval = Math.max(Math.ceil(data.length / 8), 1)
-              const showLabel = i % labelInterval === 0 || i === data.length - 1
-              const x = padding + (i / Math.max(data.length - 1, 1)) * (svgWidth - padding * 2)
-              const valOmzet = d[trendKey] || 0
-              const yOmzet = svgHeight - padding - (valOmzet / maxVal) * (svgHeight - padding * 2)
-              const yExp = svgHeight - padding - (d.pengeluaran / maxVal) * (svgHeight - padding * 2)
-              const tooltipY = Math.max(5, Math.min(yOmzet, yExp) - 42)
-              const dateLabel = d.date ? d.date.substring(5) : ''
+            {/* Active Crosshair Line */}
+            {activePoint && (
+              <line
+                x1={activePoint.x}
+                y1={padTop}
+                x2={activePoint.x}
+                y2={baselineY}
+                stroke={lineColor}
+                strokeWidth="1.25"
+                strokeDasharray="3 3"
+                strokeOpacity="0.6"
+              />
+            )}
+
+            {/* Interactive Hit Columns & Data Dots */}
+            {chartPoints.map((pt, i) => {
+              const labelInterval = Math.max(Math.ceil(chartPoints.length / 8), 1)
+              const showLabel = i % labelInterval === 0 || i === chartPoints.length - 1
+              const prevX = i === 0 ? padLeft : (chartPoints[i - 1].x + pt.x) / 2
+              const nextX = i === chartPoints.length - 1 ? svgWidth - padRight : (pt.x + chartPoints[i + 1].x) / 2
+              const hitX = Math.max(padLeft - 8, prevX)
+              const hitW = Math.max(20, (nextX - prevX) + (i === 0 || i === chartPoints.length - 1 ? 8 : 0))
+              const isActive = safeHoveredIdx === i
 
               return (
-                <g key={i} className="group cursor-pointer">
-                  <rect x={x - 8} y={Math.min(yOmzet, yExp) - 8} width="16" height={Math.abs(yOmzet - yExp) + 16} fill="transparent" />
-                  <circle cx={x} cy={yOmzet} r="4" fill={lineColor} className="transition-all group-hover:r-6" />
-                  <circle cx={x} cy={yExp} r="3.5" fill="var(--danger)" className="transition-all group-hover:r-5" />
-                  <g className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                    <rect x={x - 55} y={tooltipY} width="110" height="34" rx="4" fill="var(--surface)" stroke="var(--border)" strokeWidth="1" />
-                    <text x={x} y={tooltipY + 12} fontSize="9" fill={lineColor} fontWeight="bold" textAnchor="middle">
-                      {formatRupiah(valOmzet)}
-                    </text>
-                    <text x={x} y={tooltipY + 26} fontSize="9" fill="var(--danger)" fontWeight="bold" textAnchor="middle">
-                      {formatRupiah(d.pengeluaran)}
-                    </text>
-                  </g>
+                <g key={pt.date || i}>
+                  {isActive && (
+                    <>
+                      <circle cx={pt.x} cy={pt.yOmzet} r={10} fill={lineColor} fillOpacity="0.18" />
+                      <circle cx={pt.x} cy={pt.yExp} r={9} fill="var(--danger)" fillOpacity="0.16" />
+                    </>
+                  )}
+                  <circle
+                    cx={pt.x}
+                    cy={pt.yOmzet}
+                    r={isActive ? 5.5 : 3.75}
+                    fill={lineColor}
+                    stroke="var(--surface)"
+                    strokeWidth={isActive ? 2 : 1}
+                    className="transition-all duration-150"
+                  />
+                  <circle
+                    cx={pt.x}
+                    cy={pt.yExp}
+                    r={isActive ? 4.5 : 3}
+                    fill="var(--danger)"
+                    stroke="var(--surface)"
+                    strokeWidth={isActive ? 1.5 : 0.75}
+                    className="transition-all duration-150"
+                  />
                   {showLabel && (
-                    <text x={x} y={svgHeight - 8} fontSize="9" fill="var(--muted-foreground)" textAnchor="middle" className="font-mono tabular-nums">
-                      {dateLabel}
+                    <text x={pt.x} y={svgHeight - 8} fontSize="9" fill="var(--muted-foreground)" textAnchor="middle" className="font-mono tabular-nums">
+                      {pt.dateLabel}
                     </text>
                   )}
+                  <rect
+                    data-testid={`trend-point-${i}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${formatTrendDateLabel(pt.date)}: Omzet ${formatRupiah(pt.valOmzet)}, Beban ${formatRupiah(pt.valExp)}`}
+                    x={hitX}
+                    y={padTop - 8}
+                    width={hitW}
+                    height={plotHeight + 16}
+                    fill="transparent"
+                    className="cursor-pointer focus:outline-none"
+                    onMouseEnter={() => setHoveredTrendIndex(i)}
+                    onFocus={() => setHoveredTrendIndex(i)}
+                    onBlur={() => setHoveredTrendIndex(null)}
+                    onClick={() => setHoveredTrendIndex(i)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setHoveredTrendIndex(i)
+                      }
+                    }}
+                  />
                 </g>
               )
             })}
           </svg>
+        </div>
 
-          <div className="flex justify-center items-center gap-6 mt-3 text-xs font-semibold flex-wrap">
+        <div className="flex justify-center sm:justify-between items-center gap-4 mt-3 text-xs font-semibold flex-wrap">
+          <div className="flex items-center gap-5 flex-wrap">
             <span className="flex items-center gap-2" style={{ color: lineColor }}>
               <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: lineColor }}></span>
               {trendLabel}
@@ -966,6 +1285,10 @@ const Dashboard = () => {
               Pengeluaran Operasional
             </span>
           </div>
+          <span className="hidden sm:inline text-[11px] font-normal text-muted-dark">
+            Arahkan kursor ke titik grafik untuk melihat nominal
+          </span>
+        </div>
       </div>
     )
   }
@@ -973,9 +1296,9 @@ const Dashboard = () => {
   return (
     <div className="p-3 sm:p-5 pb-24 md:pb-8 space-y-4 max-w-7xl mx-auto bg-canvas text-foreground">
       {/* Top Header & Context Controls */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b border-border pb-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-primary-soft border border-primary/25 flex items-center justify-center text-primary shrink-0">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b border-border pb-4 animate-fade-in">
+        <div className="flex items-center gap-3 min-w-0 group">
+          <div className="w-10 h-10 rounded-xl bg-primary-soft border border-primary/25 flex items-center justify-center text-primary shrink-0 transition-transform duration-200 group-hover:scale-105">
             <BarChart3 size={20} strokeWidth={1.75} />
           </div>
           <div className="min-w-0 flex-1">
@@ -1045,7 +1368,7 @@ const Dashboard = () => {
                 setShowAIPromptModal(true)
               }
             }}
-            className="min-h-[40px] px-4 py-1.5 rounded-full font-semibold transition-all flex items-center gap-1.5 text-primary-soft-foreground bg-primary-soft hover:opacity-90 border border-primary/25 text-xs cursor-pointer active:scale-[0.98] shrink-0"
+            className="min-h-[40px] px-4 py-1.5 rounded-full font-semibold transition-all duration-150 flex items-center gap-1.5 text-primary-soft-foreground bg-primary-soft hover:opacity-90 hover:-translate-y-0.5 hover:shadow-xs border border-primary/25 text-xs cursor-pointer active:scale-[0.98] shrink-0"
             title="Buka Asisten Analisis Bisnis"
           >
             <Bot size={14} strokeWidth={2} />
@@ -1057,11 +1380,11 @@ const Dashboard = () => {
             type="button"
             onClick={fetchAllAnalyticsData}
             disabled={loading}
-            className="min-w-[40px] min-h-[40px] flex items-center justify-center bg-surface hover:bg-surface-hover border border-border text-muted hover:text-foreground rounded-xl transition-all cursor-pointer active:scale-[0.98] disabled:opacity-50 shrink-0"
+            className="group min-w-[40px] min-h-[40px] flex items-center justify-center bg-surface hover:bg-surface-hover hover:-translate-y-0.5 border border-border hover:border-border-hover text-muted hover:text-foreground rounded-xl transition-all duration-150 cursor-pointer active:scale-[0.98] disabled:opacity-50 shrink-0"
             title="Refresh Data"
             aria-label="Refresh Data Dashboard"
           >
-            <RefreshCw size={15} strokeWidth={1.75} className={loading ? 'animate-spin text-primary' : ''} />
+            <RefreshCw size={15} strokeWidth={1.75} className={loading ? 'animate-spin text-primary' : 'transition-transform duration-300 group-hover:rotate-45'} />
           </button>
         </div>
       </div>
@@ -1138,7 +1461,7 @@ const Dashboard = () => {
           <button
             type="button"
             onClick={() => navigate('/pos')}
-            className="min-h-[38px] px-3.5 py-1.5 rounded-full bg-subsurface hover:bg-surface-hover text-foreground border border-border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98] whitespace-nowrap"
+            className="min-h-[38px] px-3.5 py-1.5 rounded-full bg-subsurface hover:bg-surface-hover hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-xs text-foreground border border-border text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer active:scale-[0.98] whitespace-nowrap"
           >
             <Coffee size={13} strokeWidth={1.75} className="text-warning" />
             <span>Kasir POS</span>
@@ -1147,7 +1470,7 @@ const Dashboard = () => {
             <button
               type="button"
               onClick={() => navigate('/queue')}
-              className="min-h-[38px] px-3.5 py-1.5 rounded-full bg-subsurface hover:bg-surface-hover text-foreground border border-border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98] whitespace-nowrap"
+              className="min-h-[38px] px-3.5 py-1.5 rounded-full bg-subsurface hover:bg-surface-hover hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-xs text-foreground border border-border text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer active:scale-[0.98] whitespace-nowrap"
             >
               <Car size={13} strokeWidth={1.75} className="text-primary" />
               <span>Antrean</span>
@@ -1156,7 +1479,7 @@ const Dashboard = () => {
           <button
             type="button"
             onClick={() => navigate('/finance')}
-            className="min-h-[38px] px-3.5 py-1.5 rounded-full bg-subsurface hover:bg-surface-hover text-foreground border border-border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98] whitespace-nowrap"
+            className="min-h-[38px] px-3.5 py-1.5 rounded-full bg-subsurface hover:bg-surface-hover hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-xs text-foreground border border-border text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer active:scale-[0.98] whitespace-nowrap"
           >
             <DollarSign size={13} strokeWidth={1.75} className="text-success" />
             <span>Buku Kas</span>
@@ -1164,7 +1487,7 @@ const Dashboard = () => {
           <button
             type="button"
             onClick={() => navigate('/reports')}
-            className="min-h-[38px] px-3.5 py-1.5 rounded-full bg-subsurface hover:bg-surface-hover text-foreground border border-border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98] whitespace-nowrap"
+            className="min-h-[38px] px-3.5 py-1.5 rounded-full bg-subsurface hover:bg-surface-hover hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-xs text-foreground border border-border text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer active:scale-[0.98] whitespace-nowrap"
           >
             <FileText size={13} strokeWidth={1.75} className="text-destructive" />
             <span>Laporan</span>
@@ -1180,7 +1503,7 @@ const Dashboard = () => {
           {activeSection === 'ALL' && (
             <>
               {/* Metric 1: Total Pendapatan (Omzet) */}
-              <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between hover:border-border-hover transition-all shadow-xs group">
+              <div key="ALL-kpi-1" className="bg-surface border border-border hover:border-primary/40 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-md shadow-xs group animate-slide-up">
                 <div className="flex justify-between items-start gap-2">
                   <div>
                     <p className="text-xs font-medium text-muted">Total Pendapatan (Omzet)</p>
@@ -1188,7 +1511,7 @@ const Dashboard = () => {
                       {formatRupiah(overviewStats.totalRevenue)}
                     </h3>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-primary-soft text-primary-soft-foreground border border-primary/25 font-mono tabular-nums shrink-0">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-primary-soft text-primary-soft-foreground border border-primary/25 font-mono tabular-nums shrink-0 transition-transform duration-200 group-hover:scale-[1.03]">
                     <Receipt size={12} strokeWidth={2} />
                     {filteredStrukByTime.length > 0 ? `${filteredStrukByTime.length} Struk` : (overviewStats.totalRevenue > 0 ? 'Aktif' : '0 Transaksi')}
                   </span>
@@ -1206,8 +1529,9 @@ const Dashboard = () => {
 
               {/* Metric 2: Total Pengeluaran & Biaya */}
               <div
+                key="ALL-kpi-2"
                 onClick={() => { setSelectedExpenseDivision('ALL'); setShowExpenseModal(true) }}
-                className="bg-surface border border-border hover:border-destructive/40 rounded-2xl p-5 flex flex-col justify-between transition-all shadow-xs group cursor-pointer"
+                className="bg-surface border border-border hover:border-destructive/45 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-md shadow-xs group cursor-pointer active:scale-[0.99] animate-slide-up delay-100"
                 title="Klik untuk melihat rincian seluruh pengeluaran toko"
               >
                 <div className="flex justify-between items-start gap-2">
@@ -1223,7 +1547,7 @@ const Dashboard = () => {
                       {formatRupiah(segmentedExpenses.totalExpenses)}
                     </h3>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-destructive-bg text-destructive border border-destructive/30 font-mono tabular-nums shrink-0">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-destructive-bg text-destructive border border-destructive/30 font-mono tabular-nums shrink-0 transition-transform duration-200 group-hover:scale-[1.03]">
                     <TrendingDown size={12} strokeWidth={2} />
                     {cfoHealth.expenseRatio === '0.0' && segmentedExpenses.totalExpenses > 0 ? 'Beban Riil' : `${cfoHealth.expenseRatio}% Beban`}
                   </span>
@@ -1235,13 +1559,13 @@ const Dashboard = () => {
                   </div>
                   <div className="flex justify-between text-[11px] font-mono tabular-nums">
                     <span className="text-muted">Bersama: {formatRupiah(segmentedExpenses.sharedExp)}</span>
-                    <span className="text-primary text-[10px] font-sans font-semibold">Klik rincian ➔</span>
+                    <span className="text-primary text-[10px] font-sans font-semibold group-hover:translate-x-0.5 transition-transform">Klik rincian ➔</span>
                   </div>
                 </div>
               </div>
 
               {/* Metric 3: Laba Bersih Operasional */}
-              <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between hover:border-border-hover transition-all shadow-xs group">
+              <div key="ALL-kpi-3" className="bg-surface border border-border hover:border-success/45 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-md shadow-xs group animate-slide-up delay-200">
                 <div className="flex justify-between items-start gap-2">
                   <div>
                     <p className="text-xs font-medium text-muted">Laba Bersih Operasional</p>
@@ -1249,7 +1573,7 @@ const Dashboard = () => {
                       {formatRupiah(segmentedExpenses.holdingNetProfit)}
                     </h3>
                   </div>
-                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full font-mono tabular-nums shrink-0 border ${
+                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full font-mono tabular-nums shrink-0 border transition-transform duration-200 group-hover:scale-[1.03] ${
                     segmentedExpenses.holdingNetProfit >= 0 ? 'bg-success-bg text-success border-success/30' : 'bg-destructive-bg text-destructive border-destructive/30'
                   }`}>
                     {segmentedExpenses.holdingNetProfit >= 0 ? <TrendingUp size={12} strokeWidth={2} /> : <TrendingDown size={12} strokeWidth={2} />}
@@ -1282,7 +1606,7 @@ const Dashboard = () => {
               </div>
 
               {/* Metric 4: Likuiditas Kas & Sinergi Toko */}
-              <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between hover:border-border-hover transition-all shadow-xs group">
+              <div key="ALL-kpi-4" className="bg-surface border border-border hover:border-warning/45 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-md shadow-xs group animate-slide-up delay-300">
                 <div className="flex justify-between items-start gap-2">
                   <div>
                     <p className="text-xs font-medium text-muted">Likuiditas Kas &amp; Sinergi Toko</p>
@@ -1290,7 +1614,7 @@ const Dashboard = () => {
                       {advancedKPIs.crossConversionRate}% <span className="text-xs text-muted font-normal font-sans">Estafet</span>
                     </h3>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-warning-bg text-warning border border-warning/30 font-mono tabular-nums shrink-0">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-warning-bg text-warning border border-warning/30 font-mono tabular-nums shrink-0 transition-transform duration-200 group-hover:scale-[1.03]">
                     <Store size={12} strokeWidth={2} />
                     {advancedKPIs.crossCount} Pesanan
                   </span>
@@ -1311,7 +1635,7 @@ const Dashboard = () => {
           {activeSection === 'CARWASH' && (
             <>
               {/* CW Card 1: Omzet Divisi Carwash */}
-              <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between hover:border-border-hover transition-all shadow-xs group">
+              <div key="CW-kpi-1" className="bg-surface border border-border hover:border-primary/40 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-md shadow-xs group animate-slide-up">
                 <div className="flex justify-between items-start gap-2">
                   <div>
                     <p className="text-xs font-medium text-muted">Omzet Divisi Carwash</p>
@@ -1319,7 +1643,7 @@ const Dashboard = () => {
                       {formatRupiah(carwashAnalytics.totalRevenue)}
                     </h3>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-primary-soft text-primary-soft-foreground border border-primary/25 font-mono tabular-nums shrink-0">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-primary-soft text-primary-soft-foreground border border-primary/25 font-mono tabular-nums shrink-0 transition-transform duration-200 group-hover:scale-[1.03]">
                     <Car size={12} strokeWidth={2} />
                     {overviewStats.totalRevenue > 0 ? ((carwashAnalytics.totalRevenue / overviewStats.totalRevenue) * 100).toFixed(0) : 0}% Holding
                   </span>
@@ -1336,8 +1660,9 @@ const Dashboard = () => {
 
               {/* CW Card 2: Total Pengeluaran Carwash */}
               <div
+                key="CW-kpi-2"
                 onClick={() => { setSelectedExpenseDivision('CARWASH'); setShowExpenseModal(true) }}
-                className="bg-surface border border-border hover:border-primary/50 rounded-2xl p-5 flex flex-col justify-between transition-all shadow-xs group cursor-pointer"
+                className="bg-surface border border-border hover:border-primary/45 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-md shadow-xs group cursor-pointer active:scale-[0.99] animate-slide-up delay-100"
                 title="Klik untuk melihat rincian pengeluaran divisi carwash"
               >
                 <div className="flex justify-between items-start gap-2">
@@ -1353,14 +1678,14 @@ const Dashboard = () => {
                       {formatRupiah(segmentedExpenses.carwashExp)}
                     </h3>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-destructive-bg text-destructive border border-destructive/30 font-mono shrink-0">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-destructive-bg text-destructive border border-destructive/30 font-mono shrink-0 transition-transform duration-200 group-hover:scale-[1.03]">
                     <TrendingDown size={12} strokeWidth={2} />
                     Beban Cuci
                   </span>
                 </div>
                 <div className="mt-4 pt-3 border-t border-border text-xs">
                   <p className="font-semibold text-foreground flex items-center gap-1">
-                    Chemical, Operasional &amp; Komisi <ArrowRight size={13} className="text-primary group-hover:translate-x-0.5 transition-transform" />
+                    Chemical, Operasional &amp; Komisi <ArrowRight size={13} className="text-primary group-hover:translate-x-1 transition-transform" />
                   </p>
                   <p className="text-[11px] text-muted mt-0.5 truncate font-mono tabular-nums">
                     Komisi kru: {formatRupiah(segmentedExpenses.carwashCommission)} • Bahan &amp; utilitas
@@ -1369,7 +1694,7 @@ const Dashboard = () => {
               </div>
 
               {/* CW Card 3: Kas Bersih Carwash (Net Profit) */}
-              <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between hover:border-border-hover transition-all shadow-xs group">
+              <div key="CW-kpi-3" className="bg-surface border border-border hover:border-success/45 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-md shadow-xs group animate-slide-up delay-200">
                 <div className="flex justify-between items-start gap-2">
                   <div>
                     <p className="text-xs font-medium text-muted">Kas Bersih Carwash</p>
@@ -1377,7 +1702,7 @@ const Dashboard = () => {
                       {formatRupiah(segmentedExpenses.carwashNetProfit)}
                     </h3>
                   </div>
-                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full font-mono tabular-nums shrink-0 border ${
+                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full font-mono tabular-nums shrink-0 border transition-transform duration-200 group-hover:scale-[1.03] ${
                     segmentedExpenses.carwashNetProfit >= 0 ? 'bg-success-bg text-success border-success/30' : 'bg-destructive-bg text-destructive border-destructive/30'
                   }`}>
                     {segmentedExpenses.carwashNetProfit >= 0 ? <TrendingUp size={12} strokeWidth={2} /> : <TrendingDown size={12} strokeWidth={2} />}
@@ -1395,7 +1720,7 @@ const Dashboard = () => {
               </div>
 
               {/* CW Card 4: Volume & Utilisasi Bay */}
-              <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between hover:border-border-hover transition-all shadow-xs group">
+              <div key="CW-kpi-4" className="bg-surface border border-border hover:border-warning/45 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-md shadow-xs group animate-slide-up delay-300">
                 <div className="flex justify-between items-start gap-2">
                   <div>
                     <p className="text-xs font-medium text-muted">Utilisasi Bay Cuci</p>
@@ -1403,7 +1728,7 @@ const Dashboard = () => {
                       {advancedKPIs.capacityEfficiency}%
                     </h3>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-warning-bg text-warning border border-warning/30 font-mono tabular-nums shrink-0">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-warning-bg text-warning border border-warning/30 font-mono tabular-nums shrink-0 transition-transform duration-200 group-hover:scale-[1.03]">
                     <Layers size={12} strokeWidth={2} />
                     Target {targetCapacity}/Hari
                   </span>
@@ -1424,7 +1749,7 @@ const Dashboard = () => {
           {activeSection === 'CAFE' && (
             <>
               {/* Cafe Card 1: Omzet Divisi Cafe */}
-              <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between hover:border-border-hover transition-all shadow-xs group">
+              <div key="CAFE-kpi-1" className="bg-surface border border-border hover:border-warning/45 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-md shadow-xs group animate-slide-up">
                 <div className="flex justify-between items-start gap-2">
                   <div>
                     <p className="text-xs font-medium text-muted">Omzet Divisi Cafe &amp; Resto</p>
@@ -1432,7 +1757,7 @@ const Dashboard = () => {
                       {formatRupiah(cafeAnalytics.totalRevenue)}
                     </h3>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-warning-bg text-warning border border-warning/30 font-mono tabular-nums shrink-0">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-warning-bg text-warning border border-warning/30 font-mono tabular-nums shrink-0 transition-transform duration-200 group-hover:scale-[1.03]">
                     <Coffee size={12} strokeWidth={2} />
                     {overviewStats.totalRevenue > 0 ? ((cafeAnalytics.totalRevenue / overviewStats.totalRevenue) * 100).toFixed(0) : 0}% Holding
                   </span>
@@ -1449,8 +1774,9 @@ const Dashboard = () => {
 
               {/* Cafe Card 2: Total Pengeluaran Cafe */}
               <div
+                key="CAFE-kpi-2"
                 onClick={() => { setSelectedExpenseDivision('CAFE'); setShowExpenseModal(true) }}
-                className="bg-surface border border-border hover:border-warning/50 rounded-2xl p-5 flex flex-col justify-between transition-all shadow-xs group cursor-pointer"
+                className="bg-surface border border-border hover:border-warning/45 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-md shadow-xs group cursor-pointer active:scale-[0.99] animate-slide-up delay-100"
                 title="Klik untuk melihat rincian pengeluaran divisi cafe & resto"
               >
                 <div className="flex justify-between items-start gap-2">
@@ -1466,14 +1792,14 @@ const Dashboard = () => {
                       {formatRupiah(segmentedExpenses.cafeExp)}
                     </h3>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-destructive-bg text-destructive border border-destructive/30 font-mono shrink-0">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-destructive-bg text-destructive border border-destructive/30 font-mono shrink-0 transition-transform duration-200 group-hover:scale-[1.03]">
                     <TrendingDown size={12} strokeWidth={2} />
                     Beban F&amp;B
                   </span>
                 </div>
                 <div className="mt-4 pt-3 border-t border-border text-xs">
                   <p className="font-semibold text-foreground flex items-center gap-1">
-                    Bahan Baku &amp; Dapur <ArrowRight size={13} className="text-warning group-hover:translate-x-0.5 transition-transform" />
+                    Bahan Baku &amp; Dapur <ArrowRight size={13} className="text-warning group-hover:translate-x-1 transition-transform" />
                   </p>
                   <p className="text-[11px] text-muted mt-0.5 truncate">
                     Kulakan kopi, susu, sirup, kemasan &amp; gas dapur
@@ -1482,7 +1808,7 @@ const Dashboard = () => {
               </div>
 
               {/* Cafe Card 3: Kas Bersih Cafe (Net Profit) */}
-              <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between hover:border-border-hover transition-all shadow-xs group">
+              <div key="CAFE-kpi-3" className="bg-surface border border-border hover:border-success/45 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-md shadow-xs group animate-slide-up delay-200">
                 <div className="flex justify-between items-start gap-2">
                   <div>
                     <p className="text-xs font-medium text-muted">Kas Bersih Cafe</p>
@@ -1490,7 +1816,7 @@ const Dashboard = () => {
                       {formatRupiah(segmentedExpenses.cafeNetProfit)}
                     </h3>
                   </div>
-                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full font-mono tabular-nums shrink-0 border ${
+                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full font-mono tabular-nums shrink-0 border transition-transform duration-200 group-hover:scale-[1.03] ${
                     segmentedExpenses.cafeNetProfit >= 0 ? 'bg-success-bg text-success border-success/30' : 'bg-destructive-bg text-destructive border-destructive/30'
                   }`}>
                     {segmentedExpenses.cafeNetProfit >= 0 ? <TrendingUp size={12} strokeWidth={2} /> : <TrendingDown size={12} strokeWidth={2} />}
@@ -1508,7 +1834,7 @@ const Dashboard = () => {
               </div>
 
               {/* Cafe Card 4: Top Seller Menu & AOV */}
-              <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between hover:border-border-hover transition-all shadow-xs group">
+              <div key="CAFE-kpi-4" className="bg-surface border border-border hover:border-primary/40 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-md shadow-xs group animate-slide-up delay-300">
                 <div className="flex justify-between items-start gap-2">
                   <div className="min-w-0 pr-2">
                     <p className="text-xs font-medium text-muted">Menu Terlaris (Champion)</p>
@@ -1537,7 +1863,7 @@ const Dashboard = () => {
         {/* Second Row - Charts in 6-6 columns (Sales Performance & Revenue Breakdown) */}
         <div className="grid gap-4 sm:gap-6 grid-cols-1 xl:grid-cols-2">
           {/* Chart 1: Sales Performance (Area Chart) */}
-          <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between shadow-xs">
+          <div className="bg-surface border border-border hover:border-border-hover rounded-2xl p-5 flex flex-col justify-between shadow-xs hover:shadow-sm transition-all duration-200 animate-slide-up delay-200">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-4 border-b border-border">
               <div>
                 <h3 className="text-base font-bold text-foreground">Sales Performance</h3>
@@ -1550,7 +1876,7 @@ const Dashboard = () => {
                 <button
                   type="button"
                   onClick={() => navigate('/reports')}
-                  className="min-h-[34px] px-3 py-1 rounded-full bg-subsurface hover:bg-surface-hover text-foreground border border-border text-xs font-semibold transition-all cursor-pointer"
+                  className="min-h-[34px] px-3 py-1 rounded-full bg-subsurface hover:bg-surface-hover hover:-translate-y-0.5 text-foreground border border-border text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-[0.98]"
                 >
                   Export
                 </button>
@@ -1576,7 +1902,7 @@ const Dashboard = () => {
           </div>
 
           {/* Chart 2: Revenue & Expense Breakdown by Source */}
-          <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between shadow-xs">
+          <div className="bg-surface border border-border hover:border-border-hover rounded-2xl p-5 flex flex-col justify-between shadow-xs hover:shadow-sm transition-all duration-200 animate-slide-up delay-300">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-4 border-b border-border">
               <div>
                 <h3 className="text-base font-bold text-foreground">
@@ -1589,24 +1915,88 @@ const Dashboard = () => {
               <button
                 type="button"
                 onClick={() => navigate('/reports')}
-                className="min-h-[34px] px-3 py-1 rounded-full bg-subsurface hover:bg-surface-hover text-foreground border border-border text-xs font-semibold transition-all cursor-pointer"
+                className="min-h-[34px] px-3 py-1 rounded-full bg-subsurface hover:bg-surface-hover hover:-translate-y-0.5 text-foreground border border-border text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-[0.98]"
               >
                 Laporan Lengkap
               </button>
             </div>
 
-            <div className="py-4 space-y-4">
+            <div className="py-4 space-y-3.5" onMouseLeave={() => setHoveredBreakdownKey(null)}>
+              {/* Interactive Stacked Composition Overview Bar */}
+              <div className="space-y-2">
+                <div
+                  data-testid="breakdown-stacked-bar"
+                  className="flex h-3.5 w-full rounded-full overflow-hidden bg-subsurface border border-border p-0.5 gap-0.5"
+                >
+                  {breakdownConfig.segments.map((seg) => (
+                    <button
+                      key={seg.key}
+                      type="button"
+                      data-testid={`breakdown-segment-${seg.key}`}
+                      aria-label={`${seg.label}: ${formatRupiah(seg.amount)} (${seg.percent}%)`}
+                      onMouseEnter={() => setHoveredBreakdownKey(seg.key)}
+                      onFocus={() => setHoveredBreakdownKey(seg.key)}
+                      onBlur={() => setHoveredBreakdownKey(null)}
+                      onClick={() => setHoveredBreakdownKey(seg.key)}
+                      style={{
+                        width: breakdownConfig.allZero
+                          ? `${100 / breakdownConfig.segments.length}%`
+                          : `${Math.max(seg.sharePercent, seg.amount > 0 ? 4 : 0)}%`
+                      }}
+                      className={`h-full rounded-full ${seg.barClass} ${
+                        breakdownConfig.allZero ? 'opacity-35 hover:opacity-80' : 'hover:brightness-110'
+                      } ${
+                        hoveredBreakdownKey && hoveredBreakdownKey !== seg.key ? 'opacity-45' : ''
+                      } transition-all duration-200 cursor-pointer focus:outline-none`}
+                    />
+                  ))}
+                </div>
+
+                {/* Animated Live Numeric Hover Readout Strip */}
+                <div
+                  data-testid="breakdown-hover-tooltip"
+                  className="min-h-[42px] px-3 py-2 rounded-xl bg-subsurface border border-border flex flex-wrap items-center justify-between gap-2 text-xs transition-all duration-150"
+                >
+                  {activeBreakdownItem ? (
+                    <div key={activeBreakdownItem.key} className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-1 animate-fade-in">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${activeBreakdownItem.dotClass}`} />
+                        <span className="font-semibold text-foreground truncate">{activeBreakdownItem.label}</span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 font-mono tabular-nums text-[11px] shrink-0">
+                        <span className={`font-bold ${activeBreakdownItem.textClass}`}>
+                          {activeBreakdownItem.amountText || formatRupiah(activeBreakdownItem.amount)}
+                        </span>
+                        <span className="text-muted">({activeBreakdownItem.percent}%)</span>
+                        <span className="hidden md:inline text-muted-dark font-sans">• {activeBreakdownItem.detail}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-[11px] text-muted-dark">
+                      Arahkan kursor ke diagram batang atau baris divisi untuk melihat rincian nominal
+                    </span>
+                  )}
+                </div>
+              </div>
+
               {activeSection === 'ALL' && (
                 <>
                   {/* Category 1: Pengeluaran Carwash */}
                   <div
+                    onMouseEnter={() => setHoveredBreakdownKey('carwash')}
                     onClick={() => { setSelectedExpenseDivision('CARWASH'); setShowExpenseModal(true) }}
-                    className="p-3.5 rounded-xl bg-subsurface border border-border hover:border-border-hover transition-all cursor-pointer group space-y-2"
+                    className={`p-3.5 rounded-xl border transition-all duration-150 cursor-pointer group space-y-2 ${
+                      hoveredBreakdownKey === 'carwash'
+                        ? '-translate-y-0.5 bg-surface border-primary/40 shadow-xs'
+                        : hoveredBreakdownKey
+                          ? 'bg-subsurface border-border opacity-75'
+                          : 'bg-subsurface border-border hover:border-border-hover'
+                    }`}
                     title="Klik untuk rincian pengeluaran divisi carwash"
                   >
                     <div className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-primary"></span>
+                        <span className="w-3 h-3 rounded-full bg-primary transition-transform duration-200 group-hover:scale-125"></span>
                         <span className="font-semibold text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
                           Pengeluaran Divisi Carwash
                           <Eye size={12} className="text-primary opacity-80" />
@@ -1621,7 +2011,8 @@ const Dashboard = () => {
                     </div>
                     <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border">
                       <div
-                        className="bg-primary h-full rounded-full transition-all duration-500"
+                        key={`ALL-cw-${timeRange}`}
+                        className="bg-primary h-full rounded-full transition-all duration-500 animate-bar-grow"
                         style={{ width: `${segmentedExpenses.totalExpenses > 0 ? (segmentedExpenses.carwashExp / segmentedExpenses.totalExpenses) * 100 : 0}%` }}
                       />
                     </div>
@@ -1629,13 +2020,20 @@ const Dashboard = () => {
 
                   {/* Category 2: Pengeluaran Cafe */}
                   <div
+                    onMouseEnter={() => setHoveredBreakdownKey('cafe')}
                     onClick={() => { setSelectedExpenseDivision('CAFE'); setShowExpenseModal(true) }}
-                    className="p-3.5 rounded-xl bg-subsurface border border-border hover:border-border-hover transition-all cursor-pointer group space-y-2"
+                    className={`p-3.5 rounded-xl border transition-all duration-150 cursor-pointer group space-y-2 ${
+                      hoveredBreakdownKey === 'cafe'
+                        ? '-translate-y-0.5 bg-surface border-warning/50 shadow-xs'
+                        : hoveredBreakdownKey
+                          ? 'bg-subsurface border-border opacity-75'
+                          : 'bg-subsurface border-border hover:border-border-hover'
+                    }`}
                     title="Klik untuk rincian pengeluaran divisi cafe"
                   >
                     <div className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-warning"></span>
+                        <span className="w-3 h-3 rounded-full bg-warning transition-transform duration-200 group-hover:scale-125"></span>
                         <span className="font-semibold text-foreground group-hover:text-warning transition-colors flex items-center gap-1.5">
                           Pengeluaran Divisi Cafe
                           <Eye size={12} className="text-warning opacity-80" />
@@ -1650,7 +2048,8 @@ const Dashboard = () => {
                     </div>
                     <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border">
                       <div
-                        className="bg-warning h-full rounded-full transition-all duration-500"
+                        key={`ALL-cafe-${timeRange}`}
+                        className="bg-warning h-full rounded-full transition-all duration-500 animate-bar-grow"
                         style={{ width: `${segmentedExpenses.totalExpenses > 0 ? (segmentedExpenses.cafeExp / segmentedExpenses.totalExpenses) * 100 : 0}%` }}
                       />
                     </div>
@@ -1658,13 +2057,20 @@ const Dashboard = () => {
 
                   {/* Category 3: Pengeluaran Bersama (Shared Overhead) */}
                   <div
+                    onMouseEnter={() => setHoveredBreakdownKey('shared')}
                     onClick={() => { setSelectedExpenseDivision('SHARED'); setShowExpenseModal(true) }}
-                    className="p-3.5 rounded-xl bg-subsurface border border-border hover:border-border-hover transition-all cursor-pointer group space-y-2"
+                    className={`p-3.5 rounded-xl border transition-all duration-150 cursor-pointer group space-y-2 ${
+                      hoveredBreakdownKey === 'shared'
+                        ? '-translate-y-0.5 bg-surface border-primary/40 shadow-xs'
+                        : hoveredBreakdownKey
+                          ? 'bg-subsurface border-border opacity-75'
+                          : 'bg-subsurface border-border hover:border-border-hover'
+                    }`}
                     title="Klik untuk rincian pengeluaran bersama / overhead"
                   >
                     <div className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-ink"></span>
+                        <span className="w-3 h-3 rounded-full bg-ink transition-transform duration-200 group-hover:scale-125"></span>
                         <span className="font-semibold text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
                           Pengeluaran Bersama (Gaji/Utilitas/Holding)
                           <Eye size={12} className="text-muted opacity-80" />
@@ -1679,7 +2085,8 @@ const Dashboard = () => {
                     </div>
                     <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border">
                       <div
-                        className="bg-ink h-full rounded-full transition-all duration-500"
+                        key={`ALL-shared-${timeRange}`}
+                        className="bg-ink h-full rounded-full transition-all duration-500 animate-bar-grow"
                         style={{ width: `${segmentedExpenses.totalExpenses > 0 ? (segmentedExpenses.sharedExp / segmentedExpenses.totalExpenses) * 100 : 0}%` }}
                       />
                     </div>
@@ -1691,13 +2098,20 @@ const Dashboard = () => {
                 <>
                   {/* Row 1: Pengeluaran Operasional Cuci */}
                   <div
+                    onMouseEnter={() => setHoveredBreakdownKey('cw_exp')}
                     onClick={() => { setSelectedExpenseDivision('CARWASH'); setShowExpenseModal(true) }}
-                    className="p-3.5 rounded-xl bg-subsurface border border-border hover:border-destructive/40 transition-all cursor-pointer group space-y-2"
+                    className={`p-3.5 rounded-xl border transition-all duration-150 cursor-pointer group space-y-2 ${
+                      hoveredBreakdownKey === 'cw_exp'
+                        ? '-translate-y-0.5 bg-surface border-destructive/45 shadow-xs'
+                        : hoveredBreakdownKey
+                          ? 'bg-subsurface border-border opacity-75'
+                          : 'bg-subsurface border-border hover:border-destructive/40'
+                    }`}
                     title="Klik untuk rincian pengeluaran operasional & komisi cuci"
                   >
                     <div className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-destructive-solid"></span>
+                        <span className="w-3 h-3 rounded-full bg-destructive-solid transition-transform duration-200 group-hover:scale-125"></span>
                         <span className="font-semibold text-foreground group-hover:text-destructive transition-colors flex items-center gap-1.5">
                           Beban Operasional &amp; Chemical Cuci
                           <Eye size={12} className="text-destructive opacity-80" />
@@ -1712,17 +2126,27 @@ const Dashboard = () => {
                     </div>
                     <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border">
                       <div
-                        className="bg-destructive-solid h-full rounded-full transition-all duration-500"
+                        key={`CW-exp-${timeRange}`}
+                        className="bg-destructive-solid h-full rounded-full transition-all duration-500 animate-bar-grow"
                         style={{ width: `${Math.min(carwashAnalytics.totalRevenue > 0 ? (segmentedExpenses.carwashExp / carwashAnalytics.totalRevenue) * 100 : 0, 100)}%` }}
                       />
                     </div>
                   </div>
 
                   {/* Row 2: Kas Bersih Carwash */}
-                  <div className="p-3.5 rounded-xl bg-subsurface border border-border space-y-2">
+                  <div
+                    onMouseEnter={() => setHoveredBreakdownKey('cw_net')}
+                    className={`p-3.5 rounded-xl border transition-all duration-150 group space-y-2 ${
+                      hoveredBreakdownKey === 'cw_net'
+                        ? '-translate-y-0.5 bg-surface border-success/45 shadow-xs'
+                        : hoveredBreakdownKey
+                          ? 'bg-subsurface border-border opacity-75'
+                          : 'bg-subsurface border-border hover:border-border-hover'
+                    }`}
+                  >
                     <div className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-success"></span>
+                        <span className="w-3 h-3 rounded-full bg-success transition-transform duration-200 group-hover:scale-125"></span>
                         <span className="font-semibold text-foreground">Kas Bersih Divisi Carwash</span>
                       </div>
                       <div className="text-right">
@@ -1732,17 +2156,27 @@ const Dashboard = () => {
                     </div>
                     <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border">
                       <div
-                        className="bg-success h-full rounded-full transition-all duration-500"
+                        key={`CW-net-${timeRange}`}
+                        className="bg-success h-full rounded-full transition-all duration-500 animate-bar-grow"
                         style={{ width: `${Math.max(Math.min(parseFloat(segmentedExpenses.carwashProfitMargin) || 0, 100), 0)}%` }}
                       />
                     </div>
                   </div>
 
                   {/* Row 3: Cross-sell to cafe */}
-                  <div className="p-3.5 rounded-xl bg-subsurface border border-border space-y-2">
+                  <div
+                    onMouseEnter={() => setHoveredBreakdownKey('cw_cross')}
+                    className={`p-3.5 rounded-xl border transition-all duration-150 group space-y-2 ${
+                      hoveredBreakdownKey === 'cw_cross'
+                        ? '-translate-y-0.5 bg-surface border-warning/45 shadow-xs'
+                        : hoveredBreakdownKey
+                          ? 'bg-subsurface border-border opacity-75'
+                          : 'bg-subsurface border-border hover:border-border-hover'
+                    }`}
+                  >
                     <div className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-warning"></span>
+                        <span className="w-3 h-3 rounded-full bg-warning transition-transform duration-200 group-hover:scale-125"></span>
                         <span className="font-semibold text-foreground">Konversi Tambahan: Cross-Order ke Cafe</span>
                       </div>
                       <div className="text-right">
@@ -1751,7 +2185,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border">
-                      <div className="bg-warning h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(parseFloat(advancedKPIs.crossConversionRate) || 0, 100)}%` }} />
+                      <div key={`CW-cross-${timeRange}`} className="bg-warning h-full rounded-full transition-all duration-500 animate-bar-grow" style={{ width: `${Math.min(parseFloat(advancedKPIs.crossConversionRate) || 0, 100)}%` }} />
                     </div>
                   </div>
                 </>
@@ -1761,13 +2195,20 @@ const Dashboard = () => {
                 <>
                   {/* Row 1: Pengeluaran Bahan Baku & Operasional Cafe */}
                   <div
+                    onMouseEnter={() => setHoveredBreakdownKey('cafe_exp')}
                     onClick={() => { setSelectedExpenseDivision('CAFE'); setShowExpenseModal(true) }}
-                    className="p-3.5 rounded-xl bg-subsurface border border-border hover:border-destructive/40 transition-all cursor-pointer group space-y-2"
+                    className={`p-3.5 rounded-xl border transition-all duration-150 cursor-pointer group space-y-2 ${
+                      hoveredBreakdownKey === 'cafe_exp'
+                        ? '-translate-y-0.5 bg-surface border-destructive/45 shadow-xs'
+                        : hoveredBreakdownKey
+                          ? 'bg-subsurface border-border opacity-75'
+                          : 'bg-subsurface border-border hover:border-destructive/40'
+                    }`}
                     title="Klik untuk rincian pengeluaran bahan & operasional cafe"
                   >
                     <div className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-destructive-solid"></span>
+                        <span className="w-3 h-3 rounded-full bg-destructive-solid transition-transform duration-200 group-hover:scale-125"></span>
                         <span className="font-semibold text-foreground group-hover:text-destructive transition-colors flex items-center gap-1.5">
                           Beban Bahan Baku &amp; Operasional F&amp;B
                           <Eye size={12} className="text-destructive opacity-80" />
@@ -1782,17 +2223,27 @@ const Dashboard = () => {
                     </div>
                     <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border">
                       <div
-                        className="bg-destructive-solid h-full rounded-full transition-all duration-500"
+                        key={`CAFE-exp-${timeRange}`}
+                        className="bg-destructive-solid h-full rounded-full transition-all duration-500 animate-bar-grow"
                         style={{ width: `${Math.min(cafeAnalytics.totalRevenue > 0 ? (segmentedExpenses.cafeExp / cafeAnalytics.totalRevenue) * 100 : 0, 100)}%` }}
                       />
                     </div>
                   </div>
 
                   {/* Row 2: Kas Bersih Cafe */}
-                  <div className="p-3.5 rounded-xl bg-subsurface border border-border space-y-2">
+                  <div
+                    onMouseEnter={() => setHoveredBreakdownKey('cafe_net')}
+                    className={`p-3.5 rounded-xl border transition-all duration-150 group space-y-2 ${
+                      hoveredBreakdownKey === 'cafe_net'
+                        ? '-translate-y-0.5 bg-surface border-success/45 shadow-xs'
+                        : hoveredBreakdownKey
+                          ? 'bg-subsurface border-border opacity-75'
+                          : 'bg-subsurface border-border hover:border-border-hover'
+                    }`}
+                  >
                     <div className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-success"></span>
+                        <span className="w-3 h-3 rounded-full bg-success transition-transform duration-200 group-hover:scale-125"></span>
                         <span className="font-semibold text-foreground">Kas Bersih Divisi Cafe &amp; Resto</span>
                       </div>
                       <div className="text-right">
@@ -1802,17 +2253,27 @@ const Dashboard = () => {
                     </div>
                     <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border">
                       <div
-                        className="bg-success h-full rounded-full transition-all duration-500"
+                        key={`CAFE-net-${timeRange}`}
+                        className="bg-success h-full rounded-full transition-all duration-500 animate-bar-grow"
                         style={{ width: `${Math.max(Math.min(parseFloat(segmentedExpenses.cafeProfitMargin) || 0, 100), 0)}%` }}
                       />
                     </div>
                   </div>
 
                   {/* Row 3: Cafe Struk Count summary row */}
-                  <div className="p-3.5 rounded-xl bg-subsurface border border-border space-y-2">
+                  <div
+                    onMouseEnter={() => setHoveredBreakdownKey('cafe_struk')}
+                    className={`p-3.5 rounded-xl border transition-all duration-150 group space-y-2 ${
+                      hoveredBreakdownKey === 'cafe_struk'
+                        ? '-translate-y-0.5 bg-surface border-primary/45 shadow-xs'
+                        : hoveredBreakdownKey
+                          ? 'bg-subsurface border-border opacity-75'
+                          : 'bg-subsurface border-border hover:border-border-hover'
+                    }`}
+                  >
                     <div className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-primary"></span>
+                        <span className="w-3 h-3 rounded-full bg-primary transition-transform duration-200 group-hover:scale-125"></span>
                         <span className="font-semibold text-foreground">Struk Pesanan F&amp;B Diterbitkan</span>
                       </div>
                       <div className="text-right">
@@ -1821,7 +2282,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border">
-                      <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: '100%' }} />
+                      <div key={`CAFE-struk-${timeRange}`} className="bg-primary h-full rounded-full transition-all duration-500 animate-bar-grow" style={{ width: '100%' }} />
                     </div>
                   </div>
                 </>
@@ -1851,7 +2312,7 @@ const Dashboard = () => {
         {/* Third Row - Two Column Layout (Recent Transactions & Top Products) */}
         <div className="grid gap-4 sm:gap-6 grid-cols-1 xl:grid-cols-2">
           {/* Column 1: Recent Transactions */}
-          <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between shadow-xs">
+          <div className="bg-surface border border-border hover:border-border-hover rounded-2xl p-5 flex flex-col justify-between shadow-xs hover:shadow-sm transition-all duration-200 animate-slide-up delay-300">
             <div className="flex items-center justify-between pb-4 border-b border-border">
               <div>
                 <h3 className="text-base font-bold text-foreground">Recent Transactions</h3>
@@ -1860,7 +2321,7 @@ const Dashboard = () => {
               <button
                 type="button"
                 onClick={() => navigate('/reports')}
-                className="min-h-[34px] px-3 py-1 rounded-full bg-subsurface hover:bg-surface-hover text-foreground border border-border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+                className="min-h-[34px] px-3 py-1 rounded-full bg-subsurface hover:bg-surface-hover hover:-translate-y-0.5 text-foreground border border-border text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
               >
                 <Eye size={13} className="text-primary" />
                 View All
@@ -1872,8 +2333,8 @@ const Dashboard = () => {
                 <p className="text-xs text-muted-dark italic py-6 text-center">Belum ada transaksi pada periode ini.</p>
               ) : (
                 recentTransactionsList.map((tx) => (
-                  <div key={tx.id} className="flex items-center p-3 rounded-xl bg-subsurface border border-border gap-3">
-                    <div className="w-9 h-9 rounded-full bg-primary-soft border border-primary/25 flex items-center justify-center text-xs font-bold text-primary-soft-foreground shrink-0 font-mono">
+                  <div key={tx.id} className="group flex items-center p-3 rounded-xl bg-subsurface border border-border gap-3 transition-all duration-150 hover:-translate-y-0.5 hover:bg-surface hover:border-primary/30 hover:shadow-xs">
+                    <div className="w-9 h-9 rounded-full bg-primary-soft border border-primary/25 flex items-center justify-center text-xs font-bold text-primary-soft-foreground shrink-0 font-mono transition-transform duration-150 group-hover:scale-105">
                       {tx.customer.initials}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -1893,14 +2354,14 @@ const Dashboard = () => {
 
             <div className="pt-3 border-t border-border flex items-center justify-between text-xs text-muted">
               <span>Tercatat: <strong className="text-foreground font-mono tabular-nums">{filteredStrukByTime.length} transaksi</strong></span>
-              <button type="button" onClick={() => navigate('/pos')} className="text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer">
-                Buka Layar Kasir <ArrowRight size={12} />
+              <button type="button" onClick={() => navigate('/pos')} className="group text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer">
+                Buka Layar Kasir <ArrowRight size={12} className="transition-transform duration-150 group-hover:translate-x-1" />
               </button>
             </div>
           </div>
 
           {/* Column 2: Top Products & Services */}
-          <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between shadow-xs">
+          <div className="bg-surface border border-border hover:border-border-hover rounded-2xl p-5 flex flex-col justify-between shadow-xs hover:shadow-sm transition-all duration-200 animate-slide-up delay-400">
             <div className="flex items-center justify-between pb-4 border-b border-border">
               <div>
                 <h3 className="text-base font-bold text-foreground">Top Products &amp; Services</h3>
@@ -1909,7 +2370,7 @@ const Dashboard = () => {
               <button
                 type="button"
                 onClick={() => navigate('/database')}
-                className="min-h-[34px] px-3 py-1 rounded-full bg-subsurface hover:bg-surface-hover text-foreground border border-border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+                className="min-h-[34px] px-3 py-1 rounded-full bg-subsurface hover:bg-surface-hover hover:-translate-y-0.5 text-foreground border border-border text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
               >
                 <Eye size={13} className="text-warning" />
                 View All
@@ -1924,8 +2385,8 @@ const Dashboard = () => {
                 </div>
               ) : (
                 topProductsList.map((prod, idx) => (
-                  <div key={prod.id || idx} className="flex items-center p-3 rounded-xl bg-subsurface border border-border gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-primary-soft text-primary-soft-foreground border border-primary/25 flex items-center justify-center text-xs font-bold font-mono tabular-nums shrink-0">
+                  <div key={prod.id || idx} className="group flex items-center p-3 rounded-xl bg-subsurface border border-border gap-3 transition-all duration-150 hover:-translate-y-0.5 hover:bg-surface hover:border-primary/30 hover:shadow-xs">
+                    <div className="w-8 h-8 rounded-lg bg-primary-soft text-primary-soft-foreground border border-primary/25 flex items-center justify-center text-xs font-bold font-mono tabular-nums shrink-0 transition-transform duration-150 group-hover:scale-105">
                       #{idx + 1}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -1957,15 +2418,15 @@ const Dashboard = () => {
 
             <div className="pt-3 border-t border-border flex items-center justify-between text-xs text-muted">
               <span>Ranking Top Menu &amp; Layanan</span>
-              <button type="button" onClick={() => navigate('/gudang')} className="text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer">
-                Kelola Stok Gudang <ArrowRight size={12} />
+              <button type="button" onClick={() => navigate('/gudang')} className="group text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer">
+                Kelola Stok Gudang <ArrowRight size={12} className="transition-transform duration-150 group-hover:translate-x-1" />
               </button>
             </div>
           </div>
         </div>
 
         {/* Fourth Row - Customer Insights & Operational Tabs */}
-        <div className="bg-surface border border-border rounded-2xl p-5 shadow-xs space-y-5">
+        <div className="bg-surface border border-border hover:border-border-hover rounded-2xl p-5 shadow-xs hover:shadow-sm transition-all duration-200 space-y-5 animate-slide-up delay-400">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-border">
             <div>
               <h3 className="text-base font-bold text-foreground">Customer Insights &amp; Operations</h3>
@@ -1977,7 +2438,7 @@ const Dashboard = () => {
                 <button
                   type="button"
                   onClick={() => setActiveInsightTab('sinergi')}
-                  className={`min-h-[36px] px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                  className={`min-h-[36px] px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap active:scale-[0.98] ${
                     activeInsightTab === 'sinergi'
                       ? 'bg-primary text-primary-foreground shadow-xs'
                       : 'text-muted hover:text-foreground'
@@ -1989,7 +2450,7 @@ const Dashboard = () => {
                 <button
                   type="button"
                   onClick={() => setActiveInsightTab('rekap')}
-                  className={`min-h-[36px] px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                  className={`min-h-[36px] px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap active:scale-[0.98] ${
                     activeInsightTab === 'rekap'
                       ? 'bg-primary text-primary-foreground shadow-xs'
                       : 'text-muted hover:text-foreground'
@@ -2001,7 +2462,7 @@ const Dashboard = () => {
                 <button
                   type="button"
                   onClick={() => setActiveInsightTab('stok')}
-                  className={`min-h-[36px] px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                  className={`min-h-[36px] px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap active:scale-[0.98] ${
                     activeInsightTab === 'stok'
                       ? 'bg-primary text-primary-foreground shadow-xs'
                       : 'text-muted hover:text-foreground'
@@ -2016,23 +2477,23 @@ const Dashboard = () => {
 
           {/* Tab Content 1: Sinergi & Utilisasi */}
           {activeInsightTab === 'sinergi' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-              <div className="p-4 rounded-xl bg-subsurface border border-border space-y-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 animate-fade-in">
+              <div className="p-4 rounded-xl bg-subsurface border border-border space-y-1 transition-all duration-150 hover:-translate-y-0.5 hover:bg-surface hover:border-primary/35 hover:shadow-xs">
                 <span className="text-[10px] text-muted-dark uppercase font-bold tracking-wider">ARPU Gabungan</span>
                 <p className="text-xl font-bold text-foreground font-mono tabular-nums">{formatRupiah(advancedKPIs.combinedARPU)}</p>
                 <p className="text-[11px] text-primary font-medium">+12.5% dari target rata-rata</p>
               </div>
-              <div className="p-4 rounded-xl bg-subsurface border border-border space-y-1">
+              <div className="p-4 rounded-xl bg-subsurface border border-border space-y-1 transition-all duration-150 hover:-translate-y-0.5 hover:bg-surface hover:border-primary/35 hover:shadow-xs">
                 <span className="text-[10px] text-muted-dark uppercase font-bold tracking-wider">Utilisasi Bay Cuci</span>
                 <p className="text-xl font-bold text-primary font-mono tabular-nums">{advancedKPIs.capacityEfficiency}%</p>
                 <p className="text-[11px] text-muted">Kapasitas target {targetCapacity} unit/hari</p>
               </div>
-              <div className="p-4 rounded-xl bg-subsurface border border-border space-y-1">
+              <div className="p-4 rounded-xl bg-subsurface border border-border space-y-1 transition-all duration-150 hover:-translate-y-0.5 hover:bg-surface hover:border-primary/35 hover:shadow-xs">
                 <span className="text-[10px] text-muted-dark uppercase font-bold tracking-wider">Rata-rata Unit Cuci</span>
                 <p className="text-xl font-bold text-foreground font-mono tabular-nums">{carwashAnalytics.avgCarsPerDay} mobil</p>
                 <p className="text-[11px] text-warning font-medium">Volume kedatangan pelanggan</p>
               </div>
-              <div className="p-4 rounded-xl bg-subsurface border border-border space-y-1">
+              <div className="p-4 rounded-xl bg-subsurface border border-border space-y-1 transition-all duration-150 hover:-translate-y-0.5 hover:bg-surface hover:border-primary/35 hover:shadow-xs">
                 <span className="text-[10px] text-muted-dark uppercase font-bold tracking-wider">Porsi Cafe Terjual</span>
                 <p className="text-xl font-bold text-warning font-mono tabular-nums">{cafeAnalytics.totalItems} item</p>
                 <p className="text-[11px] text-muted">Total pesanan dapur &amp; barista</p>
@@ -2042,19 +2503,19 @@ const Dashboard = () => {
 
           {/* Tab Content 2: Rekap Kasir & Saldo */}
           {activeInsightTab === 'rekap' && (
-            <div className="space-y-4">
+            <div className="space-y-4 animate-fade-in">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
-                <div className="p-3.5 rounded-xl bg-subsurface border border-border">
+                <div className="p-3.5 rounded-xl bg-subsurface border border-border transition-all duration-150 hover:-translate-y-0.5 hover:bg-surface hover:border-success/35 hover:shadow-xs">
                   <span className="text-[10px] font-bold text-success uppercase tracking-wider block">Uang Fisik Kasir (Cash)</span>
                   <p className="text-lg font-bold text-success font-mono tabular-nums mt-1">{formatRupiah(dailyCashierRecap.totalCash)}</p>
                   <span className="text-[11px] text-muted">{dailyCashierRecap.cashPercentage}% total setoran</span>
                 </div>
-                <div className="p-3.5 rounded-xl bg-subsurface border border-border">
+                <div className="p-3.5 rounded-xl bg-subsurface border border-border transition-all duration-150 hover:-translate-y-0.5 hover:bg-surface hover:border-primary/35 hover:shadow-xs">
                   <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">QRIS &amp; Non-Tunai</span>
                   <p className="text-lg font-bold text-primary font-mono tabular-nums mt-1">{formatRupiah(dailyCashierRecap.totalNonCash)}</p>
                   <span className="text-[11px] text-muted">{dailyCashierRecap.nonCashPercentage}% digital payment</span>
                 </div>
-                <div className="p-3.5 rounded-xl bg-subsurface border border-border">
+                <div className="p-3.5 rounded-xl bg-subsurface border border-border transition-all duration-150 hover:-translate-y-0.5 hover:bg-surface hover:border-primary/35 hover:shadow-xs">
                   <span className="text-[10px] font-bold text-foreground uppercase tracking-wider block">Total Bruto Kasir</span>
                   <p className="text-lg font-bold text-foreground font-mono tabular-nums mt-1">{formatRupiah(dailyCashierRecap.totalOmzet)}</p>
                   <span className="text-[11px] text-muted">{dailyCashierRecap.totalTxCount} transaksi hari ini</span>
@@ -2064,14 +2525,14 @@ const Dashboard = () => {
               <div className="p-3.5 rounded-xl bg-subsurface border border-border">
                 <div className="flex justify-between items-center text-xs mb-2">
                   <span className="font-semibold text-foreground">Posisi Saldo Buku Kas &amp; Rekening Terdaftar:</span>
-                  <button type="button" onClick={() => navigate('/finance')} className="text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer">
-                    Buku Kas <ArrowRight size={12} />
+                  <button type="button" onClick={() => navigate('/finance')} className="group text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer">
+                    Buku Kas <ArrowRight size={12} className="transition-transform duration-150 group-hover:translate-x-1" />
                   </button>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                   {posAccountList.length > 0 ? (
                     posAccountList.map((acc) => (
-                      <div key={acc.id || acc.pos} className="p-2.5 rounded-lg bg-surface border border-border text-center">
+                      <div key={acc.id || acc.pos} className="p-2.5 rounded-lg bg-surface border border-border text-center transition-all duration-150 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-xs">
                         <span className="text-[10px] text-muted uppercase block font-bold truncate" title={acc.label || acc.pos}>
                           {acc.label || acc.pos}
                         </span>
@@ -2082,11 +2543,11 @@ const Dashboard = () => {
                     ))
                   ) : (
                     <>
-                      <div className="p-2.5 rounded-lg bg-surface border border-border text-center">
+                      <div className="p-2.5 rounded-lg bg-surface border border-border text-center transition-all duration-150 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-xs">
                         <span className="text-[10px] text-muted uppercase block font-bold">Laci Kasir</span>
                         <span className="font-mono tabular-nums font-bold text-foreground text-xs">{formatRupiah(posBalances.cash)}</span>
                       </div>
-                      <div className="p-2.5 rounded-lg bg-surface border border-border text-center">
+                      <div className="p-2.5 rounded-lg bg-surface border border-border text-center transition-all duration-150 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-xs">
                         <span className="text-[10px] text-muted uppercase block font-bold">Rekening Utama</span>
                         <span className="font-mono tabular-nums font-bold text-foreground text-xs">{formatRupiah(posBalances.rekY)}</span>
                       </div>
@@ -2099,7 +2560,7 @@ const Dashboard = () => {
 
           {/* Tab Content 3: Peringatan Stok Kritis */}
           {activeInsightTab === 'stok' && (
-            <div className="space-y-3">
+            <div className="space-y-3 animate-fade-in">
               {criticalStockItems.length === 0 ? (
                 <div className="p-4 rounded-xl bg-subsurface border border-border text-center text-xs text-muted flex items-center justify-center gap-2">
                   <CheckCircle size={16} strokeWidth={1.75} className="text-success" />
@@ -2107,7 +2568,7 @@ const Dashboard = () => {
                 </div>
               ) : (
                 criticalStockItems.map((item, i) => (
-                  <div key={i} className="flex justify-between items-center text-xs p-3 rounded-xl bg-subsurface border border-border gap-2">
+                  <div key={i} className="flex justify-between items-center text-xs p-3 rounded-xl bg-subsurface border border-border gap-2 transition-all duration-150 hover:-translate-y-0.5 hover:bg-surface hover:border-destructive/35 hover:shadow-xs">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="p-1.5 rounded-md bg-destructive-bg text-destructive border border-destructive/30 shrink-0">
                         <AlertTriangle size={14} />
