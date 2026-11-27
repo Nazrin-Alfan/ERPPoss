@@ -24,16 +24,20 @@ export default function TenantSwitcher({ isCollapsed = false }) {
       const rect = triggerRef.current.getBoundingClientRect()
 
       if (isCollapsed) {
+        const width = Math.min(290, window.innerWidth - 24)
+        const left = Math.max(12, Math.min(rect.right + 12, window.innerWidth - width - 12))
         setPortalCoords({
           top: Math.max(10, Math.min(rect.top, window.innerHeight - 380)),
-          left: rect.right + 12,
-          width: 290
+          left,
+          width
         })
       } else {
+        const width = Math.min(Math.max(rect.width, 260), window.innerWidth - 24)
+        const left = Math.max(12, Math.min(rect.left, window.innerWidth - width - 12))
         setPortalCoords({
           top: rect.bottom + 8,
-          left: rect.left,
-          width: Math.max(rect.width, 260)
+          left,
+          width
         })
       }
     }
@@ -148,7 +152,7 @@ export default function TenantSwitcher({ isCollapsed = false }) {
       {isOpen && typeof document !== 'undefined' && createPortal(
         <div
           id="tenant-switcher-portal"
-          className="fixed z-[9999] bg-surface border border-border rounded-2xl p-2.5 shadow-2xl animate-pop-in text-foreground"
+          className="fixed z-[75] bg-surface border border-border rounded-2xl p-2.5 shadow-2xl animate-pop-in text-foreground"
           style={{
             top: `${portalCoords.top}px`,
             left: `${portalCoords.left}px`,

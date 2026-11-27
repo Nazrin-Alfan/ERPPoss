@@ -209,17 +209,17 @@ export default function MerchandiseCatalog({
                   )}
 
                   {/* Kategori Badge */}
-                  <span className={`absolute top-2 left-2 text-[9px] px-2 py-0.5 rounded-full font-extrabold uppercase backdrop-blur-md shadow-sm z-20 ${visual.toneClass}`}>
+                  <span className={`absolute top-2 left-2 text-[9px] px-2 py-0.5 rounded-full font-extrabold uppercase backdrop-blur-md shadow-sm z-[5] ${visual.toneClass}`}>
                     {visual.badge}
                   </span>
 
                   {/* Stok / Counter Badge */}
                   {inCart ? (
-                    <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground font-black text-xs flex items-center justify-center shadow-sm animate-pop-in z-20 tabular-nums">
+                    <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground font-black text-xs flex items-center justify-center shadow-sm animate-pop-in z-[5] tabular-nums">
                       {inCart.qty}
                     </span>
                   ) : (
-                    <span className={`absolute top-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-md border backdrop-blur-md z-20 tabular-nums ${
+                    <span className={`absolute top-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-md border backdrop-blur-md z-[5] tabular-nums ${
                       currentStock <= 5 
                         ? 'bg-destructive-bg text-destructive border-destructive/30' 
                         : 'bg-surface/90 text-foreground border-border'

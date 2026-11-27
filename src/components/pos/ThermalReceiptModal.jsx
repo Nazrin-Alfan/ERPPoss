@@ -306,7 +306,7 @@ export default function ThermalReceiptModal({
   return (
     <>
       {/* 1. ON-SCREEN MODAL PREVIEW (Disembunyikan saat print via CSS) */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--overlay-backdrop)] backdrop-blur-sm animate-fade-in no-print">
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-[var(--overlay-backdrop)] backdrop-blur-sm animate-fade-in no-print">
         <div className="bg-surface border border-border w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
           
           {/* Modal Header */}

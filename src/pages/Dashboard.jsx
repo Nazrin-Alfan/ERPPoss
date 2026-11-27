@@ -1407,7 +1407,7 @@ const Dashboard = () => {
   return (
     <div className="p-3 sm:p-5 pb-24 md:pb-8 space-y-4 max-w-7xl mx-auto bg-canvas text-foreground">
       {/* Top Header & Context Controls */}
-      <div className="relative z-40 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b border-border pb-4">
+      <div className="relative z-[25] flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b border-border pb-4">
         <div className="flex items-center gap-3 min-w-0 group">
           <div className="w-10 h-10 rounded-xl bg-primary-soft border border-primary/25 flex items-center justify-center text-primary shrink-0 transition-transform duration-200 group-hover:scale-105">
             <BarChart3 size={20} strokeWidth={1.75} />
@@ -1454,7 +1454,7 @@ const Dashboard = () => {
             </button>
 
             {timeRange === 'custom' && showCustomCalendar && (
-              <div className="fixed inset-x-3 top-28 sm:inset-x-auto sm:absolute sm:left-0 xl:left-auto xl:right-0 sm:top-full sm:mt-2 z-[999] flex justify-center sm:block">
+              <div className="fixed inset-x-3 top-28 sm:inset-x-auto sm:absolute sm:left-0 xl:left-auto xl:right-0 sm:top-full sm:mt-2 z-30 flex justify-center sm:block">
                 <InteractiveCalendar
                   startDate={startDate}
                   endDate={endDate}

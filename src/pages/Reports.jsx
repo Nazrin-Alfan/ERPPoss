@@ -423,7 +423,7 @@ const Reports = () => {
   return (
     <div className="p-6 pb-24 md:pb-8 space-y-6 max-w-7xl mx-auto">
       {/* Top Header & Actions */}
-      <div className="relative z-30 flex justify-between items-center flex-wrap gap-4 border-b border-border pb-5 print:hidden">
+      <div className="relative z-[25] flex justify-between items-center flex-wrap gap-4 border-b border-border pb-5 print:hidden">
         <div>
           <div className="flex items-center gap-3">
             <div className="bg-surface w-10 h-10 rounded-xl border border-destructive/30 flex items-center justify-center text-destructive shadow-lg shadow-sm">
@@ -470,7 +470,7 @@ const Reports = () => {
             </button>
 
             {timeRange === 'custom' && showCustomCalendar && (
-              <div className="absolute left-0 lg:left-auto lg:right-0 top-full mt-2 z-50">
+              <div className="fixed inset-x-3 top-28 sm:inset-x-auto sm:absolute sm:left-0 lg:left-auto lg:right-0 sm:top-full sm:mt-2 z-30 flex justify-center sm:block">
                 <InteractiveCalendar
                   startDate={startDate}
                   endDate={endDate}

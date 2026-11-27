@@ -235,7 +235,7 @@ export default function CustomSelect({
       {/* Custom Floating Popover Menu */}
       {isOpen && (
         <div
-          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} top-full mt-1.5 z-[100] min-w-[180px] max-w-xs w-max bg-surface border border-border rounded-xl shadow-2xl p-1.5 space-y-1 backdrop-blur-xl animate-pop-in ${menuClassName}`}
+          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} top-full mt-1.5 z-30 min-w-[180px] max-w-xs w-max bg-surface border border-border rounded-xl shadow-2xl p-1.5 space-y-1 backdrop-blur-xl animate-pop-in ${menuClassName}`}
           style={{ minWidth: '100%' }}
         >
           {searchable && (

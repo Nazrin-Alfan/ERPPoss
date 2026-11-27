@@ -156,4 +156,32 @@ describe('Sidebar UI/UX Component & Interactive Profile Menu Test', () => {
     expect(mobileNavSegment).not.toContain('href="/ai-studio"')
     expect(mobileNavSegment).not.toContain('href="/finance"')
   })
+
+  it('TC_05 (STACKING_HIERARCHY): Uses z-40 chrome without transform-creating animate-fade-in on mobile sticky header', () => {
+    const html = renderToString(
+      React.createElement(
+        MemoryRouter,
+        { initialEntries: ['/pos'] },
+        React.createElement(Sidebar, {
+          isCollapsed: false,
+          setIsCollapsed: vi.fn()
+        })
+      )
+    )
+
+    const mobileHeaderMatch = html.match(/<header[^>]*>/)
+    expect(mobileHeaderMatch).not.toBeNull()
+    expect(mobileHeaderMatch[0]).toContain('z-40')
+    expect(mobileHeaderMatch[0]).not.toContain('animate-fade-in')
+    expect(html).toContain('data-testid="mobile-top-nav-menu"')
+    expect(html).toContain('aria-expanded="false"')
+
+    const mobileNavMatch = html.match(/<nav[^>]*data-testid="mobile-bottom-nav"[^>]*>/)
+    expect(mobileNavMatch).not.toBeNull()
+    expect(mobileNavMatch[0]).toContain('z-40')
+
+    const asideMatch = html.match(/<aside[^>]*>/)
+    expect(asideMatch).not.toBeNull()
+    expect(asideMatch[0]).toContain('z-40')
+  })
 })

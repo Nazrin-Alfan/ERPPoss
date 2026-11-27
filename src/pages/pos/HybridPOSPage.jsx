@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase, isCloudBackend } from '../../supabaseClient'
 import { useAuth } from '../../context/AuthContext'
@@ -419,13 +419,27 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
     catatan_kendaraan: ''
   })
   const [hasCarwash, setHasCarwash] = useState(false)
+  const [carwashAddError, setCarwashAddError] = useState('')
+  const carwashPlatInputRef = useRef(null)
 
-  // Otomatis aktifkan layanan carwash saat tab carwash dibuka
-  useEffect(() => {
-    if (activeTab === 'carwash' && features.hasCarwash && !hasCarwash) {
-      setHasCarwash(true)
+  const handleAddCarwashToCart = () => {
+    if (!String(carwashForm.platNomor || '').trim()) {
+      setCarwashAddError('Isi plat nomor kendaraan terlebih dahulu sebelum menambahkan ke struk.')
+      carwashPlatInputRef.current?.focus()
+      carwashPlatInputRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' })
+      return
     }
-  }, [activeTab, features.hasCarwash, hasCarwash])
+    setCarwashAddError('')
+    setError('')
+    setHasCarwash(true)
+  }
+
+  const handleRemoveCarwashFromCart = () => {
+    setHasCarwash(false)
+    setSelectedDiskonCarwash(null)
+    setClaimedLoyaltyReward({ isClaimed: false, title: '', type: '' })
+    setCarwashAddError('')
+  }
 
   // Reset status carwash jika tenant tidak mendukung fitur carwash (murni Cafe)
   useEffect(() => {
@@ -1940,9 +1954,9 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
   return (
     <div className="p-2 sm:p-4 md:pb-6 flex flex-col max-w-7xl mx-auto min-h-[calc(100vh-4rem)] w-full max-w-full min-w-0 overflow-x-hidden space-y-3">
       {/* 1. TOP HEADER FULL-WIDTH (BEBAS DARI SCROLL SAMPING & TAMPIL 100% LEGA) */}
-      <div className="bg-surface border border-border p-2.5 sm:px-3.5 sm:py-2.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0 relative z-40 w-full max-w-full shadow-sm">
+      <div className="bg-surface border border-border p-2.5 sm:px-3.5 sm:py-2.5 rounded-xl flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 shrink-0 relative z-[25] w-full max-w-full shadow-sm">
         {/* Sisi Kiri: Navigasi Tabs Lengkap */}
-        <div className="flex items-center gap-1.5 w-full sm:w-auto min-w-0">
+        <div className="flex items-center gap-1.5 w-full xl:w-auto min-w-0">
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 flex-nowrap overscroll-x-contain shrink min-w-0">
             {/* Grup 1: Penjualan / Transaksi Langsung */}
             <div className="flex items-center gap-1 bg-subsurface p-1 rounded-xl border border-border shrink-0">
@@ -2050,7 +2064,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
             </div>
           </div>
 
-          <span className="text-border font-mono px-0.5 shrink-0 hidden sm:inline">|</span>
+          <span className="text-border font-mono px-0.5 shrink-0 hidden xl:inline">|</span>
 
           {/* Grup 3: Dropdown Operasional Kas & Shift (DI LUAR overflow-x-auto) */}
           <div className="relative shrink-0">
@@ -2073,8 +2087,8 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
             {showCashOpsMenu && (
               <>
-                <div className="fixed inset-0 z-[60] bg-transparent" onClick={() => setShowCashOpsMenu(false)} />
-                <div className="absolute right-0 sm:left-0 top-full mt-2 w-52 bg-surface border border-border rounded-xl p-1.5 shadow-2xl z-[70] space-y-1 animate-slide-up">
+                <div className="fixed inset-0 z-10 bg-transparent" onClick={() => setShowCashOpsMenu(false)} />
+                <div className="absolute right-0 xl:left-0 top-full mt-2 w-52 bg-surface border border-border rounded-xl p-1.5 shadow-2xl z-20 space-y-1 animate-slide-up">
                   <button
                     type="button"
                     onClick={() => { setActiveTab('expense'); setShowCashOpsMenu(false); }}
@@ -2113,7 +2127,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
           </div>
         </div>
         {/* Sisi Kanan: Kasir Aktif & Status Laci Kas Ringkas */}
-        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end pt-1 sm:pt-0 border-t border-border/50 sm:border-t-0">
+        <div className="flex items-center gap-2 shrink-0 w-full xl:w-auto justify-between xl:justify-end pt-1.5 xl:pt-0 border-t border-border/50 xl:border-t-0">
           {/* Status Akun Kasir Login & Shift */}
           <div className="flex items-center gap-1.5 bg-subsurface border border-border rounded-xl px-2.5 py-1 text-xs">
             <span className="w-2 h-2 rounded-full bg-success animate-pulse shrink-0"></span>
@@ -2151,10 +2165,10 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
             {showCashDrawerDetail && (
               <>
                 <div
-                  className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[0.5px]"
+                  className="fixed inset-0 z-10 bg-black/40 backdrop-blur-[0.5px]"
                   onClick={() => setShowCashDrawerDetail(false)}
                 />
-                <div className="absolute right-0 top-full mt-2 w-72 bg-surface border border-border rounded-xl p-3.5 shadow-2xl z-[70] space-y-2.5 animate-slide-up">
+                <div className="absolute right-0 top-full mt-2 w-72 max-w-[calc(100vw-2rem)] bg-surface border border-border rounded-xl p-3.5 shadow-2xl z-20 space-y-2.5 animate-slide-up">
                   <div className="flex items-center justify-between border-b border-border pb-2">
                     <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
                       <Wallet size={14} className="text-primary" />
@@ -2272,7 +2286,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                         src={menu.foto_url || getMenuPhoto(menu.nama_menu)}
                         alt={menu.nama_menu}
                         loading="lazy"
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 relative z-10"
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 relative z-[1]"
                         onLoad={(e) => {
                           const placeholder = e.currentTarget.parentElement.querySelector('.fallback-placeholder');
                           if (placeholder) placeholder.style.display = 'none';
@@ -2285,10 +2299,10 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                       />
                       
                       {/* Gradient Overlay di atas gambar */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none z-20"></div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none z-[2]"></div>
 
                       {/* Kategori Badge di sudut kiri atas */}
-                      <span className={`absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded-full font-extrabold uppercase backdrop-blur-md shadow-sm z-30 ${
+                      <span className={`absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded-full font-extrabold uppercase backdrop-blur-md shadow-sm z-[5] ${
                         menu.is_bundling
                           ? 'bg-destructive-solid text-white'
                           : theme.badgeBg
@@ -2298,7 +2312,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
                       {/* Counter Badge jika sudah ada di cart */}
                       {inCartItem && (
-                        <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground font-black text-xs flex items-center justify-center shadow-sm animate-pop-in z-30 tabular-nums">
+                        <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground font-black text-xs flex items-center justify-center shadow-sm animate-pop-in z-[5] tabular-nums">
                           {inCartItem.qty}
                         </span>
                       )}
@@ -2364,10 +2378,25 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                   <Users size={13} />
                   <span>Komisi Kru Hari Ini</span>
                 </button>
-                <span className="min-h-[38px] text-xs font-bold text-success bg-success-bg px-3 py-1.5 rounded-full border border-success/30 flex items-center gap-1">
-                  <Check size={13} />
-                  <span>Masuk ke Transaksi</span>
-                </span>
+                {hasCarwash ? (
+                  <span
+                    data-testid="carwash-in-cart-badge"
+                    className="min-h-[38px] text-xs font-bold text-success bg-success-bg px-3 py-1.5 rounded-full border border-success/30 flex items-center gap-1"
+                  >
+                    <Check size={13} />
+                    <span>Masuk ke Struk</span>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    data-testid="carwash-header-add-btn"
+                    onClick={handleAddCarwashToCart}
+                    className="min-h-[38px] text-xs font-bold text-primary-foreground bg-primary hover:bg-primary-hover px-3.5 py-1.5 rounded-full shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
+                  >
+                    <Plus size={14} />
+                    <span>Tambah ke Struk</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -2378,16 +2407,26 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                   Plat Nomor Kendaraan <span className="text-destructive">*</span>
                 </label>
                 <input
+                  ref={carwashPlatInputRef}
                   type="text"
                   placeholder="Contoh: AD 1234 AB"
                   value={carwashForm.platNomor}
                   onChange={(e) => {
                     const val = e.target.value.toUpperCase()
                     setCarwashForm(prev => ({ ...prev, platNomor: val }))
-                    if (!hasCarwash) setHasCarwash(true)
+                    if (val.trim()) setCarwashAddError('')
                   }}
-                  className="w-full min-h-[44px] px-4 py-2 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark focus:outline-none focus:border-ring text-base sm:text-sm uppercase font-mono tracking-widest font-bold"
+                  className={`w-full min-h-[44px] px-4 py-2 bg-subsurface border rounded-xl text-foreground placeholder:text-muted-dark focus:outline-none text-base sm:text-sm uppercase font-mono tracking-widest font-bold ${
+                    carwashAddError
+                      ? 'border-destructive ring-2 ring-destructive/20'
+                      : 'border-border focus:border-ring'
+                  }`}
                 />
+                {carwashAddError && (
+                  <p role="alert" className="text-[11px] font-semibold text-destructive mt-1">
+                    {carwashAddError}
+                  </p>
+                )}
               </div>
 
               {/* Bay Pengerjaan */}
@@ -2395,7 +2434,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                 <label className="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
                   Bay Pengerjaan / Lokasi Antre
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-2 xl:grid-cols-4 gap-1.5">
                   {['Bay 1', 'Bay 2', 'Bay 3', 'Antre Luar'].map((b) => (
                     <button
                       key={b}
@@ -2661,6 +2700,47 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                     />
                   </div>
                 </div>
+
+                {/* Action Footer Carwash: Tambah / Hapus dari Struk */}
+                <div className="col-span-1 md:col-span-2 p-3.5 sm:p-4 rounded-xl bg-subsurface border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-muted font-medium truncate">
+                      {carwashForm.paket} • {carwashForm.ukuran} • {carwashForm.variant}
+                    </p>
+                    <p className="text-lg font-black font-mono tabular-nums text-foreground mt-0.5">
+                      {formatRupiah(carwashForm.harga)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {!hasCarwash ? (
+                      <button
+                        type="button"
+                        data-testid="add-carwash-to-cart-btn"
+                        onClick={handleAddCarwashToCart}
+                        className="min-h-[44px] px-5 bg-primary hover:bg-primary-hover text-primary-foreground font-bold rounded-full text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-[0.98] cursor-pointer"
+                      >
+                        <Plus size={15} />
+                        <span>Tambah ke Struk</span>
+                      </button>
+                    ) : (
+                      <>
+                        <span className="min-h-[38px] text-xs font-bold text-success bg-success-bg px-3 py-1.5 rounded-full border border-success/30 inline-flex items-center gap-1">
+                          <Check size={13} />
+                          <span>Masuk ke Struk</span>
+                        </span>
+                        <button
+                          type="button"
+                          data-testid="remove-carwash-from-cart-btn"
+                          onClick={handleRemoveCarwashFromCart}
+                          className="min-h-[44px] px-4 bg-destructive-bg hover:opacity-90 border border-destructive/30 text-destructive font-bold rounded-full text-xs flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer"
+                        >
+                          <Trash2 size={14} />
+                          <span>Hapus dari Struk</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
           </div>
         )}
@@ -2888,7 +2968,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
               {/* Date Filter & Actions */}
               <div className="flex items-center gap-2 flex-wrap">
-                <div className="relative z-30">
+                <div className="relative z-[25]">
                   <button
                     type="button"
                     aria-label="Filter tanggal riwayat transaksi"
@@ -2909,7 +2989,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                   </button>
 
                   {showHistoryCalendar && (
-                    <div className="fixed inset-x-3 top-28 sm:inset-x-auto sm:absolute sm:right-0 sm:top-full sm:mt-2 z-[999] flex justify-center sm:block">
+                    <div className="fixed inset-x-3 top-28 sm:inset-x-auto sm:absolute sm:right-0 sm:top-full sm:mt-2 z-30 flex justify-center sm:block">
                       <InteractiveCalendar
                         mode="single"
                         startDate={historyDate}
@@ -3887,10 +3967,14 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
               <ShoppingCart className="text-primary" size={20} />
               <h3 className="font-bold text-base text-foreground">Struk Belanja</h3>
             </div>
-            {cart.length > 0 && (
+            {(cart.length > 0 || hasCarwash) && (
               <button
                 type="button"
-                onClick={() => setCart([])}
+                onClick={() => {
+                  setCart([])
+                  setSelectedDiskonCafe(null)
+                  handleRemoveCarwashFromCart()
+                }}
                 className="text-[11px] text-destructive hover:underline font-semibold"
               >
                 Kosongkan
@@ -4085,7 +4169,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                   <button
                     type="button"
                     aria-label="Hapus item carwash"
-                    onClick={() => setHasCarwash(false)}
+                    onClick={handleRemoveCarwashFromCart}
                     className="text-destructive hover:opacity-80 p-1 shrink-0 transition-colors"
                     title="Hapus carwash dari transaksi"
                   >
@@ -4355,7 +4439,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
            type="button"
            onClick={() => setShowMobileCart(true)}
            data-testid="mobile-sticky-cart-bar"
-           className="md:hidden fixed bottom-20 left-3 right-3 z-30 bg-surface border border-border-active/60 p-3 rounded-2xl flex items-center justify-between shadow-2xl animate-slide-up text-left group transition-transform active:scale-[0.98] tap-tactile"
+           className="md:hidden fixed bottom-20 left-3 right-3 z-20 bg-surface border border-border-active/60 p-3 rounded-2xl flex items-center justify-between shadow-2xl animate-slide-up text-left group transition-transform active:scale-[0.98] tap-tactile"
            >
            <div className="flex items-center gap-3 pointer-events-none">
              <div className="w-10 h-10 rounded-xl bg-primary-soft flex items-center justify-center text-primary-soft-foreground border border-primary/30 relative">
@@ -4378,7 +4462,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
            {/* M2B: Mobile Cart Bottom-Sheet Overlay/Drawer via Portal so it overlays bottom-nav cleanly */}
            {showMobileCart && typeof document !== 'undefined' && createPortal(
-           <div className="md:hidden fixed inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-sm z-[80] flex flex-col justify-end animate-fade-in">
+           <div className="md:hidden fixed inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-sm z-[60] flex flex-col justify-end animate-fade-in">
            {/* Backdrop click area to close */}
            <div className="absolute inset-0" onClick={() => setShowMobileCart(false)}></div>
 
@@ -4579,7 +4663,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                     <button
                       type="button"
                       aria-label="Hapus item carwash"
-                      onClick={() => setHasCarwash(false)}
+                      onClick={handleRemoveCarwashFromCart}
                       className="text-destructive hover:opacity-80 p-1 shrink-0 transition-colors"
                       title="Hapus carwash dari transaksi"
                     >
@@ -5107,7 +5191,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
       {/* MODAL: Input Modal Hari Ini */}
       {showModalModal && (
-        <div className="fixed inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-md flex items-center justify-center p-4 z-[70] animate-fade-in">
+        <div className="fixed inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-md flex items-center justify-center p-4 z-[60] animate-fade-in">
           <div className="bg-surface w-full max-w-md p-6 rounded-2xl shadow-2xl border border-border animate-pop-in">
             <div className="text-center mb-5">
               <RelayLogo size="md" variant={isDark ? 'dark' : 'light'} className="mx-auto mb-3 justify-center" />

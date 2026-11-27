@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useAppTheme } from '../context/ThemeContext'
@@ -76,13 +77,73 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
   const [showFeedbackModal, setShowFeedbackModal] = useState(false)
+  const [portalRoot, setPortalRoot] = useState(null)
+  const [profilePortalCoords, setProfilePortalCoords] = useState({ top: 0, left: 0, width: 224 })
   const profileMenuRef = useRef(null)
   const currentRole = profile?.role || 'Kasir'
   const currentBusinessType = activeTenant?.business_type || 'HYBRID'
   const features = getTenantFeatures(currentBusinessType)
 
   useEffect(() => {
+    if (typeof document !== 'undefined') setPortalRoot(document.body)
+  }, [])
+
+  useEffect(() => {
+    setShowMobileNav(false)
+    setShowProfileMenu(false)
+  }, [location.pathname])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setShowMobileNav(false)
+        setShowProfileMenu(false)
+      }
+    }
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setShowMobileNav(false)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('resize', handleResize)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!showProfileMenu || !profileMenuRef.current || typeof window === 'undefined') return undefined
+    const updateProfileMenuCoords = () => {
+      if (!profileMenuRef.current) return
+      const rect = profileMenuRef.current.getBoundingClientRect()
+      if (isCollapsed) {
+        const width = Math.min(224, window.innerWidth - 24)
+        const left = Math.max(12, Math.min(rect.right + 10, window.innerWidth - width - 12))
+        const top = Math.max(12, Math.min(rect.top, window.innerHeight - 240))
+        setProfilePortalCoords({ top, left, width })
+      } else {
+        const width = Math.min(Math.max(rect.width, 200), window.innerWidth - 24)
+        const left = Math.max(12, Math.min(rect.left, window.innerWidth - width - 12))
+        const top = Math.max(12, Math.min(rect.bottom + 8, window.innerHeight - 240))
+        setProfilePortalCoords({ top, left, width })
+      }
+    }
+    updateProfileMenuCoords()
+    window.addEventListener('resize', updateProfileMenuCoords)
+    window.addEventListener('scroll', updateProfileMenuCoords, true)
+    return () => {
+      window.removeEventListener('resize', updateProfileMenuCoords)
+      window.removeEventListener('scroll', updateProfileMenuCoords, true)
+    }
+  }, [showProfileMenu, isCollapsed])
+
+  useEffect(() => {
     const handleClickOutside = (event) => {
+      const portalEl = document.getElementById('sidebar-profile-menu-portal')
+      if (portalEl && portalEl.contains(event.target)) return
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
         setShowProfileMenu(false)
       }
@@ -238,10 +299,134 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     .filter(Boolean)
     .slice(0, 4)
 
+  const mobileNavNode = showMobileNav ? (
+    <>
+      <div
+        data-testid="mobile-nav-backdrop"
+        className="md:hidden fixed inset-0 top-14 bottom-16 bg-black/45 backdrop-blur-[1px] z-[45]"
+        onClick={() => setShowMobileNav(false)}
+      />
+      <div
+        data-testid="mobile-nav-menu"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu Navigasi"
+        className="md:hidden fixed top-[3.75rem] right-3 w-72 max-w-[calc(100vw-1.5rem)] bg-surface border border-border rounded-2xl p-3 shadow-2xl z-[48] animate-pop-in flex flex-col gap-2 max-h-[calc(100dvh-9rem)] overflow-y-auto overscroll-contain pb-6 text-foreground"
+      >
+        <div className="p-2.5 rounded-xl bg-subsurface border border-border flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center text-muted shrink-0">
+              <User size={15} />
+            </div>
+            <div className="overflow-hidden min-w-0">
+              <p className="font-semibold text-xs truncate text-foreground">{profile?.nama || 'Pengguna'}</p>
+              <span className={`text-[8px] px-2 py-0.5 rounded-full font-bold uppercase inline-block mt-0.5 ${getRoleBadgeStyle(currentRole)}`}>
+                {currentRoleLabel}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-2">
+          <TenantSwitcher isCollapsed={false} />
+        </div>
+
+        {(currentRole === ROLES.SUPER_ADMIN || profile?.is_super_admin) && ENABLE_FOUNDER_CONSOLE && (
+          <Link
+            to="/founder"
+            onClick={() => setShowMobileNav(false)}
+            className="flex items-center justify-between min-h-[44px] px-3.5 py-2 rounded-full bg-warning-bg hover:opacity-90 border border-warning/35 text-xs font-bold text-warning transition-all active:scale-[0.98]"
+          >
+            <span className="flex items-center gap-2">
+              <Crown size={15} strokeWidth={2} />
+              <span>Console Founder</span>
+            </span>
+            <ChevronRight size={14} />
+          </Link>
+        )}
+
+        {navSections.map((section, sIdx) => {
+          const visibleItems = section.items.filter(isItemVisible)
+          if (visibleItems.length === 0) return null
+
+          return (
+            <div key={section.title || sIdx} className="space-y-1">
+              <p className="text-[9px] text-muted-dark font-bold uppercase tracking-wider px-2.5 pt-1">{section.title}</p>
+              {visibleItems.map((item) => {
+                const Icon = item.icon
+                const isActive = location.pathname === item.path
+
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.path}
+                    onClick={() => setShowMobileNav(false)}
+                    className={`flex items-center justify-between min-h-[44px] px-3.5 py-2 rounded-full text-xs transition-all active:scale-[0.98] ${
+                      isActive ? activeClass : inactiveClass
+                    }`}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <Icon size={17} strokeWidth={1.75} />
+                      <span>{item.name}</span>
+                    </span>
+                    {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#93C5FD] shrink-0" />}
+                  </Link>
+                )
+              })}
+            </div>
+          )
+        })}
+
+        <div className="h-[1px] w-full bg-border my-1" />
+        <Link
+          to="/panduan"
+          onClick={() => setShowMobileNav(false)}
+          className="flex items-center gap-2.5 min-h-[44px] px-3.5 py-2 rounded-full text-xs text-primary-soft-foreground bg-primary-soft hover:opacity-90 transition-colors w-full text-left font-semibold"
+        >
+          <BookOpen size={16} strokeWidth={1.75} />
+          <span>Panduan Pengguna</span>
+        </Link>
+        <button
+          type="button"
+          onClick={() => {
+            setShowMobileNav(false)
+            setShowFeedbackModal(true)
+          }}
+          className="flex items-center gap-2.5 min-h-[44px] px-3.5 py-2 rounded-full text-xs text-warning bg-warning-bg hover:opacity-90 transition-colors w-full text-left font-semibold cursor-pointer"
+        >
+          <MessageSquarePlus size={16} strokeWidth={1.75} />
+          <span>Beri Masukan Beta</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setShowMobileNav(false)
+            setShowChangePasswordModal(true)
+          }}
+          className="flex items-center gap-2.5 min-h-[44px] px-3.5 py-2 rounded-full text-xs text-foreground hover:bg-subsurface transition-colors w-full text-left font-semibold cursor-pointer"
+        >
+          <KeyRound size={16} strokeWidth={1.75} className="text-primary" />
+          <span>Ganti Kata Sandi</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setShowMobileNav(false)
+            logout()
+          }}
+          className="flex items-center gap-2.5 min-h-[44px] px-3.5 py-2 rounded-full text-xs text-destructive hover:bg-destructive-bg transition-colors w-full text-left font-bold cursor-pointer"
+        >
+          <LogOut size={16} strokeWidth={1.75} />
+          <span>Keluar Aplikasi</span>
+        </button>
+      </div>
+    </>
+  ) : null
+
   return (
     <>
       {/* Mobile Top Bar */}
-      <header className="md:hidden sticky top-0 left-0 right-0 h-14 bg-surface border-b border-border flex items-center justify-between px-4 z-30 animate-fade-in">
+      <header className="md:hidden sticky top-0 left-0 right-0 h-14 shrink-0 bg-surface border-b border-border flex items-center justify-between px-4 z-40">
         <div className="flex items-center gap-2.5 min-w-0">
           <RelayLogo size="sm" />
           <div className="min-w-0">
@@ -267,6 +452,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
           <button
             type="button"
+            data-testid="mobile-top-nav-menu"
+            aria-label="Menu Navigasi"
+            aria-expanded={showMobileNav}
             onClick={() => setShowMobileNav(!showMobileNav)}
             className={`w-10 h-10 rounded-full border transition-all active:scale-95 flex items-center justify-center cursor-pointer ${
               showMobileNav
@@ -278,130 +466,15 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
             {showMobileNav ? <X size={18} strokeWidth={1.75} /> : <Menu size={18} strokeWidth={1.75} />}
           </button>
         </div>
-
-        {showMobileNav && (
-          <>
-            <div
-              className="md:hidden fixed inset-0 top-14 bottom-16 bg-black/40 z-30"
-              onClick={() => setShowMobileNav(false)}
-            />
-            <div className="fixed top-14 right-3 w-72 bg-surface border border-border rounded-2xl p-3 shadow-2xl z-40 animate-pop-in flex flex-col gap-2 max-h-[calc(100dvh-8.5rem)] overflow-y-auto overscroll-contain pb-6">
-            <div className="p-2.5 rounded-xl bg-subsurface border border-border flex items-center justify-between mb-1">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center text-muted shrink-0">
-                  <User size={15} />
-                </div>
-                <div className="overflow-hidden min-w-0">
-                  <p className="font-semibold text-xs truncate text-foreground">{profile?.nama || 'Pengguna'}</p>
-                  <span className={`text-[8px] px-2 py-0.5 rounded-full font-bold uppercase inline-block mt-0.5 ${getRoleBadgeStyle(currentRole)}`}>
-                    {currentRoleLabel}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-2">
-              <TenantSwitcher isCollapsed={false} />
-            </div>
-
-            {(currentRole === ROLES.SUPER_ADMIN || profile?.is_super_admin) && ENABLE_FOUNDER_CONSOLE && (
-              <Link
-                to="/founder"
-                onClick={() => setShowMobileNav(false)}
-                className="flex items-center justify-between min-h-[44px] px-3.5 py-2 rounded-full bg-warning-bg hover:opacity-90 border border-warning/35 text-xs font-bold text-warning transition-all active:scale-[0.98]"
-              >
-                <span className="flex items-center gap-2">
-                  <Crown size={15} strokeWidth={2} />
-                  <span>Console Founder</span>
-                </span>
-                <ChevronRight size={14} />
-              </Link>
-            )}
-
-            {navSections.map((section, sIdx) => {
-              const visibleItems = section.items.filter(isItemVisible)
-              if (visibleItems.length === 0) return null
-
-              return (
-                <div key={section.title || sIdx} className="space-y-1">
-                  <p className="text-[9px] text-muted-dark font-bold uppercase tracking-wider px-2.5 pt-1">{section.title}</p>
-                  {visibleItems.map((item) => {
-                    const Icon = item.icon
-                    const isActive = location.pathname === item.path
-
-                    return (
-                      <Link
-                        key={item.name}
-                        to={item.path}
-                        onClick={() => setShowMobileNav(false)}
-                        className={`flex items-center justify-between min-h-[44px] px-3.5 py-2 rounded-full text-xs transition-all active:scale-[0.98] ${
-                          isActive ? activeClass : inactiveClass
-                        }`}
-                      >
-                        <span className="flex items-center gap-2.5">
-                          <Icon size={17} strokeWidth={1.75} />
-                          <span>{item.name}</span>
-                        </span>
-                        {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#93C5FD] shrink-0" />}
-                      </Link>
-                    )
-                  })}
-                </div>
-              )
-            })}
-
-            <div className="h-[1px] w-full bg-border my-1" />
-            <Link
-              to="/panduan"
-              onClick={() => setShowMobileNav(false)}
-              className="flex items-center gap-2.5 min-h-[44px] px-3.5 py-2 rounded-full text-xs text-primary-soft-foreground bg-primary-soft hover:opacity-90 transition-colors w-full text-left font-semibold"
-            >
-              <BookOpen size={16} strokeWidth={1.75} />
-              <span>Panduan Pengguna</span>
-            </Link>
-            <button
-              type="button"
-              onClick={() => {
-                setShowMobileNav(false)
-                setShowFeedbackModal(true)
-              }}
-              className="flex items-center gap-2.5 min-h-[44px] px-3.5 py-2 rounded-full text-xs text-warning bg-warning-bg hover:opacity-90 transition-colors w-full text-left font-semibold cursor-pointer"
-            >
-              <MessageSquarePlus size={16} strokeWidth={1.75} />
-              <span>Beri Masukan Beta</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowMobileNav(false)
-                setShowChangePasswordModal(true)
-              }}
-              className="flex items-center gap-2.5 min-h-[44px] px-3.5 py-2 rounded-full text-xs text-foreground hover:bg-subsurface transition-colors w-full text-left font-semibold cursor-pointer"
-            >
-              <KeyRound size={16} strokeWidth={1.75} className="text-primary" />
-              <span>Ganti Kata Sandi</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowMobileNav(false)
-                logout()
-              }}
-              className="flex items-center gap-2.5 min-h-[44px] px-3.5 py-2 rounded-full text-xs text-destructive hover:bg-destructive-bg transition-colors w-full text-left font-bold cursor-pointer"
-            >
-              <LogOut size={16} strokeWidth={1.75} />
-              <span>Keluar Aplikasi</span>
-            </button>
-            </div>
-          </>
-        )}
       </header>
+
+      {mobileNavNode && (portalRoot ? createPortal(mobileNavNode, portalRoot) : mobileNavNode)}
 
       {/* Mobile Bottom Navigation Bar (< 768px, RBAC-aware 4 priority routes + Menu trigger) */}
       <nav
         aria-label="Navigasi Mobile"
         data-testid="mobile-bottom-nav"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-30 h-16 bg-surface/95 backdrop-blur-md border-t border-border px-2 flex items-center justify-around"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 h-16 bg-surface/95 backdrop-blur-md border-t border-border px-2 flex items-center justify-around"
       >
         {mobilePrimaryTabs.map((item) => {
           const Icon = item.icon
@@ -438,6 +511,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           data-testid="mobile-bottom-nav-menu"
           onClick={() => setShowMobileNav((prev) => !prev)}
           aria-label="Buka Menu Navigasi"
+          aria-expanded={showMobileNav}
           className="min-w-[56px] min-h-[44px] flex flex-col items-center justify-center gap-0.5 rounded-xl transition-all active:scale-[0.96] cursor-pointer"
         >
           <span
@@ -461,7 +535,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       <aside
         className={`hidden md:flex flex-col ${
           isCollapsed ? 'w-[72px]' : 'w-60'
-        } h-full shrink-0 bg-surface border-r border-border text-foreground z-30 transition-[width] duration-200 ease-in-out`}
+        } h-full shrink-0 bg-surface border-r border-border text-foreground z-40 transition-[width] duration-200 ease-in-out`}
       >
         {/* Logo/Header */}
         <div
@@ -487,7 +561,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
             type="button"
             onClick={() => setIsCollapsed(!isCollapsed)}
             className={`w-8 h-8 rounded-full bg-subsurface border border-border text-muted hover:text-foreground hover:border-border-hover flex items-center justify-center transition-all cursor-pointer shrink-0 ${
-              isCollapsed ? 'absolute -right-3.5 top-4 z-50 shadow-md bg-surface border-border-hover text-primary' : ''
+              isCollapsed ? 'absolute -right-3.5 top-4 z-10 shadow-md bg-surface border-border-hover text-primary' : ''
             }`}
             title={isCollapsed ? 'Perlebar Sidebar (Expand)' : 'Perkecil Sidebar (Collapse)'}
           >
@@ -605,46 +679,54 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
               )}
             </button>
 
-            {showProfileMenu && (
-              <div
-                className={`absolute z-50 bg-surface border border-border rounded-2xl p-2 shadow-2xl animate-pop-in ${
-                  isCollapsed ? 'left-full top-0 ml-2 w-56' : 'top-full left-0 right-0 mt-2'
-                }`}
-              >
-                <div className="p-2 border-b border-border mb-1">
-                  <p className="text-[9px] text-muted-dark font-bold uppercase tracking-wider">Akun Terhubung</p>
-                  <p className="text-xs font-bold text-foreground truncate mt-0.5">{profile?.nama || 'Pengguna'}</p>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    <span className="text-[10px] text-muted font-medium">{currentRoleLabel} • Sesi Aktif</span>
+            {showProfileMenu && (() => {
+              const profileMenuNode = (
+                <div
+                  id="sidebar-profile-menu-portal"
+                  className="fixed z-[48] bg-surface border border-border rounded-2xl p-2 shadow-2xl animate-pop-in text-foreground"
+                  style={{
+                    top: `${profilePortalCoords.top}px`,
+                    left: `${profilePortalCoords.left}px`,
+                    width: `${profilePortalCoords.width}px`,
+                    maxWidth: 'calc(100vw - 24px)'
+                  }}
+                >
+                  <div className="p-2 border-b border-border mb-1">
+                    <p className="text-[9px] text-muted-dark font-bold uppercase tracking-wider">Akun Terhubung</p>
+                    <p className="text-xs font-bold text-foreground truncate mt-0.5">{profile?.nama || 'Pengguna'}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span className="text-[10px] text-muted font-medium">{currentRoleLabel} • Sesi Aktif</span>
+                    </div>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowProfileMenu(false)
+                      setShowChangePasswordModal(true)
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-foreground hover:bg-subsurface transition-all tap-tactile text-left cursor-pointer mb-1"
+                  >
+                    <KeyRound size={14} strokeWidth={1.75} className="text-primary" />
+                    <span>Ganti Kata Sandi</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowProfileMenu(false)
+                      logout()
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-destructive hover:bg-destructive-bg transition-all tap-tactile text-left cursor-pointer"
+                  >
+                    <LogOut size={14} strokeWidth={1.75} />
+                    <span>Keluar Aplikasi</span>
+                  </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowProfileMenu(false)
-                    setShowChangePasswordModal(true)
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-foreground hover:bg-subsurface transition-all tap-tactile text-left cursor-pointer mb-1"
-                >
-                  <KeyRound size={14} strokeWidth={1.75} className="text-primary" />
-                  <span>Ganti Kata Sandi</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowProfileMenu(false)
-                    logout()
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-destructive hover:bg-destructive-bg transition-all tap-tactile text-left cursor-pointer"
-                >
-                  <LogOut size={14} strokeWidth={1.75} />
-                  <span>Keluar Aplikasi</span>
-                </button>
-              </div>
-            )}
+              )
+              return portalRoot ? createPortal(profileMenuNode, portalRoot) : profileMenuNode
+            })()}
           </div>
 
           <TenantSwitcher isCollapsed={isCollapsed} />

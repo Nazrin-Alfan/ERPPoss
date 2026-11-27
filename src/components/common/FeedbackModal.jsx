@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useLocation } from 'react-router-dom'
 import { MessageSquarePlus, Star, X, CheckCircle2, AlertCircle, Send } from 'lucide-react'
 import { supabase } from '../../supabaseClient'
@@ -23,6 +24,7 @@ const FeedbackModal = ({ isOpen, onClose }) => {
   const location = useLocation()
   const { user, profile, activeTenant } = useAuth()
 
+  const [portalRoot, setPortalRoot] = useState(null)
   const [category, setCategory] = useState('FEATURE')
   const [rating, setRating] = useState(0)
   const [hoverRating, setHoverRating] = useState(0)
@@ -30,6 +32,10 @@ const FeedbackModal = ({ isOpen, onClose }) => {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [submitted, setSubmitted] = useState(false)
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') setPortalRoot(document.body)
+  }, [])
 
   useEffect(() => {
     if (isOpen) {
@@ -89,9 +95,9 @@ const FeedbackModal = ({ isOpen, onClose }) => {
     }
   }
 
-  return (
+  const modalMarkup = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-fade-in overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby="feedback-modal-title"
@@ -254,6 +260,8 @@ const FeedbackModal = ({ isOpen, onClose }) => {
       </div>
     </div>
   )
+
+  return portalRoot ? createPortal(modalMarkup, portalRoot) : modalMarkup
 }
 
 export default FeedbackModal

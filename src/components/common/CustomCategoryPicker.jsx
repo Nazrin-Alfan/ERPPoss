@@ -101,7 +101,7 @@ export default function CustomCategoryPicker({
 
       {/* Custom Dropdown Modal Panel */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-surface border border-border rounded-xl shadow-xl p-2 space-y-2 text-foreground animate-pop-in">
+        <div className="absolute top-full left-0 right-0 mt-1.5 z-30 bg-surface border border-border rounded-xl shadow-xl p-2 space-y-2 text-foreground animate-pop-in">
           {/* Form Tambah Kategori Cepat */}
           {isAddingNew ? (
             <div className="p-2 rounded-lg bg-subsurface border border-primary/25 space-y-2">

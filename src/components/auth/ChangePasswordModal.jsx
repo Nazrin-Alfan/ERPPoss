@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { KeyRound, Eye, EyeOff, Lock, CheckCircle2, AlertCircle, X, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
 export default function ChangePasswordModal({ isOpen, onClose }) {
   const { profile, user, changePassword } = useAuth()
+  const [portalRoot, setPortalRoot] = useState(null)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -18,6 +20,10 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
   const dialogRef = useRef(null)
   const focusHistoryRef = useRef([])
   const onCloseRef = useRef(onClose)
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') setPortalRoot(document.body)
+  }, [])
 
   useEffect(() => {
     onCloseRef.current = onClose
@@ -148,8 +154,8 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-fade-in">
+  const modalMarkup = (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-fade-in">
       <div
         ref={dialogRef}
         tabIndex={-1}
@@ -333,4 +339,6 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
       </div>
     </div>
   )
+
+  return portalRoot ? createPortal(modalMarkup, portalRoot) : modalMarkup
 }

@@ -716,7 +716,7 @@ const Karyawan = () => {
       {activeTab === 'wages' && (
         <div className="space-y-6 animate-fade-in">
           <div className="bg-surface border border-border p-6 rounded-2xl space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="relative z-[25] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                   <DollarSign className="text-primary" size={20} />
@@ -747,7 +747,7 @@ const Karyawan = () => {
                   </button>
 
                   {showWagesCalendar && (
-                    <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 z-50">
+                    <div className="fixed inset-x-3 top-28 sm:inset-x-auto sm:absolute sm:right-0 sm:top-full sm:mt-2 z-30 flex justify-center sm:block">
                       <InteractiveCalendar
                         startDate={wagesStartDate}
                         endDate={wagesEndDate}

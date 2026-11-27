@@ -18,7 +18,7 @@ export default function FounderLayout({ children }) {
       className="min-h-screen bg-canvas text-foreground flex flex-col selection:bg-primary selection:text-primary-foreground"
     >
       {/* Top Header Command Bar Khusus Solo Founder (Pure Carbon Obsidian D1) */}
-      <header className="sticky top-0 z-50 min-h-[60px] bg-surface/95 backdrop-blur-md border-b border-border px-4 sm:px-8 py-2.5 flex items-center justify-between">
+      <header className="sticky top-0 z-40 min-h-[60px] bg-surface/95 backdrop-blur-md border-b border-border px-4 sm:px-8 py-2.5 flex items-center justify-between">
         <div className="flex items-center gap-3 min-w-0">
           <RelayLogo variant="dark" size="md" />
           <div className="min-w-0">
