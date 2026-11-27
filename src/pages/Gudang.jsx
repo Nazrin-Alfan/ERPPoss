@@ -466,14 +466,14 @@ export default function Gudang() {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-xl bg-[#00ffff]/15 border border-[#00ffff]/30 text-[#00ffff]">
+            <div className="p-2.5 rounded-xl bg-primary-soft border border-primary/30 text-primary-soft-foreground">
               <Boxes className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-xl md:text-2xl font-black text-white flex items-center gap-2">
+              <h1 className="text-xl md:text-2xl font-black text-foreground flex items-center gap-2">
                 <span>Manajemen Multi-Gudang & Inventori</span>
               </h1>
-              <p className="text-xs md:text-sm text-[#bbcbb2] mt-0.5">
+              <p className="text-xs md:text-sm text-muted mt-0.5">
                 Pusat pengawasan bahan baku, chemical cuci mobil, dan produk retail merchandise
               </p>
             </div>
@@ -481,7 +481,7 @@ export default function Gudang() {
         </div>
 
         {/* 3 PILIHAN GUDANG TABS */}
-        <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#121215] border border-[#26272d] shadow-xl overflow-x-auto no-scrollbar shrink-0">
+        <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-surface border border-border shadow-xl overflow-x-auto no-scrollbar shrink-0">
           {features.hasCafeWarehouse && (
             <button
               onClick={() => {
@@ -490,8 +490,8 @@ export default function Gudang() {
               }}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm transition-all whitespace-nowrap shrink-0 ${
                 activeGudang === 'CAFE'
-                  ? 'bg-[#ffc71f] text-[#0f0f0f] font-bold shadow-sm'
-                  : 'text-[#bbcbb2] hover:text-white hover:bg-[#18181c]'
+                  ? 'bg-warning text-ink-foreground font-bold shadow-sm'
+                  : 'text-muted hover:text-foreground hover:bg-surface-hover'
               }`}
             >
               <Coffee size={16} />
@@ -507,8 +507,8 @@ export default function Gudang() {
               }}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm transition-all whitespace-nowrap shrink-0 ${
                 activeGudang === 'CARWASH'
-                  ? 'bg-[#f57733] text-white font-bold shadow-sm'
-                  : 'text-[#bbcbb2] hover:text-white hover:bg-[#18181c]'
+                  ? 'bg-primary text-primary-foreground font-bold shadow-sm'
+                  : 'text-muted hover:text-foreground hover:bg-surface-hover'
               }`}
             >
               <Car size={16} />
@@ -523,8 +523,8 @@ export default function Gudang() {
             }}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm transition-all whitespace-nowrap shrink-0 ${
               activeGudang === 'MERCHANDISE'
-                ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm'
-                : 'text-[#bbcbb2] hover:text-white hover:bg-[#18181c]'
+                ? 'bg-primary text-primary-foreground font-bold shadow-sm'
+                : 'text-muted hover:text-foreground hover:bg-surface-hover'
             }`}
           >
             <ShoppingBag size={16} />
@@ -535,24 +535,24 @@ export default function Gudang() {
 
       {/* ALERT NOTIFIKASI */}
       {error && (
-        <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between">
+        <div className="p-3.5 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-xs flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
             <span>{error}</span>
           </div>
-          <button onClick={() => setError('')} className="p-1 hover:bg-rose-500/20 rounded">
+          <button onClick={() => setError('')} className="p-1 hover:bg-destructive-bg rounded">
             <X size={14} />
           </button>
         </div>
       )}
 
       {success && (
-        <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
+        <div className="p-3.5 rounded-xl bg-success-bg border border-success/30 text-success text-xs flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-[#00ffff] shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
             <span>{success}</span>
           </div>
-          <button onClick={() => setSuccess('')} className="p-1 hover:bg-emerald-500/20 rounded">
+          <button onClick={() => setSuccess('')} className="p-1 hover:bg-primary-hover rounded">
             <X size={14} />
           </button>
         </div>
@@ -561,85 +561,85 @@ export default function Gudang() {
       {/* 2. KPI METRICS CARDS GUDANG AKTIF */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {/* Total Item */}
-        <div className="bg-[#121215] p-4 rounded-2xl border border-[#26272d] flex items-center justify-between">
+        <div className="bg-surface p-4 rounded-2xl border border-border flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-bold text-[#bbcbb2] uppercase tracking-wider">Total Item Barang</span>
-            <h3 className="text-xl md:text-2xl font-black text-white mt-1">{kpiStats.totalItems} <span className="text-xs font-normal text-[#6b7367]">item</span></h3>
+            <span className="text-[11px] font-bold text-muted uppercase tracking-wider">Total Item Barang</span>
+            <h3 className="text-xl md:text-2xl font-black text-foreground mt-1">{kpiStats.totalItems} <span className="text-xs font-normal text-muted-dark">item</span></h3>
           </div>
-          <div className="p-3 rounded-xl bg-[#18181c] text-white border border-[#26272d]">
+          <div className="p-3 rounded-xl bg-subsurface text-foreground border border-border">
             <Package size={22} />
           </div>
         </div>
 
         {/* Total Nilai Aset */}
         {canViewCost ? (
-          <div className="bg-[#121215] p-4 rounded-2xl border border-[#26272d] flex items-center justify-between">
+          <div className="bg-surface p-4 rounded-2xl border border-border flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold text-[#bbcbb2] uppercase tracking-wider">Total Nilai Inventori</span>
-              <h3 className="text-xl md:text-2xl font-black text-[#00ffff] font-mono mt-1">
+              <span className="text-[11px] font-bold text-muted uppercase tracking-wider">Total Nilai Inventori</span>
+              <h3 className="text-xl md:text-2xl font-black text-primary font-mono mt-1">
                 {formatRupiah(kpiStats.totalAssetValue)}
               </h3>
             </div>
-            <div className="p-3 rounded-xl bg-[#00ffff]/15 text-[#00ffff]">
+            <div className="p-3 rounded-xl bg-primary-soft text-primary-soft-foreground">
               <DollarSign size={22} />
             </div>
           </div>
         ) : (
-          <div className="bg-[#121215] p-4 rounded-2xl border border-[#26272d] flex items-center justify-between">
+          <div className="bg-surface p-4 rounded-2xl border border-border flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold text-[#bbcbb2] uppercase tracking-wider">Status Valuasi</span>
-              <h3 className="text-sm font-semibold text-[#bbcbb2] mt-1">
+              <span className="text-[11px] font-bold text-muted uppercase tracking-wider">Status Valuasi</span>
+              <h3 className="text-sm font-semibold text-muted mt-1">
                 Akses Terbatas Kasir
               </h3>
             </div>
-            <div className="p-3 rounded-xl bg-[#18181c] text-[#bbcbb2] border border-[#26272d]">
+            <div className="p-3 rounded-xl bg-subsurface text-muted border border-border">
               <Boxes size={22} />
             </div>
           </div>
         )}
 
         {/* Stok Menipis */}
-        <div className="bg-[#121215] p-4 rounded-2xl border border-[#26272d] flex items-center justify-between">
+        <div className="bg-surface p-4 rounded-2xl border border-border flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-bold text-[#bbcbb2] uppercase tracking-wider">Stok Menipis (&lt; Min)</span>
-            <h3 className="text-xl md:text-2xl font-black text-[#ffc71f] font-mono mt-1">{kpiStats.lowStockCount} <span className="text-xs font-normal text-[#6b7367]">item</span></h3>
+            <span className="text-[11px] font-bold text-muted uppercase tracking-wider">Stok Menipis (&lt; Min)</span>
+            <h3 className="text-xl md:text-2xl font-black text-warning font-mono mt-1">{kpiStats.lowStockCount} <span className="text-xs font-normal text-muted-dark">item</span></h3>
           </div>
-          <div className="p-3 rounded-xl bg-[#ffc71f]/15 text-[#ffc71f]">
+          <div className="p-3 rounded-xl bg-warning-bg text-warning">
             <AlertTriangle size={22} />
           </div>
         </div>
 
         {/* Stok Habis / Kritis */}
-        <div className="bg-[#121215] p-4 rounded-2xl border border-[#26272d] flex items-center justify-between">
+        <div className="bg-surface p-4 rounded-2xl border border-border flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-bold text-[#bbcbb2] uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-muted uppercase tracking-wider">
               {kpiStats.negativeStockCount > 0 ? 'Defisit & Kritis' : 'Stok Habis / Kritis'}
             </span>
-            <h3 className="text-xl md:text-2xl font-black text-[#ff5102] font-mono mt-1">
-              {kpiStats.emptyStockCount + kpiStats.negativeStockCount} <span className="text-xs font-normal text-[#6b7367]">item</span>
+            <h3 className="text-xl md:text-2xl font-black text-destructive font-mono mt-1">
+              {kpiStats.emptyStockCount + kpiStats.negativeStockCount} <span className="text-xs font-normal text-muted-dark">item</span>
             </h3>
             {kpiStats.negativeStockCount > 0 && (
-              <p className="text-[10px] text-rose-400 mt-0.5">({kpiStats.negativeStockCount} barang tercatat minus/defisit)</p>
+              <p className="text-[10px] text-destructive mt-0.5">({kpiStats.negativeStockCount} barang tercatat minus/defisit)</p>
             )}
           </div>
-          <div className="p-3 rounded-xl bg-[#ff5102]/15 text-[#ff5102]">
+          <div className="p-3 rounded-xl bg-destructive-bg text-destructive">
             <AlertTriangle size={22} />
           </div>
         </div>
       </div>
 
       {/* 3. CONTROLS, SEARCH & BUTTONS */}
-      <div className="bg-[#121215] p-4 rounded-2xl border border-[#26272d] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      <div className="bg-surface p-4 rounded-2xl border border-border flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         {/* Search & Filter */}
         <div className="flex flex-1 flex-wrap items-center gap-2.5">
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6b7367]" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-dark" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={`Cari di ${activeGudang === 'CAFE' ? 'Gudang Cafe' : activeGudang === 'CARWASH' ? 'Gudang Carwash' : 'Gudang Merchandise'}...`}
-              className="w-full pl-10 pr-4 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-xs md:text-sm text-white placeholder-[#6b7367] focus:outline-none focus:border-[#00ffff]"
+              className="w-full pl-10 pr-4 py-2 bg-subsurface border border-border rounded-xl text-xs md:text-sm text-foreground placeholder:text-muted-dark focus:outline-none focus:border-ring"
             />
           </div>
 
@@ -657,11 +657,11 @@ export default function Gudang() {
           />
 
           {/* Status Stok Filter */}
-          <div className="flex items-center gap-1 bg-[#18181c] p-1 rounded-xl border border-[#26272d]">
+          <div className="flex items-center gap-1 bg-subsurface p-1 rounded-xl border border-border">
             <button
               onClick={() => setStockStatusFilter('ALL')}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                stockStatusFilter === 'ALL' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
+                stockStatusFilter === 'ALL' ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-muted hover:text-foreground'
               }`}
             >
               Semua
@@ -669,7 +669,7 @@ export default function Gudang() {
             <button
               onClick={() => setStockStatusFilter('SAFE')}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                stockStatusFilter === 'SAFE' ? 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30' : 'text-[#bbcbb2] hover:text-white'
+                stockStatusFilter === 'SAFE' ? 'bg-primary-soft text-primary-soft-foreground border border-primary/30' : 'text-muted hover:text-foreground'
               }`}
             >
               Aman
@@ -677,7 +677,7 @@ export default function Gudang() {
             <button
               onClick={() => setStockStatusFilter('LOW')}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                stockStatusFilter === 'LOW' ? 'bg-[#ffc71f]/15 text-[#ffc71f] border border-[#ffc71f]/30' : 'text-[#bbcbb2] hover:text-white'
+                stockStatusFilter === 'LOW' ? 'bg-warning-bg text-warning border border-warning/30' : 'text-muted hover:text-foreground'
               }`}
             >
               Menipis
@@ -685,7 +685,7 @@ export default function Gudang() {
             <button
               onClick={() => setStockStatusFilter('EMPTY')}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                stockStatusFilter === 'EMPTY' ? 'bg-[#ff5102]/15 text-[#ff5102] border border-[#ff5102]/30' : 'text-[#bbcbb2] hover:text-white'
+                stockStatusFilter === 'EMPTY' ? 'bg-destructive-bg text-destructive border border-destructive/30' : 'text-muted hover:text-foreground'
               }`}
             >
               Habis
@@ -697,7 +697,7 @@ export default function Gudang() {
         <div className="flex items-center gap-2">
           <button
             onClick={loadInventory}
-            className="p-2.5 rounded-xl bg-[#18181c] hover:bg-[#26272d] text-[#bbcbb2] hover:text-white border border-[#26272d] transition-all cursor-pointer"
+            className="p-2.5 rounded-xl bg-subsurface hover:bg-surface-hover text-muted hover:text-foreground border border-border transition-all cursor-pointer"
             title="Refresh Data"
           >
             <RefreshCw size={15} />
@@ -706,7 +706,7 @@ export default function Gudang() {
           {canOpnameOrEdit && (
             <button
               onClick={handleOpenAddModal}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00ffff] hover:bg-[#00ffff]/90 text-[#0f0f0f] font-bold text-xs md:text-sm transition-all shadow-md active:scale-[0.98] cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-soft text-primary-foreground font-bold text-xs md:text-sm transition-all shadow-md active:scale-[0.98] cursor-pointer"
             >
               <Plus size={16} />
               <span>Tambah Barang</span>
@@ -744,7 +744,7 @@ export default function Gudang() {
           {
             key: 'nama_barang',
             label: 'NAMA BARANG',
-            className: 'font-bold text-white',
+            className: 'font-bold text-foreground',
             render: (val, item) => (
               <div>
                 <div>{val || item.nama_produk}</div>
@@ -770,7 +770,7 @@ export default function Gudang() {
                   <span
                     className={`font-mono text-sm font-bold ${
                       isNegative
-                        ? 'text-rose-400'
+                        ? 'text-destructive'
                         : isSafe
                         ? 'text-primary'
                         : isLow
@@ -784,7 +784,7 @@ export default function Gudang() {
                     {item.satuan || 'Pcs'}
                   </span>
                   {isNegative && (
-                    <div className="text-[10px] text-rose-400 font-bold">
+                    <div className="text-[10px] text-destructive font-bold">
                       Defisit {Math.abs(s)} {item.satuan}
                     </div>
                   )}
@@ -802,8 +802,8 @@ export default function Gudang() {
               const isLow = s > 0 && s <= min
               const isNegative = s < 0
               return isNegative ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-destructive-bg text-destructive border border-destructive/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-destructive-solid animate-pulse" />
                   Defisit Opname
                 </span>
               ) : isSafe ? (
@@ -870,20 +870,20 @@ export default function Gudang() {
                     <>
                       <button
                         onClick={() => handleOpenOpname(item)}
-                        className="px-2.5 py-1 rounded bg-subsurface hover:bg-border text-muted-foreground hover:text-white border border-border text-[11px] font-medium transition-colors cursor-pointer active:scale-[0.98]"
+                        className="px-2.5 py-1 rounded bg-subsurface hover:bg-border text-muted-foreground hover:text-foreground border border-border text-[11px] font-medium transition-colors cursor-pointer active:scale-[0.98]"
                         title="Sesuaikan Stok Fisik (Opname)"
                       >
                         Opname
                       </button>
                       <button
                         onClick={() => handleOpenEditModal(item)}
-                        className="px-2.5 py-1 rounded bg-subsurface hover:bg-border text-muted-foreground hover:text-white border border-border text-[11px] font-medium transition-colors cursor-pointer active:scale-[0.98]"
+                        className="px-2.5 py-1 rounded bg-subsurface hover:bg-border text-muted-foreground hover:text-foreground border border-border text-[11px] font-medium transition-colors cursor-pointer active:scale-[0.98]"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDeleteItem(item)}
-                        className="p-1.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-colors cursor-pointer active:scale-[0.98]"
+                        className="p-1.5 rounded bg-destructive-bg hover:bg-destructive-bg text-destructive border border-destructive/30 transition-colors cursor-pointer active:scale-[0.98]"
                         title="Hapus Barang"
                         aria-label={`Hapus ${item.nama_barang}`}
                       >
@@ -902,16 +902,16 @@ export default function Gudang() {
       {/* MODAL 1: TAMBAH / EDIT BARANG GUDANG */}
       {/* ========================================================================= */}
       {showItemModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-[#18181c] border border-[#26272d] rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-[#26272d]">
-              <h3 className="font-bold text-base text-white flex items-center gap-2">
-                <Boxes className="w-5 h-5 text-[#00ffff]" />
+        <div className="fixed inset-0 z-50 bg-[var(--overlay-backdrop)] backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-subsurface border border-border rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <h3 className="font-bold text-base text-foreground flex items-center gap-2">
+                <Boxes className="w-5 h-5 text-primary" />
                 <span>{editingItem ? 'Edit Data Barang' : `Tambah Barang ke Gudang ${activeGudang}`}</span>
               </h3>
               <button
                 onClick={() => setShowItemModal(false)}
-                className="p-1 rounded-lg text-[#bbcbb2] hover:text-white hover:bg-[#26272d]"
+                className="p-1 rounded-lg text-muted hover:text-foreground hover:bg-surface-hover"
               >
                 <X size={18} />
               </button>
@@ -919,37 +919,37 @@ export default function Gudang() {
 
             <form onSubmit={handleSaveItem} className="space-y-3.5 text-xs">
               {error && (
-                <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                <div className="p-2.5 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-xs flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
               <div>
-                <label className="block text-[#bbcbb2] font-semibold mb-1">ID / Kode Barang (SKU)</label>
+                <label className="block text-muted font-semibold mb-1">ID / Kode Barang (SKU)</label>
                 <input
                   type="text"
                   value={itemForm.id_barang || ''}
                   onChange={(e) => setItemForm({ ...itemForm, id_barang: e.target.value })}
                   placeholder="Contoh: CF-01, CW-01, MCH-01"
-                  className="w-full px-3 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-white font-mono uppercase focus:outline-none focus:border-[#00ffff] disabled:opacity-50"
+                  className="w-full px-3 py-2 bg-subsurface border border-border rounded-xl text-foreground font-mono uppercase focus:outline-none focus:border-ring disabled:opacity-50"
                 />
               </div>
 
               <div>
-                <label className="block text-[#bbcbb2] font-semibold mb-1">Nama Barang / Bahan Baku</label>
+                <label className="block text-muted font-semibold mb-1">Nama Barang / Bahan Baku</label>
                 <input
                   type="text"
                   value={itemForm.nama_barang}
                   onChange={(e) => setItemForm({ ...itemForm, nama_barang: e.target.value })}
                   placeholder="Nama barang..."
                   required
-                  className="w-full px-3 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-white focus:outline-none focus:border-[#00ffff]"
+                  className="w-full px-3 py-2 bg-subsurface border border-border rounded-xl text-foreground focus:outline-none focus:border-ring"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#bbcbb2] font-semibold mb-1">Kategori</label>
+                  <label className="block text-muted font-semibold mb-1">Kategori</label>
                   <CustomSelect
                     value={itemForm.kategori}
                     onChange={(val) => setItemForm({ ...itemForm, kategori: val })}
@@ -960,7 +960,7 @@ export default function Gudang() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[#bbcbb2] font-semibold mb-1">Satuan</label>
+                  <label className="block text-muted font-semibold mb-1">Satuan</label>
                   <CustomSelect
                     value={itemForm.satuan}
                     onChange={(val) => setItemForm({ ...itemForm, satuan: val })}
@@ -982,30 +982,30 @@ export default function Gudang() {
               </div>
 
               {/* KALKULATOR HPP PEMBELIAN OTOMATIS */}
-              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-3 space-y-3">
+              <div className="bg-surface border border-border rounded-xl p-3 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Calculator className="w-4 h-4 text-[#00ffff]" />
-                    <span className="font-bold text-xs text-white">Bantu Hitung HPP Otomatis</span>
+                    <Calculator className="w-4 h-4 text-primary" />
+                    <span className="font-bold text-xs text-foreground">Bantu Hitung HPP Otomatis</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowHppCalculator(!showHppCalculator)}
-                    className="text-[11px] text-[#00ffff] hover:underline font-semibold"
+                    className="text-[11px] text-primary hover:underline font-semibold"
                   >
                     {showHppCalculator ? 'Tutup Kalkulator' : '+ Buka Kalkulator'}
                   </button>
                 </div>
 
                 {showHppCalculator && (
-                  <div className="space-y-3 pt-2 border-t border-[#26272d] animate-in fade-in duration-150">
-                    <p className="text-[11px] text-[#bbcbb2] leading-relaxed">
+                  <div className="space-y-3 pt-2 border-t border-border animate-in fade-in duration-150">
+                    <p className="text-[11px] text-muted leading-relaxed">
                       Masukkan total biaya beli faktur dan jumlah kuantitas yang dibeli. Sistem akan otomatis membagi biaya menjadi harga satuan (HPP).
                     </p>
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[#bbcbb2] font-semibold mb-1 text-[11px]">
+                        <label className="block text-muted font-semibold mb-1 text-[11px]">
                           Total Harga Beli (Rp)
                         </label>
                         <input
@@ -1022,12 +1022,12 @@ export default function Gudang() {
                             }
                           }}
                           placeholder="Misal: 240000"
-                          className="w-full px-3 py-1.5 bg-[#18181c] border border-[#26272d] rounded-xl text-white font-mono focus:outline-none focus:border-[#00ffff]"
+                          className="w-full px-3 py-1.5 bg-subsurface border border-border rounded-xl text-foreground font-mono focus:outline-none focus:border-ring"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-[#bbcbb2] font-semibold mb-1 text-[11px]">
+                        <label className="block text-muted font-semibold mb-1 text-[11px]">
                           Jumlah / Qty Beli ({itemForm.satuan || 'Pcs'})
                         </label>
                         <input
@@ -1044,15 +1044,15 @@ export default function Gudang() {
                             }
                           }}
                           placeholder="Misal: 12"
-                          className="w-full px-3 py-1.5 bg-[#18181c] border border-[#26272d] rounded-xl text-white font-mono focus:outline-none focus:border-[#00ffff]"
+                          className="w-full px-3 py-1.5 bg-subsurface border border-border rounded-xl text-foreground font-mono focus:outline-none focus:border-ring"
                         />
                       </div>
                     </div>
 
                     {parseFloat(hppCalcInput.totalBeli) > 0 && parseFloat(hppCalcInput.jumlahQty) > 0 && (
-                      <div className="p-2.5 rounded-lg bg-[#00ffff]/10 border border-[#00ffff]/20 flex items-center justify-between">
-                        <span className="text-[11px] text-[#bbcbb2]">Hasil HPP per {itemForm.satuan || 'Satuan'}:</span>
-                        <span className="text-sm font-bold text-[#00ffff] font-mono tabular-nums">
+                      <div className="p-2.5 rounded-lg bg-primary-soft border border-primary/30 flex items-center justify-between">
+                        <span className="text-[11px] text-muted">Hasil HPP per {itemForm.satuan || 'Satuan'}:</span>
+                        <span className="text-sm font-bold text-primary font-mono tabular-nums">
                           {formatRupiah(Math.round(parseFloat(hppCalcInput.totalBeli) / parseFloat(hppCalcInput.jumlahQty)))}
                         </span>
                       </div>
@@ -1063,7 +1063,7 @@ export default function Gudang() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#bbcbb2] font-semibold mb-1">Harga Beli / HPP per {itemForm.satuan || 'Satuan'} (Rp)</label>
+                  <label className="block text-muted font-semibold mb-1">Harga Beli / HPP per {itemForm.satuan || 'Satuan'} (Rp)</label>
                   <input
                     type="number"
                     min="0"
@@ -1072,16 +1072,16 @@ export default function Gudang() {
                     onChange={(e) => setItemForm({ ...itemForm, harga_beli: e.target.value })}
                     placeholder="0"
                     required
-                    className="w-full px-3 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-white font-mono focus:outline-none focus:border-[#00ffff]"
+                    className="w-full px-3 py-2 bg-subsurface border border-border rounded-xl text-foreground font-mono focus:outline-none focus:border-ring"
                   />
                   {parseFloat(itemForm.harga_beli) > 0 && (
-                    <span className="block mt-1 text-[10px] text-[#bbcbb2] font-mono">
+                    <span className="block mt-1 text-[10px] text-muted font-mono">
                       {formatRupiah(parseFloat(itemForm.harga_beli) || 0)} / {itemForm.satuan || 'satuan'}
                     </span>
                   )}
                 </div>
                 <div>
-                  <label className="block text-[#bbcbb2] font-semibold mb-1">Batas Min. Stok</label>
+                  <label className="block text-muted font-semibold mb-1">Batas Min. Stok</label>
                   <input
                     type="number"
                     min="0"
@@ -1089,14 +1089,14 @@ export default function Gudang() {
                     value={itemForm.min_stok}
                     onChange={(e) => setItemForm({ ...itemForm, min_stok: e.target.value })}
                     placeholder="5"
-                    className="w-full px-3 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-white font-mono focus:outline-none focus:border-[#00ffff]"
+                    className="w-full px-3 py-2 bg-subsurface border border-border rounded-xl text-foreground font-mono focus:outline-none focus:border-ring"
                   />
                 </div>
               </div>
 
               {activeGudang === 'MERCHANDISE' && (
                 <div>
-                  <label className="block text-[#bbcbb2] font-semibold mb-1">Harga Jual ke Pelanggan (Rp)</label>
+                  <label className="block text-muted font-semibold mb-1">Harga Jual ke Pelanggan (Rp)</label>
                   <input
                     type="number"
                     min="0"
@@ -1105,24 +1105,24 @@ export default function Gudang() {
                     onChange={(e) => setItemForm({ ...itemForm, harga_jual: e.target.value })}
                     placeholder="Harga jual..."
                     required
-                    className="w-full px-3 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-amber-400 font-mono font-bold focus:outline-none focus:border-amber-500"
+                    className="w-full px-3 py-2 bg-subsurface border border-border rounded-xl text-warning font-mono font-bold focus:outline-none focus:border-ring"
                   />
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-[#26272d]">
+              <div className="flex justify-end gap-2 pt-3 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setShowItemModal(false)}
                   disabled={isSubmittingItem}
-                  className="px-4 py-2 rounded-xl bg-[#18181c] hover:bg-[#26272d] text-white font-semibold border border-[#26272d] disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl bg-subsurface hover:bg-surface-hover text-foreground font-semibold border border-border disabled:opacity-50"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmittingItem}
-                  className="px-4 py-2 rounded-xl bg-[#00ffff] hover:bg-[#00ffff]/90 text-[#0f0f0f] font-bold active:scale-[0.98] shadow-md disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-soft text-primary-foreground font-bold active:scale-[0.98] shadow-md disabled:opacity-50 flex items-center gap-2 cursor-pointer"
                 >
                   {isSubmittingItem ? (
                     <>
@@ -1143,31 +1143,31 @@ export default function Gudang() {
       {/* MODAL 2: RESTOCK / STOK MASUK */}
       {/* ========================================================================= */}
       {showRestockModal && restockTarget && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-[#18181c] border border-[#26272d] rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4 max-h-[92dvh] overflow-y-auto my-auto overscroll-contain">
-            <div className="flex items-center justify-between pb-3 border-b border-[#26272d]">
-              <h3 className="font-bold text-base text-white flex items-center gap-2">
-                <ArrowDownRight className="w-5 h-5 text-[#00ffff]" />
+        <div className="fixed inset-0 z-50 bg-[var(--overlay-backdrop)] backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-subsurface border border-border rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4 max-h-[92dvh] overflow-y-auto my-auto overscroll-contain">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <h3 className="font-bold text-base text-foreground flex items-center gap-2">
+                <ArrowDownRight className="w-5 h-5 text-primary" />
                 <span>Restock Masuk: {restockTarget.nama_barang}</span>
               </h3>
               <button
                 onClick={() => setShowRestockModal(false)}
-                className="p-1 rounded-lg text-[#bbcbb2] hover:text-white"
+                className="p-1 rounded-lg text-muted hover:text-foreground"
               >
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleConfirmRestock} className="space-y-3.5 text-xs">
-              <div className="p-3 rounded-xl bg-[#18181c] border border-[#26272d]/80 flex items-center justify-between">
-                <span className="text-[#bbcbb2]">Sisa Stok Sekarang:</span>
-                <span className="font-mono font-bold text-white text-sm">
+              <div className="p-3 rounded-xl bg-subsurface border border-border flex items-center justify-between">
+                <span className="text-muted">Sisa Stok Sekarang:</span>
+                <span className="font-mono font-bold text-foreground text-sm">
                   {restockTarget.stok} {restockTarget.satuan}
                 </span>
               </div>
 
               <div>
-                <label className="block text-[#bbcbb2] font-semibold mb-1">
+                <label className="block text-muted font-semibold mb-1">
                   Jumlah Stok Masuk ({restockTarget.satuan})
                 </label>
                 <input
@@ -1178,12 +1178,12 @@ export default function Gudang() {
                   placeholder="Jumlah..."
                   required
                   autoFocus
-                  className="w-full px-3 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-white font-mono text-base font-bold focus:outline-none focus:border-[#00ffff]"
+                  className="w-full px-3 py-2 bg-subsurface border border-border rounded-xl text-foreground font-mono text-base font-bold focus:outline-none focus:border-ring"
                 />
               </div>
 
               <div>
-                <label className="block text-[#bbcbb2] font-semibold mb-1">
+                <label className="block text-muted font-semibold mb-1">
                   Harga Beli / Satuan (Rp)
                 </label>
                 <input
@@ -1192,31 +1192,31 @@ export default function Gudang() {
                   onChange={(e) => setRestockCost(e.target.value)}
                   placeholder="Harga beli..."
                   required
-                  className="w-full px-3 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-white font-mono focus:outline-none focus:border-[#00ffff]"
+                  className="w-full px-3 py-2 bg-subsurface border border-border rounded-xl text-foreground font-mono focus:outline-none focus:border-ring"
                 />
-                <span className="text-[11px] text-[#6b7367] mt-1 block">
+                <span className="text-[11px] text-muted-dark mt-1 block">
                   *Otomatis menghitung Moving Average Cost (MAC) harga pokok baru.
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#00ffff]/10 border border-[#00ffff]/30 flex items-center justify-between font-mono">
-                <span className="text-[#00ffff] font-bold text-[11px]">Total Tagihan Restock:</span>
-                <span className="text-white font-bold text-sm">
+              <div className="p-3 rounded-xl bg-primary-soft border border-primary/30 flex items-center justify-between font-mono">
+                <span className="text-primary font-bold text-[11px]">Total Tagihan Restock:</span>
+                <span className="text-foreground font-bold text-sm">
                   {formatRupiah((parseFloat(restockQty) || 0) * (parseFloat(restockCost) || 0))}
                 </span>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-[#26272d]">
+              <div className="flex justify-end gap-2 pt-3 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setShowRestockModal(false)}
-                  className="px-4 py-2 rounded-xl bg-[#18181c] hover:bg-[#26272d] text-white font-semibold border border-[#26272d]"
+                  className="px-4 py-2 rounded-xl bg-subsurface hover:bg-surface-hover text-foreground font-semibold border border-border"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-[#00ffff] hover:bg-[#00ffff]/90 text-[#0f0f0f] font-bold shadow-md active:scale-[0.98]"
+                  className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-soft text-primary-foreground font-bold shadow-md active:scale-[0.98]"
                 >
                   Konfirmasi Restock Masuk
                 </button>
@@ -1230,31 +1230,31 @@ export default function Gudang() {
       {/* MODAL 3: STOCK OPNAME (PENYESUAIAN STOK FISIK) */}
       {/* ========================================================================= */}
       {showOpnameModal && opnameTarget && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-[#18181c] border border-[#26272d] rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4 max-h-[92dvh] overflow-y-auto my-auto overscroll-contain">
-            <div className="flex items-center justify-between pb-3 border-b border-[#26272d]">
-              <h3 className="font-bold text-base text-white flex items-center gap-2">
-                <SlidersHorizontal className="w-5 h-5 text-blue-400" />
+        <div className="fixed inset-0 z-50 bg-[var(--overlay-backdrop)] backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-subsurface border border-border rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4 max-h-[92dvh] overflow-y-auto my-auto overscroll-contain">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <h3 className="font-bold text-base text-foreground flex items-center gap-2">
+                <SlidersHorizontal className="w-5 h-5 text-primary" />
                 <span>Stock Opname: {opnameTarget.nama_barang}</span>
               </h3>
               <button
                 onClick={() => setShowOpnameModal(false)}
-                className="p-1 rounded-lg text-[#bbcbb2] hover:text-white"
+                className="p-1 rounded-lg text-muted hover:text-foreground"
               >
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleConfirmOpname} className="space-y-3.5 text-xs">
-              <div className="p-3 rounded-xl bg-[#18181c] border border-[#26272d]/80 flex items-center justify-between">
-                <span className="text-[#bbcbb2]">Tercatat di Sistem:</span>
-                <span className="font-mono font-bold text-white">
+              <div className="p-3 rounded-xl bg-subsurface border border-border flex items-center justify-between">
+                <span className="text-muted">Tercatat di Sistem:</span>
+                <span className="font-mono font-bold text-foreground">
                   {opnameTarget.stok} {opnameTarget.satuan}
                 </span>
               </div>
 
               <div>
-                <label className="block text-[#bbcbb2] font-semibold mb-1">
+                <label className="block text-muted font-semibold mb-1">
                   Hitungan Fisik Nyata di Gudang ({opnameTarget.satuan})
                 </label>
                 <input
@@ -1265,23 +1265,23 @@ export default function Gudang() {
                   placeholder="Kuantitas aktual..."
                   required
                   autoFocus
-                  className="w-full px-3 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-white font-mono text-base font-bold focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-subsurface border border-border rounded-xl text-foreground font-mono text-base font-bold focus:outline-none focus:border-ring"
                 />
               </div>
 
-              <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-between font-mono">
-                <span className="text-blue-400 font-bold text-[11px]">Selisih Penyesuaian:</span>
+              <div className="p-3 rounded-xl bg-primary-soft border border-primary/30 flex items-center justify-between font-mono">
+                <span className="text-primary font-bold text-[11px]">Selisih Penyesuaian:</span>
                 <span className={`font-bold text-sm ${
                   (parseFloat(opnameRealQty) || 0) - (parseFloat(opnameTarget.stok) || 0) < 0
-                    ? 'text-rose-400'
-                    : 'text-[#00ffff]'
+                    ? 'text-destructive'
+                    : 'text-primary'
                 }`}>
                   {((parseFloat(opnameRealQty) || 0) - (parseFloat(opnameTarget.stok) || 0)).toFixed(1)} {opnameTarget.satuan}
                 </span>
               </div>
 
               <div>
-                <label className="block text-[#bbcbb2] font-semibold mb-1">
+                <label className="block text-muted font-semibold mb-1">
                   Catatan / Alasan Penyesuaian
                 </label>
                 <textarea
@@ -1289,21 +1289,21 @@ export default function Gudang() {
                   onChange={(e) => setOpnameCatatan(e.target.value)}
                   placeholder="Misal: Tumpah, susut, atau koreksi hitung..."
                   rows={2}
-                  className="w-full px-3 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-white focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-subsurface border border-border rounded-xl text-foreground focus:outline-none focus:border-ring"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-[#26272d]">
+              <div className="flex justify-end gap-2 pt-3 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setShowOpnameModal(false)}
-                  className="px-4 py-2 rounded-xl bg-[#18181c] hover:bg-[#26272d] text-white font-semibold border border-[#26272d]"
+                  className="px-4 py-2 rounded-xl bg-subsurface hover:bg-surface-hover text-foreground font-semibold border border-border"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-[#00ffff] hover:bg-[#00ffff]/90 text-[#0f0f0f] font-bold shadow-md active:scale-[0.98]"
+                  className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-soft text-primary-foreground font-bold shadow-md active:scale-[0.98]"
                 >
                   Simpan Penyesuaian Opname
                 </button>

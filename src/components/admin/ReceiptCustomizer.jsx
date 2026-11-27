@@ -197,20 +197,20 @@ export default function ReceiptCustomizer() {
   return (
     <div className="space-y-6">
       {/* Top Banner Header */}
-      <div className="glass-panel p-5 sm:p-6 rounded-2xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-surface border border-border shadow-sm p-5 sm:p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary-soft text-primary-soft-foreground border border-primary/30">
               PRINTER THERMAL & WHATSAPP
             </span>
-            <span className="text-xs text-slate-500">•</span>
-            <span className="text-xs text-slate-400">POS Customizer Engine</span>
+            <span className="text-xs text-muted-dark">•</span>
+            <span className="text-xs text-muted">POS Customizer Engine</span>
           </div>
-          <h3 className="text-xl font-black text-white tracking-tight flex items-center gap-2.5">
-            <Printer className="text-cyan-400" size={22} />
+          <h3 className="text-xl font-black text-foreground tracking-tight flex items-center gap-2.5">
+            <Printer className="text-primary" size={22} />
             Kustomisasi Format & Teks Struk Kasir
           </h3>
-          <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+          <p className="text-xs text-muted mt-1 max-w-2xl leading-relaxed">
             Atur nama toko, nomor kontak, judul tanda terima, kalimat penutup/ucapan terima kasih, dan teks footer agar sesuai identitas usaha Anda.
           </p>
         </div>
@@ -220,7 +220,7 @@ export default function ReceiptCustomizer() {
           <button
             type="button"
             onClick={handleReset}
-            className="px-3 py-2 rounded-xl border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-all"
+            className="px-3 py-2 rounded-xl border border-border hover:bg-surface-hover text-muted hover:text-foreground text-xs font-semibold flex items-center gap-1.5 transition-all"
             title="Reset ke Template Default"
           >
             <RotateCcw size={14} />
@@ -232,13 +232,13 @@ export default function ReceiptCustomizer() {
             type="button"
             onClick={handleBluetoothTestPrint}
             disabled={isBtTesting}
-            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-[0_0_15px_rgba(59,130,246,0.3)] transition-all disabled:opacity-50 active:scale-95"
+            className="bg-primary px-3.5 py-2 rounded-xl text-primary-foreground text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50 active:scale-95"
             title="Tes cetak instan langsung ke printer thermal Bluetooth (Bebas Watermark & Tanpa RawBT)"
           >
             {isBtTesting ? (
               <Loader2 size={14} className="animate-spin" />
             ) : (
-              <Bluetooth size={14} className="text-cyan-300" />
+              <Bluetooth size={14} className="text-primary" />
             )}
             <span>{isBtTesting ? 'Mencetak...' : '⚡ Tes Bluetooth Direct'}</span>
           </button>
@@ -246,17 +246,17 @@ export default function ReceiptCustomizer() {
           <button
             type="button"
             onClick={handleTestPrint}
-            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-200 text-xs font-bold flex items-center gap-1.5 border border-slate-700 shadow-sm transition-all"
+            className="px-3.5 py-2 rounded-xl bg-subsurface hover:bg-surface-hover active:bg-surface-hover text-foreground text-xs font-bold flex items-center gap-1.5 border border-border shadow-sm transition-all"
             title="Uji Cetak Hasil ke Printer Fisik via Browser Dialog"
           >
-            <Printer size={14} className="text-cyan-400" />
+            <Printer size={14} className="text-primary" />
             <span>Tes Cetak Browser</span>
           </button>
 
           <button
             type="button"
             onClick={handleSave}
-            className="px-4 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 active:bg-cyan-500 text-slate-950 text-xs font-black flex items-center gap-2 shadow-lg shadow-cyan-400/20 transition-all uppercase tracking-wider"
+            className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover active:bg-primary-hover text-primary-foreground text-xs font-black flex items-center gap-2 shadow-lg shadow-sm transition-all uppercase tracking-wider"
           >
             <Save size={15} />
             <span>Simpan</span>
@@ -268,19 +268,19 @@ export default function ReceiptCustomizer() {
       {btTestStatus && (
         <div className={`p-3.5 rounded-xl text-xs font-semibold flex items-center justify-between animate-fade-in shadow-sm ${
           btTestStatus.type === 'success' 
-            ? 'bg-blue-500/10 border border-blue-500/30 text-blue-300' 
-            : 'bg-rose-500/10 border border-rose-500/30 text-rose-300'
+            ? 'bg-primary-soft border border-primary/30 text-primary-soft-foreground' 
+            : 'bg-destructive-bg border border-destructive/30 text-destructive'
         }`}>
           <div className="flex items-center gap-2">
             {btTestStatus.type === 'success' ? (
-              <CheckCircle2 size={16} className="text-blue-400 shrink-0" />
+              <CheckCircle2 size={16} className="text-primary shrink-0" />
             ) : (
-              <AlertCircle size={16} className="text-rose-400 shrink-0" />
+              <AlertCircle size={16} className="text-destructive shrink-0" />
             )}
             <span>{btTestStatus.text}</span>
           </div>
           <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
-            btTestStatus.type === 'success' ? 'bg-blue-500/20 text-blue-300' : 'bg-rose-500/20 text-rose-300'
+            btTestStatus.type === 'success' ? 'bg-primary-soft text-primary-soft-foreground' : 'bg-destructive-bg text-destructive'
           }`}>
             {btTestStatus.type === 'success' ? 'Bluetooth Ready' : 'Gagal'}
           </span>
@@ -289,12 +289,12 @@ export default function ReceiptCustomizer() {
 
       {/* Success Notification Alert */}
       {saveSuccess && (
-        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center justify-between animate-fade-in shadow-sm">
+        <div className="p-3.5 rounded-xl bg-success-bg border border-success/30 text-success text-xs font-semibold flex items-center justify-between animate-fade-in shadow-sm">
           <div className="flex items-center gap-2">
-            <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+            <CheckCircle2 size={16} className="text-success shrink-0" />
             <span>Pengaturan dan teks kustomisasi struk kasir berhasil disimpan secara permanen!</span>
           </div>
-          <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded text-emerald-300">Tersimpan</span>
+          <span className="text-[10px] bg-success-bg px-2 py-0.5 rounded text-success">Tersimpan</span>
         </div>
       )}
 
@@ -303,14 +303,14 @@ export default function ReceiptCustomizer() {
         {/* LEFT COLUMN: Configuration Form */}
         <div className="lg:col-span-7 space-y-4">
           {/* Sub-Section Navigation Tabs */}
-          <div className="flex flex-wrap gap-1.5 p-1 bg-slate-900/90 border border-slate-800 rounded-xl">
+          <div className="flex flex-wrap gap-1.5 p-1 bg-surface border border-border rounded-xl">
             <button
               type="button"
               onClick={() => setActiveSubSection('hardware')}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
                 activeSubSection === 'hardware'
-                  ? 'bg-blue-500 text-white shadow-md'
-                  : 'text-blue-400 hover:text-blue-300 hover:bg-slate-800/60'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'text-primary hover:text-primary hover:bg-surface-hover'
               }`}
             >
               <Bluetooth size={13} />
@@ -322,8 +322,8 @@ export default function ReceiptCustomizer() {
               onClick={() => setActiveSubSection('closing')}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
                 activeSubSection === 'closing'
-                  ? 'bg-amber-400 text-slate-950 shadow-md'
-                  : 'text-amber-400/90 hover:text-amber-300 hover:bg-slate-800/60'
+                  ? 'bg-warning text-ink-foreground shadow-md'
+                  : 'text-warning hover:text-warning hover:bg-surface-hover'
               }`}
             >
               <MessageSquare size={13} />
@@ -335,8 +335,8 @@ export default function ReceiptCustomizer() {
               onClick={() => setActiveSubSection('store')}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
                 activeSubSection === 'store'
-                  ? 'bg-cyan-400 text-slate-950 shadow-md'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'text-muted hover:text-foreground hover:bg-surface-hover'
               }`}
             >
               <Store size={13} />
@@ -348,8 +348,8 @@ export default function ReceiptCustomizer() {
               onClick={() => setActiveSubSection('titles')}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
                 activeSubSection === 'titles'
-                  ? 'bg-cyan-400 text-slate-950 shadow-md'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'text-muted hover:text-foreground hover:bg-surface-hover'
               }`}
             >
               <FileText size={13} />
@@ -361,8 +361,8 @@ export default function ReceiptCustomizer() {
               onClick={() => setActiveSubSection('paper')}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
                 activeSubSection === 'paper'
-                  ? 'bg-cyan-400 text-slate-950 shadow-md'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'text-muted hover:text-foreground hover:bg-surface-hover'
               }`}
             >
               <Printer size={13} />
@@ -374,8 +374,8 @@ export default function ReceiptCustomizer() {
               onClick={() => setActiveSubSection('all')}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
                 activeSubSection === 'all'
-                  ? 'bg-indigo-500 text-white shadow-md'
-                  : 'text-indigo-400 hover:text-indigo-300 hover:bg-slate-800/60'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'text-primary hover:text-primary hover:bg-surface-hover'
               }`}
             >
               <Layers size={13} />
@@ -387,25 +387,25 @@ export default function ReceiptCustomizer() {
           {/* SEKSI 0: HARDWARE PRINTER BLUETOOTH & TES CETAK DIRECT */}
           {/* ============================================================== */}
           {(activeSubSection === 'hardware' || activeSubSection === 'all') && (
-            <div className="glass-panel p-5 rounded-2xl border border-blue-500/30 space-y-4 bg-gradient-to-b from-blue-500/10 to-transparent animate-fade-in">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="bg-surface border border-border shadow-sm p-5 rounded-2xl border-primary/30 space-y-4 to-transparent animate-fade-in">
+              <div className="flex items-center justify-between border-b border-border pb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                  <div className="p-2 rounded-xl bg-primary-soft text-primary-soft-foreground border border-primary/30">
                     <Bluetooth size={18} />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
                       Pengaturan Hardware & Koneksi Printer Bluetooth
                     </h4>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[11px] text-muted">
                       Cetak langsung dari browser via Web Bluetooth ESC/POS (100% Bebas Watermark RawBT).
                     </p>
                   </div>
                 </div>
                 <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
                   hasBtSupport 
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                    : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                    ? 'bg-success-bg text-success border-success/30' 
+                    : 'bg-warning-bg text-warning border-warning/30'
                 }`}>
                   {hasBtSupport ? 'Web Bluetooth Siap' : 'Perlu Chrome / HTTPS'}
                 </span>
@@ -413,14 +413,14 @@ export default function ReceiptCustomizer() {
 
               {/* Diagnostic Box if Not Supported */}
               {!hasBtSupport && (
-                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 space-y-2 text-xs">
-                  <div className="flex items-center gap-2 font-bold text-amber-400">
+                <div className="p-4 rounded-xl bg-warning-bg border border-warning/30 text-warning space-y-2 text-xs">
+                  <div className="flex items-center gap-2 font-bold text-warning">
                     <AlertCircle size={16} />
                     <span>Perhatian: Web Bluetooth Belum Aktif di Browser Ini</span>
                   </div>
                   {btDiag.reason && <p className="leading-relaxed">{btDiag.reason}</p>}
                   {btDiag.fixSuggestion && (
-                    <div className="p-2.5 rounded-lg bg-slate-950/80 border border-amber-500/20 text-slate-300 font-mono text-[11px] leading-relaxed">
+                    <div className="p-2.5 rounded-lg bg-subsurface border border-warning/30 text-muted font-mono text-[11px] leading-relaxed">
                       💡 <strong>Solusi Cepat:</strong> {btDiag.fixSuggestion}
                     </div>
                   )}
@@ -428,14 +428,14 @@ export default function ReceiptCustomizer() {
               )}
 
               {/* Status Box */}
-              <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
+              <div className="p-4 rounded-xl bg-subsurface border border-border space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <div className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                      <Zap size={14} className="text-cyan-400" />
+                    <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      <Zap size={14} className="text-primary" />
                       <span>Metode Direct ESC/POS Web Bluetooth</span>
                     </div>
-                    <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                    <p className="text-[11px] text-muted mt-0.5 leading-relaxed">
                       Mengirim sinyal biner langsung ke printer tanpa melalui Android Print Spooler atau aplikasi pihak ketiga seperti RawBT.
                     </p>
                   </div>
@@ -443,23 +443,23 @@ export default function ReceiptCustomizer() {
                     type="button"
                     onClick={handleBluetoothTestPrint}
                     disabled={isBtTesting}
-                    className="shrink-0 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition-all disabled:opacity-50 active:scale-95"
+                    className="bg-primary shrink-0 px-4 py-2.5 rounded-xl text-primary-foreground text-xs font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-sm transition-all disabled:opacity-50 active:scale-95"
                   >
                     {isBtTesting ? (
                       <Loader2 size={14} className="animate-spin" />
                     ) : (
-                      <Bluetooth size={14} className="text-cyan-300" />
+                      <Bluetooth size={14} className="text-primary-foreground" />
                     )}
                     <span>{isBtTesting ? 'Sedang Mencetak...' : '⚡ Sambungkan & Tes Cetak'}</span>
                   </button>
                 </div>
 
-                <div className="pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 space-y-1">
-                  <div className="flex items-center gap-1.5 text-slate-300 font-semibold">
-                    <Info size={12} className="text-blue-400" />
+                <div className="pt-2 border-t border-border text-[11px] text-muted space-y-1">
+                  <div className="flex items-center gap-1.5 text-muted font-semibold">
+                    <Info size={12} className="text-primary" />
                     <span>Petunjuk Penggunaan:</span>
                   </div>
-                  <ul className="list-disc list-inside space-y-0.5 text-slate-400 pl-1 text-[10.5px]">
+                  <ul className="list-disc list-inside space-y-0.5 text-muted pl-1 text-[10.5px]">
                     <li>Nyalakan printer thermal Bluetooth Anda sebelum menekan tombol tes di atas.</li>
                     <li>Saat dialog browser muncul, pilih nama printer (misal: <em>POS-58, RPP02N, PT-210</em>), lalu klik <strong>Pair</strong>.</li>
                     <li>Setelah terhubung, kasir dapat mencetak langsung dari modal transaksi tanpa watermark pihak ketiga.</li>
@@ -473,43 +473,43 @@ export default function ReceiptCustomizer() {
           {/* SEKSI 1: KALIMAT PENUTUP & FOOTER (FOKUS UTAMA USER) */}
           {/* ============================================================== */}
           {(activeSubSection === 'closing' || activeSubSection === 'all') && (
-            <div className="glass-panel p-5 rounded-2xl border border-amber-400/30 space-y-5 bg-gradient-to-b from-amber-400/5 to-transparent animate-fade-in">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="bg-surface border border-border shadow-sm p-5 rounded-2xl border-warning/30 space-y-5 to-transparent animate-fade-in">
+              <div className="flex items-center justify-between border-b border-border pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-amber-400/10 text-amber-400">
+                  <div className="p-1.5 rounded-lg bg-warning-bg text-warning">
                     <MessageSquare size={17} />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
                       Field Kustomisasi Kalimat Penutup & Catatan Kaki
                     </h4>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[11px] text-muted">
                       Teks yang dicetak di baris paling bawah sebelum akhir struk dipotong printer.
                     </p>
                   </div>
                 </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 font-bold">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-warning-bg text-warning font-bold">
                   Bebas Edit
                 </span>
               </div>
 
               {/* 1A. Kalimat Penutup Struk Bukti Pembayaran (LUNAS) */}
-              <div className="space-y-2 p-4 rounded-xl bg-slate-950/60 border border-emerald-500/20">
+              <div className="space-y-2 p-4 rounded-xl bg-subsurface border border-success/30">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <label className="block text-xs font-bold text-success uppercase tracking-wider flex items-center gap-1.5">
                     <Receipt size={14} />
                     <span>Kalimat Penutup: Struk Bukti Pembayaran (Lunas)</span>
                   </label>
                   <button
                     type="button"
                     onClick={() => setPreviewType('PAYMENT')}
-                    className="text-[10px] text-emerald-400 hover:underline flex items-center gap-1"
+                    className="text-[10px] text-success hover:underline flex items-center gap-1"
                   >
                     <Eye size={11} />
                     Lihat di Preview
                   </button>
                 </div>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-muted">
                   Dicetak saat kasir menerima pembayaran lunas. Cocok untuk ucapan terima kasih, doa perjalanan, atau info garansi.
                 </p>
                 <textarea
@@ -517,44 +517,44 @@ export default function ReceiptCustomizer() {
                   value={config.paymentDisclaimer || ''}
                   onChange={(e) => handleChange('paymentDisclaimer', e.target.value)}
                   placeholder="Contoh: Terima kasih atas kepercayaan Anda..."
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-400 leading-relaxed resize-none"
+                  className="w-full bg-surface border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-dark focus:outline-none focus:border-ring leading-relaxed resize-none"
                 />
                 
                 {/* Preset Chips */}
                 <div className="pt-1 flex flex-wrap items-center gap-1.5">
-                  <span className="text-[10px] text-slate-500 font-medium">Contoh Preset Cepat:</span>
+                  <span className="text-[10px] text-muted-dark font-medium">Contoh Preset Cepat:</span>
                   <button
                     type="button"
                     onClick={() => applyPaymentClosingPreset('Terima kasih atas kepercayaan Anda. Harap periksa kembali kendaraan dan barang bawaan Anda sebelum meninggalkan area RelayPOS.')}
-                    className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-subsurface hover:bg-surface-hover text-muted border border-border transition-colors"
                   >
                     Default
                   </button>
                   <button
                     type="button"
                     onClick={() => applyPaymentClosingPreset('Terima kasih banyak atas kunjungan Anda! Hati-hati di jalan dan semoga selamat sampai tujuan.')}
-                    className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-subsurface hover:bg-surface-hover text-muted border border-border transition-colors"
                   >
                     Doa Perjalanan
                   </button>
                   <button
                     type="button"
                     onClick={() => applyPaymentClosingPreset('Garansi cuci 1x24 Jam bila terkena hujan! Cukup tunjukkan lembar struk ini ke kasir kami.')}
-                    className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-subsurface hover:bg-surface-hover text-muted border border-border transition-colors"
                   >
                     Garansi Hujan 24 Jam
                   </button>
                   <button
                     type="button"
                     onClick={() => applyPaymentClosingPreset('Kepuasan Anda kebanggaan kami. Kritik & saran hubungi WhatsApp kami.')}
-                    className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-subsurface hover:bg-surface-hover text-muted border border-border transition-colors"
                   >
                     Kritik & Saran
                   </button>
                   <button
                     type="button"
                     onClick={() => applyPaymentClosingPreset('')}
-                    className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 transition-colors"
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-destructive-bg hover:bg-destructive-bg text-destructive border border-destructive/30 transition-colors"
                   >
                     Hapus / Kosongkan
                   </button>
@@ -562,22 +562,22 @@ export default function ReceiptCustomizer() {
               </div>
 
               {/* 1B. Kalimat Penutup Struk Bukti Order (DITINGGAL / PENDING) */}
-              <div className="space-y-2 p-4 rounded-xl bg-slate-950/60 border border-amber-500/20">
+              <div className="space-y-2 p-4 rounded-xl bg-subsurface border border-warning/30">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <label className="block text-xs font-bold text-warning uppercase tracking-wider flex items-center gap-1.5">
                     <ShieldCheck size={14} />
                     <span>Kalimat Penutup: Struk Bukti Order (Drop-Off Ditinggal)</span>
                   </label>
                   <button
                     type="button"
                     onClick={() => setPreviewType('ORDER')}
-                    className="text-[10px] text-amber-400 hover:underline flex items-center gap-1"
+                    className="text-[10px] text-warning hover:underline flex items-center gap-1"
                   >
                     <Eye size={11} />
                     Lihat di Preview
                   </button>
                 </div>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-muted">
                   Dicetak saat mobil ditinggal oleh pelanggan. Cocok untuk peringatan barang berharga dan syarat klaim unit.
                 </p>
                 <textarea
@@ -585,37 +585,37 @@ export default function ReceiptCustomizer() {
                   value={config.orderDisclaimer || ''}
                   onChange={(e) => handleChange('orderDisclaimer', e.target.value)}
                   placeholder="Contoh: Simpan bukti ini sebagai tanda terima sah..."
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-400 leading-relaxed resize-none"
+                  className="w-full bg-surface border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-dark focus:outline-none focus:border-ring leading-relaxed resize-none"
                 />
 
                 {/* Preset Chips */}
                 <div className="pt-1 flex flex-wrap items-center gap-1.5">
-                  <span className="text-[10px] text-slate-500 font-medium">Contoh Preset Cepat:</span>
+                  <span className="text-[10px] text-muted-dark font-medium">Contoh Preset Cepat:</span>
                   <button
                     type="button"
                     onClick={() => applyOrderClosingPreset('Simpan bukti ini sebagai tanda terima sah saat pengambilan kendaraan. Mohon tidak meninggalkan barang berharga di dalam kendaraan.')}
-                    className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-subsurface hover:bg-surface-hover text-muted border border-border transition-colors"
                   >
                     Default
                   </button>
                   <button
                     type="button"
                     onClick={() => applyOrderClosingPreset('Wajib membawa lembar bukti order fisik ini saat mengambil kunci kendaraan di kasir.')}
-                    className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-subsurface hover:bg-surface-hover text-muted border border-border transition-colors"
                   >
                     Wajib Bukti Fisik
                   </button>
                   <button
                     type="button"
                     onClick={() => applyOrderClosingPreset('Status pengerjaan unit mobil Anda akan diinfokan otomatis melalui notifikasi WhatsApp.')}
-                    className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-subsurface hover:bg-surface-hover text-muted border border-border transition-colors"
                   >
                     Notifikasi WhatsApp
                   </button>
                   <button
                     type="button"
                     onClick={() => applyOrderClosingPreset('')}
-                    className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 transition-colors"
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-destructive-bg hover:bg-destructive-bg text-destructive border border-destructive/30 transition-colors"
                   >
                     Hapus / Kosongkan
                   </button>
@@ -623,21 +623,21 @@ export default function ReceiptCustomizer() {
               </div>
 
               {/* 1C. Teks Catatan Kaki Paling Bawah (Footer Note) - TERKUNCI BRANDING RELAYPOS */}
-              <div className="space-y-2.5 p-4 rounded-xl bg-slate-950/70 border border-slate-800">
+              <div className="space-y-2.5 p-4 rounded-xl bg-subsurface border border-border">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <Lock size={13} className="text-amber-400" />
+                  <label className="block text-xs font-bold text-muted uppercase tracking-wider flex items-center gap-1.5">
+                    <Lock size={13} className="text-warning" />
                     <span>Catatan Kaki Bawah: Media Promosi & Lisensi RelayPOS</span>
                   </label>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-primary-soft text-primary-soft-foreground border border-primary/30">
                     Otomatis Sistem
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
+                <p className="text-[11px] text-muted leading-relaxed">
                   Bagian ini dicetak permanen di paling bawah struk fisik dan bukti WhatsApp sebagai media verifikasi sistem cloud resmi dan pengiklan layanan RelayPOS.
                 </p>
-                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-cyan-300">
-                  <Sparkles size={14} className="text-cyan-400 shrink-0" />
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-surface border border-border text-xs font-mono text-primary">
+                  <Sparkles size={14} className="text-primary shrink-0" />
                   <span className="font-semibold">{PERMANENT_RELAYPOS_FOOTER}</span>
                 </div>
               </div>
@@ -648,15 +648,15 @@ export default function ReceiptCustomizer() {
           {/* SEKSI 2: IDENTITAS TOKO & HEADER */}
           {/* ============================================================== */}
           {(activeSubSection === 'store' || activeSubSection === 'all') && (
-            <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4 animate-fade-in">
-              <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-                <Store size={18} className="text-cyan-400" />
-                <h4 className="text-sm font-bold text-white">Identitas Usaha & Header Struk</h4>
+            <div className="bg-surface border border-border shadow-sm p-5 rounded-2xl space-y-4 animate-fade-in">
+              <div className="flex items-center gap-2 border-b border-border pb-3">
+                <Store size={18} className="text-primary" />
+                <h4 className="text-sm font-bold text-foreground">Identitas Usaha & Header Struk</h4>
               </div>
 
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">
                     Nama Usaha / Outlet (Huruf Kapital Tebal)
                   </label>
                   <input
@@ -664,12 +664,12 @@ export default function ReceiptCustomizer() {
                     value={config.storeName}
                     onChange={(e) => handleChange('storeName', e.target.value)}
                     placeholder="Contoh: RELAYPOS CARWASH & CAFE"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-white font-bold focus:outline-none focus:border-cyan-400 uppercase tracking-wide"
+                    className="w-full bg-surface border border-border rounded-xl px-3.5 py-2 text-sm text-foreground font-bold focus:outline-none focus:border-ring uppercase tracking-wide"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">
                     Slogan / Sub-Header Usaha
                   </label>
                   <input
@@ -677,50 +677,50 @@ export default function ReceiptCustomizer() {
                     value={config.storeTagline}
                     onChange={(e) => handleChange('storeTagline', e.target.value)}
                     placeholder="Contoh: Professional Car Wash, Detailing & Cafe"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-300 focus:outline-none focus:border-cyan-400"
+                    className="w-full bg-surface border border-border rounded-xl px-3.5 py-2 text-xs text-muted focus:outline-none focus:border-ring"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      <label className="text-xs font-semibold text-muted uppercase tracking-wider">
                         No. Kontak / WhatsApp
                       </label>
-                      <label className="flex items-center gap-1.5 text-[10px] text-slate-400 cursor-pointer">
+                      <label className="flex items-center gap-1.5 text-[10px] text-muted cursor-pointer">
                         <input
                           type="checkbox"
                           checked={config.showStorePhone}
                           onChange={(e) => handleChange('showStorePhone', e.target.checked)}
-                          className="rounded border-slate-700 bg-slate-950 text-cyan-400 focus:ring-0"
+                          className="rounded border-border bg-surface text-primary focus:ring-0"
                         />
                         <span>Cetak di Struk</span>
                       </label>
                     </div>
                     <div className="relative">
-                      <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                      <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-dark" />
                       <input
                         type="text"
                         value={config.storePhone}
                         onChange={(e) => handleChange('storePhone', e.target.value)}
                         placeholder="Contoh: 0812-3456-7890"
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3.5 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 font-mono"
+                        className="w-full bg-surface border border-border rounded-xl pl-9 pr-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-ring font-mono"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">
                       Instagram / Media Sosial
                     </label>
                     <div className="relative">
-                      <AtSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                      <AtSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-dark" />
                       <input
                         type="text"
                         value={config.storeSocial}
                         onChange={(e) => handleChange('storeSocial', e.target.value)}
                         placeholder="Contoh: @relaypos.id"
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3.5 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
+                        className="w-full bg-surface border border-border rounded-xl pl-9 pr-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-ring"
                       />
                     </div>
                   </div>
@@ -728,27 +728,27 @@ export default function ReceiptCustomizer() {
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <label className="text-xs font-semibold text-muted uppercase tracking-wider">
                       Alamat Fisik Outlet
                     </label>
-                    <label className="flex items-center gap-1.5 text-[10px] text-slate-400 cursor-pointer">
+                    <label className="flex items-center gap-1.5 text-[10px] text-muted cursor-pointer">
                       <input
                         type="checkbox"
                         checked={config.showStoreAddress}
                         onChange={(e) => handleChange('showStoreAddress', e.target.checked)}
-                        className="rounded border-slate-700 bg-slate-950 text-cyan-400 focus:ring-0"
+                        className="rounded border-border bg-surface text-primary focus:ring-0"
                       />
                       <span>Cetak di Struk</span>
                     </label>
                   </div>
                   <div className="relative">
-                    <MapPin size={14} className="absolute left-3 top-3 text-slate-500" />
+                    <MapPin size={14} className="absolute left-3 top-3 text-muted-dark" />
                     <textarea
                       rows={2}
                       value={config.storeAddress}
                       onChange={(e) => handleChange('storeAddress', e.target.value)}
                       placeholder="Contoh: Jl. Boulevard Raya Blok A No. 12, Jakarta"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3.5 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 resize-none leading-relaxed"
+                      className="w-full bg-surface border border-border rounded-xl pl-9 pr-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-ring resize-none leading-relaxed"
                     />
                   </div>
                 </div>
@@ -760,59 +760,59 @@ export default function ReceiptCustomizer() {
           {/* SEKSI 3: JUDUL & FORMAT HEADER STRUK */}
           {/* ============================================================== */}
           {(activeSubSection === 'titles' || activeSubSection === 'all') && (
-            <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4 animate-fade-in">
-              <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-                <FileText size={18} className="text-cyan-400" />
-                <h4 className="text-sm font-bold text-white">Format Judul Struk Order & Pembayaran</h4>
+            <div className="bg-surface border border-border shadow-sm p-5 rounded-2xl space-y-4 animate-fade-in">
+              <div className="flex items-center gap-2 border-b border-border pb-3">
+                <FileText size={18} className="text-primary" />
+                <h4 className="text-sm font-bold text-foreground">Format Judul Struk Order & Pembayaran</h4>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Format Struk Order */}
-                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5">
-                  <span className="text-[10px] font-bold text-amber-400 px-2 py-0.5 rounded bg-amber-400/10 uppercase">
+                <div className="p-3.5 rounded-xl bg-surface border border-border space-y-2.5">
+                  <span className="text-[10px] font-bold text-warning px-2 py-0.5 rounded bg-warning-bg uppercase">
                     Struk Bukti Order
                   </span>
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">Judul Utama</label>
+                    <label className="block text-[11px] font-semibold text-muted mb-1">Judul Utama</label>
                     <input
                       type="text"
                       value={config.orderReceiptTitle}
                       onChange={(e) => handleChange('orderReceiptTitle', e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white uppercase font-bold"
+                      className="w-full bg-surface border border-border rounded-lg px-3 py-1.5 text-xs text-foreground uppercase font-bold"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">Subjudul</label>
+                    <label className="block text-[11px] font-semibold text-muted mb-1">Subjudul</label>
                     <input
                       type="text"
                       value={config.orderReceiptSubtitle}
                       onChange={(e) => handleChange('orderReceiptSubtitle', e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-300"
+                      className="w-full bg-surface border border-border rounded-lg px-3 py-1.5 text-xs text-muted"
                     />
                   </div>
                 </div>
 
                 {/* Format Struk Pembayaran */}
-                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5">
-                  <span className="text-[10px] font-bold text-emerald-400 px-2 py-0.5 rounded bg-emerald-400/10 uppercase">
+                <div className="p-3.5 rounded-xl bg-surface border border-border space-y-2.5">
+                  <span className="text-[10px] font-bold text-success px-2 py-0.5 rounded bg-success-bg uppercase">
                     Struk Bukti Pembayaran
                   </span>
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">Judul Utama</label>
+                    <label className="block text-[11px] font-semibold text-muted mb-1">Judul Utama</label>
                     <input
                       type="text"
                       value={config.paymentReceiptTitle}
                       onChange={(e) => handleChange('paymentReceiptTitle', e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white uppercase font-bold"
+                      className="w-full bg-surface border border-border rounded-lg px-3 py-1.5 text-xs text-foreground uppercase font-bold"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">Subjudul</label>
+                    <label className="block text-[11px] font-semibold text-muted mb-1">Subjudul</label>
                     <input
                       type="text"
                       value={config.paymentReceiptSubtitle}
                       onChange={(e) => handleChange('paymentReceiptSubtitle', e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-300"
+                      className="w-full bg-surface border border-border rounded-lg px-3 py-1.5 text-xs text-muted"
                     />
                   </div>
                 </div>
@@ -824,10 +824,10 @@ export default function ReceiptCustomizer() {
           {/* SEKSI 4: UKURAN KERTAS PRINTER */}
           {/* ============================================================== */}
           {(activeSubSection === 'paper' || activeSubSection === 'all') && (
-            <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4 animate-fade-in">
-              <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-                <Printer size={18} className="text-cyan-400" />
-                <h4 className="text-sm font-bold text-white">Preferensi Lebar Kertas Printer Kasir</h4>
+            <div className="bg-surface border border-border shadow-sm p-5 rounded-2xl space-y-4 animate-fade-in">
+              <div className="flex items-center gap-2 border-b border-border pb-3">
+                <Printer size={18} className="text-primary" />
+                <h4 className="text-sm font-bold text-foreground">Preferensi Lebar Kertas Printer Kasir</h4>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -836,12 +836,12 @@ export default function ReceiptCustomizer() {
                   onClick={() => handleChange('paperWidth', '58mm')}
                   className={`p-3.5 rounded-xl border text-left transition-all ${
                     config.paperWidth === '58mm'
-                      ? 'bg-cyan-400/10 border-cyan-400/40 text-cyan-300 ring-1 ring-cyan-400'
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                      ? 'bg-primary-soft border-primary/30 text-primary-soft-foreground ring-1 ring-ring/30'
+                      : 'bg-surface border-border text-muted hover:border-border-hover'
                   }`}
                 >
                   <div className="font-bold text-xs">58 mm (Kompak)</div>
-                  <div className="text-[10px] text-slate-500 mt-1">Printer Bluetooth mini kasir portable</div>
+                  <div className="text-[10px] text-muted-dark mt-1">Printer Bluetooth mini kasir portable</div>
                 </button>
 
                 <button
@@ -849,12 +849,12 @@ export default function ReceiptCustomizer() {
                   onClick={() => handleChange('paperWidth', '72mm')}
                   className={`p-3.5 rounded-xl border text-left transition-all ${
                     config.paperWidth === '72mm' || config.paperWidth === '80mm'
-                      ? 'bg-cyan-400/10 border-cyan-400/40 text-cyan-300 ring-1 ring-cyan-400'
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                      ? 'bg-primary-soft border-primary/30 text-primary-soft-foreground ring-1 ring-ring/30'
+                      : 'bg-surface border-border text-muted hover:border-border-hover'
                   }`}
                 >
                   <div className="font-bold text-xs">72 mm / 80 mm (Standar POS)</div>
-                  <div className="text-[10px] text-slate-500 mt-1">Printer thermal USB desktop kasir umum</div>
+                  <div className="text-[10px] text-muted-dark mt-1">Printer thermal USB desktop kasir umum</div>
                 </button>
               </div>
             </div>
@@ -865,19 +865,19 @@ export default function ReceiptCustomizer() {
         <div className="lg:col-span-5 sticky top-6 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <Eye size={15} className="text-cyan-400" />
-              <span className="text-xs font-bold text-white uppercase tracking-wider">Live Struk Preview</span>
+              <Eye size={15} className="text-primary" />
+              <span className="text-xs font-bold text-foreground uppercase tracking-wider">Live Struk Preview</span>
             </div>
             
             {/* Mode Switcher */}
-            <div className="flex items-center gap-1 p-0.5 bg-slate-900 border border-slate-800 rounded-lg">
+            <div className="flex items-center gap-1 p-0.5 bg-surface border border-border rounded-lg">
               <button
                 type="button"
                 onClick={() => setPreviewType('PAYMENT')}
                 className={`px-2.5 py-1 rounded text-[11px] font-bold transition-all ${
                   previewType === 'PAYMENT'
-                    ? 'bg-emerald-500 text-slate-950 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted hover:text-foreground'
                 }`}
               >
                 Bukti Bayar
@@ -887,8 +887,8 @@ export default function ReceiptCustomizer() {
                 onClick={() => setPreviewType('ORDER')}
                 className={`px-2.5 py-1 rounded text-[11px] font-bold transition-all ${
                   previewType === 'ORDER'
-                    ? 'bg-amber-400 text-slate-950 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-warning text-ink-foreground shadow-sm'
+                    : 'text-muted hover:text-foreground'
                 }`}
               >
                 Bukti Order
@@ -897,7 +897,7 @@ export default function ReceiptCustomizer() {
           </div>
 
           {/* The Physical Simulated Thermal Receipt Paper */}
-          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex justify-center shadow-inner">
+          <div className="p-4 rounded-2xl bg-surface border border-border flex justify-center shadow-inner">
             <div 
               style={{ width: config.paperWidth === '58mm' ? '250px' : '310px' }}
               className="bg-white text-black p-4 font-mono shadow-2xl rounded text-[11px] leading-snug border border-dashed border-slate-300 transition-all select-none"

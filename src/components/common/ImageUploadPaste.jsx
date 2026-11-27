@@ -153,7 +153,7 @@ export default function ImageUploadPaste({
   return (
     <div className="space-y-1.5">
       <div className="flex justify-between items-center">
-        <label className="block text-xs font-bold text-slate-300">
+        <label className="block text-xs font-bold text-muted">
           {label}
         </label>
         {value && (
@@ -161,14 +161,14 @@ export default function ImageUploadPaste({
             <button
               type="button"
               onClick={handleTriggerFileInput}
-              className="text-[11px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
+              className="text-[11px] font-bold text-warning hover:text-warning flex items-center gap-1 transition-colors"
             >
               <RefreshCw size={12} /> Ganti Foto
             </button>
             <button
               type="button"
               onClick={handleRemove}
-              className="text-[11px] font-bold text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors"
+              className="text-[11px] font-bold text-destructive hover:text-destructive flex items-center gap-1 transition-colors"
             >
               <Trash2 size={12} /> Hapus Foto
             </button>
@@ -188,10 +188,10 @@ export default function ImageUploadPaste({
         onClick={handleTriggerFileInput}
         className={`relative border-2 border-dashed rounded-2xl p-4 transition-all cursor-pointer outline-none flex flex-col items-center justify-center min-h-[120px] text-center ${
           dragOver
-            ? 'border-amber-400 bg-amber-500/10'
+            ? 'border-warning/30 bg-warning-bg'
             : value
-            ? 'border-slate-700 bg-slate-900/50 hover:border-amber-500/50'
-            : 'border-slate-800 bg-slate-950/40 hover:border-amber-500/50 hover:bg-slate-900/50'
+            ? 'border-border bg-surface hover:border-warning/50'
+            : 'border-border bg-surface hover:border-warning/50 hover:bg-surface-hover'
         }`}
       >
         <input
@@ -204,32 +204,32 @@ export default function ImageUploadPaste({
 
         {value ? (
           <div className="flex items-center gap-4 w-full">
-            <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-900 border border-slate-700 shrink-0 relative group">
+            <div className="w-20 h-20 rounded-xl overflow-hidden bg-surface border border-border shrink-0 relative group">
               <img
                 src={value}
                 alt="Preview Produk"
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-[10px] font-bold text-amber-300">
+              <div className="absolute inset-0 bg-[var(--overlay-backdrop)] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-[10px] font-bold text-warning">
                 <RefreshCw size={14} />
                 <span>Ganti</span>
               </div>
             </div>
             <div className="flex-1 text-left space-y-1.5">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-success">
                 <Check size={14} />
                 <span>Foto Terpasang</span>
               </div>
-              <p className="text-[11px] text-slate-400">
-                Klik kartu ini, tekan tombol <strong className="text-amber-400">Ganti Foto</strong>, atau langsung tekan <strong className="text-slate-200">Ctrl + V</strong> untuk mengganti gambar baru.
+              <p className="text-[11px] text-muted">
+                Klik kartu ini, tekan tombol <strong className="text-warning">Ganti Foto</strong>, atau langsung tekan <strong className="text-foreground">Ctrl + V</strong> untuk mengganti gambar baru.
               </p>
               <div className="flex items-center gap-2">
                 {compressedSizeKb && (
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-subsurface text-muted border border-border">
                     ~{compressedSizeKb} KB
                   </span>
                 )}
-                <span className="text-[10px] font-bold text-amber-400/90 hover:underline">
+                <span className="text-[10px] font-bold text-warning hover:underline">
                   Klik untuk pilih file lain ↺
                 </span>
               </div>
@@ -237,15 +237,15 @@ export default function ImageUploadPaste({
           </div>
         ) : (
           <div className="flex flex-col items-center space-y-2 py-2">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20">
+            <div className="w-10 h-10 rounded-xl bg-warning-bg text-warning flex items-center justify-center border border-warning/30">
               <ImageIcon size={20} />
             </div>
             <div>
-              <div className="text-xs font-bold text-slate-200 flex items-center justify-center gap-1.5">
-                <Upload size={13} className="text-amber-400" />
+              <div className="text-xs font-bold text-foreground flex items-center justify-center gap-1.5">
+                <Upload size={13} className="text-warning" />
                 <span>Pilih Foto atau Paste (Ctrl + V)</span>
               </div>
-              <p className="text-[10px] text-slate-400 mt-1 max-w-xs">
+              <p className="text-[10px] text-muted mt-1 max-w-xs">
                 {helperText}
               </p>
             </div>
@@ -254,7 +254,7 @@ export default function ImageUploadPaste({
       </div>
 
       {errorMsg && (
-        <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
+        <div className="p-2.5 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-xs flex items-center gap-2">
           <AlertCircle size={14} className="shrink-0" />
           <span>{errorMsg}</span>
         </div>

@@ -649,36 +649,36 @@ const Karyawan = () => {
       {/* Header */}
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-            <Users size={32} className="text-[#00ffff]" />
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
+            <Users size={32} className="text-primary" />
             Kelola Karyawan
           </h1>
-          <p className="text-[#bbcbb2] text-sm mt-1">Registrasi staf baru, data upah gaji pencuci, karyawan kantor, & kru cuci</p>
+          <p className="text-muted text-sm mt-1">Registrasi staf baru, data upah gaji pencuci, karyawan kantor, & kru cuci</p>
         </div>
       </div>
 
       {/* Alert Banner */}
       {success && (
-        <div className="p-4 rounded-xl bg-[#00ffff]/10 border border-brand-emerald/20 text-[#00ffff] text-sm flex items-center gap-3 animate-fade-in">
+        <div className="p-4 rounded-xl bg-primary-soft border border-success/30 text-primary-soft-foreground text-sm flex items-center gap-3 animate-fade-in">
           <CheckCircle size={18} />
           <span>{success}</span>
         </div>
       )}
 
       {error && (
-        <div className="p-4 rounded-xl bg-brand-rose/10 border border-brand-rose/20 text-brand-rose text-sm flex items-center gap-3 animate-fade-in">
+        <div className="p-4 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-sm flex items-center gap-3 animate-fade-in">
           <AlertCircle size={18} />
           <span>{error}</span>
         </div>
       )}
 
       {/* Navigation Tab (Filtered by Tenant Model) */}
-      <div className="flex gap-2 overflow-x-auto pb-1.5 border-b border-[#26272d] scrollbar-thin">
+      <div className="flex gap-2 overflow-x-auto pb-1.5 border-b border-border scrollbar-thin">
         {features.hasCarwash && (
           <button
             onClick={() => { setActiveTab('wages'); setError(''); setSuccess('') }}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-              activeTab === 'wages' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
+              activeTab === 'wages' ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-muted hover:text-foreground'
             }`}
           >
             Laporan Gaji Cuci
@@ -688,7 +688,7 @@ const Karyawan = () => {
           <button
             onClick={() => { setActiveTab('crew'); setError(''); setSuccess('') }}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-              activeTab === 'crew' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
+              activeTab === 'crew' ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-muted hover:text-foreground'
             }`}
           >
             Karyawan Cuci
@@ -697,7 +697,7 @@ const Karyawan = () => {
         <button
           onClick={() => { setActiveTab('office'); setError(''); setSuccess('') }}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-            activeTab === 'office' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
+            activeTab === 'office' ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-muted hover:text-foreground'
           }`}
         >
           {features.isCafeOnly ? 'Karyawan & Staf Toko' : 'Karyawan Kantor'}
@@ -705,7 +705,7 @@ const Karyawan = () => {
         <button
           onClick={() => { setActiveTab('staff'); setError(''); setSuccess('') }}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-            activeTab === 'staff' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'
+            activeTab === 'staff' ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-muted hover:text-foreground'
           }`}
         >
           Akun Kasir & Akses
@@ -715,14 +715,14 @@ const Karyawan = () => {
       {/* CONTENT TAB 1: Laporan Gaji Cuci */}
       {activeTab === 'wages' && (
         <div className="space-y-6 animate-fade-in">
-          <div className="bg-[#121215] border border-[#26272d] p-6 rounded-2xl border border-[#26272d] space-y-6">
+          <div className="bg-surface border border-border p-6 rounded-2xl space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <DollarSign className="text-[#00ffff]" size={20} />
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                  <DollarSign className="text-primary" size={20} />
                   <span>Laporan Gaji Karyawan Cuci Mobil</span>
                 </h3>
-                <p className="text-xs text-[#6b7367] mt-1">Akumulasi upah karyawan cuci dari transaksi berstatus Selesai</p>
+                <p className="text-xs text-muted-dark mt-1">Akumulasi upah karyawan cuci dari transaksi berstatus Selesai</p>
               </div>
 
               {/* Date Filters with InteractiveCalendar & Tambah Staf CTA */}
@@ -730,7 +730,7 @@ const Karyawan = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab(features.hasCarwash ? 'crew' : 'office')}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-md shadow-emerald-500/10 cursor-pointer active:scale-[0.98]"
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-primary hover:bg-primary-hover text-primary-foreground font-bold rounded-xl text-xs transition-all shadow-md shadow-sm cursor-pointer active:scale-[0.98]"
                 >
                   <UserPlus size={14} />
                   <span>+ Tambah Staf</span>
@@ -740,9 +740,9 @@ const Karyawan = () => {
                   <button
                     type="button"
                     onClick={() => setShowWagesCalendar(!showWagesCalendar)}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#18181c] hover:bg-[#26272d] border border-[#26272d] hover:border-slate-700 text-[#bbcbb2] hover:text-white rounded-xl font-bold transition-all text-xs"
+                    className="flex items-center gap-2 px-4 py-2 bg-subsurface hover:bg-surface-hover border border-border hover:border-border-hover text-muted hover:text-foreground rounded-xl font-bold transition-all text-xs"
                   >
-                    <Calendar size={14} className="text-[#00ffff]" />
+                    <Calendar size={14} className="text-primary" />
                     <span>Periode Gaji: {wagesStartDate || 'Mulai'} s/d {wagesEndDate || 'Selesai'}</span>
                   </button>
 
@@ -768,28 +768,28 @@ const Karyawan = () => {
               <TableContainer>
                 <Table dense>
                   <thead>
-                    <tr className="border-b border-[#26272d] text-[#6b7367] font-semibold text-[10px] uppercase tracking-wider bg-[#18181c]/50">
+                    <tr className="border-b border-border text-muted-dark font-semibold text-[10px] uppercase tracking-wider bg-subsurface">
                       <th className="p-4">Nama Pencuci</th>
                       <th className="p-4 text-center">Jumlah Cuci (Mobil)</th>
                       <th className="p-4 text-right">Gaji Kotor (Rp)</th>
                       <th className="p-4 text-right">Potongan / Kasbon (Rp)</th>
-                      <th className="p-4 text-right text-[#00ffff]">Sisa Gaji Bersih (Rp)</th>
+                      <th className="p-4 text-right text-primary">Sisa Gaji Bersih (Rp)</th>
                       <th className="p-4 text-center">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#26272d]">
+                  <tbody className="divide-y divide-border">
                     {wagesSummary.map((item) => (
                       <tr 
                         key={item.key} 
-                        className={`hover:bg-[#26272d]/10 transition-colors ${
-                          selectedWageWorker === item.key ? 'bg-[#00ffff]/5' : ''
+                        className={`hover:bg-surface-hover transition-colors ${
+                          selectedWageWorker === item.key ? 'bg-primary-soft' : ''
                         }`}
                       >
-                        <td className="p-4 font-bold text-white text-sm">{item.name}</td>
-                        <td className="p-4 text-center font-bold text-white text-sm font-mono">{item.totalCars}</td>
-                        <td className="p-4 text-right text-white text-sm font-mono">{formatRupiah(item.totalWage)}</td>
-                        <td className="p-4 text-right text-brand-rose/90 text-sm font-mono">-{formatRupiah(item.totalWithdrawals)}</td>
-                        <td className={`p-4 text-right font-black text-sm font-mono ${item.netWage <= 0 ? 'text-[#6b7367] line-through' : 'text-[#00ffff]'}`}>
+                        <td className="p-4 font-bold text-foreground text-sm">{item.name}</td>
+                        <td className="p-4 text-center font-bold text-foreground text-sm font-mono">{item.totalCars}</td>
+                        <td className="p-4 text-right text-foreground text-sm font-mono">{formatRupiah(item.totalWage)}</td>
+                        <td className="p-4 text-right text-destructive text-sm font-mono">-{formatRupiah(item.totalWithdrawals)}</td>
+                        <td className={`p-4 text-right font-black text-sm font-mono ${item.netWage <= 0 ? 'text-muted-dark line-through' : 'text-primary'}`}>
                           {formatRupiah(item.netWage)}
                         </td>
                         <td className="p-4 text-center">
@@ -797,7 +797,7 @@ const Karyawan = () => {
                             <button
                               onClick={() => handleOpenPayModal(item)}
                               disabled={item.netWage <= 0}
-                              className="px-2.5 py-1 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 font-bold rounded-lg text-[11px] transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer"
+                              className="px-2.5 py-1 bg-success-bg hover:bg-primary-hover border border-success/30 text-success font-bold rounded-lg text-[11px] transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer"
                               title="Eksekusi Bayar Gaji Pencuci"
                             >
                               <DollarSign size={12} />
@@ -805,7 +805,7 @@ const Karyawan = () => {
                             </button>
                             <button
                               onClick={() => setSelectedWageWorker(item.key)}
-                              className="px-2.5 py-1 bg-[#18181c] hover:bg-[#26272d] border border-[#26272d] text-[#bbcbb2] hover:text-white font-bold rounded-lg text-[11px] transition-all cursor-pointer"
+                              className="px-2.5 py-1 bg-subsurface hover:bg-surface-hover border border-border text-muted hover:text-foreground font-bold rounded-lg text-[11px] transition-all cursor-pointer"
                             >
                               Rincian
                             </button>
@@ -819,29 +819,29 @@ const Karyawan = () => {
 
               {/* Rincian Riwayat di Bawah (Full Width) */}
               {selectedWageWorker && selectedWorkerDetails && (
-                <div id="print-area" className="bg-[#121215] border border-[#26272d] p-6 rounded-xl border border-[#26272d] space-y-6 animate-fade-in">
-                  <div className="border-b border-[#26272d] pb-3 flex justify-between items-center">
+                <div id="print-area" className="bg-surface border border-border p-6 rounded-xl space-y-6 animate-fade-in">
+                  <div className="border-b border-border pb-3 flex justify-between items-center">
                     <div>
-                      <h4 className="font-extrabold text-base text-white">Detail Riwayat Pekerjaan: {selectedWorkerDetails.name}</h4>
-                      <p className="text-xs text-[#6b7367] mt-0.5 font-medium">Rincian upah lengkap pada periode {wagesStartDate} s/d {wagesEndDate}</p>
+                      <h4 className="font-extrabold text-base text-foreground">Detail Riwayat Pekerjaan: {selectedWorkerDetails.name}</h4>
+                      <p className="text-xs text-muted-dark mt-0.5 font-medium">Rincian upah lengkap pada periode {wagesStartDate} s/d {wagesEndDate}</p>
                     </div>
                     <div className="flex gap-2">
                       <button 
                         onClick={() => handleOpenPayModal(selectedWorkerDetails)}
                         disabled={loading || (selectedWorkerDetails?.netWage || 0) <= 0}
-                        className="px-3 py-1.5 bg-[#00ffff] hover:bg-[#00ffff]/90 disabled:opacity-50 text-slate-950 text-xs font-bold rounded-lg transition-all active:scale-[0.98] flex items-center gap-1.5"
+                        className="px-3 py-1.5 bg-primary hover:bg-primary-soft disabled:opacity-50 text-primary-foreground text-xs font-bold rounded-lg transition-all active:scale-[0.98] flex items-center gap-1.5"
                       >
                         Bayar Gaji
                       </button>
                       <button 
                         onClick={() => window.print()}
-                        className="px-3 py-1.5 bg-[#00ffff] hover:bg-[#00ffff]/90 text-slate-950 text-xs font-bold rounded-lg transition-all active:scale-[0.98] flex items-center gap-1.5"
+                        className="px-3 py-1.5 bg-primary hover:bg-primary-soft text-primary-foreground text-xs font-bold rounded-lg transition-all active:scale-[0.98] flex items-center gap-1.5"
                       >
                         Cetak PDF
                       </button>
                       <button 
                         onClick={() => setSelectedWageWorker(null)}
-                        className="px-3 py-1.5 bg-[#18181c] hover:bg-[#26272d] text-[#bbcbb2] hover:text-white text-xs font-bold rounded-lg border border-[#26272d] transition-colors"
+                        className="px-3 py-1.5 bg-subsurface hover:bg-surface-hover text-muted hover:text-foreground text-xs font-bold rounded-lg border border-border transition-colors"
                       >
                         Tutup Riwayat
                       </button>
@@ -849,26 +849,26 @@ const Karyawan = () => {
                   </div>
 
                   {/* Info Card Summary */}
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 p-4 rounded-xl bg-[#18181c]/60 border border-[#26272d] text-xs">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 p-4 rounded-xl bg-subsurface border border-border text-xs">
                     <div>
-                      <span className="text-[10px] uppercase tracking-wider text-[#6b7367] block font-bold">Nama Pekerja</span>
-                      <span className="text-sm font-bold text-white">{selectedWorkerDetails.name}</span>
+                      <span className="text-[10px] uppercase tracking-wider text-muted-dark block font-bold">Nama Pekerja</span>
+                      <span className="text-sm font-bold text-foreground">{selectedWorkerDetails.name}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] uppercase tracking-wider text-[#6b7367] block font-bold">Total Pekerjaan</span>
-                      <span className="text-sm font-bold text-white font-mono">{selectedWorkerDetails?.totalCars || 0} Mobil</span>
+                      <span className="text-[10px] uppercase tracking-wider text-muted-dark block font-bold">Total Pekerjaan</span>
+                      <span className="text-sm font-bold text-foreground font-mono">{selectedWorkerDetails?.totalCars || 0} Mobil</span>
                     </div>
                     <div>
-                      <span className="text-[10px] uppercase tracking-wider text-[#6b7367] block font-bold">Gaji Kotor</span>
-                      <span className="text-sm font-bold text-white font-mono">{formatRupiah(selectedWorkerDetails?.totalWage || 0)}</span>
+                      <span className="text-[10px] uppercase tracking-wider text-muted-dark block font-bold">Gaji Kotor</span>
+                      <span className="text-sm font-bold text-foreground font-mono">{formatRupiah(selectedWorkerDetails?.totalWage || 0)}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] uppercase tracking-wider text-[#6b7367] block font-bold">Total Potongan/Kasbon</span>
-                      <span className="text-sm font-bold text-brand-rose font-mono">-{formatRupiah(selectedWorkerDetails?.totalWithdrawals || 0)}</span>
+                      <span className="text-[10px] uppercase tracking-wider text-muted-dark block font-bold">Total Potongan/Kasbon</span>
+                      <span className="text-sm font-bold text-destructive font-mono">-{formatRupiah(selectedWorkerDetails?.totalWithdrawals || 0)}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] uppercase tracking-wider text-[#00ffff] block font-bold">Sisa Gaji Bersih</span>
-                      <span className="text-sm font-black text-[#00ffff] font-mono">
+                      <span className="text-[10px] uppercase tracking-wider text-primary block font-bold">Sisa Gaji Bersih</span>
+                      <span className="text-sm font-black text-primary font-mono">
                         {formatRupiah(selectedWorkerDetails?.netWage || 0)}
                       </span>
                     </div>
@@ -876,12 +876,12 @@ const Karyawan = () => {
 
                   {/* Job List Title */}
                   <div className="space-y-2">
-                    <h5 className="text-xs font-bold text-[#bbcbb2] uppercase tracking-wider">1. Rincian Pekerjaan Cuci</h5>
+                    <h5 className="text-xs font-bold text-muted uppercase tracking-wider">1. Rincian Pekerjaan Cuci</h5>
                     {/* Full Table of History details */}
                     <TableContainer>
                 <Table dense>
                         <thead>
-                          <tr className="border-b border-[#26272d] text-[#6b7367] font-semibold text-[10px] uppercase tracking-wider bg-[#18181c]/50">
+                          <tr className="border-b border-border text-muted-dark font-semibold text-[10px] uppercase tracking-wider bg-subsurface">
                             <th className="p-4">Tanggal & Waktu</th>
                             <th className="p-4">Plat Nomor</th>
                             <th className="p-4">Paket Cuci</th>
@@ -891,10 +891,10 @@ const Karyawan = () => {
                             <th className="p-4 text-right">Bagian Upah</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#26272d]">
+                        <tbody className="divide-y divide-border">
                           {selectedWorkerDetails?.details.length === 0 ? (
                             <tr>
-                              <td colSpan="7" className="p-8 text-center text-[#6b7367] italic">
+                              <td colSpan="7" className="p-8 text-center text-muted-dark italic">
                                 Tidak ada riwayat pekerjaan.
                               </td>
                             </tr>
@@ -920,24 +920,24 @@ const Karyawan = () => {
                                 <tr 
                                   key={job.id} 
                                   onClick={() => setSelectedJobForCrosscheck(job)}
-                                  className="hover:bg-[#26272d]/10 cursor-pointer transition-colors"
+                                  className="hover:bg-surface-hover cursor-pointer transition-colors"
                                   title="Klik untuk rincian crosscheck transaksi"
                                 >
-                                  <td className="p-4 text-[#bbcbb2] font-mono">{timeStr}</td>
-                                  <td className="p-4 font-mono font-bold text-[#00ffff] uppercase">{job.platNomor || 'PLAT KOSONG'}</td>
-                                  <td className="p-4 font-bold text-white">{job.paket}</td>
-                                  <td className="p-4 text-[#bbcbb2]">{job.variant} • {job.ukuran}</td>
-                                  <td className="p-4 font-medium text-white">
+                                  <td className="p-4 text-muted font-mono">{timeStr}</td>
+                                  <td className="p-4 font-mono font-bold text-primary uppercase">{job.platNomor || 'PLAT KOSONG'}</td>
+                                  <td className="p-4 font-bold text-foreground">{job.paket}</td>
+                                  <td className="p-4 text-muted">{job.variant} • {job.ukuran}</td>
+                                  <td className="p-4 font-medium text-foreground">
                                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                                       job.split.includes('Split') 
-                                        ? 'bg-amber-500/10 text-amber-400' 
-                                        : 'bg-emerald-500/10 text-[#00ffff]'
+                                        ? 'bg-warning-bg text-warning' 
+                                        : 'bg-success-bg text-primary'
                                     }`}>
                                       {job.split}
                                     </span>
                                   </td>
-                                  <td className="p-4 text-right text-[#bbcbb2] font-mono">{formatRupiah(job.totalHarga)}</td>
-                                  <td className="p-4 text-right font-black text-[#00ffff] font-mono">{formatRupiah(job.shareWage)}</td>
+                                  <td className="p-4 text-right text-muted font-mono">{formatRupiah(job.totalHarga)}</td>
+                                  <td className="p-4 text-right font-black text-primary font-mono">{formatRupiah(job.shareWage)}</td>
                                 </tr>
                               )
                             })
@@ -949,37 +949,37 @@ const Karyawan = () => {
 
                   {/* Withdrawal List Title */}
                   <div className="space-y-2">
-                    <h5 className="text-xs font-bold text-[#bbcbb2] uppercase tracking-wider">2. Riwayat Pengambilan Kasbon & Payout Gaji</h5>
+                    <h5 className="text-xs font-bold text-muted uppercase tracking-wider">2. Riwayat Pengambilan Kasbon & Payout Gaji</h5>
                     <TableContainer>
                 <Table dense>
                         <thead>
-                          <tr className="border-b border-[#26272d] text-[#6b7367] font-semibold text-[10px] uppercase tracking-wider bg-[#18181c]/50">
+                          <tr className="border-b border-border text-muted-dark font-semibold text-[10px] uppercase tracking-wider bg-subsurface">
                             <th className="p-4">Tanggal Payout</th>
                             <th className="p-4">Keterangan Pengeluaran</th>
                             <th className="p-4">Sumber Dana (POS)</th>
                             <th className="p-4 text-right">Nominal Keluar</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#26272d]">
+                        <tbody className="divide-y divide-border">
                           {selectedWorkerDetails?.withdrawalsList.length === 0 ? (
                             <tr>
-                              <td colSpan="4" className="p-8 text-center text-[#6b7367] italic">
+                              <td colSpan="4" className="p-8 text-center text-muted-dark italic">
                                 Belum ada kasbon atau pembayaran gaji tercatat di cashflow pada periode ini.
                               </td>
                             </tr>
                           ) : (
                             selectedWorkerDetails?.withdrawalsList.map((w, idx) => (
-                              <tr key={w.id || idx} className="hover:bg-[#26272d]/10">
-                                <td className="p-4 text-[#bbcbb2] font-mono">
+                              <tr key={w.id || idx} className="hover:bg-surface-hover">
+                                <td className="p-4 text-muted font-mono">
                                   {new Date(w.tanggal).toLocaleDateString('id-ID', {
                                     day: 'numeric',
                                     month: 'long',
                                     year: 'numeric'
                                   })}
                                 </td>
-                                <td className="p-4 text-white">{w.keterangan}</td>
-                                <td className="p-4 font-mono font-bold text-[#bbcbb2]">{w.pos}</td>
-                                <td className="p-4 text-right font-bold text-brand-rose font-mono">-{formatRupiah(w.nominal)}</td>
+                                <td className="p-4 text-foreground">{w.keterangan}</td>
+                                <td className="p-4 font-mono font-bold text-muted">{w.pos}</td>
+                                <td className="p-4 text-right font-bold text-destructive font-mono">-{formatRupiah(w.nominal)}</td>
                               </tr>
                             ))
                           )}
@@ -996,14 +996,14 @@ const Karyawan = () => {
 
       {/* CONTENT TAB 2: Daftar Karyawan Cuci */}
       {activeTab === 'crew' && (
-        <div className="bg-[#121215] border border-[#26272d] p-6 rounded-2xl border border-[#26272d] max-w-4xl mx-auto space-y-6 animate-fade-in">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#26272d] pb-4">
+        <div className="bg-surface border border-border p-6 rounded-2xl max-w-4xl mx-auto space-y-6 animate-fade-in">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-4">
             <div>
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Users className="text-[#00ffff]" size={20} />
+              <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <Users className="text-primary" size={20} />
                 <span>Daftar Karyawan Cuci Mobil (Pencuci)</span>
               </h3>
-              <p className="text-xs text-[#6b7367] mt-1">
+              <p className="text-xs text-muted-dark mt-1">
                 Kelola kru cuci mobil yang aktif. Daftar ini digunakan sebagai referensi pencucian di Kasir POS.
               </p>
             </div>
@@ -1011,11 +1011,11 @@ const Karyawan = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Form Tambah Karyawan */}
-            <div className="bg-[#121215] border border-[#26272d] p-5 rounded-xl border border-[#26272d] h-fit space-y-4">
-              <h4 className="font-bold text-sm text-white">Tambah Karyawan Baru</h4>
+            <div className="bg-surface border border-border p-5 rounded-xl h-fit space-y-4">
+              <h4 className="font-bold text-sm text-foreground">Tambah Karyawan Baru</h4>
               <form onSubmit={handleAddKaryawanCuci} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] text-[#6b7367] font-bold uppercase tracking-wider block">
+                  <label className="text-[10px] text-muted-dark font-bold uppercase tracking-wider block">
                     Nama Karyawan
                   </label>
                   <input
@@ -1024,13 +1024,13 @@ const Karyawan = () => {
                     placeholder="Contoh: RIO"
                     value={newKaryawanCuci}
                     onChange={(e) => setNewKaryawanCuci(e.target.value)}
-                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-blue font-bold uppercase font-sans tracking-wide"
+                    className="w-full bg-subsurface border border-border rounded-lg py-2 px-3 text-foreground text-sm focus:outline-none focus:border-ring font-bold uppercase font-sans tracking-wide"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-2.5 bg-[#00ffff] hover:bg-[#00ffff]/90 active:scale-[0.98] text-slate-950 font-bold rounded-lg text-xs transition-all shadow-md shadow-brand-blue/15"
+                  className="w-full py-2.5 bg-primary hover:bg-primary-soft active:scale-[0.98] text-primary-foreground font-bold rounded-lg text-xs transition-all shadow-md shadow-sm"
                 >
                   Tambah Karyawan
                 </button>
@@ -1041,24 +1041,24 @@ const Karyawan = () => {
             <TableContainer className="md:col-span-2">
               <Table dense>
                 <thead>
-                  <tr className="border-b border-[#26272d] text-[#6b7367] font-semibold text-[10px] uppercase tracking-wider bg-[#18181c]/50">
+                  <tr className="border-b border-border text-muted-dark font-semibold text-[10px] uppercase tracking-wider bg-subsurface">
                     <th className="p-4">Nama Karyawan</th>
                     <th className="p-4 text-center">Tanggal Terdaftar</th>
                     <th className="p-4 text-right">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#26272d]">
+                <tbody className="divide-y divide-border">
                   {karyawanCuciList.length === 0 ? (
                     <tr>
-                      <td colSpan="3" className="p-8 text-center text-xs text-slate-600 font-medium italic">
+                      <td colSpan="3" className="p-8 text-center text-xs text-muted-dark font-medium italic">
                         Belum ada karyawan cuci terdaftar.
                       </td>
                     </tr>
                   ) : (
                     karyawanCuciList.map((k) => (
-                      <tr key={k.id} className="hover:bg-[#26272d]/10 transition-colors">
-                        <td className="p-4 font-bold text-white text-sm">{k.nama}</td>
-                        <td className="p-4 text-center text-xs text-[#bbcbb2] font-mono">
+                      <tr key={k.id} className="hover:bg-surface-hover transition-colors">
+                        <td className="p-4 font-bold text-foreground text-sm">{k.nama}</td>
+                        <td className="p-4 text-center text-xs text-muted font-mono">
                           {new Date(k.created_at).toLocaleDateString('id-ID', {
                             day: 'numeric',
                             month: 'long',
@@ -1068,7 +1068,7 @@ const Karyawan = () => {
                         <td className="p-4 text-right">
                           <button
                             onClick={() => handleDeleteKaryawanCuci(k.id, k.nama)}
-                            className="px-2.5 py-1 bg-[#18181c] hover:bg-rose-500/10 text-brand-rose border border-[#26272d] hover:border-brand-rose/20 rounded-lg text-[10px] font-bold transition-all active:scale-[0.98]"
+                            className="px-2.5 py-1 bg-subsurface hover:bg-destructive-bg text-destructive border border-border hover:border-destructive/50 rounded-lg text-[10px] font-bold transition-all active:scale-[0.98]"
                           >
                             Hapus
                           </button>
@@ -1085,31 +1085,31 @@ const Karyawan = () => {
 
       {/* CONTENT TAB 3: Daftar Karyawan Kantor */}
       {activeTab === 'office' && (
-        <div className="bg-[#121215] border border-[#26272d] p-6 rounded-2xl border border-[#26272d] max-w-5xl mx-auto space-y-6 animate-fade-in">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#26272d] pb-4">
+        <div className="bg-surface border border-border p-6 rounded-2xl max-w-5xl mx-auto space-y-6 animate-fade-in">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-4">
             <div>
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Briefcase className="text-[#00ffff]" size={20} />
+              <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <Briefcase className="text-primary" size={20} />
                 <span>Daftar Karyawan Kantor</span>
               </h3>
-              <p className="text-xs text-[#6b7367] mt-1">
+              <p className="text-xs text-muted-dark mt-1">
                 Kelola daftar karyawan bagian kantor & staf operasional. Terintegrasi langsung dengan data registrasi staf baru.
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-lg bg-[#18181c] border border-[#26272d] text-xs text-white font-semibold flex items-center gap-1.5">
-                <Users size={14} className="text-[#00ffff]" />
+              <span className="px-3 py-1 rounded-lg bg-subsurface border border-border text-xs text-foreground font-semibold flex items-center gap-1.5">
+                <Users size={14} className="text-primary" />
                 <span>Total: {karyawanKantorList.length} Orang</span>
               </span>
             </div>
           </div>
 
           {/* Banner Integrasi Otomatis */}
-          <div className="p-4 rounded-xl bg-[#00ffff]/10 border border-brand-blue/20 text-[#00ffff] text-xs flex items-start gap-3">
-            <Sparkles size={18} className="shrink-0 mt-0.5 text-[#00ffff]" />
+          <div className="p-4 rounded-xl bg-primary-soft border border-primary/30 text-primary-soft-foreground text-xs flex items-start gap-3">
+            <Sparkles size={18} className="shrink-0 mt-0.5 text-primary" />
             <div className="space-y-0.5">
-              <p className="font-bold text-white">Sinkronisasi Otomatis Aktif</p>
-              <p className="text-white leading-relaxed">
+              <p className="font-bold text-foreground">Sinkronisasi Otomatis Aktif</p>
+              <p className="text-foreground leading-relaxed">
                 Section Karyawan Kantor ini <strong>otomatis terisi</strong> jika ada data dari section <strong>Daftar Staf Baru</strong>. Anda juga dapat menambahkan staf operasional kantor non-login secara manual menggunakan form di bawah.
               </p>
             </div>
@@ -1117,19 +1117,19 @@ const Karyawan = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Form Tambah Karyawan Kantor Manual */}
-            <div className="lg:col-span-4 bg-[#121215] border border-[#26272d] p-5 rounded-xl border border-[#26272d] h-fit space-y-4">
+            <div className="lg:col-span-4 bg-surface border border-border p-5 rounded-xl h-fit space-y-4">
               <div>
-                <h4 className="font-bold text-sm text-white flex items-center gap-2">
-                  <Plus size={16} className="text-[#00ffff]" />
+                <h4 className="font-bold text-sm text-foreground flex items-center gap-2">
+                  <Plus size={16} className="text-primary" />
                   <span>Tambah Karyawan Manual</span>
                 </h4>
-                <p className="text-[11px] text-[#6b7367] mt-1">
+                <p className="text-[11px] text-muted-dark mt-1">
                   Untuk staf kantor/operasional yang tidak memerlukan akses login aplikasi.
                 </p>
               </div>
               <form onSubmit={handleAddKaryawanKantor} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] text-[#6b7367] font-bold uppercase tracking-wider block">
+                  <label className="text-[10px] text-muted-dark font-bold uppercase tracking-wider block">
                     Nama Karyawan
                   </label>
                   <input
@@ -1138,13 +1138,13 @@ const Karyawan = () => {
                     placeholder="Contoh: INDAH"
                     value={newKaryawanKantor}
                     onChange={(e) => setNewKaryawanKantor(e.target.value)}
-                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-blue font-bold uppercase font-sans tracking-wide"
+                    className="w-full bg-subsurface border border-border rounded-lg py-2 px-3 text-foreground text-sm focus:outline-none focus:border-ring font-bold uppercase font-sans tracking-wide"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-2.5 bg-[#00ffff] hover:bg-[#00ffff]/90 active:scale-[0.98] text-slate-950 font-bold rounded-lg text-xs transition-all shadow-md shadow-brand-blue/15"
+                  className="w-full py-2.5 bg-primary hover:bg-primary-soft active:scale-[0.98] text-primary-foreground font-bold rounded-lg text-xs transition-all shadow-md shadow-sm"
                 >
                   Tambah Karyawan
                 </button>
@@ -1155,7 +1155,7 @@ const Karyawan = () => {
             <TableContainer className="lg:col-span-8">
               <Table dense>
                 <thead>
-                  <tr className="border-b border-[#26272d] text-[#6b7367] font-semibold text-[10px] uppercase tracking-wider bg-[#18181c]/50">
+                  <tr className="border-b border-border text-muted-dark font-semibold text-[10px] uppercase tracking-wider bg-subsurface">
                     <th className="p-3.5">Nama Karyawan</th>
                     <th className="p-3.5">Peran / Jabatan</th>
                     <th className="p-3.5">Sumber Data</th>
@@ -1163,10 +1163,10 @@ const Karyawan = () => {
                     <th className="p-3.5 text-right">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#26272d]">
+                <tbody className="divide-y divide-border">
                   {karyawanKantorList.length === 0 ? (
                     <tr>
-                      <td colSpan="5" className="p-8 text-center text-xs text-slate-600 font-medium italic">
+                      <td colSpan="5" className="p-8 text-center text-xs text-muted-dark font-medium italic">
                         Belum ada karyawan kantor terdaftar.
                       </td>
                     </tr>
@@ -1176,11 +1176,11 @@ const Karyawan = () => {
                       const isAutoSync = k.source === 'staff_registration' || k.email
                       const isOwnerProtected = k.role === ROLES.OWNER && profile?.role !== ROLES.SUPER_ADMIN
                       return (
-                        <tr key={k.id || idx} className="hover:bg-[#26272d]/10 transition-colors">
+                        <tr key={k.id || idx} className="hover:bg-surface-hover transition-colors">
                           <td className="p-3.5">
-                            <div className="font-bold text-white text-sm">{k.nama}</div>
+                            <div className="font-bold text-foreground text-sm">{k.nama}</div>
                             {k.email && (
-                              <div className="text-[11px] text-[#6b7367] font-mono mt-0.5">
+                              <div className="text-[11px] text-muted-dark font-mono mt-0.5">
                                 {formatStaffLoginHandle(k.email)}
                               </div>
                             )}
@@ -1193,17 +1193,17 @@ const Karyawan = () => {
                           </td>
                           <td className="p-3.5">
                             {isAutoSync ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#00ffff]/10 border border-brand-blue/20 text-[#00ffff] text-[10px] font-medium">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary-soft border border-primary/30 text-primary-soft-foreground text-[10px] font-medium">
                                 <Sparkles size={11} />
                                 <span>Daftar Staf Baru</span>
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#18181c] border border-[#26272d] text-[#bbcbb2] text-[10px] font-medium">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-subsurface border border-border text-muted text-[10px] font-medium">
                                 <span>Manual</span>
                               </span>
                             )}
                           </td>
-                          <td className="p-3.5 text-center text-xs text-[#bbcbb2] font-mono">
+                          <td className="p-3.5 text-center text-xs text-muted font-mono">
                             {k.created_at ? new Date(k.created_at).toLocaleDateString('id-ID', {
                               day: 'numeric',
                               month: 'short',
@@ -1212,14 +1212,14 @@ const Karyawan = () => {
                           </td>
                           <td className="p-3.5 text-right">
                             {isOwnerProtected ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#18181c] border border-[#26272d] text-[#6b7367] text-[10px] font-semibold">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-subsurface border border-border text-muted-dark text-[10px] font-semibold">
                                 <Lock size={11} />
                                 <span>Owner Terlindungi</span>
                               </span>
                             ) : (
                               <button
                                 onClick={() => handleDeleteKaryawanKantor(k.id, k.nama, k)}
-                                className="px-2.5 py-1 bg-[#18181c] hover:bg-rose-500/10 text-brand-rose border border-[#26272d] hover:border-brand-rose/20 rounded-lg text-[10px] font-bold transition-all active:scale-[0.98]"
+                                className="px-2.5 py-1 bg-subsurface hover:bg-destructive-bg text-destructive border border-border hover:border-destructive/50 rounded-lg text-[10px] font-bold transition-all active:scale-[0.98]"
                               >
                                 {isAutoSync ? 'Nonaktifkan' : 'Hapus'}
                               </button>
@@ -1242,30 +1242,30 @@ const Karyawan = () => {
           <CoOwnerInviteCard activeTenant={activeTenant} profile={profile} />
 
           {/* Header & Banner Penjelas Integrasi */}
-          <div className="bg-[#121215] border border-[#26272d] p-6 rounded-2xl border border-[#26272d] space-y-4">
+          <div className="bg-surface border border-border p-6 rounded-2xl space-y-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <UserPlus className="text-[#00ffff]" />
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                  <UserPlus className="text-primary" />
                   <span>Daftarkan Staf Baru</span>
                 </h3>
-                <p className="text-xs text-[#6b7367] mt-1">
+                <p className="text-xs text-muted-dark mt-1">
                   Buat akun login staf dan kasir. Akun staf baru otomatis tercatat ke dalam section Karyawan Kantor.
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="px-3 py-1 rounded-lg bg-[#18181c] border border-[#26272d] text-xs text-white font-semibold flex items-center gap-1.5">
-                  <UserCheck size={14} className="text-[#00ffff]" />
+                <span className="px-3 py-1 rounded-lg bg-subsurface border border-border text-xs text-foreground font-semibold flex items-center gap-1.5">
+                  <UserCheck size={14} className="text-primary" />
                   <span>Staf Terdaftar: {staffList.length} Akun</span>
                 </span>
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-[#00ffff]/10 border border-brand-emerald/20 text-[#00ffff] text-xs flex items-start gap-3">
-              <Sparkles size={18} className="shrink-0 mt-0.5 text-[#00ffff]" />
+            <div className="p-4 rounded-xl bg-primary-soft border border-success/30 text-primary-soft-foreground text-xs flex items-start gap-3">
+              <Sparkles size={18} className="shrink-0 mt-0.5 text-primary" />
               <div className="space-y-0.5">
-                <p className="font-bold text-white">Otomatis Terintegrasi ke Karyawan Kantor</p>
-                <p className="text-white leading-relaxed">
+                <p className="font-bold text-foreground">Otomatis Terintegrasi ke Karyawan Kantor</p>
+                <p className="text-foreground leading-relaxed">
                   Setiap staf yang didaftarkan di form ini akan <strong>langsung mengisi section Karyawan Kantor</strong> secara otomatis tanpa perlu penginputan manual berulang.
                 </p>
               </div>
@@ -1274,20 +1274,20 @@ const Karyawan = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Form Registrasi Staf */}
-            <div className="lg:col-span-5 bg-[#121215] border border-[#26272d] p-6 rounded-2xl border border-[#26272d] space-y-5 h-fit">
+            <div className="lg:col-span-5 bg-surface border border-border p-6 rounded-2xl space-y-5 h-fit">
               <div>
-                <h4 className="font-bold text-sm text-white flex items-center gap-2">
-                  <UserPlus size={16} className="text-[#00ffff]" />
+                <h4 className="font-bold text-sm text-foreground flex items-center gap-2">
+                  <UserPlus size={16} className="text-primary" />
                   <span>Form Pendaftaran Akun Staf</span>
                 </h4>
-                <p className="text-[11px] text-[#6b7367] mt-1">
+                <p className="text-[11px] text-muted-dark mt-1">
                   Kredensial login dapat digunakan untuk masuk ke RelayPOS.
                 </p>
               </div>
 
               <form onSubmit={handleRegisterStaff} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
                     Nama Lengkap Staf
                   </label>
                   <input
@@ -1295,13 +1295,13 @@ const Karyawan = () => {
                     placeholder="Ketik nama (misal: Alexa Syafa)"
                     value={staffForm.nama}
                     onChange={(e) => setStaffForm(prev => ({ ...prev, nama: e.target.value }))}
-                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-blue font-bold tracking-wide"
+                    className="w-full bg-subsurface border border-border rounded-lg py-2 px-3 text-foreground text-sm focus:outline-none focus:border-ring font-bold tracking-wide"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
                     Username / Email Login
                   </label>
                   <input
@@ -1309,16 +1309,16 @@ const Karyawan = () => {
                     placeholder="Masukkan username (tanpa spasi)..."
                     value={staffForm.email}
                     onChange={(e) => setStaffForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-blue font-mono"
+                    className="w-full bg-subsurface border border-border rounded-lg py-2 px-3 text-foreground text-sm focus:outline-none focus:border-ring font-mono"
                     required
                   />
-                  <p className="text-[11px] text-[#6b7367] mt-1">
-                    Jika mengisi username tanpa email, staf login memakai format <span className="font-mono text-slate-300">username.kode-toko</span> yang tampil di daftar sebelah kanan.
+                  <p className="text-[11px] text-muted-dark mt-1">
+                    Jika mengisi username tanpa email, staf login memakai format <span className="font-mono text-muted">username.kode-toko</span> yang tampil di daftar sebelah kanan.
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
                     Kata Sandi
                   </label>
                   <input
@@ -1328,19 +1328,19 @@ const Karyawan = () => {
                     autoComplete="new-password"
                     value={staffForm.password}
                     onChange={(e) => setStaffForm(prev => ({ ...prev, password: e.target.value }))}
-                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-blue font-mono"
+                    className="w-full bg-subsurface border border-border rounded-lg py-2 px-3 text-foreground text-sm focus:outline-none focus:border-ring font-mono"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
                     Peran Hak Akses (Role)
                   </label>
                   <select
                     value={staffForm.role}
                     onChange={(e) => setStaffForm(prev => ({ ...prev, role: e.target.value }))}
-                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-blue"
+                    className="w-full bg-subsurface border border-border rounded-lg py-2 px-3 text-foreground text-sm focus:outline-none focus:border-ring"
                   >
                     <option value="Kasir">Kasir (Akses Transaksi POS &amp; Antrean Cabang)</option>
                     <option value="Staff Kantor">Staff Kantor (Gudang &amp; Stok Cabang)</option>
@@ -1358,13 +1358,13 @@ const Karyawan = () => {
 
                 {isTenantWideManager(profile?.role) && tenantBranches.length > 1 && (
                   <div>
-                    <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
                       Penempatan Cabang
                     </label>
                     <select
                       value={staffForm.branchId}
                       onChange={(e) => setStaffForm(prev => ({ ...prev, branchId: e.target.value }))}
-                      className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-blue"
+                      className="w-full bg-subsurface border border-border rounded-lg py-2 px-3 text-foreground text-sm focus:outline-none focus:border-ring"
                     >
                       <option value="">Cabang Utama (Default)</option>
                       {tenantBranches.map((br) => (
@@ -1379,7 +1379,7 @@ const Karyawan = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-2.5 bg-[#00ffff] hover:bg-[#00ffff]/90 active:scale-[0.98] text-slate-950 font-bold rounded-xl shadow-lg shadow-brand-blue/20 transition-all text-sm mt-2 disabled:opacity-50"
+                  className="w-full py-2.5 bg-primary hover:bg-primary-soft active:scale-[0.98] text-primary-foreground font-bold rounded-xl shadow-lg shadow-sm transition-all text-sm mt-2 disabled:opacity-50"
                 >
                   {loading ? 'Mendaftarkan...' : 'Registrasikan Akun Staf'}
                 </button>
@@ -1387,14 +1387,14 @@ const Karyawan = () => {
             </div>
 
             {/* Tabel Daftar Akun Staf Terdaftar */}
-            <div className="lg:col-span-7 bg-[#121215] border border-[#26272d] p-6 rounded-2xl border border-[#26272d] space-y-4">
+            <div className="lg:col-span-7 bg-surface border border-border p-6 rounded-2xl space-y-4">
               <div className="flex justify-between items-center">
                 <div>
-                  <h4 className="font-bold text-sm text-white flex items-center gap-2">
-                    <Shield size={16} className="text-[#00ffff]" />
+                  <h4 className="font-bold text-sm text-foreground flex items-center gap-2">
+                    <Shield size={16} className="text-primary" />
                     <span>Daftar Akun Staf Terdaftar</span>
                   </h4>
-                  <p className="text-[11px] text-[#6b7367] mt-1">
+                  <p className="text-[11px] text-muted-dark mt-1">
                     Seluruh akun staf yang aktif dan otomatis mengisi section Karyawan Kantor.
                   </p>
                 </div>
@@ -1403,17 +1403,17 @@ const Karyawan = () => {
               <TableContainer>
                 <Table dense>
                   <thead>
-                    <tr className="border-b border-[#26272d] text-[#6b7367] font-semibold text-[10px] uppercase tracking-wider bg-[#18181c]/50">
+                    <tr className="border-b border-border text-muted-dark font-semibold text-[10px] uppercase tracking-wider bg-subsurface">
                       <th className="p-3.5">Nama & Username Login</th>
                       <th className="p-3.5">Peran Hak Akses</th>
                       <th className="p-3.5 text-center">Status</th>
                       <th className="p-3.5 text-right">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#26272d]">
+                  <tbody className="divide-y divide-border">
                     {staffList.length === 0 ? (
                       <tr>
-                        <td colSpan="4" className="p-8 text-center text-xs text-slate-600 font-medium italic">
+                        <td colSpan="4" className="p-8 text-center text-xs text-muted-dark font-medium italic">
                           Belum ada staf terdaftar di sistem.
                         </td>
                       </tr>
@@ -1436,11 +1436,11 @@ const Karyawan = () => {
                         return (
                           <tr
                             key={staf.id || idx}
-                            className={`hover:bg-[#26272d]/10 transition-colors ${!isActive ? 'opacity-60' : ''}`}
+                            className={`hover:bg-surface-hover transition-colors ${!isActive ? 'opacity-60' : ''}`}
                           >
                             <td className="p-3.5">
-                              <div className="font-bold text-white text-sm">{staf.nama}</div>
-                              <div className="text-[11px] text-[#6b7367] font-mono">
+                              <div className="font-bold text-foreground text-sm">{staf.nama}</div>
+                              <div className="text-[11px] text-muted-dark font-mono">
                                 {formatStaffLoginHandle(staf.email)}
                               </div>
                             </td>
@@ -1451,7 +1451,7 @@ const Karyawan = () => {
                                   onChange={(e) => handleChangeStaffRole(staf, e.target.value)}
                                   disabled={loading}
                                   aria-label={`Ubah peran ${staf.nama}`}
-                                  className="bg-[#18181c] border border-[#26272d] hover:border-brand-blue/40 rounded-lg py-1 px-2 text-xs font-semibold text-white focus:outline-none focus:border-brand-blue"
+                                  className="bg-subsurface border border-border hover:border-border-active rounded-lg py-1 px-2 text-xs font-semibold text-foreground focus:outline-none focus:border-ring"
                                 >
                                   <option value="Kasir">Kasir</option>
                                   <option value="Admin">Admin Cabang (1 Cabang)</option>
@@ -1471,17 +1471,17 @@ const Karyawan = () => {
                               <span
                                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
                                   isActive
-                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                                    : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                                    ? 'bg-success-bg text-success border-success/30'
+                                    : 'bg-destructive-bg text-destructive border-destructive/30'
                                 }`}
                               >
-                                <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                                <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-primary' : 'bg-rose-400'}`} />
                                 <span>{isActive ? 'Aktif' : 'Nonaktif'}</span>
                               </span>
                             </td>
                             <td className="p-3.5 text-right">
                               {isOwnerRow && profile?.role !== ROLES.SUPER_ADMIN ? (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#18181c] border border-[#26272d] text-[#6b7367] text-[10px] font-semibold">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-subsurface border border-border text-muted-dark text-[10px] font-semibold">
                                   <Lock size={11} />
                                   <span>Owner Terlindungi</span>
                                 </span>
@@ -1492,14 +1492,14 @@ const Karyawan = () => {
                                   disabled={loading}
                                   className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all active:scale-[0.98] ${
                                     isActive
-                                      ? 'bg-[#18181c] hover:bg-rose-500/10 text-brand-rose border-[#26272d] hover:border-brand-rose/20'
-                                      : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                      ? 'bg-subsurface hover:bg-destructive-bg text-destructive border-border hover:border-destructive/50'
+                                      : 'bg-success-bg hover:bg-primary-hover text-success border-success/30'
                                   }`}
                                 >
                                   {isActive ? 'Nonaktifkan' : 'Aktifkan'}
                                 </button>
                               ) : (
-                                <span className="text-[10px] text-[#6b7367] font-mono">-</span>
+                                <span className="text-[10px] text-muted-dark font-mono">-</span>
                               )}
                             </td>
                           </tr>
@@ -1516,18 +1516,18 @@ const Karyawan = () => {
 
       {/* MODAL: Bayar Gaji Karyawan */}
       {showPayModal && (
-        <div className="fixed inset-0 bg-[#18181c]/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-[#121215] border border-[#26272d] w-full max-w-md p-6 rounded-2xl shadow-2xl border border-[#26272d] space-y-4 animate-pop-in">
-            <div className="flex justify-between items-center border-b border-[#26272d] pb-3">
+        <div className="fixed inset-0 bg-subsurface backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-surface border border-border w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-4 animate-pop-in">
+            <div className="flex justify-between items-center border-b border-border pb-3">
               <div>
-                <h3 className="font-extrabold text-sm text-white">
+                <h3 className="font-extrabold text-sm text-foreground">
                   Form Pembayaran Gaji Karyawan
                 </h3>
-                <p className="text-[10px] text-[#6b7367]">Membayar langsung sisa gaji ke cashflow (Uang Owner)</p>
+                <p className="text-[10px] text-muted-dark">Membayar langsung sisa gaji ke cashflow (Uang Owner)</p>
               </div>
               <button 
                 onClick={() => setShowPayModal(false)}
-                className="text-[#bbcbb2] hover:text-white text-sm font-bold"
+                className="text-muted hover:text-foreground text-sm font-bold"
               >
                 ✕
               </button>
@@ -1535,39 +1535,39 @@ const Karyawan = () => {
 
             <form onSubmit={handleProcessWagePayment} className="space-y-4 text-xs">
               <div className="space-y-1">
-                <span className="text-[10px] text-[#6b7367] font-bold uppercase tracking-wider block">Nama Karyawan</span>
+                <span className="text-[10px] text-muted-dark font-bold uppercase tracking-wider block">Nama Karyawan</span>
                 <input 
                   type="text" 
                   value={payForm.workerName} 
                   disabled 
                   readOnly 
-                  className="w-full bg-[#18181c] border border-[#26272d] opacity-50 rounded-lg py-2 px-3 text-white text-sm font-bold"
+                  className="w-full bg-subsurface border border-border opacity-50 rounded-lg py-2 px-3 text-foreground text-sm font-bold"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <span className="text-[10px] text-[#6b7367] font-bold uppercase tracking-wider block">Sisa Gaji (Sistem)</span>
-                  <span className="text-sm font-black text-[#00ffff] font-mono block pt-1.5">{formatRupiah(payForm.calculatedOutstanding)}</span>
+                  <span className="text-[10px] text-muted-dark font-bold uppercase tracking-wider block">Sisa Gaji (Sistem)</span>
+                  <span className="text-sm font-black text-primary font-mono block pt-1.5">{formatRupiah(payForm.calculatedOutstanding)}</span>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-[10px] text-[#6b7367] font-bold uppercase tracking-wider block">Nominal Dibayarkan</span>
+                  <span className="text-[10px] text-muted-dark font-bold uppercase tracking-wider block">Nominal Dibayarkan</span>
                   <input 
                     type="number" 
                     required 
                     value={payForm.amountToPay} 
                     onChange={(e) => setPayForm(prev => ({ ...prev, amountToPay: e.target.value }))}
-                    className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-1.5 px-2.5 text-white text-sm font-bold font-mono focus:outline-none focus:border-brand-blue"
+                    className="w-full bg-subsurface border border-border rounded-lg py-1.5 px-2.5 text-foreground text-sm font-bold font-mono focus:outline-none focus:border-ring"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <span className="text-[10px] text-[#6b7367] font-bold uppercase tracking-wider block">Sumber Dana Pembayaran (Cashflow POS)</span>
+                <span className="text-[10px] text-muted-dark font-bold uppercase tracking-wider block">Sumber Dana Pembayaran (Cashflow POS)</span>
                 <select 
                   value={payForm.fundSource} 
                   onChange={(e) => setPayForm(prev => ({ ...prev, fundSource: e.target.value }))}
-                  className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-xs font-bold focus:outline-none focus:border-brand-blue"
+                  className="w-full bg-subsurface border border-border rounded-lg py-2 px-3 text-foreground text-xs font-bold focus:outline-none focus:border-ring"
                 >
                   {pocketOptions.length > 0 ? (
                     pocketOptions.map((pk) => (
@@ -1585,29 +1585,29 @@ const Karyawan = () => {
               </div>
 
               <div className="space-y-1">
-                <span className="text-[10px] text-[#6b7367] font-bold uppercase tracking-wider block">Keterangan Transaksi</span>
+                <span className="text-[10px] text-muted-dark font-bold uppercase tracking-wider block">Keterangan Transaksi</span>
                 <input 
                   type="text" 
                   required 
                   placeholder="Contoh: Pelunasan Gaji RAHMAN"
                   value={payForm.note} 
                   onChange={(e) => setPayForm(prev => ({ ...prev, note: e.target.value }))}
-                  className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 px-3 text-white text-sm focus:outline-none"
+                  className="w-full bg-subsurface border border-border rounded-lg py-2 px-3 text-foreground text-sm focus:outline-none"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-[#26272d] mt-4">
+              <div className="flex justify-end gap-3 pt-3 border-t border-border mt-4">
                 <button
                   type="button"
                   onClick={() => setShowPayModal(false)}
-                  className="px-4 py-2 bg-[#18181c] hover:bg-[#26272d] font-bold rounded-xl text-xs text-white transition-colors w-24"
+                  className="px-4 py-2 bg-subsurface hover:bg-surface-hover font-bold rounded-xl text-xs text-foreground transition-colors w-24"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-4 py-2 bg-[#00ffff] hover:bg-[#00ffff]/90 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-xs transition-all w-24 active:scale-[0.98] shadow-md shadow-brand-emerald/15"
+                  className="px-4 py-2 bg-primary hover:bg-primary-soft disabled:opacity-50 text-primary-foreground font-bold rounded-xl text-xs transition-all w-24 active:scale-[0.98] shadow-md shadow-sm"
                 >
                   {loading ? 'Menyimpan...' : 'Bayar'}
                 </button>
@@ -1619,18 +1619,18 @@ const Karyawan = () => {
 
       {/* MODAL: Crosscheck Detail Mobil Cuci */}
       {selectedJobForCrosscheck && (
-        <div className="fixed inset-0 bg-[#18181c]/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-[#121215] border border-[#26272d] w-full max-w-md p-6 rounded-2xl shadow-2xl border border-[#26272d] space-y-4 animate-pop-in">
-            <div className="flex justify-between items-center border-b border-[#26272d] pb-3">
+        <div className="fixed inset-0 bg-subsurface backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-surface border border-border w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-4 animate-pop-in">
+            <div className="flex justify-between items-center border-b border-border pb-3">
               <div>
-                <h3 className="font-black text-sm text-[#00ffff] tracking-wider uppercase font-mono">
+                <h3 className="font-black text-sm text-primary tracking-wider uppercase font-mono">
                   Detail Transaksi Mobil {selectedJobForCrosscheck.platNomor}
                 </h3>
-                <p className="text-[10px] text-[#6b7367]">Crosscheck data transaksi & pembagian gaji</p>
+                <p className="text-[10px] text-muted-dark">Crosscheck data transaksi & pembagian gaji</p>
               </div>
               <button 
                 onClick={() => setSelectedJobForCrosscheck(null)}
-                className="text-[#bbcbb2] hover:text-white text-sm font-bold"
+                className="text-muted hover:text-foreground text-sm font-bold"
               >
                 ✕
               </button>
@@ -1638,13 +1638,13 @@ const Karyawan = () => {
 
             <div className="space-y-3.5 text-xs">
               <div className="grid grid-cols-2 gap-2.5">
-                <div className="p-2.5 rounded-lg bg-[#18181c]/60 border border-[#26272d]">
-                  <span className="text-[9px] text-[#6b7367] font-bold uppercase block">ID Transaksi</span>
-                  <span className="font-mono text-[9px] font-bold text-white select-all">{selectedJobForCrosscheck.id}</span>
+                <div className="p-2.5 rounded-lg bg-subsurface border border-border">
+                  <span className="text-[9px] text-muted-dark font-bold uppercase block">ID Transaksi</span>
+                  <span className="font-mono text-[9px] font-bold text-foreground select-all">{selectedJobForCrosscheck.id}</span>
                 </div>
-                <div className="p-2.5 rounded-lg bg-[#18181c]/60 border border-[#26272d]">
-                  <span className="text-[9px] text-[#6b7367] font-bold uppercase block">Waktu Input</span>
-                  <span className="font-mono text-[9.5px] font-semibold text-white">
+                <div className="p-2.5 rounded-lg bg-subsurface border border-border">
+                  <span className="text-[9px] text-muted-dark font-bold uppercase block">Waktu Input</span>
+                  <span className="font-mono text-[9.5px] font-semibold text-foreground">
                     {(() => {
                       const dParts = selectedJobForCrosscheck.tanggal ? String(selectedJobForCrosscheck.tanggal).split('T')[0].split('-') : []
                       const dStr = dParts.length === 3
@@ -1664,46 +1664,46 @@ const Karyawan = () => {
                 </div>
               </div>
 
-              <div className="p-3 rounded-lg bg-[#18181c]/60 border border-[#26272d] space-y-2">
-                <h5 className="font-bold text-[10px] text-[#bbcbb2] uppercase tracking-wider border-b border-[#26272d] pb-1 mb-1">Spesifikasi Layanan</h5>
+              <div className="p-3 rounded-lg bg-subsurface border border-border space-y-2">
+                <h5 className="font-bold text-[10px] text-muted uppercase tracking-wider border-b border-border pb-1 mb-1">Spesifikasi Layanan</h5>
                 <div className="flex justify-between">
-                  <span className="text-[#bbcbb2] font-medium">Jenis Paket:</span>
-                  <span className="font-bold text-white">{selectedJobForCrosscheck.paket}</span>
+                  <span className="text-muted font-medium">Jenis Paket:</span>
+                  <span className="font-bold text-foreground">{selectedJobForCrosscheck.paket}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#bbcbb2] font-medium">Ukuran & Variant:</span>
-                  <span className="font-bold text-white">{selectedJobForCrosscheck.ukuran} • {selectedJobForCrosscheck.variant}</span>
+                  <span className="text-muted font-medium">Ukuran & Variant:</span>
+                  <span className="font-bold text-foreground">{selectedJobForCrosscheck.ukuran} • {selectedJobForCrosscheck.variant}</span>
                 </div>
-                <div className="flex justify-between pt-1 border-t border-[#26272d]/50">
-                  <span className="text-[#bbcbb2] font-medium">Total Harga Jasa:</span>
-                  <span className="font-black text-[#00ffff]">{formatRupiah(selectedJobForCrosscheck.totalHarga)}</span>
+                <div className="flex justify-between pt-1 border-t border-border">
+                  <span className="text-muted font-medium">Total Harga Jasa:</span>
+                  <span className="font-black text-primary">{formatRupiah(selectedJobForCrosscheck.totalHarga)}</span>
                 </div>
               </div>
 
-              <div className="p-3 rounded-lg bg-[#18181c]/60 border border-[#26272d] space-y-2">
-                <h5 className="font-bold text-[10px] text-[#bbcbb2] uppercase tracking-wider border-b border-[#26272d] pb-1 mb-1">Rincian Pembagian Gaji</h5>
+              <div className="p-3 rounded-lg bg-subsurface border border-border space-y-2">
+                <h5 className="font-bold text-[10px] text-muted uppercase tracking-wider border-b border-border pb-1 mb-1">Rincian Pembagian Gaji</h5>
                 <div className="flex justify-between">
-                  <span className="text-[#bbcbb2] font-medium">Kru Pencuci 1:</span>
-                  <span className="font-bold text-white">{selectedJobForCrosscheck.rawItem?.anggota_1 || '-'}</span>
+                  <span className="text-muted font-medium">Kru Pencuci 1:</span>
+                  <span className="font-bold text-foreground">{selectedJobForCrosscheck.rawItem?.anggota_1 || '-'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#bbcbb2] font-medium">Kru Pencuci 2:</span>
-                  <span className="font-bold text-white">{selectedJobForCrosscheck.rawItem?.anggota_2 || 'Tidak ada (Solo)'}</span>
+                  <span className="text-muted font-medium">Kru Pencuci 2:</span>
+                  <span className="font-bold text-foreground">{selectedJobForCrosscheck.rawItem?.anggota_2 || 'Tidak ada (Solo)'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#bbcbb2] font-medium">Tipe Pengerjaan:</span>
-                  <span className="font-bold text-white font-mono text-[10px]">{selectedJobForCrosscheck.split}</span>
+                  <span className="text-muted font-medium">Tipe Pengerjaan:</span>
+                  <span className="font-bold text-foreground font-mono text-[10px]">{selectedJobForCrosscheck.split}</span>
                 </div>
-                <div className="flex justify-between pt-1 border-t border-[#26272d]/50">
-                  <span className="text-[#bbcbb2] font-bold">Porsi Gaji Diterima:</span>
-                  <span className="font-black text-[#00ffff] text-sm">{formatRupiah(selectedJobForCrosscheck.shareWage)}</span>
+                <div className="flex justify-between pt-1 border-t border-border">
+                  <span className="text-muted font-bold">Porsi Gaji Diterima:</span>
+                  <span className="font-black text-primary text-sm">{formatRupiah(selectedJobForCrosscheck.shareWage)}</span>
                 </div>
               </div>
             </div>
 
             <button
               onClick={() => setSelectedJobForCrosscheck(null)}
-              className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 font-bold rounded-xl text-xs text-white transition-colors"
+              className="w-full py-2.5 bg-subsurface hover:bg-surface-hover font-bold rounded-xl text-xs text-foreground transition-colors"
             >
               Tutup Rincian
             </button>
@@ -1713,28 +1713,28 @@ const Karyawan = () => {
 
       {/* CUSTOM ALERT/CONFIRM MODAL */}
       {customAlert && (
-        <div className="fixed inset-0 bg-[#18181c]/80 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">
-          <div className="bg-[#121215] border border-[#26272d] w-full max-w-sm p-6 rounded-2xl shadow-2xl border border-[#26272d] shadow-[0_0_50px_rgba(16,185,129,0.08)] animate-pop-in text-center">
+        <div className="fixed inset-0 bg-subsurface backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">
+          <div className="bg-surface border border-border w-full max-w-sm p-6 rounded-2xl shadow-2xl shadow-sm animate-pop-in text-center">
             <div className="mb-4">
               {customAlert.title === 'Sukses' ? (
-                <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/10 flex items-center justify-center">
-                  <CheckCircle className="text-[#00ffff]" size={24} />
+                <div className="w-12 h-12 mx-auto rounded-full bg-success-bg flex items-center justify-center">
+                  <CheckCircle className="text-primary" size={24} />
                 </div>
               ) : customAlert.title === 'Error' || customAlert.title === 'Hapus Karyawan Cuci' || customAlert.title === 'Hapus Karyawan Kantor' ? (
-                <div className="w-12 h-12 mx-auto rounded-full bg-rose-500/10 flex items-center justify-center">
-                  <AlertCircle className="text-rose-400" size={24} />
+                <div className="w-12 h-12 mx-auto rounded-full bg-destructive-bg flex items-center justify-center">
+                  <AlertCircle className="text-destructive" size={24} />
                 </div>
               ) : (
-                <div className="w-12 h-12 mx-auto rounded-full bg-amber-500/10 flex items-center justify-center">
-                  <AlertCircle className="text-amber-400" size={24} />
+                <div className="w-12 h-12 mx-auto rounded-full bg-warning-bg flex items-center justify-center">
+                  <AlertCircle className="text-warning" size={24} />
                 </div>
               )}
             </div>
             
-            <h4 className="text-base font-extrabold text-white mb-2">
+            <h4 className="text-base font-extrabold text-foreground mb-2">
               {customAlert.title}
             </h4>
-            <p className="text-xs text-[#bbcbb2] leading-relaxed mb-6">
+            <p className="text-xs text-muted leading-relaxed mb-6">
               {customAlert.message}
             </p>
             
@@ -1743,7 +1743,7 @@ const Karyawan = () => {
                 <button
                   type="button"
                   onClick={customAlert.onCancel}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-white font-bold rounded-xl text-xs transition-all w-24"
+                  className="px-4 py-2 bg-subsurface hover:bg-surface-hover active:scale-[0.98] text-foreground font-bold rounded-xl text-xs transition-all w-24"
                 >
                   Batal
                 </button>
@@ -1753,8 +1753,8 @@ const Karyawan = () => {
                 onClick={customAlert.onConfirm}
                 className={`px-4 py-2 active:scale-[0.98] font-bold rounded-xl text-xs transition-all w-24 ${
                   customAlert.title === 'Error' || customAlert.title === 'Hapus Karyawan Cuci' || customAlert.title === 'Hapus Karyawan Kantor'
-                    ? 'bg-rose-500 hover:bg-rose-600 text-white'
-                    : 'bg-[#00ffff] hover:bg-[#00ffff]/90 text-slate-950'
+                    ? 'bg-destructive-solid hover:opacity-90 text-white'
+                    : 'bg-primary hover:bg-primary-soft text-primary-foreground'
                 }`}
               >
                 {customAlert.type === 'confirm' ? 'Ya' : 'OK'}

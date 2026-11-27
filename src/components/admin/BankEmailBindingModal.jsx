@@ -264,21 +264,21 @@ export default function BankEmailBindingModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[var(--overlay-backdrop)] backdrop-blur-sm animate-fade-in overflow-y-auto"
       aria-labelledby="bank-email-binding-modal-title"
     >
-      <div className="w-full max-w-3xl bg-[#121215] border border-[#26272d] rounded-2xl shadow-2xl flex flex-col max-h-[92dvh] overflow-hidden my-auto">
+      <div className="w-full max-w-3xl bg-surface border border-border rounded-2xl shadow-2xl flex flex-col max-h-[92dvh] overflow-hidden my-auto">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#26272d] bg-[#18181c] shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-subsurface shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#00ffff]/10 border border-[#00ffff]/30 flex items-center justify-center text-[#00ffff]">
+            <div className="w-9 h-9 rounded-xl bg-primary-soft border border-primary/30 flex items-center justify-center text-primary-soft-foreground">
               <Mail size={18} />
             </div>
             <div>
-              <h2 id="bank-email-binding-modal-title" className="text-base font-bold text-white">
+              <h2 id="bank-email-binding-modal-title" className="text-base font-bold text-foreground">
                 Integrasi Email Notifikasi Bank Mandiri
               </h2>
-              <p className="text-[11px] text-[#bbcbb2]">
+              <p className="text-[11px] text-muted">
                 1 Akun Gmail untuk banyak rekening Mandiri (filter 4 digit ekor rekening &amp; proteksi lintas tenant)
               </p>
             </div>
@@ -287,7 +287,7 @@ export default function BankEmailBindingModal({
             type="button"
             onClick={onClose}
             aria-label="Tutup dialog integrasi email bank"
-            className="p-1.5 rounded-lg text-[#bbcbb2] hover:text-white hover:bg-[#26272d] transition-colors active:scale-[0.98]"
+            className="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-surface-hover transition-colors active:scale-[0.98]"
           >
             <X size={16} />
           </button>
@@ -296,22 +296,22 @@ export default function BankEmailBindingModal({
         {/* Body */}
         <div className="p-6 overflow-y-auto flex-1 min-h-0 space-y-6 overscroll-contain">
           {/* Architecture Notice */}
-          <div className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] text-xs text-[#bbcbb2] space-y-1.5">
-            <div className="flex items-center gap-2 font-bold text-[#00ffff]">
+          <div className="p-3.5 rounded-xl bg-subsurface border border-border text-xs text-muted space-y-1.5">
+            <div className="flex items-center gap-2 font-bold text-primary">
               <ShieldCheck size={15} />
               <span>Cara Kerja Isolasi Multi-Rekening &amp; Multi-Tenant</span>
             </div>
             <ul className="list-disc pl-5 space-y-1 text-[11px] leading-relaxed">
               <li>
                 <strong>1 Gmail &rarr; Banyak Rekening Mandiri:</strong> Daftarkan 4 digit ekor rekening (misal{' '}
-                <code className="text-white font-mono">1122</code>, <code className="text-white font-mono">3344</code>)
+                <code className="text-foreground font-mono">1122</code>, <code className="text-foreground font-mono">3344</code>)
                 ke masing-masing kantong saldo. Rekening pribadi di Gmail yang sama otomatis diabaikan (
-                <code className="text-amber-300 font-mono">IGNORED_UNBOUND_ACCOUNT</code>).
+                <code className="text-warning font-mono">IGNORED_UNBOUND_ACCOUNT</code>).
               </li>
               <li>
                 <strong>1 Rekening Fisik &rarr; Banyak Kantong Saldo:</strong> Jika beberapa kantong memakai ekor
                 rekening yang sama tanpa default tunggal, mutasi masuk ke antrean{' '}
-                <code className="text-amber-300 font-mono">AMBIGUOUS_POCKET</code> agar kasir/admin memilih kantong
+                <code className="text-warning font-mono">AMBIGUOUS_POCKET</code> agar kasir/admin memilih kantong
                 sebelum saldo dipotong.
               </li>
               <li>
@@ -325,18 +325,18 @@ export default function BankEmailBindingModal({
           {error && (
             <div
               role="alert"
-              className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2"
+              className="p-3 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-xs flex items-center gap-2"
             >
-              <AlertCircle size={16} className="shrink-0 text-rose-400" />
+              <AlertCircle size={16} className="shrink-0 text-destructive" />
               <span>{error}</span>
             </div>
           )}
           {success && (
             <div
               role="status"
-              className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2"
+              className="p-3 rounded-xl bg-success-bg border border-success/30 text-success text-xs flex items-center gap-2"
             >
-              <CheckCircle2 size={16} className="shrink-0 text-emerald-400" />
+              <CheckCircle2 size={16} className="shrink-0 text-success" />
               <span>{success}</span>
             </div>
           )}
@@ -344,20 +344,20 @@ export default function BankEmailBindingModal({
           {/* Loading State */}
           {loading ? (
             <div className="space-y-3 py-6" data-testid="bank-email-loading">
-              <div className="h-10 rounded-xl bg-[#18181c] border border-[#26272d] animate-pulse" />
-              <div className="h-24 rounded-xl bg-[#18181c] border border-[#26272d] animate-pulse" />
-              <div className="h-28 rounded-xl bg-[#18181c] border border-[#26272d] animate-pulse" />
+              <div className="h-10 rounded-xl bg-subsurface border border-border animate-pulse" />
+              <div className="h-24 rounded-xl bg-subsurface border border-border animate-pulse" />
+              <div className="h-28 rounded-xl bg-subsurface border border-border animate-pulse" />
             </div>
           ) : (
             <>
               {/* Step 1: Email Connection */}
-              <div className="p-4 rounded-xl bg-[#18181c]/70 border border-[#26272d] space-y-3">
+              <div className="p-4 rounded-xl bg-subsurface border border-border space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
-                    <Mail size={14} className="text-[#00ffff]" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
+                    <Mail size={14} className="text-primary" />
                     <span>1. Koneksi Kotak Masuk Gmail (Penerima Notifikasi Mandiri)</span>
                   </h3>
-                  <span className="text-[11px] font-mono tabular-nums text-[#bbcbb2]">
+                  <span className="text-[11px] font-mono tabular-nums text-muted">
                     {connections.length} Koneksi Aktif
                   </span>
                 </div>
@@ -368,13 +368,13 @@ export default function BankEmailBindingModal({
                     placeholder="Contoh: finance.outlet@gmail.com"
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
-                    className="flex-1 bg-[#121215] border border-[#26272d] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-[#00ffff]"
+                    className="flex-1 bg-surface border border-border rounded-xl px-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-ring"
                     required
                   />
                   <button
                     type="submit"
                     disabled={submittingConn}
-                    className="px-4 py-2 rounded-xl bg-[#00ffff] hover:bg-cyan-400 active:scale-[0.98] text-[#0f0f0f] font-bold text-xs flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 shrink-0"
+                    className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover active:scale-[0.98] text-primary-foreground font-bold text-xs flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 shrink-0"
                   >
                     <Plus size={14} />
                     <span>{submittingConn ? 'Menghubungkan...' : 'Hubungkan Gmail'}</span>
@@ -382,32 +382,32 @@ export default function BankEmailBindingModal({
                 </form>
 
                 {connections.length === 0 ? (
-                  <div className="p-3 rounded-xl bg-[#121215] border border-dashed border-[#26272d] text-xs text-[#bbcbb2] flex items-center gap-2">
-                    <Info size={14} className="text-[#00ffff] shrink-0" />
+                  <div className="p-3 rounded-xl bg-surface border border-dashed border-border text-xs text-muted flex items-center gap-2">
+                    <Info size={14} className="text-primary shrink-0" />
                     <span>
                       Belum ada akun Gmail terhubung. Tambahkan alamat Gmail yang menerima email dari{' '}
-                      <code className="text-white font-mono">notifikasi@bankmandiri.co.id</code>.
+                      <code className="text-foreground font-mono">notifikasi@bankmandiri.co.id</code>.
                     </span>
                   </div>
                 ) : (
-                  <div className="divide-y divide-[#26272d] rounded-xl bg-[#121215] border border-[#26272d] overflow-hidden">
+                  <div className="divide-y divide-border rounded-xl bg-surface border border-border overflow-hidden">
                     {connections.map((conn) => (
                       <div key={conn.id} className="px-3.5 py-2.5 flex items-center justify-between gap-2 text-xs">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-white truncate">{conn.connected_email}</span>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                            <span className="font-bold text-foreground truncate">{conn.connected_email}</span>
+                            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-success-bg text-success border border-success/30">
                               {conn.status || 'ACTIVE'}
                             </span>
                           </div>
-                          <div className="text-[10px] text-[#6b7367] font-mono mt-0.5">
+                          <div className="text-[10px] text-muted-dark font-mono mt-0.5">
                             Identitas Kanonis: {conn.normalized_email}
                           </div>
                         </div>
                         <button
                           type="button"
                           onClick={() => handleDeleteConnection(conn.id)}
-                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors active:scale-[0.98]"
+                          className="p-1.5 rounded-lg bg-destructive-bg hover:bg-destructive-bg text-destructive transition-colors active:scale-[0.98]"
                           title="Putuskan Koneksi Email"
                         >
                           <Trash2 size={13} />
@@ -419,13 +419,13 @@ export default function BankEmailBindingModal({
               </div>
 
               {/* Step 2: Bind 4-digit Account to Pocket */}
-              <div className="p-4 rounded-xl bg-[#18181c]/70 border border-[#26272d] space-y-4">
+              <div className="p-4 rounded-xl bg-subsurface border border-border space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
-                    <Link2 size={14} className="text-[#00ffff]" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
+                    <Link2 size={14} className="text-primary" />
                     <span>2. Ikat 4 Digit Ekor Rekening Mandiri ke Kantong Saldo</span>
                   </h3>
-                  <span className="text-[11px] font-mono tabular-nums text-[#bbcbb2]">
+                  <span className="text-[11px] font-mono tabular-nums text-muted">
                     {bindings.length} Rekening Terikat
                   </span>
                 </div>
@@ -433,13 +433,13 @@ export default function BankEmailBindingModal({
                 <form onSubmit={handleAddBinding} className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1">
+                      <label className="block text-[11px] font-semibold text-muted uppercase tracking-wider mb-1">
                         Koneksi Gmail Sumber
                       </label>
                       <select
                         value={bindingForm.connection_id}
                         onChange={(e) => setBindingForm((prev) => ({ ...prev, connection_id: e.target.value }))}
-                        className="w-full bg-[#121215] border border-[#26272d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00ffff]"
+                        className="w-full bg-surface border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-ring"
                         required
                       >
                         <option value="">-- Pilih Koneksi Gmail --</option>
@@ -452,13 +452,13 @@ export default function BankEmailBindingModal({
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1">
+                      <label className="block text-[11px] font-semibold text-muted uppercase tracking-wider mb-1">
                         Kantong Saldo Tujuan (Rekening Bank)
                       </label>
                       <select
                         value={bindingForm.pocket_id}
                         onChange={(e) => setBindingForm((prev) => ({ ...prev, pocket_id: e.target.value }))}
-                        className="w-full bg-[#121215] border border-[#26272d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00ffff]"
+                        className="w-full bg-surface border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-ring"
                         required
                       >
                         <option value="">-- Pilih Kantong Saldo --</option>
@@ -473,7 +473,7 @@ export default function BankEmailBindingModal({
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1">
+                      <label className="block text-[11px] font-semibold text-muted uppercase tracking-wider mb-1">
                         4 Digit Ekor Rekening Mandiri
                       </label>
                       <input
@@ -488,26 +488,26 @@ export default function BankEmailBindingModal({
                             account_last4: e.target.value.replace(/\D/g, '').slice(0, 4)
                           }))
                         }
-                        className="w-full bg-[#121215] border border-[#26272d] rounded-xl px-3 py-2 text-xs text-white font-mono tabular-nums focus:outline-none focus:border-[#00ffff]"
+                        className="w-full bg-surface border border-border rounded-xl px-3 py-2 text-xs text-foreground font-mono tabular-nums focus:outline-none focus:border-ring"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1">
+                      <label className="block text-[11px] font-semibold text-muted uppercase tracking-wider mb-1">
                         Tanggal Cutoff Mulai Impor
                       </label>
                       <input
                         type="date"
                         value={bindingForm.import_start_date}
                         onChange={(e) => setBindingForm((prev) => ({ ...prev, import_start_date: e.target.value }))}
-                        className="w-full bg-[#121215] border border-[#26272d] rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-[#00ffff]"
+                        className="w-full bg-surface border border-border rounded-xl px-3 py-2 text-xs text-foreground font-mono focus:outline-none focus:border-ring"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-[#bbcbb2] uppercase tracking-wider mb-1">
+                      <label className="block text-[11px] font-semibold text-muted uppercase tracking-wider mb-1">
                         Nama Pemilik Rekening (Opsional)
                       </label>
                       <input
@@ -515,20 +515,20 @@ export default function BankEmailBindingModal({
                         placeholder="Misal: Mandiri Operasional"
                         value={bindingForm.account_holder_name}
                         onChange={(e) => setBindingForm((prev) => ({ ...prev, account_holder_name: e.target.value }))}
-                        className="w-full bg-[#121215] border border-[#26272d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00ffff]"
+                        className="w-full bg-surface border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-ring"
                       />
                     </div>
                   </div>
 
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-                    <label className="flex items-center gap-2 text-xs text-[#bbcbb2] cursor-pointer select-none">
+                    <label className="flex items-center gap-2 text-xs text-muted cursor-pointer select-none">
                       <input
                         type="checkbox"
                         checked={bindingForm.is_default_for_last4}
                         onChange={(e) =>
                           setBindingForm((prev) => ({ ...prev, is_default_for_last4: e.target.checked }))
                         }
-                        className="rounded border-[#26272d] bg-[#121215] text-[#00ffff]"
+                        className="rounded border-border bg-surface text-primary"
                       />
                       <span>
                         Jadikan kantong default untuk ekor rekening ini (jika 1 rekening fisik dipakai &gt;1 kantong)
@@ -538,7 +538,7 @@ export default function BankEmailBindingModal({
                     <button
                       type="submit"
                       disabled={submittingBind || connections.length === 0}
-                      className="px-4 py-2 rounded-xl bg-[#00ffff] hover:bg-cyan-400 active:scale-[0.98] text-[#0f0f0f] font-bold text-xs flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 shrink-0"
+                      className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover active:scale-[0.98] text-primary-foreground font-bold text-xs flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 shrink-0"
                     >
                       <Link2 size={14} />
                       <span>{submittingBind ? 'Menyimpan...' : 'Simpan Ikatan Rekening'}</span>
@@ -548,14 +548,14 @@ export default function BankEmailBindingModal({
 
                 {/* Active Bindings Table */}
                 {bindings.length === 0 ? (
-                  <div className="p-4 rounded-xl bg-[#121215] border border-dashed border-[#26272d] text-center text-xs text-[#bbcbb2]">
+                  <div className="p-4 rounded-xl bg-surface border border-dashed border-border text-center text-xs text-muted">
                     Belum ada ekor rekening Bank Mandiri yang diikat ke kantong saldo.
                   </div>
                 ) : (
-                  <div className="overflow-x-auto rounded-xl border border-[#26272d] bg-[#121215]">
+                  <div className="overflow-x-auto rounded-xl border border-border bg-surface">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="border-b border-[#26272d] bg-[#18181c] text-[#bbcbb2] text-[10px] uppercase font-bold">
+                        <tr className="border-b border-border bg-subsurface text-muted text-[10px] uppercase font-bold">
                           <th className="py-2.5 px-3">Bank &amp; Ekor</th>
                           <th className="py-2.5 px-3">Kantong Saldo</th>
                           <th className="py-2.5 px-3">Gmail Terhubung</th>
@@ -563,30 +563,30 @@ export default function BankEmailBindingModal({
                           <th className="py-2.5 px-3 text-center">Aksi</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#26272d]">
+                      <tbody className="divide-y divide-border">
                         {bindings.map((b) => {
                           const pocket = pockets.find((p) => p.id === b.pocket_id)
                           const conn = connections.find((c) => c.id === b.connection_id)
                           return (
-                            <tr key={b.id} className="hover:bg-[#18181c]/60">
-                              <td className="py-2.5 px-3 font-mono font-bold text-white">
+                            <tr key={b.id} className="hover:bg-surface-hover">
+                              <td className="py-2.5 px-3 font-mono font-bold text-foreground">
                                 <div className="flex items-center gap-1.5">
-                                  <Building2 size={13} className="text-[#00ffff]" />
+                                  <Building2 size={13} className="text-primary" />
                                   <span>MANDIRI •••• {b.account_last4}</span>
                                   {b.is_default_for_last4 && (
-                                    <span className="px-1.5 py-0.5 rounded text-[9px] bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30">
+                                    <span className="px-1.5 py-0.5 rounded text-[9px] bg-primary-soft text-primary-soft-foreground border border-primary/30">
                                       DEFAULT
                                     </span>
                                   )}
                                 </div>
                               </td>
-                              <td className="py-2.5 px-3 text-white font-semibold">
+                              <td className="py-2.5 px-3 text-foreground font-semibold">
                                 {pocket ? `${pocket.label || pocket.pos} (${pocket.pos})` : b.pocket_id}
                               </td>
-                              <td className="py-2.5 px-3 text-[#bbcbb2]">
+                              <td className="py-2.5 px-3 text-muted">
                                 {conn?.connected_email || '-'}
                               </td>
-                              <td className="py-2.5 px-3 text-right font-mono tabular-nums text-[#bbcbb2]">
+                              <td className="py-2.5 px-3 text-right font-mono tabular-nums text-muted">
                                 <span className="inline-flex items-center gap-1">
                                   <Calendar size={11} />
                                   {b.import_start_date}
@@ -596,7 +596,7 @@ export default function BankEmailBindingModal({
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteBinding(b.id)}
-                                  className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors active:scale-[0.98]"
+                                  className="p-1.5 rounded-lg bg-destructive-bg hover:bg-destructive-bg text-destructive transition-colors active:scale-[0.98]"
                                   title="Hapus Ikatan Rekening"
                                 >
                                   <Trash2 size={13} />
@@ -615,20 +615,20 @@ export default function BankEmailBindingModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 border-t border-[#26272d] bg-[#18181c] flex items-center justify-between shrink-0">
+        <div className="px-6 py-3.5 border-t border-border bg-subsurface flex items-center justify-between shrink-0">
           <button
             type="button"
             onClick={loadData}
             disabled={loading}
-            className="px-3 py-1.5 rounded-xl bg-[#121215] hover:bg-[#26272d] border border-[#26272d] text-xs font-bold text-white flex items-center gap-1.5 active:scale-[0.98]"
+            className="px-3 py-1.5 rounded-xl bg-surface hover:bg-surface-hover border border-border text-xs font-bold text-foreground flex items-center gap-1.5 active:scale-[0.98]"
           >
-            <RefreshCw size={13} className={loading ? 'animate-spin text-[#00ffff]' : ''} />
+            <RefreshCw size={13} className={loading ? 'animate-spin text-primary' : ''} />
             <span>Segarkan</span>
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 rounded-xl bg-[#26272d] hover:bg-slate-700 text-xs font-bold text-white active:scale-[0.98]"
+            className="px-4 py-1.5 rounded-xl bg-subsurface hover:bg-surface-hover text-xs font-bold text-foreground active:scale-[0.98]"
           >
             Selesai
           </button>

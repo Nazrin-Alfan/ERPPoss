@@ -102,24 +102,24 @@ export default function OwnerWithdrawalModal({ isOpen, onClose, onSuccess, curre
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="w-full max-w-md glass-panel border border-brand-emerald/30 rounded-3xl shadow-2xl relative flex flex-col max-h-[92dvh] overflow-hidden my-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[var(--overlay-backdrop)] backdrop-blur-md animate-fade-in overflow-y-auto">
+      <div className="w-full max-w-md bg-surface border border-border shadow-sm border-success/30 rounded-3xl shadow-2xl relative flex flex-col max-h-[92dvh] overflow-hidden my-auto">
         {/* Pinned Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 shrink-0 bg-slate-900/60">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0 bg-surface">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-brand-emerald/15 border border-brand-emerald/30 flex items-center justify-center text-brand-emerald">
+            <div className="w-9 h-9 rounded-xl bg-success-bg border border-success/30 flex items-center justify-center text-success">
               <Wallet size={18} />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">Tarik Saldo / Prive Pemilik</h3>
-              <p className="text-[10px] text-slate-400">
+              <h3 className="text-base font-bold text-foreground">Tarik Saldo / Prive Pemilik</h3>
+              <p className="text-[10px] text-muted">
                 Penarikan Pribadi Owner Tanpa Merusak Laba Bersih
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-surface-hover transition-colors"
           >
             <X size={16} />
           </button>
@@ -129,20 +129,20 @@ export default function OwnerWithdrawalModal({ isOpen, onClose, onSuccess, curre
         <form onSubmit={handleWithdraw} className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <div className="p-6 overflow-y-auto flex-1 min-h-0 space-y-4 overscroll-contain">
             {/* Info Banner Akuntansi */}
-            <div className="p-3 rounded-2xl bg-brand-emerald/10 border border-brand-emerald/20 text-xs text-slate-300">
-              <span className="font-bold text-brand-emerald block mb-0.5">ℹ️ Integritas Laporan Akuntansi:</span>
-              Penarikan ini dicatat pada akun <strong className="text-white">Prive [3002]</strong> (Ekuitas Pemilik), sehingga kas riil berkurang namun laba operasional toko tetap akurat 100%.
+            <div className="p-3 rounded-2xl bg-success-bg border border-success/30 text-xs text-muted">
+              <span className="font-bold text-success block mb-0.5">ℹ️ Integritas Laporan Akuntansi:</span>
+              Penarikan ini dicatat pada akun <strong className="text-foreground">Prive [3002]</strong> (Ekuitas Pemilik), sehingga kas riil berkurang namun laba operasional toko tetap akurat 100%.
             </div>
 
             {error && (
-              <div className="p-2.5 rounded-xl bg-rose-500/20 text-rose-300 text-xs font-medium">
+              <div className="p-2.5 rounded-xl bg-destructive-bg text-destructive text-xs font-medium">
                 {error}
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                Sumber Dana Penarikan <span className="text-rose-400">*</span>
+              <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
+                Sumber Dana Penarikan <span className="text-destructive">*</span>
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {activePockets.length > 0 ? (
@@ -157,12 +157,12 @@ export default function OwnerWithdrawalModal({ isOpen, onClose, onSuccess, curre
                         onClick={() => setSumberDana(acc.pos)}
                         className={`p-3 rounded-xl border text-left transition-all ${
                           isSelected
-                            ? (isCash ? 'bg-emerald-500/15 border-emerald-500 text-white shadow-sm' : 'bg-blue-500/15 border-blue-500 text-white shadow-sm')
-                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                            ? (isCash ? 'bg-success-bg border-success/30 text-foreground shadow-sm' : 'bg-primary-soft border-primary/30 text-foreground shadow-sm')
+                            : 'bg-surface border-border text-muted hover:text-foreground'
                         }`}
                       >
                         <div className="text-xs font-bold truncate">{pocketLabel}</div>
-                        <div className="text-[10px] text-slate-400 font-mono tabular-nums mt-0.5">
+                        <div className="text-[10px] text-muted font-mono tabular-nums mt-0.5">
                           {formatRupiah(acc.currentBalance ?? acc.current_balance ?? 0)}
                         </div>
                       </button>
@@ -175,24 +175,24 @@ export default function OwnerWithdrawalModal({ isOpen, onClose, onSuccess, curre
                       onClick={() => setSumberDana('SALDO CASH')}
                       className={`p-3 rounded-xl border text-left transition-all ${
                         sumberDana === 'SALDO CASH'
-                          ? 'bg-emerald-500/15 border-emerald-500 text-white shadow-sm'
-                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                          ? 'bg-success-bg border-success/30 text-foreground shadow-sm'
+                          : 'bg-surface border-border text-muted hover:text-foreground'
                       }`}
                     >
                       <div className="text-xs font-bold">Kas Laci Kasir</div>
-                      <div className="text-[10px] text-slate-500 font-mono">Uang Tunai Fisik</div>
+                      <div className="text-[10px] text-muted-dark font-mono">Uang Tunai Fisik</div>
                     </button>
                     <button
                       type="button"
                       onClick={() => setSumberDana('SALDO REKENING Y')}
                       className={`p-3 rounded-xl border text-left transition-all ${
                         sumberDana !== 'SALDO CASH'
-                          ? 'bg-blue-500/15 border-blue-500 text-white shadow-sm'
-                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                          ? 'bg-primary-soft border-primary/30 text-foreground shadow-sm'
+                          : 'bg-surface border-border text-muted hover:text-foreground'
                       }`}
                     >
                       <div className="text-xs font-bold">Rekening Bank</div>
-                      <div className="text-[10px] text-slate-500 font-mono">QRIS / Transfer</div>
+                      <div className="text-[10px] text-muted-dark font-mono">QRIS / Transfer</div>
                     </button>
                   </>
                 )}
@@ -200,8 +200,8 @@ export default function OwnerWithdrawalModal({ isOpen, onClose, onSuccess, curre
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                Jumlah Nominal Penarikan (Rp) <span className="text-rose-400">*</span>
+              <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
+                Jumlah Nominal Penarikan (Rp) <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
@@ -209,18 +209,18 @@ export default function OwnerWithdrawalModal({ isOpen, onClose, onSuccess, curre
                 placeholder="0"
                 value={formatCurrencyInput(nominal)}
                 onChange={(e) => setNominal(parseCurrencyInput(e.target.value))}
-                className="w-full px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-base font-mono font-bold focus:outline-none focus:border-brand-emerald"
+                className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl text-foreground text-base font-mono font-bold focus:outline-none focus:border-ring"
                 required
                 autoFocus
               />
               {parseFloat(nominal || 0) > 0 && (
                 <div className="flex items-center justify-between text-xs mt-1.5 font-medium">
-                  <div className="flex items-center gap-1.5 text-emerald-400">
+                  <div className="flex items-center gap-1.5 text-success">
                     <Check size={14} />
                     <span>Terbaca: {formatRupiah(nominal)}</span>
                   </div>
                   {selectedBalance !== null && (
-                    <span className={selectedBalance - parseFloat(nominal) < 0 ? 'text-rose-400 font-bold' : 'text-slate-400'}>
+                    <span className={selectedBalance - parseFloat(nominal) < 0 ? 'text-destructive font-bold' : 'text-muted'}>
                       Sisa Saldo: {formatRupiah(selectedBalance - parseFloat(nominal))}
                       {selectedBalance - parseFloat(nominal) < 0 ? ' (⚠️ Saldo Kurang)' : ''}
                     </span>
@@ -230,7 +230,7 @@ export default function OwnerWithdrawalModal({ isOpen, onClose, onSuccess, curre
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
                 Keterangan Penarikan
               </label>
               <input
@@ -238,25 +238,25 @@ export default function OwnerWithdrawalModal({ isOpen, onClose, onSuccess, curre
                 placeholder="Contoh: Keperluan pribadi Pak Budi"
                 value={keterangan}
                 onChange={(e) => setKeterangan(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-brand-emerald"
+                className="w-full px-3.5 py-2.5 bg-surface border border-border rounded-xl text-foreground text-xs focus:outline-none focus:border-ring"
               />
             </div>
           </div>
 
           {/* Pinned Footer Actions */}
-          <div className="px-6 py-4 border-t border-slate-800 bg-slate-900/90 shrink-0 flex items-center justify-end gap-2.5">
+          <div className="px-6 py-4 border-t border-border bg-surface shrink-0 flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold transition-all cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-surface hover:bg-surface-hover text-muted text-xs font-semibold transition-all cursor-pointer"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2.5 rounded-xl bg-brand-emerald hover:bg-emerald-500 active:bg-emerald-600 text-slate-950 text-xs font-black shadow-lg shadow-brand-emerald/20 flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+              className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover active:bg-primary-hover text-primary-foreground text-xs font-black shadow-lg shadow-sm flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
             >
               <ArrowDownRight size={14} />
               <span>{loading ? 'Memproses...' : 'Tarik Saldo Sekarang'}</span>

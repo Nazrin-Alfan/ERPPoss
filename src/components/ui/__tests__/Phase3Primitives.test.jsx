@@ -64,6 +64,33 @@ const WAVE4_2B_CLEAN_FILES = [
   'src/components/pos/VoidReasonModal.jsx'
 ]
 
+const WAVE4_3_CLEAN_FILES = [
+  'src/pages/Finance.jsx',
+  'src/components/finance/BankMutationInboxTab.jsx',
+  'src/components/finance/OwnerWithdrawalModal.jsx',
+  'src/pages/Reports.jsx',
+  'src/components/reports/GeneralLedgerView.jsx',
+  'src/pages/Gudang.jsx',
+  'src/pages/Karyawan.jsx',
+  'src/components/karyawan/CoOwnerInviteCard.jsx',
+  'src/pages/CRM.jsx',
+  'src/services/crmService.js',
+  'src/components/common/ImageUploadPaste.jsx',
+  'src/pages/Admin.jsx',
+  'src/components/admin/BankEmailBindingModal.jsx',
+  'src/components/admin/CarwashPackageManager.jsx',
+  'src/components/admin/MerchandiseManager.jsx',
+  'src/components/admin/MenuHppCalculator.jsx',
+  'src/components/admin/LicenseManager.jsx',
+  'src/pages/Konsolidasi.jsx'
+]
+
+const WAVE4_4_CLEAN_FILES = [
+  'src/pages/Founder.jsx',
+  'src/pages/SuperAdmin.jsx',
+  'src/pages/Database.jsx'
+]
+
 const PHASE3_CLEAN_FILES = [
   'src/index.css',
   'src/context/ThemeContext.jsx',
@@ -249,6 +276,46 @@ describe('Phase 3: UI Primitives, Brand Logo B3 & Token Hygiene Gate', () => {
       violations.push(`src/components/pos/ThermalReceiptModal.jsx: ${thermalMatch[0]}`)
     }
     expect(thermalContent).toContain('thermal-receipt-print-wrapper')
+
+    expect(violations).toEqual([])
+  })
+
+  it('enforces Zero-Neon & Zero-Legacy-Dark Token Hygiene across all Wave 4.3 Back-Office files and ReceiptCustomizer shell', () => {
+    const forbiddenWave43Pattern =
+      /#00ffff|#00e5e5|#26d6d6|#c8f31d|#6366f1|#c084fc|#ffc71f|#ff5102|#f57733|#bbcbb2|#6b7367|#121215|#141418|#18181c|#1b1b1d|#26272d|#242428|#34353d|#3f414a|#080C14|#090D16|#050810|#0f0f0f|#000000|\bcyan-\d+|\bindigo-\d+|\bpurple-\d+|\bbrand-emerald\b|\bbrand-blue\b|\bbrand-rose\b|\bslate-850\b|\bslate-750\b|\bslate-350\b|\brose-450\b|\bamber-350\b|\bbg-slate-9|\bbg-slate-8|\bbg-zinc-9|\bbg-zinc-8|\btext-slate-950\b|text-primary-foreground\/|shadow-\[0_0_/i
+    const violations = []
+
+    for (const relPath of WAVE4_3_CLEAN_FILES) {
+      const content = fs.readFileSync(path.join(ROOT, relPath), 'utf-8')
+      const match = content.match(forbiddenWave43Pattern)
+      if (match) {
+        violations.push(`${relPath}: ${match[0]}`)
+      }
+    }
+
+    const receiptCustomizerLines = fs.readFileSync(path.join(ROOT, 'src/components/admin/ReceiptCustomizer.jsx'), 'utf-8').split(/\r?\n/)
+    const receiptShell = receiptCustomizerLines.slice(0, 900).join('\n')
+    const receiptMatch = receiptShell.match(forbiddenWave43Pattern)
+    if (receiptMatch) {
+      violations.push(`src/components/admin/ReceiptCustomizer.jsx (shell): ${receiptMatch[0]}`)
+    }
+    expect(receiptCustomizerLines.join('\n')).toContain('thermal-print-only')
+
+    expect(violations).toEqual([])
+  })
+
+  it('enforces Zero-Neon & Zero-Legacy-Dark Token Hygiene across all Wave 4.4 Founder Console files', () => {
+    const forbiddenWave44Pattern =
+      /#00ffff|#00e5e5|#26d6d6|#c8f31d|#6366f1|#c084fc|#ffc71f|#ff5102|#f57733|#bbcbb2|#6b7367|#121215|#141418|#18181c|#1b1b1d|#26272d|#242428|#34353d|#3f414a|#080C14|#090D16|#050810|#0f0f0f|#000000|\bcyan-\d+|\bindigo-\d+|\bpurple-\d+|\bbrand-emerald\b|\bbrand-blue\b|\bbrand-rose\b|\bslate-850\b|\bslate-750\b|\bslate-350\b|\bbg-slate-9|\bbg-slate-8|\bbg-zinc-9|\bbg-zinc-8|\btext-slate-950\b|text-primary-foreground\/|shadow-\[0_0_/i
+    const violations = []
+
+    for (const relPath of WAVE4_4_CLEAN_FILES) {
+      const content = fs.readFileSync(path.join(ROOT, relPath), 'utf-8')
+      const match = content.match(forbiddenWave44Pattern)
+      if (match) {
+        violations.push(`${relPath}: ${match[0]}`)
+      }
+    }
 
     expect(violations).toEqual([])
   })

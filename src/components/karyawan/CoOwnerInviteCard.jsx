@@ -4,9 +4,9 @@ import { supabase } from '../../supabaseClient'
 import { ROLES } from '../../constants/roles'
 
 const STATUS_BADGE = {
-  pending: { label: 'Menunggu Login', cls: 'bg-[#ffc71f]/15 text-[#ffc71f] border-[#ffc71f]/30' },
-  accepted: { label: 'Diterima', cls: 'bg-[#00ffff]/15 text-[#00ffff] border-[#00ffff]/30' },
-  revoked: { label: 'Dibatalkan', cls: 'bg-zinc-800 text-zinc-400 border-zinc-700' }
+  pending: { label: 'Menunggu Login', cls: 'bg-warning-bg text-warning border-warning/30' },
+  accepted: { label: 'Diterima', cls: 'bg-primary-soft text-primary-soft-foreground border-primary/30' },
+  revoked: { label: 'Dibatalkan', cls: 'bg-subsurface text-muted border-border' }
 }
 
 export default function CoOwnerInviteCard({ activeTenant, profile }) {
@@ -118,48 +118,48 @@ export default function CoOwnerInviteCard({ activeTenant, profile }) {
   }
 
   return (
-    <div className="bg-[#121215] border border-[#26272d] p-5 sm:p-6 rounded-2xl space-y-4">
+    <div className="bg-surface border border-border p-5 sm:p-6 rounded-2xl space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h4 className="text-base font-bold text-white flex items-center gap-2">
-            <Crown size={17} className="text-[#ffc71f]" />
+          <h4 className="text-base font-bold text-foreground flex items-center gap-2">
+            <Crown size={17} className="text-warning" />
             <span>Undang Co-Owner (Gmail)</span>
           </h4>
-          <p className="text-xs text-[#6b7367] mt-0.5">
+          <p className="text-xs text-muted-dark mt-0.5">
             Partner cukup login dengan Google memakai Gmail yang diundang — tanpa perlu membuatkan kata sandi dan tidak masuk ke daftar Karyawan Kantor.
           </p>
         </div>
       </div>
 
       {error && (
-        <div role="alert" className="p-3 rounded-xl bg-[#ff5102]/10 border border-[#ff5102]/30 text-[#ff5102] text-xs flex items-center gap-2">
+        <div role="alert" className="p-3 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-xs flex items-center gap-2">
           <AlertCircle size={15} className="shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {successMsg && (
-        <div role="status" className="p-3 rounded-xl bg-[#00ffff]/10 border border-[#00ffff]/30 text-[#00ffff] text-xs">
+        <div role="status" className="p-3 rounded-xl bg-primary-soft border border-primary/30 text-primary-soft-foreground text-xs">
           {successMsg}
         </div>
       )}
 
       <form onSubmit={handleInviteSubmit} className="flex flex-col sm:flex-row gap-2.5">
         <div className="relative flex-1">
-          <Mail size={15} className="absolute left-3 top-2.5 text-[#6b7367]" />
+          <Mail size={15} className="absolute left-3 top-2.5 text-muted-dark" />
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="partner@gmail.com"
             required
-            className="w-full bg-[#18181c] border border-[#26272d] rounded-lg py-2 pl-9 pr-3 text-white text-xs sm:text-sm font-mono focus:outline-none focus:border-[#00ffff]"
+            className="w-full bg-subsurface border border-border rounded-lg py-2 pl-9 pr-3 text-foreground text-xs sm:text-sm font-mono focus:outline-none focus:border-ring"
           />
         </div>
         <button
           type="submit"
           disabled={submitting}
-          className="px-4 py-2 rounded-lg bg-[#ffc71f] hover:bg-[#ffd24d] text-[#0f0f0f] font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98] disabled:opacity-50 shrink-0"
+          className="px-4 py-2 rounded-lg bg-warning hover:opacity-90 text-ink-foreground font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98] disabled:opacity-50 shrink-0"
         >
           {submitting && <Loader2 size={14} className="animate-spin" />}
           <span>Buat Undangan</span>
@@ -167,17 +167,17 @@ export default function CoOwnerInviteCard({ activeTenant, profile }) {
       </form>
 
       {loading ? (
-        <div className="h-10 rounded-lg bg-[#18181c] animate-pulse" />
+        <div className="h-10 rounded-lg bg-subsurface animate-pulse" />
       ) : invitations.length === 0 ? (
-        <p className="text-[11px] text-[#6b7367]">Belum ada undangan Co-Owner untuk toko ini.</p>
+        <p className="text-[11px] text-muted-dark">Belum ada undangan Co-Owner untuk toko ini.</p>
       ) : (
-        <div className="divide-y divide-[#26272d] border border-[#26272d] rounded-xl bg-[#18181c]/50">
+        <div className="divide-y divide-border border border-border rounded-xl bg-subsurface">
           {invitations.map((inv) => {
             const badge = STATUS_BADGE[inv.status] || STATUS_BADGE.pending
             return (
               <div key={inv.id} className="px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="font-mono text-white truncate">{inv.email}</span>
+                  <span className="font-mono text-foreground truncate">{inv.email}</span>
                   <span className={`text-[10px] px-2 py-0.5 rounded border font-bold ${badge.cls}`}>
                     {badge.label}
                   </span>
@@ -187,7 +187,7 @@ export default function CoOwnerInviteCard({ activeTenant, profile }) {
                     <button
                       type="button"
                       onClick={() => handleCopyInvite(inv)}
-                      className="px-2.5 py-1 rounded-md bg-[#121215] hover:bg-[#26272d] border border-[#26272d] text-[#00ffff] font-semibold text-[11px] flex items-center gap-1 cursor-pointer active:scale-[0.98]"
+                      className="px-2.5 py-1 rounded-md bg-surface hover:bg-surface-hover border border-border text-primary font-semibold text-[11px] flex items-center gap-1 cursor-pointer active:scale-[0.98]"
                     >
                       {copiedId === inv.id ? <Check size={12} /> : <Copy size={12} />}
                       <span>{copiedId === inv.id ? 'Tersalin' : 'Salin Pesan WA'}</span>
@@ -195,7 +195,7 @@ export default function CoOwnerInviteCard({ activeTenant, profile }) {
                     <button
                       type="button"
                       onClick={() => handleRevoke(inv.id)}
-                      className="px-2 py-1 rounded-md bg-[#121215] hover:bg-[#ff5102]/15 border border-[#26272d] hover:border-[#ff5102]/30 text-[#ff5102] font-semibold text-[11px] flex items-center gap-1 cursor-pointer active:scale-[0.98]"
+                      className="px-2 py-1 rounded-md bg-surface hover:bg-destructive-bg border border-border hover:border-destructive/40 text-destructive font-semibold text-[11px] flex items-center gap-1 cursor-pointer active:scale-[0.98]"
                     >
                       <XCircle size={12} />
                       <span>Batalkan</span>

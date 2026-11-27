@@ -136,7 +136,7 @@ export function calculateRFMSegment({
       return {
         code: 'VIP',
         label: 'VIP (Perlu Follow-Up)',
-        badgeClass: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+        badgeClass: 'bg-success-bg text-success border-success/30',
         daysSinceLastVisit,
         isChurnRisk: false,
         actionRecommendation: 'Kirimkan WhatsApp ramah menawarkan reservasi slot cuci atau voucher minuman.'
@@ -145,7 +145,7 @@ export function calculateRFMSegment({
     return {
       code: 'VIP',
       label: 'VIP (Pelanggan Setia)',
-      badgeClass: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+      badgeClass: 'bg-success-bg text-success border-success/30',
       daysSinceLastVisit,
       isChurnRisk: false,
       actionRecommendation: 'Berikan perlakuan VIP, jalur cepat pengerjaan, dan voucher apresiasi.'
@@ -158,7 +158,7 @@ export function calculateRFMSegment({
     return {
       code: 'AT_RISK',
       label: `Berisiko Churn (>${churnDays} Hari)`,
-      badgeClass: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+      badgeClass: 'bg-destructive-bg text-destructive border-destructive/30',
       daysSinceLastVisit,
       isChurnRisk: true,
       actionRecommendation: 'Kirimkan pesan winback dengan voucher diskon eksklusif 20%.'
@@ -170,7 +170,7 @@ export function calculateRFMSegment({
     return {
       code: 'NEED_ATTENTION',
       label: `Perlu Follow-Up (${activeDays}-${churnDays} Hari)`,
-      badgeClass: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+      badgeClass: 'bg-warning-bg text-warning border-warning/30',
       daysSinceLastVisit,
       isChurnRisk: false,
       actionRecommendation: 'Kirimkan WhatsApp reminder cuci berkala dengan penawaran minuman cafe.'
@@ -182,7 +182,7 @@ export function calculateRFMSegment({
     return {
       code: 'VIP',
       label: 'VIP (Pelanggan Setia)',
-      badgeClass: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+      badgeClass: 'bg-success-bg text-success border-success/30',
       daysSinceLastVisit,
       isChurnRisk: false,
       actionRecommendation: 'Berikan perlakuan VIP, jalur cepat pengerjaan, dan voucher apresiasi.'
@@ -194,7 +194,7 @@ export function calculateRFMSegment({
     return {
       code: 'LOYAL',
       label: 'Pelanggan Reguler',
-      badgeClass: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
+      badgeClass: 'bg-primary-soft text-primary-soft-foreground border-primary/30',
       daysSinceLastVisit,
       isChurnRisk: false,
       actionRecommendation: 'Tawarkan paket stamp loyalty untuk mendorong menuju level VIP.'
@@ -206,7 +206,7 @@ export function calculateRFMSegment({
     return {
       code: 'NEW',
       label: 'Pelanggan Baru',
-      badgeClass: 'bg-slate-700/40 text-slate-300 border-slate-600/40',
+      badgeClass: 'bg-subsurface text-muted border-border',
       daysSinceLastVisit,
       isChurnRisk: false,
       actionRecommendation: 'Kirimkan pesan terima kasih dan undang untuk kunjungan kedua.'
@@ -217,7 +217,7 @@ export function calculateRFMSegment({
   return {
     code: 'REGULAR',
     label: 'Pelanggan Biasa',
-    badgeClass: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+    badgeClass: 'bg-primary-soft text-primary-soft-foreground border-primary/30',
     daysSinceLastVisit,
     isChurnRisk: false,
     actionRecommendation: 'Pertahankan kualitas layanan standar.'

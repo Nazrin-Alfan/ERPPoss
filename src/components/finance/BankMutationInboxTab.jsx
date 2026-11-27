@@ -410,35 +410,35 @@ export default function BankMutationInboxTab({
     <div className="space-y-6 animate-fade-in">
       {/* KPI Bar */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <div className="p-4 rounded-2xl bg-[#121215] border border-[#26272d]">
-          <span className="text-[10px] text-[#6b7367] font-bold uppercase tracking-wider">
+        <div className="p-4 rounded-2xl bg-surface border border-border">
+          <span className="text-[10px] text-muted-dark font-bold uppercase tracking-wider">
             Menunggu Persetujuan
           </span>
-          <p className="text-xl font-black font-mono tabular-nums text-[#00ffff] mt-1 text-right">
+          <p className="text-xl font-black font-mono tabular-nums text-primary mt-1 text-right">
             {kpis.pendingCount} Draf
           </p>
         </div>
-        <div className="p-4 rounded-2xl bg-[#121215] border border-[#26272d]">
-          <span className="text-[10px] text-[#6b7367] font-bold uppercase tracking-wider">
+        <div className="p-4 rounded-2xl bg-surface border border-border">
+          <span className="text-[10px] text-muted-dark font-bold uppercase tracking-wider">
             Nominal Debit Antrean
           </span>
-          <p className="text-xl font-black font-mono tabular-nums text-rose-400 mt-1 text-right">
+          <p className="text-xl font-black font-mono tabular-nums text-destructive mt-1 text-right">
             {formatRupiah(kpis.pendingDebit)}
           </p>
         </div>
-        <div className="p-4 rounded-2xl bg-[#121215] border border-[#26272d]">
-          <span className="text-[10px] text-[#6b7367] font-bold uppercase tracking-wider">
+        <div className="p-4 rounded-2xl bg-surface border border-border">
+          <span className="text-[10px] text-muted-dark font-bold uppercase tracking-wider">
             Sudah Diposting (Jurnal &amp; Kas)
           </span>
-          <p className="text-xl font-black font-mono tabular-nums text-emerald-400 mt-1 text-right">
+          <p className="text-xl font-black font-mono tabular-nums text-success mt-1 text-right">
             {kpis.postedCount} Mutasi
           </p>
         </div>
-        <div className="p-4 rounded-2xl bg-[#121215] border border-[#26272d]">
-          <span className="text-[10px] text-[#6b7367] font-bold uppercase tracking-wider">
+        <div className="p-4 rounded-2xl bg-surface border border-border">
+          <span className="text-[10px] text-muted-dark font-bold uppercase tracking-wider">
             Diabaikan (Ignored)
           </span>
-          <p className="text-xl font-black font-mono tabular-nums text-[#bbcbb2] mt-1 text-right">
+          <p className="text-xl font-black font-mono tabular-nums text-muted mt-1 text-right">
             {kpis.ignoredCount} Mutasi
           </p>
         </div>
@@ -448,31 +448,31 @@ export default function BankMutationInboxTab({
       {error && (
         <div
           role="alert"
-          className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2.5"
+          className="p-3.5 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-xs flex items-center gap-2.5"
         >
-          <AlertCircle size={16} className="shrink-0 text-rose-400" />
+          <AlertCircle size={16} className="shrink-0 text-destructive" />
           <span>{error}</span>
         </div>
       )}
       {success && (
         <div
           role="status"
-          className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2.5"
+          className="p-3.5 rounded-xl bg-success-bg border border-success/30 text-success text-xs flex items-center gap-2.5"
         >
-          <CheckCircle2 size={16} className="shrink-0 text-emerald-400" />
+          <CheckCircle2 size={16} className="shrink-0 text-success" />
           <span>{success}</span>
         </div>
       )}
 
       {/* Main Queue Panel */}
-      <div className="bg-[#121215] border border-[#26272d] p-5 rounded-2xl space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[#26272d] pb-4">
+      <div className="bg-surface border border-border p-5 rounded-2xl space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-border pb-4">
           <div>
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Mail size={18} className="text-[#00ffff]" />
+            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+              <Mail size={18} className="text-primary" />
               <span>Antrean Rekonsiliasi Email Notifikasi Bank Mandiri</span>
             </h3>
-            <p className="text-xs text-[#bbcbb2] mt-0.5">
+            <p className="text-xs text-muted mt-0.5">
               Setiap email transaksi keluar Livin&apos; by Mandiri masuk sebagai draf terlebih dahulu — saldo kantong
               hanya berkurang saat Anda menekan <strong>Setujui &amp; Posting</strong>.
             </p>
@@ -483,15 +483,15 @@ export default function BankMutationInboxTab({
               type="button"
               onClick={loadInboxData}
               disabled={loading}
-              className="px-3 py-2 rounded-xl bg-[#18181c] hover:bg-[#26272d] border border-[#26272d] text-white text-xs font-bold flex items-center gap-1.5 active:scale-[0.98]"
+              className="px-3 py-2 rounded-xl bg-subsurface hover:bg-surface-hover border border-border text-foreground text-xs font-bold flex items-center gap-1.5 active:scale-[0.98]"
             >
-              <RefreshCw size={13} className={loading ? 'animate-spin text-[#00ffff]' : ''} />
+              <RefreshCw size={13} className={loading ? 'animate-spin text-primary' : ''} />
               <span>Segarkan</span>
             </button>
             <button
               type="button"
               onClick={() => setShowImportModal(true)}
-              className="px-3.5 py-2 rounded-xl bg-[#00ffff] hover:bg-cyan-400 active:scale-[0.98] text-[#0f0f0f] text-xs font-bold flex items-center gap-1.5 shadow-sm"
+              className="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-hover active:scale-[0.98] text-primary-foreground text-xs font-bold flex items-center gap-1.5 shadow-sm"
             >
               <Plus size={14} />
               <span>Impor / Uji Email Mandiri</span>
@@ -517,8 +517,8 @@ export default function BankMutationInboxTab({
                 onClick={() => setStatusFilter(tab.id)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors active:scale-[0.98] ${
                   isActive
-                    ? 'bg-[#00ffff] text-[#0f0f0f]'
-                    : 'bg-[#18181c] text-[#bbcbb2] hover:text-white border border-[#26272d]'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-subsurface text-muted hover:text-foreground border border-border'
                 }`}
               >
                 {tab.label}
@@ -530,17 +530,17 @@ export default function BankMutationInboxTab({
         {/* 4 UI States: Loading / Empty / List */}
         {loading ? (
           <div className="space-y-3 py-6" data-testid="bank-inbox-loading">
-            <div className="h-24 rounded-xl bg-[#18181c] border border-[#26272d] animate-pulse" />
-            <div className="h-24 rounded-xl bg-[#18181c] border border-[#26272d] animate-pulse" />
+            <div className="h-24 rounded-xl bg-subsurface border border-border animate-pulse" />
+            <div className="h-24 rounded-xl bg-subsurface border border-border animate-pulse" />
           </div>
         ) : filteredDrafts.length === 0 ? (
-          <div className="p-10 rounded-2xl bg-[#18181c]/50 border border-dashed border-[#26272d] text-center space-y-3">
-            <Inbox size={34} className="mx-auto text-[#6b7367]" />
+          <div className="p-10 rounded-2xl bg-subsurface border border-dashed border-border text-center space-y-3">
+            <Inbox size={34} className="mx-auto text-muted-dark" />
             <div>
-              <p className="text-sm font-bold text-white">
+              <p className="text-sm font-bold text-foreground">
                 Tidak ada draf mutasi Bank Mandiri pada filter ini
               </p>
-              <p className="text-xs text-[#bbcbb2] mt-1 max-w-md mx-auto">
+              <p className="text-xs text-muted mt-1 max-w-md mx-auto">
                 Gunakan tombol di bawah untuk menguji parser email notifikasi Livin&apos; by Mandiri (Transfer BI-FAST,
                 QRIS, atau Tagihan PLN) dan memverifikasi alur persetujuan ke kantong saldo.
               </p>
@@ -548,7 +548,7 @@ export default function BankMutationInboxTab({
             <button
               type="button"
               onClick={() => setShowImportModal(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#00ffff]/15 hover:bg-[#00ffff]/25 text-[#00ffff] border border-[#00ffff]/30 text-xs font-bold active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary-soft hover:bg-primary-soft text-primary-soft-foreground border border-primary/30 text-xs font-bold active:scale-[0.98]"
             >
               <Plus size={14} />
               <span>Impor / Uji Email Notifikasi Mandiri Sekarang</span>
@@ -567,56 +567,56 @@ export default function BankMutationInboxTab({
                   key={draft.id}
                   className={`p-4 rounded-2xl border transition-colors space-y-3 ${
                     draft.review_status === 'NEEDS_REVIEW'
-                      ? 'bg-[#18181c] border-amber-500/40'
+                      ? 'bg-subsurface border-warning/30'
                       : draft.review_status === 'POSTED'
-                      ? 'bg-[#18181c]/40 border-emerald-500/30'
-                      : 'bg-[#18181c]/80 border-[#26272d]'
+                      ? 'bg-subsurface border-success/30'
+                      : 'bg-subsurface border-border'
                   }`}
                 >
                   {/* Top Row: Meta & Amounts */}
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#121215] border border-[#26272d] font-mono font-bold text-xs text-white">
-                          <Building2 size={12} className="text-[#00ffff]" />
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface border border-border font-mono font-bold text-xs text-foreground">
+                          <Building2 size={12} className="text-primary" />
                           MANDIRI •••• {draft.source_account_last4}
                         </span>
-                        <span className="px-2 py-0.5 rounded-md bg-[#121215] border border-[#26272d] font-mono text-[11px] text-[#bbcbb2]">
+                        <span className="px-2 py-0.5 rounded-md bg-surface border border-border font-mono text-[11px] text-muted">
                           {draft.tx_type}
                         </span>
                         {draft.review_status === 'READY' && (
-                          <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+                          <span className="px-2 py-0.5 rounded-md bg-success-bg text-success border border-success/30 text-[10px] font-bold">
                             READY
                           </span>
                         )}
                         {draft.review_status === 'NEEDS_REVIEW' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-bold">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-warning-bg text-warning border border-warning/30 text-[10px] font-bold">
                             <AlertTriangle size={11} />
                             NEEDS REVIEW: {draft.review_reason || 'PERiksa KANTONG'}
                           </span>
                         )}
                         {draft.review_status === 'POSTED' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-success-bg text-success border border-success/30 text-[10px] font-bold">
                             <Check size={11} />
                             POSTED
                           </span>
                         )}
                         {draft.review_status === 'IGNORED' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-800 text-[#bbcbb2] text-[10px] font-bold">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-subsurface text-muted text-[10px] font-bold">
                             <Ban size={11} />
                             IGNORED
                           </span>
                         )}
-                        <span className="text-[11px] font-mono text-[#6b7367]">
+                        <span className="text-[11px] font-mono text-muted-dark">
                           Ref: {draft.bank_reference_no || '-'}
                         </span>
                       </div>
 
-                      <div className="text-sm font-bold text-white">
+                      <div className="text-sm font-bold text-foreground">
                         Penerima: {draft.beneficiary_name || 'Merchant / Penerima'}{' '}
                         {draft.beneficiary_bank ? `(${draft.beneficiary_bank})` : ''}
                       </div>
-                      <div className="text-[11px] text-[#bbcbb2] font-mono">
+                      <div className="text-[11px] text-muted font-mono">
                         Waktu Transaksi:{' '}
                         {draft.tx_occurred_at
                           ? new Date(draft.tx_occurred_at).toLocaleString('id-ID')
@@ -625,12 +625,12 @@ export default function BankMutationInboxTab({
                     </div>
 
                     {/* Numeric Breakdown (Mandatory text-right font-mono tabular-nums) */}
-                    <div className="text-right font-mono tabular-nums bg-[#121215] border border-[#26272d] rounded-xl px-4 py-2.5 shrink-0">
-                      <div className="text-[11px] text-[#bbcbb2]">
+                    <div className="text-right font-mono tabular-nums bg-surface border border-border rounded-xl px-4 py-2.5 shrink-0">
+                      <div className="text-[11px] text-muted">
                         Pokok: {formatRupiah(draft.principal_amount)} | Biaya Admin:{' '}
                         {formatRupiah(draft.fee_amount)}
                       </div>
-                      <div className="text-base font-black text-rose-400 mt-0.5">
+                      <div className="text-base font-black text-destructive mt-0.5">
                         -{formatRupiah(draft.total_debit)}
                       </div>
                     </div>
@@ -638,8 +638,8 @@ export default function BankMutationInboxTab({
 
                   {/* Warning explanation when NEEDS_REVIEW */}
                   {draft.review_status === 'NEEDS_REVIEW' && (
-                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-center gap-2">
-                      <ShieldAlert size={15} className="shrink-0 text-amber-400" />
+                    <div className="p-2.5 rounded-xl bg-warning-bg border border-warning/30 text-warning text-xs flex items-center gap-2">
+                      <ShieldAlert size={15} className="shrink-0 text-warning" />
                       <span>
                         {draft.review_reason === 'AMBIGUOUS_POCKET'
                           ? `Ekor rekening •••• ${draft.source_account_last4} terhubung ke lebih dari 1 kantong saldo di tenant ini. Pilih kantong saldo yang tepat sebelum memposting.`
@@ -652,20 +652,20 @@ export default function BankMutationInboxTab({
 
                   {/* Action Controls for READY / NEEDS_REVIEW */}
                   {isEditable && (
-                    <div className="pt-2 border-t border-[#26272d] grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                    <div className="pt-2 border-t border-border grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
                       {/* Pocket Selector */}
                       <div className="md:col-span-3">
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-[#bbcbb2] mb-1">
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-muted mb-1">
                           Kantong Saldo Sumber
                         </label>
                         <select
                           aria-label="Pilih Kantong Saldo Sumber"
                           value={form.pocket_id}
                           onChange={(e) => updateRowForm(draft, { pocket_id: e.target.value })}
-                          className={`w-full bg-[#121215] border rounded-xl px-3 py-2 text-xs text-white focus:outline-none ${
+                          className={`w-full bg-surface border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none ${
                             !form.pocket_id
-                              ? 'border-amber-400'
-                              : 'border-[#26272d] focus:border-[#00ffff]'
+                              ? 'border-warning/30'
+                              : 'border-border focus:border-ring'
                           }`}
                         >
                           <option value="">-- Pilih Kantong Saldo --</option>
@@ -679,14 +679,14 @@ export default function BankMutationInboxTab({
 
                       {/* Action Selector */}
                       <div className="md:col-span-3">
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-[#bbcbb2] mb-1">
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-muted mb-1">
                           Tindakan Rekonsiliasi
                         </label>
                         <select
                           aria-label="Pilih Tindakan Rekonsiliasi"
                           value={form.action}
                           onChange={(e) => updateRowForm(draft, { action: e.target.value })}
-                          className="w-full bg-[#121215] border border-[#26272d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00ffff]"
+                          className="w-full bg-surface border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-ring"
                         >
                           <option value="RECORD_EXPENSE">Catat Pengeluaran + Jurnal</option>
                           <option value="TRANSFER_POCKET">Pindah Saldo ke Kantong Lain</option>
@@ -702,14 +702,14 @@ export default function BankMutationInboxTab({
                         {form.action === 'RECORD_EXPENSE' && (
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <label className="block text-[10px] font-bold uppercase tracking-wider text-[#bbcbb2] mb-1">
+                              <label className="block text-[10px] font-bold uppercase tracking-wider text-muted mb-1">
                                 Kategori Beban
                               </label>
                               <select
                                 aria-label="Pilih Kategori Beban"
                                 value={form.kategori}
                                 onChange={(e) => updateRowForm(draft, { kategori: e.target.value })}
-                                className="w-full bg-[#121215] border border-[#26272d] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-[#00ffff]"
+                                className="w-full bg-surface border border-border rounded-xl px-2.5 py-2 text-xs text-foreground focus:outline-none focus:border-ring"
                               >
                                 {(expenseCategories.length > 0
                                   ? expenseCategories
@@ -722,14 +722,14 @@ export default function BankMutationInboxTab({
                               </select>
                             </div>
                             <div>
-                              <label className="block text-[10px] font-bold uppercase tracking-wider text-[#bbcbb2] mb-1">
+                              <label className="block text-[10px] font-bold uppercase tracking-wider text-muted mb-1">
                                 Keterangan Jurnal
                               </label>
                               <input
                                 type="text"
                                 value={form.keterangan}
                                 onChange={(e) => updateRowForm(draft, { keterangan: e.target.value })}
-                                className="w-full bg-[#121215] border border-[#26272d] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-[#00ffff]"
+                                className="w-full bg-surface border border-border rounded-xl px-2.5 py-2 text-xs text-foreground focus:outline-none focus:border-ring"
                               />
                             </div>
                           </div>
@@ -737,7 +737,7 @@ export default function BankMutationInboxTab({
 
                         {form.action === 'TRANSFER_POCKET' && (
                           <div>
-                            <label className="block text-[10px] font-bold uppercase tracking-wider text-[#bbcbb2] mb-1">
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-muted mb-1">
                               Kantong Saldo Tujuan (Mutasi Masuk)
                             </label>
                             <select
@@ -746,7 +746,7 @@ export default function BankMutationInboxTab({
                               onChange={(e) =>
                                 updateRowForm(draft, { target_pocket_id: e.target.value })
                               }
-                              className="w-full bg-[#121215] border border-[#26272d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00ffff]"
+                              className="w-full bg-surface border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-ring"
                             >
                               <option value="">-- Pilih Kantong Tujuan --</option>
                               {allActivePockets
@@ -762,7 +762,7 @@ export default function BankMutationInboxTab({
 
                         {form.action === 'LINK_EXISTING_CASHFLOW' && (
                           <div>
-                            <label className="block text-[10px] font-bold uppercase tracking-wider text-[#bbcbb2] mb-1">
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-muted mb-1">
                               Pilih Cashflow Manual yang Sudah Dicatat
                             </label>
                             <select
@@ -771,7 +771,7 @@ export default function BankMutationInboxTab({
                               onChange={(e) =>
                                 updateRowForm(draft, { existing_cashflow_id: e.target.value })
                               }
-                              className="w-full bg-[#121215] border border-[#26272d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00ffff]"
+                              className="w-full bg-surface border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-ring"
                             >
                               <option value="">-- Pilih Transaksi Cashflow --</option>
                               {candidateExpenseCashflows.map((cf) => (
@@ -786,7 +786,7 @@ export default function BankMutationInboxTab({
 
                         {form.action === 'IGNORE' && (
                           <div>
-                            <label className="block text-[10px] font-bold uppercase tracking-wider text-[#bbcbb2] mb-1">
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-muted mb-1">
                               Alasan Abaikan Mutasi
                             </label>
                             <input
@@ -796,7 +796,7 @@ export default function BankMutationInboxTab({
                               onChange={(e) =>
                                 updateRowForm(draft, { ignore_reason: e.target.value })
                               }
-                              className="w-full bg-[#121215] border border-[#26272d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00ffff]"
+                              className="w-full bg-surface border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-ring"
                             />
                           </div>
                         )}
@@ -810,8 +810,8 @@ export default function BankMutationInboxTab({
                           onClick={() => handlePostDraft(draft)}
                           className={`w-full px-4 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 ${
                             form.action === 'IGNORE'
-                              ? 'bg-slate-800 hover:bg-slate-700 text-white border border-[#26272d]'
-                              : 'bg-[#00ffff] hover:bg-cyan-400 text-[#0f0f0f] shadow-sm'
+                              ? 'bg-subsurface hover:bg-surface-hover text-foreground border border-border'
+                              : 'bg-primary hover:bg-primary-hover text-primary-foreground shadow-sm'
                           }`}
                         >
                           {form.action === 'IGNORE' ? (
@@ -849,18 +849,18 @@ export default function BankMutationInboxTab({
       {/* Modal Impor / Uji Email Notifikasi Mandiri */}
       {showImportModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[var(--overlay-backdrop)] backdrop-blur-sm animate-fade-in overflow-y-auto"
           aria-labelledby="import-mandiri-email-modal-title"
         >
-          <div className="w-full max-w-2xl bg-[#121215] border border-[#26272d] rounded-2xl shadow-2xl flex flex-col max-h-[92dvh] overflow-hidden my-auto">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#26272d] bg-[#18181c] shrink-0">
+          <div className="w-full max-w-2xl bg-surface border border-border rounded-2xl shadow-2xl flex flex-col max-h-[92dvh] overflow-hidden my-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-subsurface shrink-0">
               <div className="flex items-center gap-2.5">
-                <Mail size={18} className="text-[#00ffff]" />
+                <Mail size={18} className="text-primary" />
                 <div>
-                  <h3 id="import-mandiri-email-modal-title" className="text-base font-bold text-white">
+                  <h3 id="import-mandiri-email-modal-title" className="text-base font-bold text-foreground">
                     Impor / Uji Email Notifikasi Livin&apos; by Mandiri
                   </h3>
-                  <p className="text-[11px] text-[#bbcbb2]">
+                  <p className="text-[11px] text-muted">
                     Tempel body email dari notifikasi@bankmandiri.co.id atau gunakan template resmi
                   </p>
                 </div>
@@ -868,7 +868,7 @@ export default function BankMutationInboxTab({
               <button
                 type="button"
                 onClick={() => setShowImportModal(false)}
-                className="p-1.5 rounded-lg text-[#bbcbb2] hover:text-white hover:bg-[#26272d] active:scale-[0.98]"
+                className="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-surface-hover active:scale-[0.98]"
               >
                 <X size={16} />
               </button>
@@ -880,7 +880,7 @@ export default function BankMutationInboxTab({
             >
               {/* 1-Click Sample Template Selector */}
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#bbcbb2] mb-1.5">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-muted mb-1.5">
                   Pilih Contoh Template Email Mandiri (1-Klik)
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -895,8 +895,8 @@ export default function BankMutationInboxTab({
                       onClick={() => applySampleTemplate(tpl.key, simLast4)}
                       className={`p-2.5 rounded-xl border text-left text-xs font-bold transition-all active:scale-[0.98] ${
                         selectedTemplateKey === tpl.key
-                          ? 'bg-[#00ffff]/15 border-[#00ffff] text-white'
-                          : 'bg-[#18181c] border-[#26272d] text-[#bbcbb2] hover:text-white'
+                          ? 'bg-primary-soft border-primary/30 text-foreground'
+                          : 'bg-subsurface border-border text-muted hover:text-foreground'
                       }`}
                     >
                       {tpl.label}
@@ -907,19 +907,19 @@ export default function BankMutationInboxTab({
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#bbcbb2] mb-1">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-muted mb-1">
                     Pengirim Email
                   </label>
                   <input
                     type="email"
                     value={simSender}
                     onChange={(e) => setSimSender(e.target.value)}
-                    className="w-full bg-[#18181c] border border-[#26272d] rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-[#00ffff]"
+                    className="w-full bg-subsurface border border-border rounded-xl px-3 py-2 text-xs text-foreground font-mono focus:outline-none focus:border-ring"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#bbcbb2] mb-1">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-muted mb-1">
                     4 Digit Ekor Rekening di Email
                   </label>
                   <input
@@ -935,17 +935,17 @@ export default function BankMutationInboxTab({
                         )
                       }
                     }}
-                    className="w-full bg-[#18181c] border border-[#26272d] rounded-xl px-3 py-2 text-xs text-white font-mono tabular-nums focus:outline-none focus:border-[#00ffff]"
+                    className="w-full bg-subsurface border border-border rounded-xl px-3 py-2 text-xs text-foreground font-mono tabular-nums focus:outline-none focus:border-ring"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#bbcbb2] mb-1">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-muted mb-1">
                     Koneksi Gmail Penerima
                   </label>
                   <select
                     value={simConnectionId}
                     onChange={(e) => setSimConnectionId(e.target.value)}
-                    className="w-full bg-[#18181c] border border-[#26272d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00ffff]"
+                    className="w-full bg-subsurface border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-ring"
                   >
                     <option value="">Otomatis (Buat / Gunakan Default)</option>
                     {connections.map((c) => (
@@ -958,43 +958,43 @@ export default function BankMutationInboxTab({
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#bbcbb2] mb-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-muted mb-1">
                   Subjek Email
                 </label>
                 <input
                   type="text"
                   value={simSubject}
                   onChange={(e) => setSimSubject(e.target.value)}
-                  className="w-full bg-[#18181c] border border-[#26272d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00ffff]"
+                  className="w-full bg-subsurface border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-ring"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#bbcbb2] mb-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-muted mb-1">
                   Isi HTML / Teks Email Notifikasi Mandiri
                 </label>
                 <textarea
                   rows={5}
                   value={simHtml}
                   onChange={(e) => setSimHtml(e.target.value)}
-                  className="w-full bg-[#18181c] border border-[#26272d] rounded-xl p-3 text-xs text-white font-mono focus:outline-none focus:border-[#00ffff]"
+                  className="w-full bg-subsurface border border-border rounded-xl p-3 text-xs text-foreground font-mono focus:outline-none focus:border-ring"
                   required
                 />
               </div>
 
               {/* Real-time Parser Preview Box */}
-              <div className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] space-y-2 text-xs">
+              <div className="p-3.5 rounded-xl bg-subsurface border border-border space-y-2 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-[#00ffff] flex items-center gap-1.5">
+                  <span className="font-bold text-primary flex items-center gap-1.5">
                     <FileText size={14} />
                     <span>Hasil Ekstraksi Parser Deterministik</span>
                   </span>
                   <span
                     className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold ${
                       parsedPreview.ok
-                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                        ? 'bg-success-bg text-success border border-success/30'
+                        : 'bg-destructive-bg text-destructive border border-destructive/30'
                     }`}
                   >
                     {parsedPreview.ok ? `VALID (${parsedPreview.parser_version})` : parsedPreview.reason}
@@ -1003,28 +1003,28 @@ export default function BankMutationInboxTab({
 
                 {parsedPreview.ok && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px]">
-                    <div className="p-2 rounded-lg bg-[#121215] border border-[#26272d]">
-                      <span className="text-[#6b7367] block">Rekening Sumber</span>
-                      <strong className="font-mono text-white">
+                    <div className="p-2 rounded-lg bg-surface border border-border">
+                      <span className="text-muted-dark block">Rekening Sumber</span>
+                      <strong className="font-mono text-foreground">
                         •••• {parsedPreview.source_account_last4}
                       </strong>
                     </div>
-                    <div className="p-2 rounded-lg bg-[#121215] border border-[#26272d]">
-                      <span className="text-[#6b7367] block">Penerima</span>
-                      <strong className="text-white truncate block">
+                    <div className="p-2 rounded-lg bg-surface border border-border">
+                      <span className="text-muted-dark block">Penerima</span>
+                      <strong className="text-foreground truncate block">
                         {parsedPreview.beneficiary_name}
                       </strong>
                     </div>
-                    <div className="p-2 rounded-lg bg-[#121215] border border-[#26272d] text-right">
-                      <span className="text-[#6b7367] block">Pokok + Admin</span>
-                      <strong className="font-mono tabular-nums text-white">
+                    <div className="p-2 rounded-lg bg-surface border border-border text-right">
+                      <span className="text-muted-dark block">Pokok + Admin</span>
+                      <strong className="font-mono tabular-nums text-foreground">
                         {formatRupiah(parsedPreview.principal_amount)} +{' '}
                         {formatRupiah(parsedPreview.fee_amount)}
                       </strong>
                     </div>
-                    <div className="p-2 rounded-lg bg-[#121215] border border-[#26272d] text-right">
-                      <span className="text-[#6b7367] block">Total Debit</span>
-                      <strong className="font-mono tabular-nums text-rose-400">
+                    <div className="p-2 rounded-lg bg-surface border border-border text-right">
+                      <span className="text-muted-dark block">Total Debit</span>
+                      <strong className="font-mono tabular-nums text-destructive">
                         {formatRupiah(parsedPreview.total_debit)}
                       </strong>
                     </div>
@@ -1032,18 +1032,18 @@ export default function BankMutationInboxTab({
                 )}
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-2 border-t border-[#26272d]">
+              <div className="flex justify-end gap-2.5 pt-2 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setShowImportModal(false)}
-                  className="px-4 py-2 rounded-xl bg-[#18181c] hover:bg-[#26272d] text-white text-xs font-bold active:scale-[0.98]"
+                  className="px-4 py-2 rounded-xl bg-subsurface hover:bg-surface-hover text-foreground text-xs font-bold active:scale-[0.98]"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={ingesting || !parsedPreview.ok}
-                  className="px-5 py-2 rounded-xl bg-[#00ffff] hover:bg-cyan-400 active:scale-[0.98] text-[#0f0f0f] text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl bg-primary hover:bg-primary-hover active:scale-[0.98] text-primary-foreground text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
                 >
                   <ArrowUpRight size={14} />
                   <span>{ingesting ? 'Memproses...' : 'Masukkan ke Antrean Draf'}</span>

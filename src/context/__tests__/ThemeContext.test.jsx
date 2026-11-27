@@ -7,10 +7,14 @@ import {
 } from '../ThemeContext.jsx'
 
 describe('Phase 3: Dual-Mode ThemeContext & Strangler-Fig Safety', () => {
-  it('resolves /pos, /founder, and /super-admin to Pure Carbon Dark D1 in auto mode', () => {
+  it('resolves /pos, /founder, /super-admin, and /database to Pure Carbon Dark D1 in auto mode', () => {
     for (const route of DARK_DEFAULT_ROUTES) {
       expect(resolveSurfaceMode(route, 'auto')).toBe('dark')
     }
+    expect(resolveSurfaceMode('/pos', 'auto')).toBe('dark')
+    expect(resolveSurfaceMode('/founder', 'auto')).toBe('dark')
+    expect(resolveSurfaceMode('/super-admin', 'auto')).toBe('dark')
+    expect(resolveSurfaceMode('/database', 'auto')).toBe('dark')
   })
 
   it('resolves migrated routes in MIGRATED_LIGHT_ROUTES to light mode in auto mode', () => {
@@ -26,12 +30,18 @@ describe('Phase 3: Dual-Mode ThemeContext & Strangler-Fig Safety', () => {
     expect(resolveSurfaceMode('/reset-password', 'auto')).toBe('light')
     expect(resolveSurfaceMode('/dashboard', 'auto')).toBe('light')
     expect(resolveSurfaceMode('/queue', 'auto')).toBe('light')
+    expect(resolveSurfaceMode('/finance', 'auto')).toBe('light')
+    expect(resolveSurfaceMode('/reports', 'auto')).toBe('light')
+    expect(resolveSurfaceMode('/gudang', 'auto')).toBe('light')
+    expect(resolveSurfaceMode('/inventory', 'auto')).toBe('light')
+    expect(resolveSurfaceMode('/karyawan', 'auto')).toBe('light')
+    expect(resolveSurfaceMode('/crm', 'auto')).toBe('light')
+    expect(resolveSurfaceMode('/admin', 'auto')).toBe('light')
+    expect(resolveSurfaceMode('/konsolidasi', 'auto')).toBe('light')
   })
 
-  it('keeps unmigrated Phase 4 pages in Pure Carbon Dark D1 during Wave 4.2A so root / does not swallow app routes', () => {
-    expect(resolveSurfaceMode('/finance', 'auto')).toBe('dark')
-    expect(resolveSurfaceMode('/admin', 'auto')).toBe('dark')
-    expect(resolveSurfaceMode('/gudang', 'auto')).toBe('dark')
+  it('defaults fallback routes to Fintech Cobalt Light once Phase 4 migration is complete', () => {
+    expect(resolveSurfaceMode('/unknown-route', 'auto')).toBe('light')
   })
 
   it('respects explicit user light or dark preference override regardless of route', () => {

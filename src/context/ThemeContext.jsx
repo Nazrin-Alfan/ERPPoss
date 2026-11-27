@@ -5,11 +5,10 @@ export const THEME_STORAGE_KEY = 'relaypos_theme_mode_v5'
 /**
  * Operational routes that always default to Pure Carbon Obsidian Dark Mode (Opsi D1).
  */
-export const DARK_DEFAULT_ROUTES = ['/pos', '/founder', '/super-admin']
+export const DARK_DEFAULT_ROUTES = ['/pos', '/founder', '/super-admin', '/database']
 
 /**
- * Strangler-Fig allowlist of routes migrated to Fintech Cobalt Blue Light Mode.
- * Unmigrated routes stay in Pure Carbon D1 ('dark') so existing light text never turns white-on-white.
+ * Allowlist of routes migrated to Fintech Cobalt Blue Light Mode.
  */
 export const MIGRATED_LIGHT_ROUTES = [
   '/ui-kit',
@@ -21,7 +20,15 @@ export const MIGRATED_LIGHT_ROUTES = [
   '/forgot-password',
   '/reset-password',
   '/dashboard',
-  '/queue'
+  '/queue',
+  '/finance',
+  '/reports',
+  '/gudang',
+  '/inventory',
+  '/karyawan',
+  '/crm',
+  '/admin',
+  '/konsolidasi'
 ]
 
 export const themes = {
@@ -75,8 +82,7 @@ export function resolveSurfaceMode(pathname = '/', preference = 'auto') {
     return 'light'
   }
 
-  // Strangler-Fig safety default for pages awaiting Phase 4 Light-mode migration
-  return 'dark'
+  return 'light'
 }
 
 const ThemeContext = createContext({

@@ -576,39 +576,39 @@ const DatabaseManager = () => {
       {/* Top Header */}
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-            <DbIcon size={32} className="text-brand-blue animate-pulse" />
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
+            <DbIcon size={32} className="text-primary animate-pulse" />
             Database Manager
           </h1>
-          <p className="text-slate-400 text-sm mt-1">Kelola, sunting, cari, dan lakukan pemeliharaan data database secara langsung</p>
+          <p className="text-muted text-sm mt-1">Kelola, sunting, cari, dan lakukan pemeliharaan data database secara langsung</p>
         </div>
       </div>
 
       {/* Alert Banner */}
       {success && (
-        <div className="p-4 rounded-xl bg-brand-emerald/10 border border-brand-emerald/20 text-brand-emerald text-sm flex items-center gap-3 animate-fade-in">
+        <div className="p-4 rounded-xl bg-success-bg border border-success/30 text-success text-sm flex items-center gap-3 animate-fade-in">
           <CheckCircle size={18} />
           <span>{success}</span>
         </div>
       )}
 
       {error && (
-        <div className="p-4 rounded-xl bg-brand-rose/10 border border-brand-rose/20 text-brand-rose text-sm flex items-center gap-3 animate-fade-in">
+        <div className="p-4 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-sm flex items-center gap-3 animate-fade-in">
           <AlertCircle size={18} />
           <span>{error}</span>
         </div>
       )}
 
       {/* Toolbar / Filters Panel */}
-      <div className="glass-panel p-4 rounded-2xl border border-slate-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-surface border border-border shadow-sm p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
           {/* Table Selector */}
           <div className="space-y-1">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Pilih Tabel</span>
+            <span className="text-[10px] text-muted-dark font-bold uppercase tracking-wider block">Pilih Tabel</span>
             <select
               value={selectedTable}
               onChange={handleTableChange}
-              className="bg-slate-900 border border-slate-800 rounded-xl py-2 px-3 text-white text-xs font-bold focus:outline-none focus:border-brand-blue min-w-[200px]"
+              className="bg-surface border border-border rounded-xl py-2 px-3 text-foreground text-xs font-bold focus:outline-none focus:border-ring min-w-[200px]"
             >
               {availableTables.map(key => (
                 <option key={key} value={key}>{TABLES_METADATA[key].name} ({key})</option>
@@ -619,11 +619,11 @@ const DatabaseManager = () => {
           {/* Month Selector (if table has dateField) */}
           {meta.dateField && (
             <div className="space-y-1">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Filter Bulan</span>
+              <span className="text-[10px] text-muted-dark font-bold uppercase tracking-wider block">Filter Bulan</span>
               <select
                 value={selectedMonth}
                 onChange={(e) => { setSelectedMonth(e.target.value); setCurrentPage(1) }}
-                className="bg-slate-900 border border-slate-800 rounded-xl py-2 px-3 text-white text-xs font-bold focus:outline-none focus:border-brand-blue"
+                className="bg-surface border border-border rounded-xl py-2 px-3 text-foreground text-xs font-bold focus:outline-none focus:border-ring"
               >
                 {monthOptions.map(opt => (
                   <option key={opt.val} value={opt.val}>{opt.label}</option>
@@ -637,7 +637,7 @@ const DatabaseManager = () => {
             <button
               onClick={handleExportCSV}
               disabled={loading}
-              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-brand-emerald border border-slate-800 hover:border-slate-700 disabled:opacity-50 font-bold rounded-xl py-[8.5px] text-xs transition-all flex items-center gap-1.5 active:scale-95"
+              className="px-4 py-2 bg-surface hover:bg-surface-hover text-success border border-border hover:border-border-hover disabled:opacity-50 font-bold rounded-xl py-[8.5px] text-xs transition-all flex items-center gap-1.5 active:scale-95"
             >
               <FileText size={13} />
               Cetak CSV
@@ -649,20 +649,20 @@ const DatabaseManager = () => {
         <div className="flex items-center gap-3 w-full md:w-auto">
           {/* Client Search */}
           <div className="relative flex-1 md:w-64">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-dark" />
             <input
               type="text"
               placeholder="Cari data di halaman ini..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2 pl-9 pr-4 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-brand-blue"
+              className="w-full bg-surface border border-border rounded-xl py-2 pl-9 pr-4 text-foreground text-xs placeholder:text-muted-dark focus:outline-none focus:border-ring"
             />
           </div>
 
           {/* Create Button */}
           <button
             onClick={handleOpenCreateModal}
-            className="flex items-center gap-1.5 px-4 py-2 bg-brand-emerald hover:bg-emerald-500 active:scale-95 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-md shadow-brand-emerald/15 shrink-0"
+            className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary-hover active:scale-95 text-primary-foreground font-bold rounded-xl text-xs transition-all shadow-md shadow-sm shrink-0"
           >
             <Plus size={14} />
             Tambah Baris
@@ -671,26 +671,26 @@ const DatabaseManager = () => {
       </div>
 
       {/* Main Grid / Data Table */}
-      <div className="glass-panel rounded-2xl border border-slate-800/80 overflow-hidden relative min-h-[300px]">
+      <div className="bg-surface border border-border shadow-sm rounded-2xl overflow-hidden relative min-h-[300px]">
         {loading && (
-          <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center z-10">
-            <div className="w-8 h-8 border-4 border-brand-blue border-t-transparent rounded-full animate-spin"></div>
+          <div className="absolute inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-xs flex items-center justify-center z-10">
+            <div className="w-8 h-8 border-4 border-primary/30 border-t-transparent rounded-full animate-spin"></div>
           </div>
         )}
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px] text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-slate-800 text-slate-500 font-semibold uppercase tracking-wider bg-slate-900/60 select-none">
+              <tr className="border-b border-border text-muted-dark font-semibold uppercase tracking-wider bg-surface select-none">
                 {meta.columns.map(col => (
                   <th 
                     key={col.name} 
                     onClick={() => handleSort(col.name)}
-                    className="p-4 cursor-pointer hover:bg-slate-800/20 hover:text-white transition-colors"
+                    className="p-4 cursor-pointer hover:bg-surface-hover hover:text-foreground transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
                       <span>{col.label}</span>
-                      <span className="text-[9px] text-slate-600">
+                      <span className="text-[9px] text-muted-dark">
                         {sortColumn === col.name ? (sortAscending ? '▲' : '▼') : '↕'}
                       </span>
                     </div>
@@ -699,16 +699,16 @@ const DatabaseManager = () => {
                 <th className="p-4 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-850">
+            <tbody className="divide-y divide-border">
               {filteredRows.length === 0 ? (
                 <tr>
-                  <td colSpan={meta.columns.length + 1} className="p-12 text-center text-slate-500 italic">
+                  <td colSpan={meta.columns.length + 1} className="p-12 text-center text-muted-dark italic">
                     {loading ? 'Sedang memuat data...' : 'Tidak ditemukan data di halaman ini.'}
                   </td>
                 </tr>
               ) : (
                 filteredRows.map((row, idx) => (
-                  <tr key={row[meta.keyField] || idx} className="hover:bg-slate-800/10 transition-colors">
+                  <tr key={row[meta.keyField] || idx} className="hover:bg-surface-hover transition-colors">
                     {meta.columns.map(col => {
                       const val = row[col.name]
                       let displayVal = String(val !== null && val !== undefined ? val : '')
@@ -733,9 +733,9 @@ const DatabaseManager = () => {
                       if (val === false) displayVal = 'NON-AKTIF'
 
                       return (
-                        <td key={col.name} className="p-4 font-medium text-slate-300 max-w-[200px] truncate" title={displayVal}>
+                        <td key={col.name} className="p-4 font-medium text-muted max-w-[200px] truncate" title={displayVal}>
                           {col.name === meta.keyField ? (
-                            <span className="font-mono text-[10px] text-slate-400 select-all">{displayVal}</span>
+                            <span className="font-mono text-[10px] text-muted select-all">{displayVal}</span>
                           ) : (
                             displayVal
                           )}
@@ -747,7 +747,7 @@ const DatabaseManager = () => {
                       <button
                         onClick={() => setViewingRowJson(row)}
                         title="Lihat Detail JSON"
-                        className="p-1.5 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg border border-slate-800 transition-colors active:scale-95 inline-flex"
+                        className="p-1.5 bg-surface hover:bg-surface-hover text-muted hover:text-foreground rounded-lg border border-border transition-colors active:scale-95 inline-flex"
                       >
                         <Eye size={12} />
                       </button>
@@ -755,7 +755,7 @@ const DatabaseManager = () => {
                       <button
                         onClick={() => handleOpenEditModal(row)}
                         title="Sunting Baris"
-                        className="p-1.5 bg-slate-900 hover:bg-brand-blue/10 text-brand-blue rounded-lg border border-slate-800 hover:border-brand-blue/20 transition-colors active:scale-95 inline-flex"
+                        className="p-1.5 bg-surface hover:bg-primary-hover text-primary rounded-lg border border-border hover:border-border-active transition-colors active:scale-95 inline-flex"
                       >
                         <Edit3 size={12} />
                       </button>
@@ -763,7 +763,7 @@ const DatabaseManager = () => {
                       <button
                         onClick={() => handleDeleteRow(row)}
                         title="Hapus Baris"
-                        className="p-1.5 bg-slate-900 hover:bg-rose-500/10 text-brand-rose rounded-lg border border-slate-800 hover:border-brand-rose/20 transition-colors active:scale-95 inline-flex"
+                        className="p-1.5 bg-surface hover:bg-destructive-bg text-destructive rounded-lg border border-border hover:border-destructive/50 transition-colors active:scale-95 inline-flex"
                       >
                         <Trash2 size={12} />
                       </button>
@@ -776,25 +776,25 @@ const DatabaseManager = () => {
         </div>
 
         {/* Pagination Panel */}
-        <div className="p-4 border-t border-slate-800/80 bg-slate-900/40 flex items-center justify-between flex-wrap gap-4 text-[11px] text-slate-400 font-medium">
+        <div className="p-4 border-t border-border bg-surface flex items-center justify-between flex-wrap gap-4 text-[11px] text-muted font-medium">
           <div>
-            Menampilkan <span className="font-bold text-slate-200">{filteredRows.length}</span> baris dari{' '}
-            <span className="font-bold text-slate-200">{totalCount}</span> total baris
+            Menampilkan <span className="font-bold text-foreground">{filteredRows.length}</span> baris dari{' '}
+            <span className="font-bold text-foreground">{totalCount}</span> total baris
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={currentPage === 1 || loading}
-              className="p-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white rounded-lg border border-slate-800 transition-colors"
+              className="p-2 bg-surface hover:bg-surface-hover disabled:opacity-40 text-foreground rounded-lg border border-border transition-colors"
             >
               <ChevronLeft size={12} />
             </button>
-            <span>Halaman <span className="font-bold text-white">{currentPage}</span> dari <span className="font-bold text-white">{totalPages}</span></span>
+            <span>Halaman <span className="font-bold text-foreground">{currentPage}</span> dari <span className="font-bold text-foreground">{totalPages}</span></span>
             <button
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages || loading}
-              className="p-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white rounded-lg border border-slate-800 transition-colors"
+              className="p-2 bg-surface hover:bg-surface-hover disabled:opacity-40 text-foreground rounded-lg border border-border transition-colors"
             >
               <ChevronRight size={12} />
             </button>
@@ -804,16 +804,16 @@ const DatabaseManager = () => {
 
       {/* FORM CREATE / EDIT MODAL */}
       {showFormModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="glass-panel w-full max-w-xl p-6 rounded-2xl shadow-2xl border border-slate-800 max-h-[90vh] flex flex-col justify-between animate-pop-in">
+        <div className="fixed inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-surface border border-border shadow-sm w-full max-w-xl p-6 rounded-2xl shadow-2xl max-h-[90vh] flex flex-col justify-between animate-pop-in">
             <div>
-              <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
-                <h3 className="text-lg font-bold text-white">
+              <div className="flex justify-between items-center border-b border-border pb-4 mb-4">
+                <h3 className="text-lg font-bold text-foreground">
                   {isEditing ? 'Sunting Data Baris' : 'Tambah Baris Baru'}
                 </h3>
                 <button 
                   onClick={() => setShowFormModal(false)}
-                  className="text-slate-400 hover:text-slate-200"
+                  className="text-muted hover:text-foreground"
                 >
                   <X size={16} />
                 </button>
@@ -826,15 +826,15 @@ const DatabaseManager = () => {
                     
                     return (
                       <div key={col.name} className="space-y-1.5">
-                        <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
-                          {col.label} {col.required && <span className="text-brand-rose">*</span>}
+                        <label className="text-[10px] text-muted-dark font-bold uppercase tracking-wider block">
+                          {col.label} {col.required && <span className="text-destructive">*</span>}
                         </label>
                         
                         {col.type === 'select' ? (
                           <select
                             value={formData[col.name] !== undefined ? formData[col.name] : ''}
                             onChange={(e) => setFormData(prev => ({ ...prev, [col.name]: e.target.value }))}
-                            className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-blue"
+                            className="w-full bg-surface border border-border rounded-lg py-2 px-3 text-foreground text-sm focus:outline-none focus:border-ring"
                             required={col.required}
                           >
                             {col.options.map(opt => (
@@ -850,7 +850,7 @@ const DatabaseManager = () => {
                             onChange={(e) => setFormData(prev => ({ ...prev, [col.name]: e.target.value }))}
                             readOnly={isReadOnly}
                             disabled={isReadOnly}
-                            className={`w-full bg-slate-900 border border-slate-800 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-blue ${
+                            className={`w-full bg-surface border border-border rounded-lg py-2 px-3 text-foreground text-sm focus:outline-none focus:border-ring ${
                               isReadOnly ? 'opacity-40 cursor-not-allowed font-mono text-xs' : ''
                             }`}
                             required={col.required}
@@ -861,18 +861,18 @@ const DatabaseManager = () => {
                   })}
                 </div>
 
-                <div className="flex justify-end gap-3 pt-6 border-t border-slate-800 mt-6">
+                <div className="flex justify-end gap-3 pt-6 border-t border-border mt-6">
                   <button
                     type="button"
                     onClick={() => setShowFormModal(false)}
-                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 active:scale-95 text-slate-300 font-bold rounded-xl text-xs transition-all w-24"
+                    className="px-4 py-2 bg-surface hover:bg-surface-hover active:scale-95 text-muted font-bold rounded-xl text-xs transition-all w-24"
                   >
                     Batal
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="px-4 py-2 bg-brand-emerald hover:bg-emerald-500 active:scale-95 text-slate-950 font-bold rounded-xl text-xs transition-all w-24 shadow-md shadow-brand-emerald/10 disabled:opacity-50"
+                    className="px-4 py-2 bg-primary hover:bg-primary-hover active:scale-95 text-primary-foreground font-bold rounded-xl text-xs transition-all w-24 shadow-md shadow-sm disabled:opacity-50"
                   >
                     {submitting ? 'Menyimpan...' : 'Simpan'}
                   </button>
@@ -885,26 +885,26 @@ const DatabaseManager = () => {
 
       {/* JSON VIEW DETAIL MODAL */}
       {viewingRowJson && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="glass-panel w-full max-w-xl p-6 rounded-2xl shadow-2xl border border-slate-800 max-h-[90vh] flex flex-col justify-between animate-pop-in">
+        <div className="fixed inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-surface border border-border shadow-sm w-full max-w-xl p-6 rounded-2xl shadow-2xl max-h-[90vh] flex flex-col justify-between animate-pop-in">
             <div>
-              <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
+              <div className="flex justify-between items-center border-b border-border pb-4 mb-4">
                 <div>
-                  <h3 className="text-sm font-bold text-brand-blue font-mono uppercase tracking-wider">
+                  <h3 className="text-sm font-bold text-primary font-mono uppercase tracking-wider">
                     Detail JSON Baris Data
                   </h3>
-                  <p className="text-[10px] text-slate-500">Tabel: {selectedTable} • Key: {meta.keyField}</p>
+                  <p className="text-[10px] text-muted-dark">Tabel: {selectedTable} • Key: {meta.keyField}</p>
                 </div>
                 <button 
                   onClick={() => setViewingRowJson(null)}
-                  className="text-slate-400 hover:text-slate-200"
+                  className="text-muted hover:text-foreground"
                 >
                   <X size={16} />
                 </button>
               </div>
 
-              <div className="bg-slate-950 border border-slate-900 p-4 rounded-xl max-h-[55vh] overflow-auto">
-                <pre className="text-[10px] font-mono text-emerald-400 select-all overflow-x-auto whitespace-pre-wrap leading-relaxed">
+              <div className="bg-surface border border-slate-900 p-4 rounded-xl max-h-[55vh] overflow-auto">
+                <pre className="text-[10px] font-mono text-success select-all overflow-x-auto whitespace-pre-wrap leading-relaxed">
                   {JSON.stringify(viewingRowJson, null, 2)}
                 </pre>
               </div>
@@ -912,7 +912,7 @@ const DatabaseManager = () => {
               <div className="flex justify-end pt-6">
                 <button
                   onClick={() => setViewingRowJson(null)}
-                  className="px-5 py-2 bg-slate-900 hover:bg-slate-800 font-bold rounded-xl text-xs text-slate-200 transition-colors"
+                  className="px-5 py-2 bg-surface hover:bg-surface-hover font-bold rounded-xl text-xs text-foreground transition-colors"
                 >
                   Tutup Rincian
                 </button>
@@ -924,28 +924,28 @@ const DatabaseManager = () => {
 
       {/* CUSTOM ALERT/CONFIRM MODAL */}
       {customAlert && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">
-          <div className="glass-panel w-full max-w-sm p-6 rounded-2xl shadow-2xl border border-slate-800 text-center animate-pop-in">
+        <div className="fixed inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">
+          <div className="bg-surface border border-border shadow-sm w-full max-w-sm p-6 rounded-2xl shadow-2xl text-center animate-pop-in">
             <div className="mb-4">
               {customAlert.title === 'Sukses' ? (
-                <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/10 flex items-center justify-center">
-                  <CheckCircle className="text-emerald-400" size={24} />
+                <div className="w-12 h-12 mx-auto rounded-full bg-success-bg flex items-center justify-center">
+                  <CheckCircle className="text-success" size={24} />
                 </div>
               ) : customAlert.title === 'Konfirmasi Hapus' ? (
-                <div className="w-12 h-12 mx-auto rounded-full bg-rose-500/10 flex items-center justify-center">
-                  <Trash2 className="text-rose-400" size={24} />
+                <div className="w-12 h-12 mx-auto rounded-full bg-destructive-bg flex items-center justify-center">
+                  <Trash2 className="text-destructive" size={24} />
                 </div>
               ) : (
-                <div className="w-12 h-12 mx-auto rounded-full bg-amber-500/10 flex items-center justify-center">
-                  <AlertCircle className="text-amber-400" size={24} />
+                <div className="w-12 h-12 mx-auto rounded-full bg-warning-bg flex items-center justify-center">
+                  <AlertCircle className="text-warning" size={24} />
                 </div>
               )}
             </div>
             
-            <h4 className="text-base font-extrabold text-white mb-2">
+            <h4 className="text-base font-extrabold text-foreground mb-2">
               {customAlert.title}
             </h4>
-            <p className="text-xs text-slate-350 leading-relaxed mb-6">
+            <p className="text-xs text-muted leading-relaxed mb-6">
               {customAlert.message}
             </p>
             
@@ -954,7 +954,7 @@ const DatabaseManager = () => {
                 <button
                   type="button"
                   onClick={customAlert.onCancel}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-bold rounded-xl text-xs transition-all w-24"
+                  className="px-4 py-2 bg-subsurface hover:bg-surface-hover active:scale-95 text-muted font-bold rounded-xl text-xs transition-all w-24"
                 >
                   Batal
                 </button>
@@ -964,8 +964,8 @@ const DatabaseManager = () => {
                 onClick={customAlert.onConfirm}
                 className={`px-4 py-2 active:scale-95 font-bold rounded-xl text-xs transition-all w-24 ${
                   customAlert.title === 'Konfirmasi Hapus'
-                    ? 'bg-rose-500 hover:bg-rose-600 text-white'
-                    : 'bg-brand-blue hover:bg-cyan-500 text-slate-950'
+                    ? 'bg-destructive-solid hover:opacity-90 text-white'
+                    : 'bg-primary hover:bg-primary-hover text-primary-foreground'
                 }`}
               >
                 {customAlert.type === 'confirm' ? 'Ya' : 'OK'}

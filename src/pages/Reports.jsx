@@ -423,48 +423,48 @@ const Reports = () => {
   return (
     <div className="p-6 pb-24 md:pb-8 space-y-6 max-w-7xl mx-auto">
       {/* Top Header & Actions */}
-      <div className="flex justify-between items-center flex-wrap gap-4 border-b border-[#26272d] pb-5 print:hidden">
+      <div className="flex justify-between items-center flex-wrap gap-4 border-b border-border pb-5 print:hidden">
         <div>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500/20 to-purple-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 shadow-lg shadow-rose-500/10">
+            <div className="bg-surface w-10 h-10 rounded-xl border border-destructive/30 flex items-center justify-center text-destructive shadow-lg shadow-sm">
               <FileText size={22} />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+              <h1 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
                 Laporan Keuangan Konsolidasi
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-400 border border-rose-500/25 uppercase tracking-wider">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-destructive-bg text-destructive border border-destructive/30 uppercase tracking-wider">
                   Standar EMKM
                 </span>
               </h1>
-              <p className="text-[#bbcbb2] text-xs mt-0.5">Rekonsiliasi Laba Rugi Segmen Usaha, Posisi Saldo Kas & Rekapitulasi Neraca</p>
+              <p className="text-muted text-xs mt-0.5">Rekonsiliasi Laba Rugi Segmen Usaha, Posisi Saldo Kas & Rekapitulasi Neraca</p>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
           {/* Time Range Filter */}
-          <div className="relative flex bg-[#18181c]/90 p-1 rounded-xl border border-[#26272d] text-xs shadow-inner">
+          <div className="relative flex bg-subsurface p-1 rounded-xl border border-border text-xs shadow-inner">
             <button
               onClick={() => { setTimeRange('today'); setShowCustomCalendar(false) }}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${timeRange === 'today' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'}`}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${timeRange === 'today' ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-muted hover:text-foreground'}`}
             >
               Hari Ini
             </button>
             <button
               onClick={() => { setTimeRange('month'); setShowCustomCalendar(false) }}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${timeRange === 'month' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'}`}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${timeRange === 'month' ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-muted hover:text-foreground'}`}
             >
               Bulan Ini
             </button>
             <button
               onClick={() => { setTimeRange('custom'); setShowCustomCalendar(!showCustomCalendar) }}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${timeRange === 'custom' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'}`}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${timeRange === 'custom' ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-muted hover:text-foreground'}`}
             >
               Kustom
             </button>
             <button
               onClick={() => { setTimeRange('all'); setShowCustomCalendar(false) }}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${timeRange === 'all' ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm' : 'text-[#bbcbb2] hover:text-white'}`}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${timeRange === 'all' ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-muted hover:text-foreground'}`}
             >
               Semua
             </button>
@@ -487,7 +487,7 @@ const Reports = () => {
           <button
             onClick={fetchReportsData}
             disabled={loading}
-            className="p-2 bg-[#18181c] hover:bg-[#26272d] border border-[#26272d] text-white rounded-xl transition-all active:scale-95 disabled:opacity-50"
+            className="p-2 bg-subsurface hover:bg-surface-hover border border-border text-foreground rounded-xl transition-all active:scale-95 disabled:opacity-50"
             title="Refresh Data"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
@@ -495,7 +495,7 @@ const Reports = () => {
 
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl shadow-lg shadow-rose-600/20 transition-all text-xs active:scale-95"
+            className="flex items-center gap-2 px-4 py-2 bg-destructive-solid hover:opacity-90 text-white font-bold rounded-xl shadow-lg shadow-sm transition-all text-xs active:scale-95"
           >
             <Printer size={15} />
             Cetak Laporan (PDF)
@@ -504,26 +504,26 @@ const Reports = () => {
       </div>
 
       {errorMsg && (
-        <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2 print:hidden">
+        <div className="p-3.5 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-xs flex items-center gap-2 print:hidden">
           <AlertCircle size={16} />
           <span>{errorMsg}</span>
         </div>
       )}
 
       {/* Primary Report Mode Switcher: Operational vs General Ledger */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-[#18181c]/80 p-2 rounded-2xl border border-[#26272d] print:hidden">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-subsurface p-2 rounded-2xl border border-border print:hidden">
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setReportViewMode('operational')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
               reportViewMode === 'operational'
-                ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/20'
-                : 'text-[#bbcbb2] hover:text-white'
+                ? 'bg-destructive-solid text-white shadow-lg shadow-sm'
+                : 'text-muted hover:text-foreground'
             }`}
           >
             <FileText size={16} />
             <span>Rekap Operasional Segmen (Kasir POS)</span>
-            <span className="text-[9px] bg-white/20 text-white px-1.5 py-0.5 rounded font-extrabold normal-case">
+            <span className="text-[9px] bg-white/20 text-foreground px-1.5 py-0.5 rounded font-extrabold normal-case">
               Rekomendasi
             </span>
           </button>
@@ -531,8 +531,8 @@ const Reports = () => {
             onClick={() => setReportViewMode('general_ledger')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
               reportViewMode === 'general_ledger'
-                ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-sm'
-                : 'text-[#bbcbb2] hover:text-white'
+                ? 'bg-primary text-primary-foreground font-bold shadow-sm'
+                : 'text-muted hover:text-foreground'
             }`}
           >
             <Scale size={16} />
@@ -540,7 +540,7 @@ const Reports = () => {
           </button>
         </div>
 
-        <p className="text-[11px] text-[#8e978a] px-2 italic">
+        <p className="text-[11px] text-muted px-2 italic">
           {reportViewMode === 'operational'
             ? '💡 Menampilkan omzet riil kasir, beban operasional unit, dan margin bersih tanpa istilah akuntansi rumit.'
             : '📘 Modul pembukuan akuntansi formal dengan bagan akun (COA), neraca saldo, debit/kredit, dan rekonsiliasi.'}
@@ -551,39 +551,39 @@ const Reports = () => {
         <GeneralLedgerView tenantId={targetTenantId} />
       ) : (
         /* Printable Sheet Area */
-        <div id="print-area" className="bg-[#121215] border border-[#26272d] p-8 rounded-2xl border border-[#26272d] bg-[#18181c]/40 text-white print:bg-white print:text-black print:p-0 print:border-none print:shadow-none space-y-8">
+        <div id="print-area" className="bg-surface border border-border p-8 rounded-2xl bg-subsurface text-foreground print:bg-white print:text-black print:p-0 print:border-none print:shadow-none space-y-8">
         {/* Header Laporan Resmi */}
-        <div className="text-center border-b-2 border-[#26272d] pb-6 print:border-black print:pb-4">
+        <div className="text-center border-b-2 border-border pb-6 print:border-black print:pb-4">
           <div className="flex justify-center items-center gap-2 mb-1">
-            <Building size={20} className="text-rose-500 print:text-black" />
-            <h2 className="text-2xl font-black tracking-tight text-white print:text-black uppercase">
+            <Building size={20} className="text-destructive print:text-black" />
+            <h2 className="text-2xl font-black tracking-tight text-foreground print:text-black uppercase">
               {receiptConfig.storeName || 'RELAYPOS CARWASH & CAFE'}
             </h2>
           </div>
-          <p className="text-xs text-[#bbcbb2] uppercase tracking-widest font-bold print:text-slate-600">Laporan Keuangan Konsolidasi (Segmen Usaha Terpadu)</p>
-          <p className="text-xs text-cyan-400 font-mono mt-1 font-bold print:text-slate-700">
+          <p className="text-xs text-muted uppercase tracking-widest font-bold print:text-slate-600">Laporan Keuangan Konsolidasi (Segmen Usaha Terpadu)</p>
+          <p className="text-xs text-primary font-mono mt-1 font-bold print:text-slate-700">
             Periode: {timeRange === 'all' ? 'Seluruh Periode' : `${parseDateSafe(startDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toLocaleDateString('en-CA')).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })} s/d ${parseDateSafe(endDate || new Date().toLocaleDateString('en-CA')).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`}
           </p>
-          <span className="text-[10px] text-[#6b7367] block mt-1.5 print:text-[#6b7367] font-medium">Mata Uang: Rupiah Indonesia (IDR) • Basis Pencatatan: Akrual & Kas Riil</span>
+          <span className="text-[10px] text-muted-dark block mt-1.5 print:text-slate-600 font-medium">Mata Uang: Rupiah Indonesia (IDR) • Basis Pencatatan: Akrual & Kas Riil</span>
         </div>
 
         {/* Bento Overview: Performa Unit Usaha (Cafe vs Carwash) */}
         <div className={`grid grid-cols-1 gap-4 ${features.isHybrid ? 'md:grid-cols-4 print:grid-cols-4' : 'md:grid-cols-3 print:grid-cols-3'}`}>
           {/* Card Cafe */}
           {features.hasCafe && (
-            <div className="p-4 rounded-2xl border border-[#26272d] bg-[#121215] print:border-black print:bg-transparent">
+            <div className="p-4 rounded-2xl border border-border bg-surface print:border-black print:bg-transparent">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black uppercase tracking-wider text-amber-400">Unit Cafe & F&B</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold">
+                <span className="text-[11px] font-black uppercase tracking-wider text-warning">Unit Cafe & F&B</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-warning-bg text-warning font-bold">
                   Margin {statements.marginCafe.toFixed(0)}%
                 </span>
               </div>
               <div className="mt-3 space-y-1">
-                <p className="text-xs text-[#bbcbb2]">Omzet: <span className="text-white font-bold">{formatRupiah(statements.cafeRevenue)}</span></p>
-                <p className="text-xs text-[#bbcbb2]">Beban: <span className="text-rose-400 font-bold">({formatRupiah(statements.totalBebanCafe)})</span></p>
-                <div className="pt-2 border-t border-[#26272d] flex items-center justify-between">
-                  <span className="text-xs font-semibold text-white">Laba Cafe:</span>
-                  <span className={`text-sm font-black ${statements.labaOperasionalCafe >= 0 ? 'text-[#00ffff]' : 'text-rose-400'}`}>
+                <p className="text-xs text-muted">Omzet: <span className="text-foreground font-bold">{formatRupiah(statements.cafeRevenue)}</span></p>
+                <p className="text-xs text-muted">Beban: <span className="text-destructive font-bold">({formatRupiah(statements.totalBebanCafe)})</span></p>
+                <div className="pt-2 border-t border-border flex items-center justify-between">
+                  <span className="text-xs font-semibold text-foreground">Laba Cafe:</span>
+                  <span className={`text-sm font-black ${statements.labaOperasionalCafe >= 0 ? 'text-primary' : 'text-destructive'}`}>
                     {formatRupiah(statements.labaOperasionalCafe)}
                   </span>
                 </div>
@@ -593,19 +593,19 @@ const Reports = () => {
 
           {/* Card Carwash */}
           {features.hasCarwash && (
-            <div className="p-4 rounded-2xl border border-[#26272d] bg-[#121215] print:border-black print:bg-transparent">
+            <div className="p-4 rounded-2xl border border-border bg-surface print:border-black print:bg-transparent">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black uppercase tracking-wider text-cyan-400">Unit Carwash</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold">
+                <span className="text-[11px] font-black uppercase tracking-wider text-primary">Unit Carwash</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary-soft text-primary-soft-foreground font-bold">
                   Margin {statements.marginCarwash.toFixed(0)}%
                 </span>
               </div>
               <div className="mt-3 space-y-1">
-                <p className="text-xs text-[#bbcbb2]">Omzet: <span className="text-white font-bold">{formatRupiah(statements.carwashRevenue)}</span></p>
-                <p className="text-xs text-[#bbcbb2]">Beban: <span className="text-rose-400 font-bold">({formatRupiah(statements.totalBebanCarwash)})</span></p>
-                <div className="pt-2 border-t border-[#26272d] flex items-center justify-between">
-                  <span className="text-xs font-semibold text-white">Laba Carwash:</span>
-                  <span className={`text-sm font-black ${statements.labaOperasionalCarwash >= 0 ? 'text-[#00ffff]' : 'text-rose-400'}`}>
+                <p className="text-xs text-muted">Omzet: <span className="text-foreground font-bold">{formatRupiah(statements.carwashRevenue)}</span></p>
+                <p className="text-xs text-muted">Beban: <span className="text-destructive font-bold">({formatRupiah(statements.totalBebanCarwash)})</span></p>
+                <div className="pt-2 border-t border-border flex items-center justify-between">
+                  <span className="text-xs font-semibold text-foreground">Laba Carwash:</span>
+                  <span className={`text-sm font-black ${statements.labaOperasionalCarwash >= 0 ? 'text-primary' : 'text-destructive'}`}>
                     {formatRupiah(statements.labaOperasionalCarwash)}
                   </span>
                 </div>
@@ -614,14 +614,14 @@ const Reports = () => {
           )}
 
           {/* Card Overhead Bersama */}
-          <div className="p-4 rounded-2xl border border-[#26272d] bg-[#121215] print:border-black print:bg-transparent">
-            <span className="text-[11px] font-black uppercase tracking-wider text-purple-400 block">Biaya Bersama</span>
+          <div className="p-4 rounded-2xl border border-border bg-surface print:border-black print:bg-transparent">
+            <span className="text-[11px] font-black uppercase tracking-wider text-primary block">Biaya Bersama</span>
             <div className="mt-3 space-y-1">
-              <p className="text-xs text-[#bbcbb2]">Listrik & Air: <span className="text-white font-bold">{formatRupiah(statements.bebanBersamaUtilitas)}</span></p>
-              <p className="text-xs text-[#bbcbb2]">Gaji/Casbon: <span className="text-white font-bold">{formatRupiah(statements.bebanBersamaGaji)}</span></p>
-              <div className="pt-2 border-t border-[#26272d] flex items-center justify-between">
-                <span className="text-xs font-semibold text-white">Total Overhead:</span>
-                <span className="text-sm font-black text-rose-400">
+              <p className="text-xs text-muted">Listrik & Air: <span className="text-foreground font-bold">{formatRupiah(statements.bebanBersamaUtilitas)}</span></p>
+              <p className="text-xs text-muted">Gaji/Casbon: <span className="text-foreground font-bold">{formatRupiah(statements.bebanBersamaGaji)}</span></p>
+              <div className="pt-2 border-t border-border flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground">Total Overhead:</span>
+                <span className="text-sm font-black text-destructive">
                   ({formatRupiah(statements.totalBebanBersama)})
                 </span>
               </div>
@@ -629,14 +629,14 @@ const Reports = () => {
           </div>
 
           {/* Card Laba Bersih Konsolidasi */}
-          <div className="p-4 rounded-2xl border border-[#26272d] bg-[#121215] print:border-black print:bg-transparent">
-            <span className="text-[11px] font-black uppercase tracking-wider text-[#00ffff] block">Laba Bersih Konsolidasi</span>
+          <div className="p-4 rounded-2xl border border-border bg-surface print:border-black print:bg-transparent">
+            <span className="text-[11px] font-black uppercase tracking-wider text-primary block">Laba Bersih Konsolidasi</span>
             <div className="mt-3 space-y-1">
-              <p className="text-xs text-[#bbcbb2]">Total Omzet: <span className="text-white font-bold">{formatRupiah(statements.totalRevenue)}</span></p>
-              <p className="text-xs text-[#bbcbb2]">Total Beban: <span className="text-rose-400 font-bold">({formatRupiah(statements.totalOperatingExpenses)})</span></p>
-              <div className="pt-2 border-t border-[#26272d] flex items-center justify-between">
-                <span className="text-xs font-semibold text-white">Net Profit:</span>
-                <span className={`text-base font-black ${statements.netProfit >= 0 ? 'text-[#00ffff]' : 'text-rose-400'}`}>
+              <p className="text-xs text-muted">Total Omzet: <span className="text-foreground font-bold">{formatRupiah(statements.totalRevenue)}</span></p>
+              <p className="text-xs text-muted">Total Beban: <span className="text-destructive font-bold">({formatRupiah(statements.totalOperatingExpenses)})</span></p>
+              <div className="pt-2 border-t border-border flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground">Net Profit:</span>
+                <span className={`text-base font-black ${statements.netProfit >= 0 ? 'text-primary' : 'text-destructive'}`}>
                   {formatRupiah(statements.netProfit)}
                 </span>
               </div>
@@ -646,14 +646,14 @@ const Reports = () => {
 
         {/* Section 1: Laporan Laba Rugi Segmen */}
         <div className="space-y-4">
-          <h3 className="text-sm font-extrabold text-white border-l-4 border-rose-500 pl-2.5 uppercase tracking-wider print:text-black print:border-black">
+          <h3 className="text-sm font-extrabold text-foreground border-l-4 border-destructive/30 pl-2.5 uppercase tracking-wider print:text-black print:border-black">
             I. Laporan Laba Rugi Segmen (Consolidated Profit & Loss)
           </h3>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-[#26272d] text-[#bbcbb2] font-bold uppercase print:border-black print:text-black">
+                <tr className="border-b border-border text-muted font-bold uppercase print:border-black print:text-black">
                   <th className="py-2.5">Deskripsi Akun</th>
                   <th className="py-2.5 text-right pr-4">Segmen Cafe</th>
                   <th className="py-2.5 text-right pr-4">Segmen Carwash</th>
@@ -661,96 +661,96 @@ const Reports = () => {
                   <th className="py-2.5 text-right font-black">Konsolidasi (Total)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/40 print:divide-slate-200">
+              <tbody className="divide-y divide-border print:divide-slate-200">
                 <tr>
-                  <td className="py-3 font-semibold text-white print:text-black">PENDAPATAN USAHA (OMZET)</td>
-                  <td className="py-3 text-right pr-4 text-[#00ffff] font-bold print:text-black">{formatRupiah(statements.cafeRevenue)}</td>
-                  <td className="py-3 text-right pr-4 text-[#00ffff] font-bold print:text-black">{formatRupiah(statements.carwashRevenue)}</td>
-                  <td className="py-3 text-right pr-4 text-[#6b7367]">-</td>
-                  <td className="py-3 text-right font-bold text-[#00ffff] print:text-black">{formatRupiah(statements.consolidatedRevenue)}</td>
+                  <td className="py-3 font-semibold text-foreground print:text-black">PENDAPATAN USAHA (OMZET)</td>
+                  <td className="py-3 text-right pr-4 text-primary font-bold print:text-black">{formatRupiah(statements.cafeRevenue)}</td>
+                  <td className="py-3 text-right pr-4 text-primary font-bold print:text-black">{formatRupiah(statements.carwashRevenue)}</td>
+                  <td className="py-3 text-right pr-4 text-muted-dark">-</td>
+                  <td className="py-3 text-right font-bold text-primary print:text-black">{formatRupiah(statements.consolidatedRevenue)}</td>
                 </tr>
                 <tr>
-                  <td className="py-3 pl-4 text-[#bbcbb2] print:text-slate-600">Pendapatan Lain-lain (Non-Operasional)</td>
-                  <td className="py-3 text-right pr-4 text-[#6b7367]">-</td>
-                  <td className="py-3 text-right pr-4 text-[#6b7367]">-</td>
-                  <td className="py-3 text-right pr-4 text-[#6b7367]">-</td>
-                  <td className="py-3 text-right text-white print:text-black">{formatRupiah(statements.otherIncome)}</td>
+                  <td className="py-3 pl-4 text-muted print:text-slate-600">Pendapatan Lain-lain (Non-Operasional)</td>
+                  <td className="py-3 text-right pr-4 text-muted-dark">-</td>
+                  <td className="py-3 text-right pr-4 text-muted-dark">-</td>
+                  <td className="py-3 text-right pr-4 text-muted-dark">-</td>
+                  <td className="py-3 text-right text-foreground print:text-black">{formatRupiah(statements.otherIncome)}</td>
                 </tr>
-                <tr className="bg-[#18181c]/20 font-bold border-y border-[#26272d] print:bg-slate-100 print:border-black">
-                  <td className="py-3 text-white print:text-black">TOTAL PENDAPATAN KOTOR</td>
+                <tr className="bg-subsurface font-bold border-y border-border print:bg-slate-100 print:border-black">
+                  <td className="py-3 text-foreground print:text-black">TOTAL PENDAPATAN KOTOR</td>
                   <td className="py-3 text-right pr-4 print:text-black">{formatRupiah(statements.cafeRevenue)}</td>
                   <td className="py-3 text-right pr-4 print:text-black">{formatRupiah(statements.carwashRevenue)}</td>
-                  <td className="py-3 text-right pr-4 text-[#6b7367]">-</td>
+                  <td className="py-3 text-right pr-4 text-muted-dark">-</td>
                   <td className="py-3 text-right font-black print:text-black">{formatRupiah(statements.totalRevenue)}</td>
                 </tr>
 
                 {/* Beban Langsung & Bahan */}
                 <tr>
-                  <td className="py-3 pl-4 text-[#bbcbb2] print:text-slate-600">Bahan Baku & Kemasan Cafe (COGS)</td>
-                  <td className="py-3 text-right pr-4 text-rose-400 print:text-black">({formatRupiah(statements.cafeBahanBaku)})</td>
-                  <td className="py-3 text-right pr-4 text-[#6b7367]">-</td>
-                  <td className="py-3 text-right pr-4 text-[#6b7367]">-</td>
-                  <td className="py-3 text-right text-rose-400 print:text-black">({formatRupiah(statements.cafeBahanBaku)})</td>
+                  <td className="py-3 pl-4 text-muted print:text-slate-600">Bahan Baku & Kemasan Cafe (COGS)</td>
+                  <td className="py-3 text-right pr-4 text-destructive print:text-black">({formatRupiah(statements.cafeBahanBaku)})</td>
+                  <td className="py-3 text-right pr-4 text-muted-dark">-</td>
+                  <td className="py-3 text-right pr-4 text-muted-dark">-</td>
+                  <td className="py-3 text-right text-destructive print:text-black">({formatRupiah(statements.cafeBahanBaku)})</td>
                 </tr>
                 <tr>
-                  <td className="py-3 pl-4 text-[#bbcbb2] print:text-slate-600">Chemical Cucian & Komisi Kru Pencuci</td>
-                  <td className="py-3 text-right pr-4 text-[#6b7367]">-</td>
-                  <td className="py-3 text-right pr-4 text-rose-400 print:text-black">({formatRupiah(statements.carwashCommission + statements.carwashBahan)})</td>
-                  <td className="py-3 text-right pr-4 text-[#6b7367]">-</td>
-                  <td className="py-3 text-right text-rose-400 print:text-black">({formatRupiah(statements.carwashCommission + statements.carwashBahan)})</td>
+                  <td className="py-3 pl-4 text-muted print:text-slate-600">Chemical Cucian & Komisi Kru Pencuci</td>
+                  <td className="py-3 text-right pr-4 text-muted-dark">-</td>
+                  <td className="py-3 text-right pr-4 text-destructive print:text-black">({formatRupiah(statements.carwashCommission + statements.carwashBahan)})</td>
+                  <td className="py-3 text-right pr-4 text-muted-dark">-</td>
+                  <td className="py-3 text-right text-destructive print:text-black">({formatRupiah(statements.carwashCommission + statements.carwashBahan)})</td>
                 </tr>
                 <tr>
-                  <td className="py-3 pl-4 text-[#bbcbb2] print:text-slate-600">Beban Operasional Khusus Segmen</td>
-                  <td className="py-3 text-right pr-4 text-rose-400 print:text-black">({formatRupiah(statements.cafeOperasional)})</td>
-                  <td className="py-3 text-right pr-4 text-rose-400 print:text-black">({formatRupiah(statements.carwashOperasional)})</td>
-                  <td className="py-3 text-right pr-4 text-[#6b7367]">-</td>
-                  <td className="py-3 text-right text-rose-400 print:text-black">({formatRupiah(statements.cafeOperasional + statements.carwashOperasional)})</td>
+                  <td className="py-3 pl-4 text-muted print:text-slate-600">Beban Operasional Khusus Segmen</td>
+                  <td className="py-3 text-right pr-4 text-destructive print:text-black">({formatRupiah(statements.cafeOperasional)})</td>
+                  <td className="py-3 text-right pr-4 text-destructive print:text-black">({formatRupiah(statements.carwashOperasional)})</td>
+                  <td className="py-3 text-right pr-4 text-muted-dark">-</td>
+                  <td className="py-3 text-right text-destructive print:text-black">({formatRupiah(statements.cafeOperasional + statements.carwashOperasional)})</td>
                 </tr>
                 <tr>
-                  <td className="py-3 pl-4 text-[#bbcbb2] print:text-slate-600">Beban Utilitas Bersama (Listrik, Air PDAM, Wi-Fi)</td>
-                  <td className="py-3 text-right pr-4 text-[#6b7367]">-</td>
-                  <td className="py-3 text-right pr-4 text-[#6b7367]">-</td>
-                  <td className="py-3 text-right pr-4 text-rose-400 print:text-black">({formatRupiah(statements.bebanBersamaUtilitas)})</td>
-                  <td className="py-3 text-right text-rose-400 print:text-black">({formatRupiah(statements.bebanBersamaUtilitas)})</td>
+                  <td className="py-3 pl-4 text-muted print:text-slate-600">Beban Utilitas Bersama (Listrik, Air PDAM, Wi-Fi)</td>
+                  <td className="py-3 text-right pr-4 text-muted-dark">-</td>
+                  <td className="py-3 text-right pr-4 text-muted-dark">-</td>
+                  <td className="py-3 text-right pr-4 text-destructive print:text-black">({formatRupiah(statements.bebanBersamaUtilitas)})</td>
+                  <td className="py-3 text-right text-destructive print:text-black">({formatRupiah(statements.bebanBersamaUtilitas)})</td>
                 </tr>
                 <tr>
-                  <td className="py-3 pl-4 text-[#bbcbb2] print:text-slate-600">Beban Gaji Kasir/Umum & Casbon</td>
-                  <td className="py-3 text-right pr-4 text-[#6b7367]">-</td>
-                  <td className="py-3 text-right pr-4 text-[#6b7367]">-</td>
-                  <td className="py-3 text-right pr-4 text-rose-400 print:text-black">({formatRupiah(statements.bebanBersamaGaji)})</td>
-                  <td className="py-3 text-right text-rose-400 print:text-black">({formatRupiah(statements.bebanBersamaGaji)})</td>
+                  <td className="py-3 pl-4 text-muted print:text-slate-600">Beban Gaji Kasir/Umum & Casbon</td>
+                  <td className="py-3 text-right pr-4 text-muted-dark">-</td>
+                  <td className="py-3 text-right pr-4 text-muted-dark">-</td>
+                  <td className="py-3 text-right pr-4 text-destructive print:text-black">({formatRupiah(statements.bebanBersamaGaji)})</td>
+                  <td className="py-3 text-right text-destructive print:text-black">({formatRupiah(statements.bebanBersamaGaji)})</td>
                 </tr>
                 {statements.bebanBersamaLain > 0 && (
                   <tr>
-                    <td className="py-3 pl-4 text-[#bbcbb2] print:text-slate-600">Beban Operasional Lain-lain</td>
-                    <td className="py-3 text-right pr-4 text-[#6b7367]">-</td>
-                    <td className="py-3 text-right pr-4 text-[#6b7367]">-</td>
-                    <td className="py-3 text-right pr-4 text-rose-400 print:text-black">({formatRupiah(statements.bebanBersamaLain)})</td>
-                    <td className="py-3 text-right text-rose-400 print:text-black">({formatRupiah(statements.bebanBersamaLain)})</td>
+                    <td className="py-3 pl-4 text-muted print:text-slate-600">Beban Operasional Lain-lain</td>
+                    <td className="py-3 text-right pr-4 text-muted-dark">-</td>
+                    <td className="py-3 text-right pr-4 text-muted-dark">-</td>
+                    <td className="py-3 text-right pr-4 text-destructive print:text-black">({formatRupiah(statements.bebanBersamaLain)})</td>
+                    <td className="py-3 text-right text-destructive print:text-black">({formatRupiah(statements.bebanBersamaLain)})</td>
                   </tr>
                 )}
 
-                <tr className="bg-[#18181c]/30 font-bold border-y border-[#26272d] print:bg-slate-100 print:border-black">
-                  <td className="py-3 text-white print:text-black">TOTAL BEBAN OPERASIONAL</td>
-                  <td className="py-3 text-right pr-4 text-rose-400 print:text-black">({formatRupiah(statements.totalBebanCafe)})</td>
-                  <td className="py-3 text-right pr-4 text-rose-400 print:text-black">({formatRupiah(statements.totalBebanCarwash)})</td>
-                  <td className="py-3 text-right pr-4 text-rose-400 print:text-black">({formatRupiah(statements.totalBebanBersama)})</td>
-                  <td className="py-3 text-right font-black text-rose-400 print:text-black">({formatRupiah(statements.totalOperatingExpenses)})</td>
+                <tr className="bg-subsurface font-bold border-y border-border print:bg-slate-100 print:border-black">
+                  <td className="py-3 text-foreground print:text-black">TOTAL BEBAN OPERASIONAL</td>
+                  <td className="py-3 text-right pr-4 text-destructive print:text-black">({formatRupiah(statements.totalBebanCafe)})</td>
+                  <td className="py-3 text-right pr-4 text-destructive print:text-black">({formatRupiah(statements.totalBebanCarwash)})</td>
+                  <td className="py-3 text-right pr-4 text-destructive print:text-black">({formatRupiah(statements.totalBebanBersama)})</td>
+                  <td className="py-3 text-right font-black text-destructive print:text-black">({formatRupiah(statements.totalOperatingExpenses)})</td>
                 </tr>
 
                 {/* Net Profit Segmen & Konsolidasi */}
-                <tr className="bg-rose-500/10 border-y-2 border-slate-700 font-extrabold text-sm print:bg-slate-200 print:border-black print:text-black">
-                  <td className="py-3.5 text-white print:text-black">LABA BERSIH BERJALAN (NET PROFIT)</td>
-                  <td className={`py-3.5 text-right pr-4 font-black ${statements.labaOperasionalCafe >= 0 ? 'text-[#00ffff]' : 'text-rose-400'} print:text-black`}>
+                <tr className="bg-destructive-bg border-y-2 border-border font-extrabold text-sm print:bg-slate-200 print:border-black print:text-black">
+                  <td className="py-3.5 text-foreground print:text-black">LABA BERSIH BERJALAN (NET PROFIT)</td>
+                  <td className={`py-3.5 text-right pr-4 font-black ${statements.labaOperasionalCafe >= 0 ? 'text-primary' : 'text-destructive'} print:text-black`}>
                     {formatRupiah(statements.labaOperasionalCafe)}
                   </td>
-                  <td className={`py-3.5 text-right pr-4 font-black ${statements.labaOperasionalCarwash >= 0 ? 'text-[#00ffff]' : 'text-rose-400'} print:text-black`}>
+                  <td className={`py-3.5 text-right pr-4 font-black ${statements.labaOperasionalCarwash >= 0 ? 'text-primary' : 'text-destructive'} print:text-black`}>
                     {formatRupiah(statements.labaOperasionalCarwash)}
                   </td>
-                  <td className="py-3.5 text-right pr-4 font-black text-rose-400 print:text-black">
+                  <td className="py-3.5 text-right pr-4 font-black text-destructive print:text-black">
                     ({formatRupiah(statements.totalBebanBersama)})
                   </td>
-                  <td className={`py-3.5 text-right font-black ${statements.netProfit >= 0 ? 'text-[#00ffff]' : 'text-rose-400'} print:text-black`}>
+                  <td className={`py-3.5 text-right font-black ${statements.netProfit >= 0 ? 'text-primary' : 'text-destructive'} print:text-black`}>
                     {formatRupiah(statements.netProfit)}
                   </td>
                 </tr>
@@ -761,40 +761,40 @@ const Reports = () => {
 
         {/* Section 2: Posisi Saldo Kas & Rekening */}
         <div className="space-y-4">
-          <h3 className="text-sm font-extrabold text-white border-l-4 border-rose-500 pl-2.5 uppercase tracking-wider print:text-black print:border-black">
+          <h3 className="text-sm font-extrabold text-foreground border-l-4 border-destructive/30 pl-2.5 uppercase tracking-wider print:text-black print:border-black">
             II. Laporan Rekonsiliasi & Posisi Saldo Kas (Cash Position)
           </h3>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 print:grid-cols-4">
             {posAccountList.length > 0 ? (
               posAccountList.map((acc) => (
-                <div key={acc.id || acc.pos} className="p-4 rounded-xl border border-[#26272d] bg-[#18181c]/30 text-center print:border-black print:bg-transparent">
-                  <span className="text-[10px] text-[#6b7367] uppercase font-semibold block truncate" title={acc.label || acc.pos}>
+                <div key={acc.id || acc.pos} className="p-4 rounded-xl border border-border bg-subsurface text-center print:border-black print:bg-transparent">
+                  <span className="text-[10px] text-muted-dark uppercase font-semibold block truncate" title={acc.label || acc.pos}>
                     {acc.label || acc.pos}
                   </span>
-                  <h4 className="text-lg font-mono tabular-nums font-black text-white mt-1 print:text-black">
+                  <h4 className="text-lg font-mono tabular-nums font-black text-foreground mt-1 print:text-black">
                     {formatRupiah(acc.current_balance ?? acc.balance ?? 0)}
                   </h4>
-                  <span className="text-[9px] text-[#6b7367] block mt-0.5 print:text-black">Saldo Buku ERPPoss</span>
+                  <span className="text-[9px] text-muted-dark block mt-0.5 print:text-black">Saldo Buku ERPPoss</span>
                 </div>
               ))
             ) : (
               <>
-                <div className="p-4 rounded-xl border border-[#26272d] bg-[#18181c]/30 text-center print:border-black print:bg-transparent">
-                  <span className="text-[10px] text-[#6b7367] uppercase font-semibold">Kas Laci Kasir</span>
-                  <h4 className="text-lg font-mono tabular-nums font-black text-white mt-1 print:text-black">{formatRupiah(posBalances.cash)}</h4>
+                <div className="p-4 rounded-xl border border-border bg-subsurface text-center print:border-black print:bg-transparent">
+                  <span className="text-[10px] text-muted-dark uppercase font-semibold">Kas Laci Kasir</span>
+                  <h4 className="text-lg font-mono tabular-nums font-black text-foreground mt-1 print:text-black">{formatRupiah(posBalances.cash)}</h4>
                 </div>
-                <div className="p-4 rounded-xl border border-[#26272d] bg-[#18181c]/30 text-center print:border-black print:bg-transparent">
-                  <span className="text-[10px] text-[#6b7367] uppercase font-semibold">Rekening Utama</span>
-                  <h4 className="text-lg font-mono tabular-nums font-black text-white mt-1 print:text-black">{formatRupiah(posBalances.rekY)}</h4>
+                <div className="p-4 rounded-xl border border-border bg-subsurface text-center print:border-black print:bg-transparent">
+                  <span className="text-[10px] text-muted-dark uppercase font-semibold">Rekening Utama</span>
+                  <h4 className="text-lg font-mono tabular-nums font-black text-foreground mt-1 print:text-black">{formatRupiah(posBalances.rekY)}</h4>
                 </div>
               </>
             )}
           </div>
 
-          <div className="p-4 rounded-xl border border-slate-700 bg-[#18181c]/50 flex justify-between items-center text-xs font-bold print:border-black print:bg-slate-100">
-            <span className="text-[#bbcbb2] print:text-black">TOTAL KAS LIKUID PERUSAHAAN (CASH & EQUIVALENTS)</span>
-            <span className="text-brand-emerald text-sm font-black print:text-black">
+          <div className="p-4 rounded-xl border border-border bg-subsurface flex justify-between items-center text-xs font-bold print:border-black print:bg-slate-100">
+            <span className="text-muted print:text-black">TOTAL KAS LIKUID PERUSAHAAN (CASH & EQUIVALENTS)</span>
+            <span className="text-success text-sm font-black print:text-black">
               {formatRupiah(statements.totalLiquid)}
             </span>
           </div>
@@ -802,35 +802,35 @@ const Reports = () => {
 
         {/* Section 3: Catatan Metrik Penunjang */}
         <div className="space-y-4">
-          <h3 className="text-sm font-extrabold text-white border-l-4 border-rose-500 pl-2.5 uppercase tracking-wider print:text-black print:border-black">
+          <h3 className="text-sm font-extrabold text-foreground border-l-4 border-destructive/30 pl-2.5 uppercase tracking-wider print:text-black print:border-black">
             III. Catatan Penunjang Laporan (Usaha & Metrik Operasional)
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:grid-cols-2 text-xs">
-            <div className="p-4 rounded-xl border border-[#26272d] bg-[#18181c]/20 space-y-2 print:border-black print:bg-transparent">
-              <h4 className="font-bold text-amber-400 uppercase tracking-wide print:text-black">Segmen Cafe</h4>
-              <div className="space-y-1 text-white print:text-black">
+            <div className="p-4 rounded-xl border border-border bg-subsurface space-y-2 print:border-black print:bg-transparent">
+              <h4 className="font-bold text-warning uppercase tracking-wide print:text-black">Segmen Cafe</h4>
+              <div className="space-y-1 text-foreground print:text-black">
                 <div className="flex justify-between">
-                  <span className="text-[#6b7367] print:text-slate-600">Total Porsi / Cup Terjual:</span>
-                  <span className="font-bold text-white print:text-black">{statements.totalCafeItems} unit</span>
+                  <span className="text-muted-dark print:text-slate-600">Total Porsi / Cup Terjual:</span>
+                  <span className="font-bold text-foreground print:text-black">{statements.totalCafeItems} unit</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#6b7367] print:text-slate-600">Rata-rata Transaksi (AOV):</span>
-                  <span className="font-bold text-white print:text-black">{formatRupiah(statements.aov)}</span>
+                  <span className="text-muted-dark print:text-slate-600">Rata-rata Transaksi (AOV):</span>
+                  <span className="font-bold text-foreground print:text-black">{formatRupiah(statements.aov)}</span>
                 </div>
               </div>
             </div>
 
-            <div className="p-4 rounded-xl border border-[#26272d] bg-[#18181c]/20 space-y-2 print:border-black print:bg-transparent">
-              <h4 className="font-bold text-brand-blue uppercase tracking-wide print:text-black">Segmen Carwash</h4>
-              <div className="space-y-1 text-white print:text-black">
+            <div className="p-4 rounded-xl border border-border bg-subsurface space-y-2 print:border-black print:bg-transparent">
+              <h4 className="font-bold text-primary uppercase tracking-wide print:text-black">Segmen Carwash</h4>
+              <div className="space-y-1 text-foreground print:text-black">
                 <div className="flex justify-between">
-                  <span className="text-[#6b7367] print:text-slate-600">Total Unit Mobil Dicuci:</span>
-                  <span className="font-bold text-white print:text-black">{statements.totalCars} unit</span>
+                  <span className="text-muted-dark print:text-slate-600">Total Unit Mobil Dicuci:</span>
+                  <span className="font-bold text-foreground print:text-black">{statements.totalCars} unit</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#6b7367] print:text-slate-600">Total Alokasi Komisi Kru:</span>
-                  <span className="font-bold text-white print:text-black">{formatRupiah(statements.carwashCommission)}</span>
+                  <span className="text-muted-dark print:text-slate-600">Total Alokasi Komisi Kru:</span>
+                  <span className="font-bold text-foreground print:text-black">{formatRupiah(statements.carwashCommission)}</span>
                 </div>
               </div>
             </div>
@@ -838,12 +838,12 @@ const Reports = () => {
         </div>
 
         {/* Footer Lembar Cetak */}
-        <div className="hidden print:flex justify-between items-center text-[10px] text-[#6b7367] border-t border-slate-200 mt-12 pt-4">
+        <div className="hidden print:flex justify-between items-center text-[10px] text-muted-dark border-t border-border mt-12 pt-4">
           <span>Dicetak otomatis oleh Sistem ERP {receiptConfig.storeName || 'RelayPOS'}</span>
           <span>Waktu Cetak: {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} WIB</span>
           <div className="flex flex-col items-center gap-1">
             <span>Disetujui Oleh:</span>
-            <span className="font-bold mt-8 text-black border-t border-black px-8 text-center">Owner / Manajemen</span>
+            <span className="font-bold mt-8 text-foreground border-t border-black px-8 text-center">Owner / Manajemen</span>
           </div>
         </div>
       </div>

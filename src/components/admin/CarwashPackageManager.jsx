@@ -235,21 +235,21 @@ const CarwashPackageManager = ({
   return (
     <div className="space-y-6">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/60 p-5 rounded-2xl border border-slate-800">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-surface p-5 rounded-2xl border border-border">
         <div>
-          <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+          <h3 className="text-base sm:text-lg font-black text-foreground flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-primary-soft text-primary-soft-foreground border border-primary/30">
               <Sparkles size={18} />
             </div>
             <span>Master Paket & Tarif Cuci Mobil</span>
           </h3>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-muted mt-1">
             Konfigurasi nama layanan, matriks tarif kendaraan, pemotongan stok bahan kimia (BOM), dan komisi kru.
           </p>
         </div>
         <button
           onClick={openNewModal}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs shadow-lg shadow-cyan-500/20 transition-all cursor-pointer shrink-0"
+          className="bg-primary flex items-center gap-2 px-4 py-2.5 rounded-xl text-primary-foreground font-black text-xs shadow-lg shadow-sm transition-all cursor-pointer shrink-0"
         >
           <Plus size={16} />
           <span>Tambah Paket Baru</span>
@@ -269,43 +269,43 @@ const CarwashPackageManager = ({
               key={pkg.id || pkg.nama_paket}
               className={`p-5 rounded-2xl border transition-all ${
                 isActive
-                  ? 'bg-slate-900/40 border-slate-800 hover:border-slate-700'
-                  : 'bg-slate-950/40 border-slate-900/80 opacity-60'
+                  ? 'bg-surface border-border hover:border-border-hover'
+                  : 'bg-surface border-slate-900/80 opacity-60'
               }`}
             >
               {/* Header card */}
               <div className="flex justify-between items-start gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="text-sm font-black text-white tracking-wide uppercase">
+                    <h4 className="text-sm font-black text-foreground tracking-wide uppercase">
                       {pkg.nama_paket}
                     </h4>
                     <span
                       className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
                         isActive
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                          : 'bg-slate-800 text-slate-400 border-slate-700'
+                          ? 'bg-success-bg text-success border-success/30'
+                          : 'bg-subsurface text-muted border-border'
                       }`}
                     >
                       {isActive ? 'AKTIF' : 'NON-AKTIF'}
                     </span>
                   </div>
                   {pkg.keterangan && (
-                    <p className="text-xs text-slate-400 mt-1 line-clamp-1">{pkg.keterangan}</p>
+                    <p className="text-xs text-muted mt-1 line-clamp-1">{pkg.keterangan}</p>
                   )}
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     onClick={() => openEditModal(pkg)}
-                    className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-cyan-400 hover:bg-slate-700 transition-colors"
+                    className="p-1.5 rounded-lg bg-subsurface text-muted hover:text-primary hover:bg-surface-hover transition-colors"
                     title="Edit Paket & Resep Bahan Cuci"
                   >
                     <Edit3 size={14} />
                   </button>
                   <button
                     onClick={() => onDeletePackage(pkg.id)}
-                    className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-rose-400 hover:bg-slate-700 transition-colors"
+                    className="p-1.5 rounded-lg bg-subsurface text-muted hover:text-destructive hover:bg-surface-hover transition-colors"
                     title="Hapus Paket"
                   >
                     <Trash2 size={14} />
@@ -314,30 +314,30 @@ const CarwashPackageManager = ({
               </div>
 
               {/* Takaran Bahan Kimia Cuci (BOM) */}
-              <div className="mt-3 p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-cyan-400 mb-1">
+              <div className="mt-3 p-2.5 rounded-xl bg-subsurface border border-border">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-primary mb-1">
                   <FlaskConical size={13} />
                   <span>Stok Bahan Kimia Digunakan (per Mobil):</span>
                 </div>
                 {pkgRecipes.length > 0 ? (
                   <div className="flex flex-wrap gap-1.5">
                     {pkgRecipes.map((r, i) => (
-                      <span key={i} className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-900 border border-slate-700 text-slate-300">
-                        {r.nama_bahan}: <strong className="text-cyan-300">{r.jumlah_dibutuhkan || r.jumlah} {r.satuan}</strong>
+                      <span key={i} className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-surface border border-border text-muted">
+                        {r.nama_bahan}: <strong className="text-primary">{r.jumlah_dibutuhkan || r.jumlah} {r.satuan}</strong>
                       </span>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-[10px] text-slate-500 italic">
+                  <p className="text-[10px] text-muted-dark italic">
                     Belum diset bahan kimia (klik edit untuk memasukkan takaran shampo/semir).
                   </p>
                 )}
               </div>
 
               {/* Komisi Badge */}
-              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-800/60 text-xs">
-                <span className="text-slate-400">Komisi Kru:</span>
-                <span className="font-bold text-amber-400">
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border text-xs">
+                <span className="text-muted">Komisi Kru:</span>
+                <span className="font-bold text-warning">
                   {pkg.komisi_skema === 'PERCENT'
                     ? `${pkg.komisi_value}% dari tarif`
                     : pkg.komisi_skema === 'FIXED'
@@ -350,23 +350,23 @@ const CarwashPackageManager = ({
               <div className="mt-3 overflow-x-auto">
                 <table className="w-full text-xs text-left">
                   <thead>
-                    <tr className="text-slate-400 border-b border-slate-800/60 text-[10px] uppercase">
+                    <tr className="text-muted border-b border-border text-[10px] uppercase">
                       <th className="py-1 font-semibold">Ukuran</th>
                       <th className="py-1 text-right font-semibold">Reguler</th>
                       <th className="py-1 text-right font-semibold">Body Only</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/40 text-slate-300">
+                  <tbody className="divide-y divide-border text-muted">
                     {SIZES.map(s => {
                       const regPrice = pkg.tarif?.[s]?.Regular ?? 0
                       const bodyPrice = pkg.tarif?.[s]?.['Body only'] ?? 0
                       return (
-                        <tr key={s} className="hover:bg-slate-800/30">
-                          <td className="py-1 text-slate-400 font-medium">{s}</td>
-                          <td className="py-1 text-right font-mono font-bold text-emerald-400">
+                        <tr key={s} className="hover:bg-surface-hover">
+                          <td className="py-1 text-muted font-medium">{s}</td>
+                          <td className="py-1 text-right font-mono font-bold text-success">
                             {formatRupiah(regPrice)}
                           </td>
-                          <td className="py-1 text-right font-mono text-slate-300">
+                          <td className="py-1 text-right font-mono text-muted">
                             {formatRupiah(bodyPrice)}
                           </td>
                         </tr>
@@ -382,18 +382,18 @@ const CarwashPackageManager = ({
 
       {/* Modal Add / Edit */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
-          <div className="glass-panel w-full max-w-xl p-6 rounded-2xl border border-slate-800 bg-slate-900 my-8 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center pb-4 border-b border-slate-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--overlay-backdrop)] backdrop-blur-sm animate-fade-in overflow-y-auto">
+          <div className="bg-surface border border-border shadow-sm w-full max-w-xl p-6 rounded-2xl my-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center pb-4 border-b border-border">
               <div className="flex items-center gap-2">
-                <Car size={18} className="text-cyan-400" />
-                <h3 className="text-base font-black text-white uppercase">
+                <Car size={18} className="text-primary" />
+                <h3 className="text-base font-black text-foreground uppercase">
                   {editingId ? 'Edit Paket Cuci' : 'Tambah Paket Cuci Baru'}
                 </h3>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+                className="p-1 text-muted hover:text-foreground rounded-lg hover:bg-surface-hover transition-colors"
               >
                 <X size={18} />
               </button>
@@ -402,7 +402,7 @@ const CarwashPackageManager = ({
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               {/* Nama Paket */}
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-muted uppercase tracking-wider mb-1">
                   Nama Paket Cuci *
                 </label>
                 <input
@@ -411,13 +411,13 @@ const CarwashPackageManager = ({
                   placeholder="Contoh: PAKET CUCI SALJU REGULER"
                   value={formData.nama_paket}
                   onChange={e => setFormData(prev => ({ ...prev, nama_paket: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white uppercase focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-surface border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground uppercase focus:outline-none focus:border-ring"
                 />
               </div>
 
               {/* Keterangan */}
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-muted uppercase tracking-wider mb-1">
                   Keterangan / Deskripsi Singkat
                 </label>
                 <input
@@ -425,26 +425,26 @@ const CarwashPackageManager = ({
                   placeholder="Contoh: Cuci bodi luar + semir ban + vakum interior"
                   value={formData.keterangan}
                   onChange={e => setFormData(prev => ({ ...prev, keterangan: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-surface border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground focus:outline-none focus:border-ring"
                 />
               </div>
 
               {/* 🧪 STANDAR PENGGUNAAN BAHAN KIMIA (BOM CUCI) */}
-              <div className="p-4 rounded-xl bg-slate-950/80 border border-cyan-500/30 space-y-3">
+              <div className="p-4 rounded-xl bg-subsurface border border-primary/30 space-y-3">
                 <div className="flex justify-between items-center">
                   <div>
-                    <label className="text-xs font-black text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <label className="text-xs font-black text-primary uppercase tracking-wider flex items-center gap-1.5">
                       <FlaskConical size={14} />
                       Takaran Bahan Kimia per Mobil (BOM)
                     </label>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[11px] text-muted">
                       Stok di Gudang Carwash otomatis terpotong saat mobil selesai dicuci.
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={handleAddResepRow}
-                    className="px-2 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 text-[11px] font-bold transition-all"
+                    className="px-2 py-1 rounded-lg bg-primary-soft border border-primary/30 text-primary-soft-foreground hover:bg-primary-hover text-[11px] font-bold transition-all"
                   >
                     + Tambah Bahan
                   </button>
@@ -452,7 +452,7 @@ const CarwashPackageManager = ({
 
                 <div className="space-y-2">
                   {formData.resep_bahan.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+                    <div key={idx} className="flex items-center gap-2 bg-surface p-2 rounded-lg border border-border">
                       {/* Dropdown Bahan Kimia */}
                       <div className="flex-1">
                         <input
@@ -461,7 +461,7 @@ const CarwashPackageManager = ({
                           placeholder="Pilih atau ketik bahan (misal: Shampo Snow Foam)"
                           value={item.nama_bahan}
                           onChange={(e) => handleResepChange(idx, 'nama_bahan', e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-400"
+                          className="w-full bg-surface border border-border rounded-lg px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:border-ring"
                         />
                         <datalist id="chemical-options">
                           {carwashChemicals.map((c, i) => (
@@ -483,7 +483,7 @@ const CarwashPackageManager = ({
                           placeholder="Jumlah"
                           value={item.jumlah}
                           onChange={(e) => handleResepChange(idx, 'jumlah', e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-cyan-300 font-mono text-center focus:outline-none focus:border-cyan-400"
+                          className="w-full bg-surface border border-border rounded-lg px-2 py-1.5 text-xs text-primary font-mono text-center focus:outline-none focus:border-ring"
                         />
                       </div>
 
@@ -492,7 +492,7 @@ const CarwashPackageManager = ({
                         <select
                           value={item.satuan || 'Liter'}
                           onChange={(e) => handleResepChange(idx, 'satuan', e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-cyan-400"
+                          className="w-full bg-surface border border-border rounded-lg px-2 py-1.5 text-xs text-muted focus:outline-none focus:border-ring"
                         >
                           <option value="Liter">Liter</option>
                           <option value="ml">ml</option>
@@ -505,7 +505,7 @@ const CarwashPackageManager = ({
                       <button
                         type="button"
                         onClick={() => handleRemoveResepRow(idx)}
-                        className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg transition-colors"
+                        className="p-1.5 text-muted-dark hover:text-destructive rounded-lg transition-colors"
                       >
                         <Trash2 size={13} />
                       </button>
@@ -516,7 +516,7 @@ const CarwashPackageManager = ({
 
               {/* Skema Komisi Kru */}
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-muted uppercase tracking-wider">
                   Skema Komisi Kru Cuci
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -531,8 +531,8 @@ const CarwashPackageManager = ({
                       onClick={() => setFormData(prev => ({ ...prev, komisi_skema: scheme.id }))}
                       className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center ${
                         formData.komisi_skema === scheme.id
-                          ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400'
-                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                          ? 'bg-primary-soft border-primary/30 text-primary-soft-foreground'
+                          : 'bg-surface border-border text-muted hover:text-foreground'
                       }`}
                     >
                       {scheme.label}
@@ -542,14 +542,14 @@ const CarwashPackageManager = ({
 
                 {formData.komisi_skema !== 'TIERED' && (
                   <div className="mt-2">
-                    <label className="block text-[10px] text-slate-400 mb-1">
+                    <label className="block text-[10px] text-muted mb-1">
                       {formData.komisi_skema === 'PERCENT' ? 'Persentase Komisi (%)' : 'Nominal Komisi (Rp)'}
                     </label>
                     <input
                       type="number"
                       value={formData.komisi_value}
                       onChange={e => setFormData(prev => ({ ...prev, komisi_value: e.target.value }))}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
+                      className="w-full bg-surface border border-border rounded-xl px-3.5 py-2 text-xs text-foreground font-mono focus:outline-none focus:border-ring"
                     />
                   </div>
                 )}
@@ -557,30 +557,30 @@ const CarwashPackageManager = ({
 
               {/* Matriks Tarif per Ukuran */}
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-muted uppercase tracking-wider">
                   Matriks Tarif Kendaraan (Rp) *
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-subsurface p-4 rounded-xl border border-border">
                   {SIZES.map(s => (
-                    <div key={s} className="p-3 bg-slate-900/80 rounded-xl border border-slate-800/80 space-y-2">
-                      <div className="text-xs font-bold text-cyan-300 uppercase">{s}</div>
+                    <div key={s} className="p-3 bg-surface rounded-xl border border-border space-y-2">
+                      <div className="text-xs font-bold text-primary uppercase">{s}</div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-[10px] text-slate-400 mb-0.5">Reguler</label>
+                          <label className="block text-[10px] text-muted mb-0.5">Reguler</label>
                           <input
                             type="text"
                             value={formData.tarif?.[s]?.Regular || ''}
                             onChange={e => handlePriceChange(s, 'Regular', e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-emerald-400 font-mono focus:outline-none focus:border-cyan-500"
+                            className="w-full bg-surface border border-border rounded-lg px-2.5 py-1.5 text-xs text-success font-mono focus:outline-none focus:border-ring"
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] text-slate-400 mb-0.5">Body Only</label>
+                          <label className="block text-[10px] text-muted mb-0.5">Body Only</label>
                           <input
                             type="text"
                             value={formData.tarif?.[s]?.['Body only'] || ''}
                             onChange={e => handlePriceChange(s, 'Body only', e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 font-mono focus:outline-none focus:border-cyan-500"
+                            className="w-full bg-surface border border-border rounded-lg px-2.5 py-1.5 text-xs text-muted font-mono focus:outline-none focus:border-ring"
                           />
                         </div>
                       </div>
@@ -590,18 +590,18 @@ const CarwashPackageManager = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex justify-end items-center gap-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end items-center gap-3 pt-4 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold cursor-pointer transition-colors"
+                  className="px-4 py-2.5 rounded-xl border border-border text-muted hover:text-foreground hover:bg-surface-hover text-xs font-bold cursor-pointer transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-black shadow-lg shadow-cyan-500/20 cursor-pointer transition-all disabled:opacity-50"
+                  className="bg-primary px-5 py-2.5 rounded-xl text-primary-foreground text-xs font-black shadow-lg shadow-sm cursor-pointer transition-all disabled:opacity-50"
                 >
                   {loading ? 'Menyimpan...' : 'Simpan Paket & Resep Bahan'}
                 </button>
