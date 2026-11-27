@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import RelayLogo from '../components/brand/RelayLogo'
 import {
   ArrowRight,
   BookOpen,
@@ -94,7 +95,7 @@ const BUSINESS_MODES = [
     code: 'CAFE',
     name: 'Mode Cafe & Resto',
     icon: Coffee,
-    accent: 'text-amber-400 border-amber-500/30 bg-amber-500/10',
+    accent: 'text-warning border-warning/30 bg-warning-bg',
     description: 'Fokus operasional F&B, meja open bill, resep HPP (BOM), dan stok dapur.',
     items: ['POS Katalog Menu & Modifier', 'Open Bill Meja Bayar Nanti', 'Pemotongan Stok Bahan Resep Otomatis']
   },
@@ -102,7 +103,7 @@ const BUSINESS_MODES = [
     code: 'CARWASH',
     name: 'Mode Carwash & Detailing',
     icon: Car,
-    accent: 'text-cyan-400 border-cyan-500/30 bg-cyan-500/10',
+    accent: 'text-primary-soft-foreground border-primary/25 bg-primary-soft',
     description: 'Fokus layanan cuci kendaraan berdasarkan ukuran, antrean Kanban, dan komisi pencuci.',
     items: ['Matriks Tarif Small s.d. Extra Large', 'Antrean Kanban Tunggu vs Tinggal', 'Alokasi Komisi Kru & CRM Plat Nomor']
   },
@@ -110,7 +111,7 @@ const BUSINESS_MODES = [
     code: 'HYBRID',
     name: 'Mode Hybrid Terpadu',
     icon: Layers,
-    accent: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10',
+    accent: 'text-success border-success/30 bg-success-bg',
     description: 'Gabungkan lini Carwash + Cafe dalam satu struk pelanggan dan satu pembukuan terpisah.',
     items: ['1 Struk Gabungan Cuci + Kopi/Makanan', 'Laporan Laba Rugi per Segmen Usaha', 'Konsolidasi Kas & Multi-Gudang Terpusat']
   }
@@ -171,40 +172,36 @@ const LandingPage = () => {
     SCREENSHOT_SHOWCASE.find((s) => s.id === selectedScreenshotId) || SCREENSHOT_SHOWCASE[0]
 
   return (
-    <div className="min-h-screen bg-[#080C14] text-slate-100">
+    <div className="min-h-screen bg-canvas text-foreground">
       {/* Sticky Navbar */}
-      <header className="sticky top-0 z-40 h-14 bg-[#080C14]/95 border-b border-slate-800">
+      <header className="sticky top-0 z-40 h-16 bg-surface/95 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-2.5 shrink-0">
-            <img
-              src="/relaypos-logo.svg"
-              alt="RelayPOS"
-              className="w-7 h-7 rounded-lg border border-slate-700 bg-[#0F172A] p-0.5 object-contain"
-            />
+            <RelayLogo size="sm" />
             <div className="leading-none">
-              <span className="font-bold text-sm tracking-wide text-white uppercase">RelayPOS</span>
-              <span className="hidden sm:block text-[10px] text-slate-400 mt-0.5">
+              <span className="font-bold text-sm tracking-wide text-foreground uppercase">RelayPOS</span>
+              <span className="hidden sm:block text-[10px] text-muted mt-0.5">
                 SaaS ERP &amp; Kasir Estafet
               </span>
             </div>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-5 text-xs font-semibold text-slate-400">
-            <a href="#screenshots" className="hover:text-white transition-colors">
+          <nav className="hidden md:flex items-center gap-5 text-xs font-semibold text-muted">
+            <a href="#screenshots" className="hover:text-foreground transition-colors">
               Screenshot Aplikasi
             </a>
-            <a href="#model-bisnis" className="hover:text-white transition-colors">
+            <a href="#model-bisnis" className="hover:text-foreground transition-colors">
               Mode Bisnis
             </a>
-            <a href="#fitur" className="hover:text-white transition-colors">
+            <a href="#fitur" className="hover:text-foreground transition-colors">
               Fitur Utama
             </a>
-            <a href="#beta" className="hover:text-white transition-colors">
+            <a href="#beta" className="hover:text-foreground transition-colors">
               Beta 30 Hari
             </a>
             <Link
               to="/panduan"
-              className="inline-flex items-center gap-1.5 text-cyan-300 hover:text-cyan-200 transition-colors"
+              className="inline-flex items-center gap-1.5 text-primary hover:underline transition-colors"
             >
               <BookOpen size={14} strokeWidth={1.75} />
               <span>Panduan Pengguna</span>
@@ -214,7 +211,7 @@ const LandingPage = () => {
           <div className="flex items-center gap-2 shrink-0">
             <Link
               to="/panduan"
-              className="md:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#0F172A] border border-slate-800 text-xs font-semibold text-cyan-300"
+              className="md:hidden inline-flex items-center gap-1 min-h-[40px] px-3 py-1.5 rounded-full bg-subsurface border border-border text-xs font-semibold text-primary"
             >
               <BookOpen size={13} strokeWidth={1.75} />
               <span>Panduan</span>
@@ -222,7 +219,7 @@ const LandingPage = () => {
             {user ? (
               <Link
                 to="/dashboard"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 text-xs font-bold transition-all active:scale-[0.98]"
+                className="inline-flex items-center gap-1.5 min-h-[40px] px-4 py-1.5 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold transition-all active:scale-[0.98]"
               >
                 <span>Buka Aplikasi</span>
                 <ArrowRight size={14} strokeWidth={2} />
@@ -231,14 +228,14 @@ const LandingPage = () => {
               <>
                 <Link
                   to="/login"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0F172A] hover:bg-[#1E293B] border border-slate-700 text-xs font-semibold text-white transition-all active:scale-[0.98]"
+                  className="inline-flex items-center gap-1.5 min-h-[40px] px-3.5 py-1.5 rounded-full bg-surface hover:bg-surface-hover border border-border text-xs font-semibold text-foreground transition-all active:scale-[0.98]"
                 >
                   <LogIn size={13} strokeWidth={1.75} />
                   <span>Masuk</span>
                 </Link>
                 <Link
                   to="/login?mode=register"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition-all active:scale-[0.98]"
+                  className="inline-flex items-center gap-1.5 min-h-[40px] px-4 py-1.5 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold transition-all active:scale-[0.98]"
                 >
                   <span>Coba Gratis 30 Hari</span>
                 </Link>
@@ -249,19 +246,19 @@ const LandingPage = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="px-4 sm:px-6 pt-12 pb-10 sm:pt-16 sm:pb-14 border-b border-slate-800">
+      <section className="px-4 sm:px-6 pt-12 pb-10 sm:pt-16 sm:pb-14 border-b border-border bg-canvas">
         <div className="max-w-7xl mx-auto space-y-10">
           <div className="max-w-3xl space-y-5">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-[11px] font-bold uppercase tracking-wider text-emerald-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-soft border border-primary/25 text-[11px] font-bold uppercase tracking-wider text-primary-soft-foreground">
+              <span className="w-2 h-2 rounded-full bg-primary"></span>
               <span>Beta Publik Gratis 30 Hari • Tanpa Kartu Kredit</span>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-white leading-tight">
+            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-foreground leading-tight">
               Kasir Estafet &amp; ERP Akuntansi Real-Time untuk Bisnis Cafe, Carwash, dan Hybrid
             </h1>
 
-            <p className="text-sm sm:text-base text-slate-400 leading-relaxed max-w-2xl">
+            <p className="text-sm sm:text-base text-muted leading-relaxed max-w-2xl">
               Satukan transaksi kasir, antrean kendaraan, pemotongan stok resep (BOM), pembagian komisi kru
               cuci, hingga laporan keuangan standar SAK EMKM dalam satu sistem multi-outlet yang cepat di tablet
               maupun desktop.
@@ -270,21 +267,21 @@ const LandingPage = () => {
             <div className="flex flex-wrap items-center gap-3 pt-1">
               <Link
                 to="/login?mode=register"
-                className="h-11 px-5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-bold inline-flex items-center gap-2 transition-all active:scale-[0.98]"
+                className="min-h-[44px] px-6 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground text-sm font-semibold inline-flex items-center gap-2 transition-all active:scale-[0.98] shadow-xs"
               >
                 <span>Mulai Uji Coba Gratis 30 Hari</span>
                 <ArrowRight size={16} strokeWidth={2} />
               </Link>
               <Link
                 to="/panduan"
-                className="h-11 px-5 rounded-xl bg-[#0F172A] hover:bg-[#1E293B] border border-slate-700 text-white text-sm font-semibold inline-flex items-center gap-2 transition-all active:scale-[0.98]"
+                className="min-h-[44px] px-5 rounded-full bg-surface hover:bg-surface-hover border border-border text-foreground text-sm font-semibold inline-flex items-center gap-2 transition-all active:scale-[0.98]"
               >
-                <BookOpen size={16} strokeWidth={1.75} className="text-cyan-400" />
+                <BookOpen size={16} strokeWidth={1.75} className="text-primary" />
                 <span>Baca User Manual &amp; SOP</span>
               </Link>
               <Link
                 to="/login"
-                className="h-11 px-4 rounded-xl text-slate-300 hover:text-white text-sm font-semibold inline-flex items-center gap-1.5"
+                className="min-h-[44px] px-4 rounded-full text-muted hover:text-foreground text-sm font-semibold inline-flex items-center gap-1.5"
               >
                 <span>Sudah punya akun? Masuk</span>
               </Link>
@@ -296,12 +293,12 @@ const LandingPage = () => {
             {METRICS_STRIP.map((m) => (
               <div
                 key={m.label}
-                className="p-4 rounded-xl bg-[#0F172A] border border-slate-800 space-y-1"
+                className="p-4 rounded-2xl bg-surface border border-border shadow-xs space-y-1"
               >
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">
                   {m.label}
                 </span>
-                <span className="block text-sm sm:text-base font-bold font-mono tabular-nums text-sky-400">
+                <span className="block text-sm sm:text-base font-bold font-mono tabular-nums text-primary">
                   {m.value}
                 </span>
               </div>
@@ -311,24 +308,24 @@ const LandingPage = () => {
       </section>
 
       {/* Interactive Application Screenshot Showcase */}
-      <section id="screenshots" className="px-4 sm:px-6 py-14 border-b border-slate-800 bg-[#080C14]">
+      <section id="screenshots" className="px-4 sm:px-6 py-14 border-b border-border bg-surface">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div className="space-y-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
                 Tampilan Asli Aplikasi
               </span>
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                 Lihat Modul Operasional RelayPOS Sebelum Mendaftar
               </h2>
-              <p className="text-xs sm:text-sm text-slate-400 max-w-2xl">
+              <p className="text-xs sm:text-sm text-muted max-w-2xl">
                 Pilih modul di bawah untuk melihat tangkapan layar antarmuka asli yang digunakan kasir,
                 pengawas cuci, dan owner setiap hari.
               </p>
             </div>
             <Link
               to="/panduan"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-300 hover:text-cyan-200 shrink-0"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline shrink-0"
             >
               <span>Pelajari SOP di User Manual</span>
               <ArrowRight size={14} strokeWidth={1.75} />
@@ -346,10 +343,10 @@ const LandingPage = () => {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setSelectedScreenshotId(item.id)}
-                  className={`h-10 px-3.5 rounded-xl text-xs font-bold border transition-all active:scale-[0.98] cursor-pointer ${
+                  className={`min-h-[40px] px-4 rounded-full text-xs font-semibold border transition-all active:scale-[0.98] cursor-pointer ${
                     active
-                      ? 'bg-cyan-500/15 border-cyan-400 text-cyan-300'
-                      : 'bg-[#0F172A] border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                      ? 'bg-selected-surface border-border-active text-primary-soft-foreground'
+                      : 'bg-subsurface border-border text-muted hover:text-foreground hover:border-border-hover'
                   }`}
                 >
                   {item.tabLabel}
@@ -360,16 +357,16 @@ const LandingPage = () => {
 
           {/* Frame Showcase */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <div className="lg:col-span-8 rounded-xl border border-slate-800 bg-[#0F172A] overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-slate-800 flex items-center justify-between gap-2 bg-[#0b1120]">
-                <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
-                  <Monitor size={14} strokeWidth={1.75} className="text-cyan-400" />
+            <div className="lg:col-span-8 rounded-2xl border border-border bg-subsurface overflow-hidden shadow-xs">
+              <div className="px-4 py-2.5 border-b border-border flex items-center justify-between gap-2 bg-surface">
+                <div className="flex items-center gap-2 text-xs text-muted font-mono">
+                  <Monitor size={14} strokeWidth={1.75} className="text-primary" />
                   <span>{activeShot.tabLabel}</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setZoomedShot(activeShot)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1E293B] hover:bg-slate-700 border border-slate-700 text-[11px] font-semibold text-white transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1 rounded-full bg-subsurface hover:bg-surface-hover border border-border text-[11px] font-semibold text-foreground transition-all cursor-pointer"
                 >
                   <Maximize2 size={12} strokeWidth={1.75} />
                   <span>Perbesar Preview</span>
@@ -389,26 +386,26 @@ const LandingPage = () => {
               </button>
             </div>
 
-            <div className="lg:col-span-4 bg-[#0F172A] border border-slate-800 rounded-xl p-5 space-y-4">
-              <span className="inline-block px-2.5 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/25 text-[10px] font-bold uppercase tracking-wider text-cyan-300">
+            <div className="lg:col-span-4 bg-canvas border border-border rounded-2xl p-5 space-y-4 shadow-xs">
+              <span className="inline-block px-2.5 py-0.5 rounded-full bg-primary-soft border border-primary/25 text-[10px] font-bold uppercase tracking-wider text-primary-soft-foreground">
                 Detail Modul
               </span>
-              <h3 className="text-lg font-bold text-white leading-snug">{activeShot.title}</h3>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">{activeShot.description}</p>
+              <h3 className="text-lg font-bold text-foreground leading-snug">{activeShot.title}</h3>
+              <p className="text-xs sm:text-sm text-muted leading-relaxed">{activeShot.description}</p>
 
               <ul className="space-y-2.5 pt-1">
                 {activeShot.highlights.map((hl) => (
-                  <li key={hl} className="flex items-start gap-2.5 text-xs text-slate-200 leading-relaxed">
-                    <CheckCircle2 size={15} strokeWidth={1.75} className="text-emerald-400 shrink-0 mt-0.5" />
+                  <li key={hl} className="flex items-start gap-2.5 text-xs text-foreground leading-relaxed">
+                    <CheckCircle2 size={15} strokeWidth={1.75} className="text-success shrink-0 mt-0.5" />
                     <span>{hl}</span>
                   </li>
                 ))}
               </ul>
 
-              <div className="pt-2 border-t border-slate-800 flex flex-wrap gap-2">
+              <div className="pt-3 border-t border-border flex flex-wrap gap-2">
                 <Link
                   to="/login?mode=register"
-                  className="w-full h-10 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+                  className="w-full min-h-[44px] rounded-full bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
                 >
                   <span>Coba Modul Ini Gratis 30 Hari</span>
                   <ArrowRight size={14} strokeWidth={2} />
@@ -420,16 +417,16 @@ const LandingPage = () => {
       </section>
 
       {/* 3 Adaptive Business Modes */}
-      <section id="model-bisnis" className="px-4 sm:px-6 py-14 border-b border-slate-800 bg-[#0b101b]">
+      <section id="model-bisnis" className="px-4 sm:px-6 py-14 border-b border-border bg-canvas">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="space-y-1.5 max-w-2xl">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
               Menyesuaikan Jenis Usaha Anda
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
               Tiga Mode Operasional dalam Satu Platform
             </h2>
-            <p className="text-xs sm:text-sm text-slate-400">
+            <p className="text-xs sm:text-sm text-muted">
               Pilih tipe usaha saat pendaftaran. Menu kasir, antrean, gudang, dan starter data langsung
               menyesuaikan agar staf tidak melihat modul yang tidak dibutuhkan.
             </p>
@@ -441,23 +438,23 @@ const LandingPage = () => {
               return (
                 <div
                   key={mode.code}
-                  className="bg-[#0F172A] border border-slate-800 rounded-xl p-5 flex flex-col justify-between gap-4"
+                  className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between gap-4 shadow-xs"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${mode.accent}`}>
                         <Icon size={18} strokeWidth={1.75} />
                       </div>
-                      <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-[#080C14] border border-slate-800 text-slate-300">
+                      <span className="font-mono text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-subsurface border border-border text-muted">
                         {mode.code}
                       </span>
                     </div>
-                    <h3 className="text-base font-bold text-white">{mode.name}</h3>
-                    <p className="text-xs text-slate-400 leading-relaxed">{mode.description}</p>
+                    <h3 className="text-base font-bold text-foreground">{mode.name}</h3>
+                    <p className="text-xs text-muted leading-relaxed">{mode.description}</p>
                     <ul className="space-y-2 pt-1">
                       {mode.items.map((item) => (
-                        <li key={item} className="flex items-start gap-2 text-xs text-slate-200">
-                          <CheckCircle2 size={14} strokeWidth={1.75} className="text-emerald-400 shrink-0 mt-0.5" />
+                        <li key={item} className="flex items-start gap-2 text-xs text-foreground">
+                          <CheckCircle2 size={14} strokeWidth={1.75} className="text-success shrink-0 mt-0.5" />
                           <span>{item}</span>
                         </li>
                       ))}
@@ -471,13 +468,13 @@ const LandingPage = () => {
       </section>
 
       {/* 6 Core Capabilities */}
-      <section id="fitur" className="px-4 sm:px-6 py-14 border-b border-slate-800">
+      <section id="fitur" className="px-4 sm:px-6 py-14 border-b border-border bg-surface">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="space-y-1.5 max-w-2xl">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
               Arsitektur Pengendalian Internal
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
               Dirancang untuk Mencegah Kebocoran Kas &amp; Stok
             </h2>
           </div>
@@ -488,13 +485,13 @@ const LandingPage = () => {
               return (
                 <div
                   key={feat.title}
-                  className="bg-[#0F172A] border border-slate-800 rounded-xl p-5 space-y-2.5"
+                  className="bg-canvas border border-border rounded-2xl p-5 space-y-2.5 shadow-xs"
                 >
-                  <div className="w-9 h-9 rounded-lg bg-[#1E293B] border border-slate-700 flex items-center justify-center text-cyan-400">
+                  <div className="w-9 h-9 rounded-xl bg-primary-soft border border-primary/25 flex items-center justify-center text-primary">
                     <Icon size={17} strokeWidth={1.75} />
                   </div>
-                  <h3 className="text-sm font-bold text-white">{feat.title}</h3>
-                  <p className="text-xs text-slate-400 leading-relaxed">{feat.description}</p>
+                  <h3 className="text-sm font-bold text-foreground">{feat.title}</h3>
+                  <p className="text-xs text-muted leading-relaxed">{feat.description}</p>
                 </div>
               )
             })}
@@ -503,17 +500,17 @@ const LandingPage = () => {
       </section>
 
       {/* Beta 30 Days + User Manual Banner */}
-      <section id="beta" className="px-4 sm:px-6 py-14">
+      <section id="beta" className="px-4 sm:px-6 py-14 bg-canvas">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-5">
-          <div className="lg:col-span-7 bg-[#0F172A] border border-emerald-500/30 rounded-xl p-6 space-y-4">
-            <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+          <div className="lg:col-span-7 bg-surface border border-primary/25 rounded-2xl p-6 space-y-4 shadow-xs">
+            <div className="flex items-center gap-2 text-primary text-xs font-bold uppercase tracking-wider">
               <ShieldCheck size={16} strokeWidth={1.75} />
               <span>Program Beta Publik Terbuka</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-white">
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">
               Gratis Penuh 30 Hari + Tenggang 7 Hari untuk Outlet Pertama Anda
             </h2>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            <p className="text-xs sm:text-sm text-muted leading-relaxed">
               Daftarkan bisnis Anda sekarang tanpa biaya setup. Gunakan seluruh fitur POS, antrean, gudang,
               payroll, dan laporan SAK EMKM selama 30 hari penuh, serta kirim masukan langsung dari dalam
               aplikasi.
@@ -521,34 +518,34 @@ const LandingPage = () => {
             <div className="flex flex-wrap items-center gap-3 pt-1">
               <Link
                 to="/login?mode=register"
-                className="h-11 px-5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all active:scale-[0.98]"
+                className="min-h-[44px] px-5 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground text-xs sm:text-sm font-semibold inline-flex items-center gap-2 transition-all active:scale-[0.98]"
               >
                 <span>Daftar &amp; Mulai Beta Sekarang</span>
                 <ArrowRight size={15} strokeWidth={2} />
               </Link>
               <Link
                 to="/login"
-                className="h-11 px-4 rounded-xl bg-[#1E293B] border border-slate-700 text-xs sm:text-sm font-semibold text-white inline-flex items-center gap-2 hover:bg-slate-700"
+                className="min-h-[44px] px-4 rounded-full bg-subsurface border border-border text-xs sm:text-sm font-semibold text-foreground inline-flex items-center gap-2 hover:bg-surface-hover"
               >
                 <span>Masuk ke Akun</span>
               </Link>
             </div>
           </div>
 
-          <div className="lg:col-span-5 bg-[#0F172A] border border-slate-800 rounded-xl p-6 flex flex-col justify-between gap-4">
+          <div className="lg:col-span-5 bg-surface border border-border rounded-2xl p-6 flex flex-col justify-between gap-4 shadow-xs">
             <div className="space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+              <div className="w-10 h-10 rounded-xl bg-primary-soft border border-primary/25 flex items-center justify-center text-primary">
                 <BookOpen size={18} strokeWidth={1.75} />
               </div>
-              <h3 className="text-lg font-bold text-white">User Manual &amp; SOP Staf</h3>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+              <h3 className="text-lg font-bold text-foreground">User Manual &amp; SOP Staf</h3>
+              <p className="text-xs sm:text-sm text-muted leading-relaxed">
                 Bingung alur kasir, split payment, klaim loyalty, atau tutup shift akhir hari? Baca panduan
                 resmi 8 bab yang dapat difilter berdasarkan peran dan dicetak sebagai PDF untuk tim Anda.
               </p>
             </div>
             <Link
               to="/panduan"
-              className="h-11 px-4 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/50 text-cyan-300 text-xs sm:text-sm font-bold inline-flex items-center justify-between transition-all active:scale-[0.98]"
+              className="min-h-[44px] px-4 rounded-full bg-primary-soft hover:opacity-90 border border-primary/25 text-primary-soft-foreground text-xs sm:text-sm font-semibold inline-flex items-center justify-between transition-all active:scale-[0.98]"
             >
               <span>Buka Halaman User Manual (/panduan)</span>
               <ArrowRight size={15} strokeWidth={1.75} />
@@ -558,17 +555,20 @@ const LandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800 px-4 sm:px-6 py-6 bg-[#080C14]">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
-          <span>&copy; 2026 RelayPOS Enterprise — Sistem Kasir Estafet &amp; ERP Akuntansi Multi-Tenant.</span>
-          <div className="flex items-center gap-4 font-semibold text-slate-400">
-            <Link to="/panduan" className="hover:text-white transition-colors">
+      <footer className="border-t border-border px-4 sm:px-6 py-6 bg-surface">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted">
+          <div className="flex items-center gap-2">
+            <RelayLogo size="xs" />
+            <span>&copy; 2026 RelayPOS Enterprise — Sistem Kasir Estafet &amp; ERP Akuntansi Multi-Tenant.</span>
+          </div>
+          <div className="flex items-center gap-4 font-semibold text-muted">
+            <Link to="/panduan" className="hover:text-foreground transition-colors">
               Panduan Pengguna
             </Link>
-            <Link to="/login" className="hover:text-white transition-colors">
+            <Link to="/login" className="hover:text-foreground transition-colors">
               Masuk
             </Link>
-            <Link to="/login?mode=register" className="hover:text-emerald-400 transition-colors">
+            <Link to="/login?mode=register" className="text-primary hover:underline transition-colors">
               Daftar Beta 30 Hari
             </Link>
           </div>
@@ -578,31 +578,31 @@ const LandingPage = () => {
       {/* Lightbox Modal untuk Perbesar Screenshot */}
       {zoomedShot && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4"
           role="dialog"
           aria-modal="true"
           aria-label={`Preview ${zoomedShot.tabLabel}`}
           onClick={() => setZoomedShot(null)}
         >
           <div
-            className="w-full max-w-6xl bg-[#0F172A] border border-slate-700 rounded-2xl overflow-hidden shadow-2xl"
+            className="w-full max-w-6xl bg-surface border border-border rounded-2xl overflow-hidden shadow-2xl text-foreground"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between gap-3">
+            <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-bold text-white">{zoomedShot.title}</p>
-                <p className="text-xs text-slate-400">{zoomedShot.tabLabel}</p>
+                <p className="text-sm font-bold text-foreground">{zoomedShot.title}</p>
+                <p className="text-xs text-muted">{zoomedShot.tabLabel}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setZoomedShot(null)}
                 aria-label="Tutup preview"
-                className="p-1.5 rounded-lg bg-[#1E293B] border border-slate-700 text-slate-300 hover:text-white cursor-pointer"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-subsurface border border-border text-muted hover:text-foreground cursor-pointer"
               >
                 <X size={16} strokeWidth={1.75} />
               </button>
             </div>
-            <img src={zoomedShot.image} alt={zoomedShot.title} className="w-full h-auto max-h-[82dvh] object-contain bg-[#080C14]" />
+            <img src={zoomedShot.image} alt={zoomedShot.title} className="w-full h-auto max-h-[82dvh] object-contain bg-subsurface" />
           </div>
         </div>
       )}

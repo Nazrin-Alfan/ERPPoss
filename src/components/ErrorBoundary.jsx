@@ -18,23 +18,24 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-[400px] flex items-center justify-center p-6">
-          <div className="glass-panel max-w-md w-full p-6 rounded-2xl border border-rose-500/30 bg-slate-900/90 text-center space-y-4 shadow-2xl">
-            <div className="w-12 h-12 mx-auto rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center">
+        <div className="min-h-[400px] bg-canvas text-foreground flex items-center justify-center p-6">
+          <div className="max-w-md w-full p-6 rounded-2xl border border-destructive/30 bg-surface text-center space-y-4 shadow-sm">
+            <div className="w-12 h-12 mx-auto rounded-xl bg-destructive-bg text-destructive border border-destructive/25 flex items-center justify-center">
               <AlertTriangle size={24} />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">Terjadi Kendala Memuat Tampilan</h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <h3 className="text-base font-bold text-foreground">Terjadi Kendala Memuat Tampilan</h3>
+              <p className="text-xs text-muted mt-1">
                 {this.state.error?.message || 'Gagal merender komponen halaman.'}
               </p>
             </div>
             <button
+              type="button"
               onClick={() => {
                 this.setState({ hasError: false, error: null })
                 window.location.reload()
               }}
-              className="px-4 py-2 bg-brand-blue hover:bg-cyan-500 text-slate-950 font-bold rounded-xl text-xs transition-all flex items-center gap-2 mx-auto shadow-md"
+              className="px-5 py-2.5 min-h-[44px] bg-primary hover:bg-primary-hover text-primary-foreground font-semibold rounded-full text-xs transition-all active:scale-[0.98] flex items-center gap-2 mx-auto shadow-xs cursor-pointer"
             >
               <RefreshCw size={14} />
               Muat Ulang Halaman

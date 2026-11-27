@@ -31,6 +31,18 @@ import {
 
 const ROOT = process.cwd()
 
+const WAVE4_1_CLEAN_FILES = [
+  'src/pages/Login.jsx',
+  'src/pages/ForgotPassword.jsx',
+  'src/pages/ResetPassword.jsx',
+  'src/pages/LandingPage.jsx',
+  'src/pages/UserManualPage.jsx',
+  'src/components/auth/ActivateLicenseModal.jsx',
+  'src/components/auth/ChangePasswordModal.jsx',
+  'src/components/auth/LicenseExpiredLockout.jsx',
+  'src/components/ErrorBoundary.jsx'
+]
+
 const PHASE3_CLEAN_FILES = [
   'src/index.css',
   'src/context/ThemeContext.jsx',
@@ -154,6 +166,27 @@ describe('Phase 3: UI Primitives, Brand Logo B3 & Token Hygiene Gate', () => {
       if (forbiddenHexPattern.test(content)) {
         violations.push(relPath)
       }
+    }
+
+    expect(violations).toEqual([])
+  })
+
+  it('enforces Zero-Neon & Zero-Legacy-Dark Token Hygiene across all 9 Wave 4.1 files and FeedbackModal', () => {
+    const forbiddenWave41Pattern =
+      /#00ffff|#00e5e5|#c8f31d|#6366f1|#c084fc|#080C14|#0F172A|#0b101b|#121215|#18181c|#1E293B|#26272d|#bbcbb2|#25D366|\bcyan-\d+|\bbrand-emerald\b|\bbrand-cyan\b|\bbg-slate-9|\bbg-slate-8|\bbg-zinc-9/i
+    const violations = []
+
+    for (const relPath of WAVE4_1_CLEAN_FILES) {
+      const content = fs.readFileSync(path.join(ROOT, relPath), 'utf-8')
+      const match = content.match(forbiddenWave41Pattern)
+      if (match) {
+        violations.push(`${relPath}: ${match[0]}`)
+      }
+    }
+
+    const feedbackContent = fs.readFileSync(path.join(ROOT, 'src/components/common/FeedbackModal.jsx'), 'utf-8')
+    if (/amber-400/i.test(feedbackContent)) {
+      violations.push('src/components/common/FeedbackModal.jsx: amber-400')
     }
 
     expect(violations).toEqual([])

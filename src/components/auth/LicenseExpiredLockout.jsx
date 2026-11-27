@@ -55,49 +55,49 @@ export default function LicenseExpiredLockout() {
   })
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#000000] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-      <div className="w-full max-w-lg bg-[#121215] border border-[#26272d] rounded-2xl p-6 sm:p-8 shadow-2xl relative text-left">
+    <div className="fixed inset-0 z-50 bg-canvas flex items-center justify-center p-4 sm:p-6 overflow-y-auto text-foreground">
+      <div className="w-full max-w-lg bg-surface border border-border rounded-2xl p-6 sm:p-8 shadow-lg relative text-left">
         {/* Header Icon & Status Badge */}
-        <div className="flex items-center justify-between pb-5 border-b border-[#26272d]">
+        <div className="flex items-center justify-between pb-5 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
+            <div className="w-11 h-11 rounded-xl bg-destructive-bg border border-destructive/25 flex items-center justify-center text-destructive shrink-0">
               <ShieldAlert size={22} strokeWidth={1.75} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold tracking-wider text-white uppercase">RELAYPOS</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                <span className="text-xs font-bold tracking-wider text-foreground uppercase">RELAYPOS</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-destructive-bg text-destructive border border-destructive/30">
                   TRIAL EXPIRED
                 </span>
               </div>
-              <p className="text-xs text-[#bbcbb2] font-medium mt-0.5">Gerbang Keamanan & Lisensi ERP</p>
+              <p className="text-xs text-muted font-medium mt-0.5">Gerbang Keamanan &amp; Lisensi ERP</p>
             </div>
           </div>
         </div>
 
         {/* Headline & Informasi Toko */}
         <div className="mt-5 space-y-2">
-          <h2 className="text-lg font-bold text-white tracking-tight">
+          <h2 className="text-lg font-bold text-foreground tracking-tight">
             Masa Uji Coba 30 Hari Telah Berakhir
           </h2>
-          <p className="text-xs text-[#bbcbb2] leading-relaxed">
-            Akses operasional untuk <strong className="text-white font-semibold">{activeTenant?.nama || 'Toko Anda'}</strong> saat ini dikunci. Seluruh data transaksi, keuangan, dan inventori Anda tersimpan aman di cloud.
+          <p className="text-xs text-muted leading-relaxed">
+            Akses operasional untuk <strong className="text-foreground font-semibold">{activeTenant?.nama || 'Toko Anda'}</strong> saat ini dikunci. Seluruh data transaksi, keuangan, dan inventori Anda tersimpan aman di cloud.
           </p>
         </div>
 
         {/* Ringkasan Akun */}
-        <div className="mt-4 p-3.5 bg-[#18181c] border border-[#26272d] rounded-xl space-y-2 text-xs">
-          <div className="flex justify-between items-center text-zinc-400">
+        <div className="mt-4 p-3.5 bg-subsurface border border-border rounded-xl space-y-2 text-xs">
+          <div className="flex justify-between items-center text-muted">
             <span>Nama Outlet:</span>
-            <span className="text-white font-medium">{activeTenant?.nama || '-'}</span>
+            <span className="text-foreground font-semibold">{activeTenant?.nama || '-'}</span>
           </div>
-          <div className="flex justify-between items-center text-zinc-400">
+          <div className="flex justify-between items-center text-muted">
             <span>ID Tenant:</span>
-            <span className="text-zinc-300 font-mono text-[11px] select-all">{activeTenant?.id || '-'}</span>
+            <span className="text-foreground font-mono text-[11px] select-all">{activeTenant?.id || '-'}</span>
           </div>
-          <div className="flex justify-between items-center text-zinc-400">
+          <div className="flex justify-between items-center text-muted">
             <span>Status Sistem:</span>
-            <span className="text-rose-400 font-semibold flex items-center gap-1">
+            <span className="text-destructive font-semibold flex items-center gap-1">
               <Clock size={12} /> Terkunci (Perlu Aktivasi)
             </span>
           </div>
@@ -105,15 +105,15 @@ export default function LicenseExpiredLockout() {
 
         {/* Pesan Sukses / Error */}
         {errorMsg && (
-          <div className="mt-4 p-3 rounded-lg bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2">
-            <AlertCircle size={15} className="shrink-0 mt-0.5 text-rose-400" />
+          <div className="mt-4 p-3 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-xs flex items-start gap-2">
+            <AlertCircle size={15} className="shrink-0 mt-0.5 text-destructive" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="mt-4 p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs flex items-start gap-2">
-            <CheckCircle2 size={15} className="shrink-0 mt-0.5 text-emerald-400" />
+          <div className="mt-4 p-3 rounded-xl bg-success-bg border border-success/30 text-success text-xs flex items-start gap-2">
+            <CheckCircle2 size={15} className="shrink-0 mt-0.5 text-success" />
             <span>{successMsg}</span>
           </div>
         )}
@@ -122,7 +122,7 @@ export default function LicenseExpiredLockout() {
         {isOwner ? (
           <div className="mt-5 space-y-4">
             <form onSubmit={handleActivate} className="space-y-3">
-              <label className="block text-xs font-semibold text-zinc-300">
+              <label className="block text-xs font-semibold text-foreground">
                 Masukkan Serial Key Lisensi Resmi
               </label>
               <div className="relative">
@@ -131,16 +131,16 @@ export default function LicenseExpiredLockout() {
                   value={serialKey}
                   onChange={(e) => setSerialKey(e.target.value.toUpperCase())}
                   placeholder="RLPOS-PRO-2027-XXXX-XXXX"
-                  className="w-full bg-[#18181c] border border-[#26272d] focus:border-[#00ffff] rounded-lg px-3.5 py-2.5 text-xs text-white font-mono placeholder:text-zinc-600 focus:outline-none transition-colors"
+                  className="w-full min-h-[44px] bg-subsurface border border-border focus:border-border-active focus:ring-2 focus:ring-ring/20 rounded-xl pl-3.5 pr-10 py-2.5 text-base sm:text-sm text-foreground font-mono placeholder:text-muted-dark focus:outline-none transition-colors"
                   disabled={isSubmitting}
                 />
-                <KeyRound size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
+                <KeyRound size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-dark pointer-events-none" />
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting || !serialKey.trim()}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-[#00ffff] hover:bg-[#00e5e5] text-black font-bold text-xs transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full min-h-[44px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-xs transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 <Sparkles size={14} className="shrink-0" />
                 <span>{isSubmitting ? 'Memverifikasi Lisensi...' : 'Aktivasi & Buka Sistem'}</span>
@@ -148,8 +148,8 @@ export default function LicenseExpiredLockout() {
             </form>
 
             <div className="relative flex items-center justify-center my-3">
-              <div className="border-t border-[#26272d] w-full"></div>
-              <span className="bg-[#121215] px-2 text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">
+              <div className="border-t border-border w-full"></div>
+              <span className="bg-surface px-2.5 text-[10px] text-muted-dark uppercase tracking-wider font-semibold">
                 Atau
               </span>
             </div>
@@ -158,26 +158,27 @@ export default function LicenseExpiredLockout() {
               href={waLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/30 text-[#25D366] font-semibold text-xs transition-all active:scale-[0.98] cursor-pointer"
+              className="w-full min-h-[44px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-full bg-success-bg hover:opacity-90 border border-success/30 text-success font-semibold text-xs transition-all active:scale-[0.98] cursor-pointer"
             >
               <MessageCircle size={15} className="shrink-0" />
               <span>Hubungi Founder via WhatsApp untuk Aktivasi</span>
             </a>
           </div>
         ) : (
-          <div className="mt-5 p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 text-xs text-zinc-400 space-y-2">
-            <p className="font-medium text-white">Perhatian untuk Staf / Kasir:</p>
+          <div className="mt-5 p-4 rounded-xl bg-subsurface border border-border text-xs text-muted space-y-2">
+            <p className="font-semibold text-foreground">Perhatian untuk Staf / Kasir:</p>
             <p className="leading-relaxed">
-              Masa uji coba toko ini telah selesai. Harap hubungi <strong className="text-white">Pemilik Toko (Owner)</strong> untuk mengaktifkan lisensi RelayPOS agar Anda dapat melanjutkan transaksi kasir.
+              Masa uji coba toko ini telah selesai. Harap hubungi <strong className="text-foreground">Pemilik Toko (Owner)</strong> untuk mengaktifkan lisensi RelayPOS agar Anda dapat melanjutkan transaksi kasir.
             </p>
           </div>
         )}
 
         {/* Tombol Keluar Sesi */}
-        <div className="mt-6 pt-4 border-t border-[#26272d] flex justify-end">
+        <div className="mt-6 pt-4 border-t border-border flex justify-end">
           <button
+            type="button"
             onClick={logout}
-            className="flex items-center gap-2 text-xs font-semibold text-zinc-400 hover:text-rose-400 transition-colors cursor-pointer"
+            className="min-h-[40px] px-3 inline-flex items-center gap-2 text-xs font-semibold text-muted hover:text-destructive transition-colors cursor-pointer"
           >
             <LogOut size={14} />
             <span>Keluar Sesi</span>

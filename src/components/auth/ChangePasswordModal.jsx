@@ -86,7 +86,7 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
   if (!isOpen) return null
 
   const calculateStrength = (pwd) => {
-    if (!pwd) return { score: 0, text: '', color: 'bg-slate-700' }
+    if (!pwd) return { score: 0, text: '', color: 'bg-border' }
     let score = 0
     if (pwd.length >= 8) score += 1
     if (pwd.length >= 12) score += 1
@@ -94,9 +94,9 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
     if (/[0-9]/.test(pwd)) score += 1
     if (/[^A-Za-z0-9]/.test(pwd)) score += 1
 
-    if (score <= 2) return { score, text: 'Cukup', color: 'bg-amber-500' }
-    if (score <= 4) return { score, text: 'Kuat', color: 'bg-emerald-500' }
-    return { score, text: 'Sangat Kuat', color: 'bg-cyan-400' }
+    if (score <= 2) return { score, text: 'Cukup', color: 'bg-warning' }
+    if (score <= 4) return { score, text: 'Kuat', color: 'bg-success' }
+    return { score, text: 'Sangat Kuat', color: 'bg-primary' }
   }
 
   const strength = calculateStrength(newPassword)
@@ -149,34 +149,34 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-      <div 
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-fade-in">
+      <div
         ref={dialogRef}
         tabIndex={-1}
-        className="relative w-full max-w-md bg-[#121215] border border-[#26272d] rounded-2xl shadow-2xl overflow-hidden animate-pop-in"
+        className="relative w-full max-w-md bg-surface border border-border rounded-2xl shadow-xl overflow-hidden animate-pop-in text-foreground"
         role="dialog"
         aria-modal="true"
         aria-labelledby="change-password-title"
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-5 border-b border-[#26272d]">
+        <div className="flex items-center justify-between p-5 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <div className="p-2.5 rounded-xl bg-primary-soft text-primary border border-primary/25">
               <KeyRound size={20} />
             </div>
             <div>
-              <h3 id="change-password-title" className="text-base font-bold text-white">
+              <h3 id="change-password-title" className="text-base font-bold text-foreground">
                 Ganti Kata Sandi
               </h3>
-              <p className="text-xs text-slate-400">
-                Akun: <span className="text-white font-medium">{profile?.email || user?.email || 'Pengguna'}</span>
+              <p className="text-xs text-muted">
+                Akun: <span className="text-foreground font-medium">{profile?.email || user?.email || 'Pengguna'}</span>
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+            className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl text-muted hover:text-foreground hover:bg-subsurface transition cursor-pointer"
             aria-label="Tutup modal"
           >
             <X size={18} />
@@ -186,26 +186,26 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
         {/* Modal Body */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-red-950/40 border border-red-500/30 text-red-300 text-xs flex items-start gap-2.5">
-              <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-400" />
+            <div className="p-3 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-xs flex items-start gap-2.5">
+              <AlertCircle size={16} className="shrink-0 mt-0.5 text-destructive" />
               <span>{errorMsg}</span>
             </div>
           )}
 
           {successMsg && (
-            <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs flex items-start gap-2.5">
-              <CheckCircle2 size={16} className="shrink-0 mt-0.5 text-emerald-400" />
+            <div className="p-3 rounded-xl bg-success-bg border border-success/30 text-success text-xs flex items-start gap-2.5">
+              <CheckCircle2 size={16} className="shrink-0 mt-0.5 text-success" />
               <span>{successMsg}</span>
             </div>
           )}
 
           {/* Input Password Lama */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Kata Sandi Saat Ini <span className="text-red-400">*</span>
+            <label className="block text-xs font-semibold text-foreground mb-1.5">
+              Kata Sandi Saat Ini <span className="text-destructive">*</span>
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-dark">
                 <Lock size={15} />
               </div>
               <input
@@ -215,12 +215,12 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                className="w-full pl-9 pr-10 py-2.5 bg-[#18181c] border border-[#26272d] rounded-xl text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-[#00ffff] transition"
+                className="w-full min-h-[44px] pl-9 pr-11 py-2.5 bg-subsurface border border-border rounded-xl text-foreground text-base sm:text-sm placeholder:text-muted-dark focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20 transition"
               />
               <button
                 type="button"
                 onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer"
+                className="absolute inset-y-0 right-0 px-3 flex items-center text-muted hover:text-foreground cursor-pointer"
                 aria-label="Tampilkan atau sembunyikan kata sandi saat ini"
               >
                 {showCurrentPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -230,11 +230,11 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
 
           {/* Input Password Baru */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Kata Sandi Baru <span className="text-red-400">*</span>
+            <label className="block text-xs font-semibold text-foreground mb-1.5">
+              Kata Sandi Baru <span className="text-destructive">*</span>
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-dark">
                 <Lock size={15} />
               </div>
               <input
@@ -245,12 +245,12 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
                 required
                 minLength={8}
                 autoComplete="new-password"
-                className="w-full pl-9 pr-10 py-2.5 bg-[#18181c] border border-[#26272d] rounded-xl text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-[#00ffff] transition"
+                className="w-full min-h-[44px] pl-9 pr-11 py-2.5 bg-subsurface border border-border rounded-xl text-foreground text-base sm:text-sm placeholder:text-muted-dark focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20 transition"
               />
               <button
                 type="button"
                 onClick={() => setShowNewPassword(!showNewPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer"
+                className="absolute inset-y-0 right-0 px-3 flex items-center text-muted hover:text-foreground cursor-pointer"
                 aria-label="Tampilkan atau sembunyikan kata sandi baru"
               >
                 {showNewPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -260,21 +260,21 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
             {/* Indikator Kekuatan Password */}
             {newPassword && (
               <div className="mt-2 flex items-center gap-2">
-                <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden flex gap-0.5">
+                <div className="flex-1 h-1.5 bg-subsurface rounded-full overflow-hidden flex gap-0.5 border border-border">
                   <div className={`h-full ${strength.color} transition-all duration-300`} style={{ width: `${Math.min(100, strength.score * 20)}%` }}></div>
                 </div>
-                <span className="text-[10px] font-semibold text-slate-400">{strength.text}</span>
+                <span className="text-[11px] font-semibold text-muted">{strength.text}</span>
               </div>
             )}
           </div>
 
           {/* Input Konfirmasi Password Baru */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Ulangi Kata Sandi Baru <span className="text-red-400">*</span>
+            <label className="block text-xs font-semibold text-foreground mb-1.5">
+              Ulangi Kata Sandi Baru <span className="text-destructive">*</span>
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-dark">
                 <ShieldCheck size={15} />
               </div>
               <input
@@ -285,40 +285,40 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
                 required
                 minLength={8}
                 autoComplete="new-password"
-                className="w-full pl-9 pr-10 py-2.5 bg-[#18181c] border border-[#26272d] rounded-xl text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-[#00ffff] transition"
+                className="w-full min-h-[44px] pl-9 pr-11 py-2.5 bg-subsurface border border-border rounded-xl text-foreground text-base sm:text-sm placeholder:text-muted-dark focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20 transition"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer"
+                className="absolute inset-y-0 right-0 px-3 flex items-center text-muted hover:text-foreground cursor-pointer"
                 aria-label="Tampilkan atau sembunyikan konfirmasi kata sandi baru"
               >
                 {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>
             {confirmPassword && newPassword !== confirmPassword && (
-              <p className="text-[10px] text-red-400 mt-1">Konfirmasi kata sandi belum sama.</p>
+              <p className="text-[11px] text-destructive mt-1">Konfirmasi kata sandi belum sama.</p>
             )}
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#26272d]">
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border">
             <button
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-semibold transition cursor-pointer"
+              className="min-h-[44px] px-4 py-2 rounded-full border border-border bg-subsurface text-muted hover:text-foreground hover:bg-surface-hover text-xs font-semibold transition cursor-pointer"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={isLoading || Boolean(successMsg)}
-              className="px-5 py-2 rounded-xl bg-[#00ffff] hover:bg-cyan-400 disabled:opacity-50 text-slate-950 text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-lg active:scale-[0.98]"
+              className="min-h-[44px] px-5 py-2 rounded-full bg-primary hover:bg-primary-hover disabled:opacity-50 text-primary-foreground text-xs font-semibold transition flex items-center gap-2 cursor-pointer shadow-xs active:scale-[0.98]"
             >
               {isLoading ? (
                 <>
-                  <span className="w-3.5 h-3.5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></span>
+                  <span className="w-3.5 h-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></span>
                   <span>Menyimpan...</span>
                 </>
               ) : (

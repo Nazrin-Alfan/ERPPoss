@@ -170,7 +170,7 @@ const FeedbackModal = ({ isOpen, onClose }) => {
                     >
                       <Star
                         size={18}
-                        className={filled ? 'text-amber-400 fill-amber-400' : 'text-muted-dark'}
+                        className={filled ? 'text-warning fill-warning' : 'text-muted-dark'}
                       />
                     </button>
                   )

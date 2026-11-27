@@ -9,10 +9,18 @@ export const DARK_DEFAULT_ROUTES = ['/pos', '/founder', '/super-admin']
 
 /**
  * Strangler-Fig allowlist of routes migrated to Fintech Cobalt Blue Light Mode.
- * During Phase 3 this starts with ['/ui-kit']; each migrated Phase 4 route is added here.
  * Unmigrated routes stay in Pure Carbon D1 ('dark') so existing light text never turns white-on-white.
  */
-export const MIGRATED_LIGHT_ROUTES = ['/ui-kit']
+export const MIGRATED_LIGHT_ROUTES = [
+  '/ui-kit',
+  '/',
+  '/welcome',
+  '/panduan',
+  '/manual',
+  '/login',
+  '/forgot-password',
+  '/reset-password'
+]
 
 export const themes = {
   1: {
@@ -53,10 +61,15 @@ export function resolveSurfaceMode(pathname = '/', preference = 'auto') {
   }
 
   const normalized = String(pathname || '/').split('?')[0]
-  if (DARK_DEFAULT_ROUTES.some((prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`))) {
+  const matchesPrefix = (targetPath, prefix) =>
+    prefix === '/'
+      ? targetPath === '/'
+      : targetPath === prefix || targetPath.startsWith(`${prefix}/`)
+
+  if (DARK_DEFAULT_ROUTES.some((prefix) => matchesPrefix(normalized, prefix))) {
     return 'dark'
   }
-  if (MIGRATED_LIGHT_ROUTES.some((prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`))) {
+  if (MIGRATED_LIGHT_ROUTES.some((prefix) => matchesPrefix(normalized, prefix))) {
     return 'light'
   }
 

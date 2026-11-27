@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../services/apiAdapter'
 import { supabase } from '../supabaseClient'
+import RelayLogo from '../components/brand/RelayLogo'
 import { KeyRound, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react'
 
 export default function ResetPassword() {
@@ -68,45 +69,48 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#000000] px-4 text-white">
-      <form onSubmit={handleSubmit} className="w-full max-w-md bg-[#121215] border border-[#26272d] p-7 rounded-2xl shadow-2xl space-y-4">
-        <div className="text-center space-y-1">
-          <div className="w-11 h-11 mx-auto rounded-xl bg-[#00ffff]/10 border border-[#00ffff]/30 text-[#00ffff] flex items-center justify-center mb-2">
-            <KeyRound size={20} />
+    <div className="min-h-screen flex items-center justify-center bg-canvas px-4 text-foreground">
+      <form onSubmit={handleSubmit} className="w-full max-w-md bg-surface border border-border p-7 rounded-2xl shadow-sm space-y-4">
+        <div className="text-center space-y-1.5">
+          <div className="flex justify-center mb-2">
+            <RelayLogo size="md" />
           </div>
-          <h2 className="text-xl font-bold text-white">Atur Kata Sandi Baru</h2>
-          <p className="text-xs text-[#bbcbb2]">Buat kata sandi baru minimal 8 karakter untuk akun Anda.</p>
+          <div className="w-10 h-10 mx-auto rounded-xl bg-primary-soft border border-primary/25 text-primary-soft-foreground flex items-center justify-center">
+            <KeyRound size={18} />
+          </div>
+          <h2 className="text-xl font-bold text-foreground">Atur Kata Sandi Baru</h2>
+          <p className="text-xs text-muted">Buat kata sandi baru minimal 8 karakter untuk akun Anda.</p>
         </div>
 
         {error && (
-          <div className="p-3 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-xs flex items-center gap-2">
             <AlertCircle size={15} className="shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {api.isCloud && sessionChecked && !hasRecoverySession && !success ? (
-          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs text-center space-y-3">
-            <AlertCircle size={24} className="mx-auto text-rose-400" />
-            <p className="font-bold text-white">Tautan Reset Tidak Valid atau Kedaluwarsa</p>
+          <div className="p-4 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-xs text-center space-y-3">
+            <AlertCircle size={24} className="mx-auto text-destructive" />
+            <p className="font-bold text-foreground">Tautan Reset Tidak Valid atau Kedaluwarsa</p>
             <p>Silakan minta tautan pemulihan kata sandi yang baru agar sesi recovery aman.</p>
             <Link
               to="/forgot-password"
-              className="inline-block px-4 py-2 rounded-lg bg-[#00ffff] text-[#0f0f0f] font-bold hover:bg-[#00e5e5]"
+              className="inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-semibold hover:bg-primary-hover transition-colors"
             >
               Minta Tautan Reset Baru
             </Link>
           </div>
         ) : success ? (
-          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs text-center space-y-2">
-            <CheckCircle2 size={24} className="mx-auto text-emerald-400" />
-            <p className="font-bold text-white">Kata Sandi Berhasil Diperbarui</p>
+          <div className="p-4 rounded-xl bg-success-bg border border-success/30 text-success text-xs text-center space-y-2">
+            <CheckCircle2 size={24} className="mx-auto text-success" />
+            <p className="font-bold text-foreground">Kata Sandi Berhasil Diperbarui</p>
             <p>Mengalihkan Anda ke halaman login...</p>
           </div>
         ) : (
           <>
             <div>
-              <label className="block text-xs font-semibold text-[#bbcbb2] mb-1.5">Kata Sandi Baru</label>
+              <label className="block text-xs font-semibold text-muted mb-1.5">Kata Sandi Baru</label>
               <input
                 type="password"
                 value={newPassword}
@@ -114,13 +118,13 @@ export default function ResetPassword() {
                 placeholder="Minimal 8 karakter"
                 minLength={8}
                 autoComplete="new-password"
-                className="w-full bg-[#18181c] border border-[#26272d] rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-[#00ffff]"
+                className="w-full min-h-[44px] bg-subsurface border border-border rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-foreground placeholder:text-muted-dark focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#bbcbb2] mb-1.5">Konfirmasi Kata Sandi Baru</label>
+              <label className="block text-xs font-semibold text-muted mb-1.5">Konfirmasi Kata Sandi Baru</label>
               <input
                 type="password"
                 value={confirmPassword}
@@ -128,7 +132,7 @@ export default function ResetPassword() {
                 placeholder="Ulangi kata sandi baru"
                 minLength={8}
                 autoComplete="new-password"
-                className="w-full bg-[#18181c] border border-[#26272d] rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-[#00ffff]"
+                className="w-full min-h-[44px] bg-subsurface border border-border rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-foreground placeholder:text-muted-dark focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20"
                 required
               />
             </div>
@@ -136,13 +140,13 @@ export default function ResetPassword() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#00ffff] hover:bg-[#00e5e5] text-[#0f0f0f] font-bold py-2.5 rounded-lg text-sm transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+              className="w-full min-h-[44px] bg-primary hover:bg-primary-hover text-primary-foreground font-semibold py-2.5 rounded-full text-sm transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
             >
               {loading ? 'Menyimpan...' : 'Simpan Kata Sandi Baru'}
             </button>
 
             <div className="text-center pt-1">
-              <Link to="/login" className="inline-flex items-center gap-1.5 text-xs text-[#bbcbb2] hover:text-[#00ffff]">
+              <Link to="/login" className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-primary font-medium">
                 <ArrowLeft size={13} />
                 <span>Kembali ke Login</span>
               </Link>

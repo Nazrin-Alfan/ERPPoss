@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useAppTheme } from '../context/ThemeContext'
 import { api } from '../services/apiAdapter'
+import RelayLogo from '../components/brand/RelayLogo'
 import {
   KeyRound,
   Mail,
@@ -13,7 +13,10 @@ import {
   CheckCircle2,
   LogIn,
   BookOpen,
-  ArrowLeft
+  ArrowLeft,
+  Layers,
+  Car,
+  Coffee
 } from 'lucide-react'
 import { ROLES, getRoleLandingRoute } from '../constants/roles'
 
@@ -45,7 +48,6 @@ const Login = () => {
     userTenants,
     loading: authLoading
   } = useAuth()
-  const { currentTheme } = useAppTheme()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 
@@ -211,32 +213,28 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#070a10] px-4 py-8 relative">
-      <div className="w-full max-w-md bg-[#0d121f] p-6 sm:p-8 rounded-2xl shadow-xl border border-slate-800">
+    <div className="min-h-screen flex items-center justify-center bg-canvas text-foreground px-4 py-8 relative">
+      <div className="w-full max-w-md bg-surface p-6 sm:p-8 rounded-2xl shadow-sm border border-border">
         {/* Header Logo */}
-        <div className="text-center mb-5">
-          <div className="w-16 h-16 mx-auto rounded-2xl overflow-hidden border border-slate-700/80 shadow-md mb-3 bg-[#111827] p-2 flex items-center justify-center">
-            <img
-              src={currentTheme.logo}
-              alt="Logo RelayPOS"
-              className="w-full h-full object-contain"
-            />
+        <div className="text-center mb-6">
+          <div className="flex justify-center mb-3">
+            <RelayLogo size="lg" />
           </div>
-          <h2 className="text-xl font-bold tracking-tight text-white flex items-center justify-center gap-1.5">
+          <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center justify-center gap-1.5">
             <span>RelayPOS</span>
           </h2>
-          <p className="text-slate-400 text-xs mt-1">Sistem Operasional &amp; Kasir Estafet Terpadu</p>
+          <p className="text-muted text-xs mt-1">Sistem Operasional &amp; Kasir Estafet Terpadu</p>
         </div>
 
         {/* 2-Tab Navigation: Masuk ke Toko vs Daftar Toko Baru */}
-        <div className="grid grid-cols-2 gap-1 p-1 bg-slate-900/80 border border-slate-800 rounded-xl mb-5">
+        <div className="grid grid-cols-2 gap-1 p-1 bg-subsurface border border-border rounded-xl mb-5">
           <button
             type="button"
             onClick={() => switchTab('login')}
-            className={`py-2 px-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`min-h-[40px] py-2 px-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
               activeTab === 'login'
-                ? 'bg-brand-emerald text-slate-950 shadow-md shadow-brand-emerald/20'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-primary text-primary-foreground shadow-xs'
+                : 'text-muted hover:text-foreground'
             }`}
           >
             <LogIn size={14} />
@@ -245,10 +243,10 @@ const Login = () => {
           <button
             type="button"
             onClick={() => switchTab('register')}
-            className={`py-2 px-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`min-h-[40px] py-2 px-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
               activeTab === 'register'
-                ? 'bg-brand-emerald text-slate-950 shadow-md shadow-brand-emerald/20'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-primary text-primary-foreground shadow-xs'
+                : 'text-muted hover:text-foreground'
             }`}
           >
             <Sparkles size={14} />
@@ -258,7 +256,7 @@ const Login = () => {
 
         {/* Error Alert */}
         {error && (
-          <div role="alert" className="mb-5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs sm:text-sm flex items-start gap-2.5">
+          <div role="alert" className="mb-5 p-3.5 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-xs sm:text-sm flex items-start gap-2.5">
             <AlertCircle size={16} className="shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
@@ -266,7 +264,7 @@ const Login = () => {
 
         {/* Success Alert */}
         {successMsg && (
-          <div role="status" className="mb-5 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs sm:text-sm flex items-start gap-2.5">
+          <div role="status" className="mb-5 p-3.5 rounded-xl bg-success-bg border border-success/30 text-success text-xs sm:text-sm flex items-start gap-2.5">
             <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
             <span>{successMsg}</span>
           </div>
@@ -279,34 +277,34 @@ const Login = () => {
               type="button"
               onClick={handleGoogleLogin}
               disabled={!GOOGLE_AUTH_ENABLED || loading}
-              className={`w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2.5 transition-all text-xs sm:text-sm border ${
+              className={`w-full min-h-[44px] py-3 px-4 rounded-full font-semibold flex items-center justify-center gap-2.5 transition-all text-xs sm:text-sm border ${
                 GOOGLE_AUTH_ENABLED
-                  ? 'bg-white hover:bg-slate-100 text-slate-900 shadow-md active:scale-[0.98] cursor-pointer border-slate-200'
-                  : 'bg-slate-900/60 text-slate-500 border-slate-800 cursor-not-allowed opacity-60'
+                  ? 'bg-surface hover:bg-surface-hover text-foreground shadow-xs active:scale-[0.98] cursor-pointer border-border hover:border-border-hover'
+                  : 'bg-subsurface text-muted-dark border-border cursor-not-allowed opacity-60'
               }`}
             >
               <GoogleIcon />
               <span>{GOOGLE_AUTH_ENABLED ? 'Lanjutkan dengan Google' : 'Google Sign-In Dinonaktifkan'}</span>
             </button>
-            <p className="text-[11px] text-slate-400 text-center mt-2">
+            <p className="text-[11px] text-muted text-center mt-2">
               Khusus akun Google yang sudah terdaftar di toko atau diundang Owner.
             </p>
 
             <div className="relative flex py-4 items-center">
-              <div className="flex-grow border-t border-slate-800"></div>
-              <span className="flex-shrink mx-3 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+              <div className="flex-grow border-t border-border"></div>
+              <span className="flex-shrink mx-3 text-[10px] uppercase font-bold text-muted-dark tracking-wider">
                 atau masuk dengan akun toko
               </span>
-              <div className="flex-grow border-t border-slate-800"></div>
+              <div className="flex-grow border-t border-border"></div>
             </div>
 
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div>
-                <label htmlFor="login-identifier" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                <label htmlFor="login-identifier" className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1.5">
                   Username atau Email
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-3 text-slate-500" size={16} />
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark pointer-events-none" size={16} />
                   <input
                     id="login-identifier"
                     name="identifier"
@@ -315,7 +313,7 @@ const Login = () => {
                     placeholder="owner@tokoanda.com atau kasir1.kode-toko"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm font-mono"
+                    className="w-full min-h-[44px] pl-10 pr-4 py-2.5 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20 transition-all text-base sm:text-sm font-mono"
                     required
                   />
                 </div>
@@ -323,18 +321,18 @@ const Login = () => {
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label htmlFor="login-password" className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <label htmlFor="login-password" className="block text-xs font-semibold uppercase tracking-wider text-muted">
                     PIN / Kata Sandi
                   </label>
                   <Link
                     to="/forgot-password"
-                    className="text-[11px] text-brand-emerald hover:underline font-medium"
+                    className="text-[11px] text-primary hover:underline font-semibold"
                   >
                     Lupa kata sandi?
                   </Link>
                 </div>
                 <div className="relative">
-                  <KeyRound className="absolute left-3.5 top-3 text-slate-500" size={16} />
+                  <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark pointer-events-none" size={16} />
                   <input
                     id="login-password"
                     name="password"
@@ -343,7 +341,7 @@ const Login = () => {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm font-mono"
+                    className="w-full min-h-[44px] pl-10 pr-4 py-2.5 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20 transition-all text-base sm:text-sm font-mono"
                     required
                   />
                 </div>
@@ -351,11 +349,11 @@ const Login = () => {
 
               {api.isCloud && identifier.trim() && !identifier.includes('@') && !identifier.includes('.') && (
                 <div>
-                  <label htmlFor="login-tenant-slug" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                  <label htmlFor="login-tenant-slug" className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1.5">
                     Kode Toko (Khusus Staf Tanpa Email)
                   </label>
                   <div className="relative">
-                    <Building2 className="absolute left-3.5 top-3 text-slate-500" size={16} />
+                    <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark pointer-events-none" size={16} />
                     <input
                       id="login-tenant-slug"
                       name="tenantSlug"
@@ -364,7 +362,7 @@ const Login = () => {
                       placeholder="Misal: berkah-auto-wash"
                       value={tenantSlug}
                       onChange={(e) => setTenantSlug(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm font-mono"
+                      className="w-full min-h-[44px] pl-10 pr-4 py-2.5 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20 transition-all text-base sm:text-sm font-mono"
                     />
                   </div>
                 </div>
@@ -373,10 +371,10 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-brand-emerald hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-black rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-brand-emerald/20 cursor-pointer disabled:opacity-50"
+                className="w-full min-h-[44px] py-3 bg-primary hover:bg-primary-hover active:scale-[0.98] text-primary-foreground font-semibold rounded-full text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer disabled:opacity-50"
               >
                 {loading ? (
-                  <div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
                 ) : (
                   'Masuk'
                 )}
@@ -389,11 +387,11 @@ const Login = () => {
         {activeTab === 'register' && (
           <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
             <div>
-              <label htmlFor="reg-tenant-name" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+              <label htmlFor="reg-tenant-name" className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1">
                 Nama Usaha / Toko
               </label>
               <div className="relative">
-                <Building2 className="absolute left-3.5 top-3 text-slate-500" size={16} />
+                <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark pointer-events-none" size={16} />
                 <input
                   id="reg-tenant-name"
                   type="text"
@@ -401,52 +399,52 @@ const Login = () => {
                   placeholder="Contoh: Berkah Auto & Cafe"
                   value={regTenantName}
                   onChange={(e) => setRegTenantName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm"
+                  className="w-full min-h-[44px] pl-10 pr-4 py-2 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20 transition-all text-base sm:text-sm"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1">
                 Model Operasional Toko
               </label>
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => setRegBusinessType('HYBRID')}
-                  className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
+                  className={`min-h-[56px] p-2 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
                     regBusinessType === 'HYBRID'
-                      ? 'bg-brand-emerald/15 border-brand-emerald text-brand-emerald font-bold'
-                      : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white'
+                      ? 'bg-selected-surface border-border-active text-primary-soft-foreground font-bold'
+                      : 'bg-subsurface border-border text-muted hover:text-foreground hover:border-border-hover'
                   }`}
                 >
-                  <div className="text-sm">🚗☕</div>
-                  <div className="text-[10px] mt-0.5">Hybrid</div>
+                  <Layers size={18} strokeWidth={1.75} />
+                  <span className="text-[11px]">Hybrid</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setRegBusinessType('CARWASH')}
-                  className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
+                  className={`min-h-[56px] p-2 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
                     regBusinessType === 'CARWASH'
-                      ? 'bg-brand-emerald/15 border-brand-emerald text-brand-emerald font-bold'
-                      : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white'
+                      ? 'bg-selected-surface border-border-active text-primary-soft-foreground font-bold'
+                      : 'bg-subsurface border-border text-muted hover:text-foreground hover:border-border-hover'
                   }`}
                 >
-                  <div className="text-sm">🚗</div>
-                  <div className="text-[10px] mt-0.5">Carwash</div>
+                  <Car size={18} strokeWidth={1.75} />
+                  <span className="text-[11px]">Carwash</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setRegBusinessType('CAFE')}
-                  className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
+                  className={`min-h-[56px] p-2 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
                     regBusinessType === 'CAFE'
-                      ? 'bg-brand-emerald/15 border-brand-emerald text-brand-emerald font-bold'
-                      : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white'
+                      ? 'bg-selected-surface border-border-active text-primary-soft-foreground font-bold'
+                      : 'bg-subsurface border-border text-muted hover:text-foreground hover:border-border-hover'
                   }`}
                 >
-                  <div className="text-sm">☕</div>
-                  <div className="text-[10px] mt-0.5">Cafe Only</div>
+                  <Coffee size={18} strokeWidth={1.75} />
+                  <span className="text-[11px]">Cafe Only</span>
                 </button>
               </div>
             </div>
@@ -455,32 +453,32 @@ const Login = () => {
               type="button"
               onClick={handleGoogleRegister}
               disabled={!GOOGLE_AUTH_ENABLED || loading}
-              className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold flex items-center justify-center gap-2.5 transition-all shadow-md active:scale-[0.98] cursor-pointer border border-slate-200 text-xs sm:text-sm disabled:opacity-50"
+              className="w-full min-h-[44px] py-2.5 px-4 rounded-full bg-surface hover:bg-surface-hover text-foreground font-semibold flex items-center justify-center gap-2.5 transition-all shadow-xs active:scale-[0.98] cursor-pointer border border-border hover:border-border-hover text-xs sm:text-sm disabled:opacity-50"
             >
               <GoogleIcon />
               <span>Daftar Toko Cepat dengan Google</span>
             </button>
 
             <div className="relative flex py-2 items-center">
-              <div className="flex-grow border-t border-slate-800"></div>
+              <div className="flex-grow border-t border-border"></div>
               <button
                 type="button"
                 onClick={() => setShowManualRegister((prev) => !prev)}
-                className="flex-shrink mx-3 text-[11px] font-bold text-slate-400 hover:text-brand-emerald transition-colors cursor-pointer"
+                className="flex-shrink mx-3 text-[11px] font-semibold text-muted hover:text-primary transition-colors cursor-pointer"
               >
                 {showManualRegister ? 'Sembunyikan form manual ▲' : 'Atau daftar manual dengan Email ▼'}
               </button>
-              <div className="flex-grow border-t border-slate-800"></div>
+              <div className="flex-grow border-t border-border"></div>
             </div>
 
             {showManualRegister && (
               <>
                 <div>
-                  <label htmlFor="reg-nama" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                  <label htmlFor="reg-nama" className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1">
                     Nama Lengkap Pemilik
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3.5 top-3 text-slate-500" size={16} />
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark pointer-events-none" size={16} />
                     <input
                       id="reg-nama"
                       type="text"
@@ -488,18 +486,18 @@ const Login = () => {
                       placeholder="Budi Santoso"
                       value={regNama}
                       onChange={(e) => setRegNama(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm"
+                      className="w-full min-h-[44px] pl-10 pr-4 py-2 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20 transition-all text-base sm:text-sm"
                       required
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="reg-email" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                  <label htmlFor="reg-email" className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1">
                     Email Akun Owner
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-3 text-slate-500" size={16} />
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark pointer-events-none" size={16} />
                     <input
                       id="reg-email"
                       type="email"
@@ -507,18 +505,18 @@ const Login = () => {
                       placeholder="budi@autoclean.com"
                       value={regEmail}
                       onChange={(e) => setRegEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm font-mono"
+                      className="w-full min-h-[44px] pl-10 pr-4 py-2 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20 transition-all text-base sm:text-sm font-mono"
                       required
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="reg-password" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                  <label htmlFor="reg-password" className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1">
                     Kata Sandi (Min. 8 Karakter)
                   </label>
                   <div className="relative">
-                    <KeyRound className="absolute left-3.5 top-3 text-slate-500" size={16} />
+                    <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark pointer-events-none" size={16} />
                     <input
                       id="reg-password"
                       type="password"
@@ -527,7 +525,7 @@ const Login = () => {
                       placeholder="••••••••"
                       value={regPassword}
                       onChange={(e) => setRegPassword(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-brand-emerald/60 focus:ring-1 focus:ring-brand-emerald/20 transition-all text-sm font-mono"
+                      className="w-full min-h-[44px] pl-10 pr-4 py-2 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20 transition-all text-base sm:text-sm font-mono"
                       required
                     />
                   </div>
@@ -536,10 +534,10 @@ const Login = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 bg-brand-emerald hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-black rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-brand-emerald/20 cursor-pointer disabled:opacity-50 mt-3"
+                  className="w-full min-h-[44px] py-3 bg-primary hover:bg-primary-hover active:scale-[0.98] text-primary-foreground font-semibold rounded-full text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer disabled:opacity-50 mt-3"
                 >
                   {loading ? (
-                    <div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
                   ) : (
                     'Daftar & Buka Toko Sekarang'
                   )}
@@ -547,18 +545,18 @@ const Login = () => {
               </>
             )}
 
-            <p className="text-[10px] text-slate-500 text-center mt-2">
+            <p className="text-[11px] text-muted text-center mt-2">
               Otomatis mendapatkan lisensi Trial Beta 30 Hari dan Chart of Accounts (COA) siap pakai.
             </p>
           </form>
         )}
 
-        <div className="mt-5 pt-4 border-t border-slate-800/80 flex items-center justify-between gap-2 text-[11px] font-semibold text-slate-400">
-          <Link to="/welcome" className="inline-flex items-center gap-1.5 hover:text-white transition-colors">
+        <div className="mt-5 pt-4 border-t border-border flex items-center justify-between gap-2 text-xs font-semibold text-muted">
+          <Link to="/welcome" className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors">
             <ArrowLeft size={13} strokeWidth={1.75} />
             <span>Beranda Produk</span>
           </Link>
-          <Link to="/panduan" className="inline-flex items-center gap-1.5 text-cyan-300 hover:text-cyan-200 transition-colors">
+          <Link to="/panduan" className="inline-flex items-center gap-1.5 text-primary hover:underline transition-colors">
             <BookOpen size={13} strokeWidth={1.75} />
             <span>Panduan Pengguna</span>
           </Link>

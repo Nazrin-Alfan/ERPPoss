@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import RelayLogo from '../components/brand/RelayLogo'
 import {
   ArrowLeft,
-  BookOpen,
   Printer,
   Search,
   ShieldCheck,
@@ -27,9 +27,9 @@ const ROLE_FILTERS = [
 ]
 
 const ROLE_BADGE_STYLES = {
-  OWNER: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
-  ADMIN: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-  KASIR: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+  OWNER: 'bg-primary-soft text-primary-soft-foreground border-primary/25',
+  ADMIN: 'bg-warning-bg text-warning border-warning/30',
+  KASIR: 'bg-success-bg text-success border-success/30'
 }
 
 const CHAPTERS = [
@@ -211,24 +211,22 @@ const UserManualPage = () => {
   }, [searchQuery, selectedRole])
 
   return (
-    <div className="min-h-screen bg-[#080C14] text-slate-100">
+    <div className="min-h-screen bg-canvas text-foreground">
       {/* Topbar Publik (Tersembunyi saat print) */}
-      <header className="sticky top-0 z-40 h-14 bg-[#080C14]/95 border-b border-slate-800 print:hidden">
+      <header className="sticky top-0 z-40 h-16 bg-surface/95 backdrop-blur-md border-b border-border print:hidden">
         <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <Link
               to="/"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300 hover:text-white px-2.5 py-1.5 rounded-lg bg-[#0F172A] border border-slate-800 transition-all active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 min-h-[40px] text-xs font-semibold text-foreground hover:bg-surface-hover px-3 py-1.5 rounded-full bg-subsurface border border-border transition-all active:scale-[0.98]"
             >
               <ArrowLeft size={14} strokeWidth={1.75} />
               <span>Beranda</span>
             </Link>
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-[#0F172A] border border-slate-800 flex items-center justify-center shrink-0">
-                <BookOpen size={14} strokeWidth={1.75} className="text-[#00ffff]" />
-              </div>
+              <RelayLogo size="sm" />
               <div className="min-w-0">
-                <p className="text-xs sm:text-sm font-bold text-white truncate">
+                <p className="text-xs sm:text-sm font-bold text-foreground truncate">
                   User Manual &amp; SOP RelayPOS
                 </p>
               </div>
@@ -239,21 +237,21 @@ const UserManualPage = () => {
             <button
               type="button"
               onClick={() => window.print()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0F172A] hover:bg-[#1E293B] border border-slate-700 text-xs font-semibold text-slate-200 transition-all active:scale-[0.98] cursor-pointer"
+              className="inline-flex items-center gap-1.5 min-h-[40px] px-3.5 py-1.5 rounded-full bg-surface hover:bg-surface-hover border border-border text-xs font-semibold text-foreground transition-all active:scale-[0.98] cursor-pointer"
             >
-              <Printer size={14} strokeWidth={1.75} className="text-sky-400" />
+              <Printer size={14} strokeWidth={1.75} className="text-primary" />
               <span className="hidden sm:inline">Cetak / Simpan PDF</span>
             </button>
             <Link
               to="/login"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0F172A] hover:bg-[#1E293B] border border-slate-700 text-xs font-semibold text-white transition-all active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 min-h-[40px] px-3.5 py-1.5 rounded-full bg-surface hover:bg-surface-hover border border-border text-xs font-semibold text-foreground transition-all active:scale-[0.98]"
             >
               <LogIn size={14} strokeWidth={1.75} />
               <span>Masuk</span>
             </Link>
             <Link
               to="/login?mode=register"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition-all active:scale-[0.98]"
+              className="hidden sm:inline-flex items-center gap-1.5 min-h-[40px] px-4 py-1.5 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold transition-all active:scale-[0.98]"
             >
               <span>Uji Coba 30 Hari</span>
             </Link>
@@ -262,36 +260,36 @@ const UserManualPage = () => {
       </header>
 
       {/* Hero & Search Filter Bar */}
-      <section className="border-b border-slate-800 bg-[#0F172A]/60 py-8 px-4 sm:px-6">
+      <section className="border-b border-border bg-surface py-8 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto space-y-5">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div className="space-y-2 max-w-2xl">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-[10px] font-bold uppercase tracking-wider text-cyan-300">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-soft border border-primary/25 text-[10px] font-bold uppercase tracking-wider text-primary-soft-foreground">
                 Dokumentasi Operasional Resmi V3
               </span>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                 Panduan Penggunaan &amp; SOP Lengkap RelayPOS
               </h1>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+              <p className="text-xs sm:text-sm text-muted leading-relaxed">
                 Pelajari alur kerja standar untuk Kasir, Pengawas Antrean, Admin Keuangan, dan Owner — mulai dari
                 buka shift kasir hingga tutup buku laporan keuangan SAK EMKM.
               </p>
             </div>
-            <div className="text-xs font-mono tabular-nums text-slate-400 bg-[#080C14] border border-slate-800 rounded-xl px-3.5 py-2.5 shrink-0">
-              Total Modul SOP: <strong className="text-white">{CHAPTERS.length} Bab</strong>
+            <div className="text-xs font-mono tabular-nums text-muted bg-subsurface border border-border rounded-xl px-3.5 py-2.5 shrink-0">
+              Total Modul SOP: <strong className="text-foreground">{CHAPTERS.length} Bab</strong>
             </div>
           </div>
 
           <div className="flex flex-col lg:flex-row gap-3 print:hidden">
             <div className="relative flex-1">
-              <Search size={15} strokeWidth={1.75} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search size={15} strokeWidth={1.75} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari topik SOP (misal: modal awal, split payment, komisi, bluetooth, void, loyalty)..."
                 aria-label="Cari topik panduan pengguna"
-                className="w-full h-11 pl-10 pr-4 rounded-xl bg-[#080C14] border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                className="w-full min-h-[44px] pl-10 pr-4 rounded-xl bg-subsurface border border-border text-base sm:text-sm text-foreground placeholder:text-muted-dark focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20"
               />
             </div>
 
@@ -303,10 +301,10 @@ const UserManualPage = () => {
                     key={rf.id}
                     type="button"
                     onClick={() => setSelectedRole(rf.id)}
-                    className={`h-11 px-3.5 rounded-xl text-xs font-bold border transition-all active:scale-[0.98] cursor-pointer ${
+                    className={`min-h-[44px] px-4 rounded-full text-xs font-semibold border transition-all active:scale-[0.98] cursor-pointer ${
                       active
-                        ? 'bg-cyan-500/15 border-cyan-400 text-cyan-300'
-                        : 'bg-[#080C14] border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                        ? 'bg-primary border-primary text-primary-foreground shadow-xs'
+                        : 'bg-surface border-border text-muted hover:text-foreground hover:border-border-hover'
                     }`}
                   >
                     {rf.label}
@@ -322,12 +320,12 @@ const UserManualPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Sticky Table of Contents */}
         <aside className="lg:col-span-4 xl:col-span-3 print:hidden">
-          <div className="lg:sticky lg:top-20 bg-[#0F172A] border border-slate-800 rounded-xl p-4 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+          <div className="lg:sticky lg:top-20 bg-surface border border-border rounded-2xl p-4 space-y-3 shadow-xs">
+            <div className="flex items-center justify-between border-b border-border pb-2.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted">
                 Daftar Isi SOP
               </span>
-              <span className="text-[11px] font-mono tabular-nums text-cyan-300">
+              <span className="text-[11px] font-mono tabular-nums text-primary font-semibold">
                 {filteredChapters.length}/{CHAPTERS.length}
               </span>
             </div>
@@ -340,11 +338,11 @@ const UserManualPage = () => {
                     href={`#${ch.id}`}
                     className={`flex items-start gap-2 px-2.5 py-2 rounded-lg text-xs transition-colors ${
                       visible
-                        ? 'text-slate-300 hover:text-white hover:bg-[#1E293B]'
-                        : 'text-slate-600 pointer-events-none opacity-50'
+                        ? 'text-foreground hover:bg-subsurface'
+                        : 'text-muted-dark pointer-events-none opacity-50'
                     }`}
                   >
-                    <span className="font-mono text-[10px] font-bold text-cyan-400 pt-0.5 shrink-0">
+                    <span className="font-mono text-[10px] font-bold text-primary pt-0.5 shrink-0">
                       {ch.number}
                     </span>
                     <span className="leading-snug">{ch.title.replace(/^Bab \d+:\s*/, '')}</span>
@@ -358,9 +356,9 @@ const UserManualPage = () => {
         {/* Chapters Body */}
         <main className="lg:col-span-8 xl:col-span-9 space-y-6">
           {filteredChapters.length === 0 ? (
-            <div className="bg-[#0F172A] border border-slate-800 rounded-xl p-8 text-center space-y-3">
-              <p className="text-sm font-bold text-white">Topik SOP tidak ditemukan</p>
-              <p className="text-xs text-slate-400">
+            <div className="bg-surface border border-border rounded-2xl p-8 text-center space-y-3 shadow-xs">
+              <p className="text-sm font-bold text-foreground">Topik SOP tidak ditemukan</p>
+              <p className="text-xs text-muted">
                 Coba kata kunci lain atau reset filter peran ke &quot;Semua Peran&quot;.
               </p>
               <button
@@ -369,7 +367,7 @@ const UserManualPage = () => {
                   setSearchQuery('')
                   setSelectedRole('ALL')
                 }}
-                className="px-4 py-2 rounded-lg bg-[#1E293B] border border-slate-700 text-xs font-bold text-white hover:bg-slate-700 cursor-pointer"
+                className="min-h-[44px] px-5 py-2 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold cursor-pointer"
               >
                 Reset Pencarian
               </button>
@@ -381,16 +379,16 @@ const UserManualPage = () => {
                 <article
                   key={ch.id}
                   id={ch.id}
-                  className="bg-[#0F172A] border border-slate-800 rounded-xl p-5 sm:p-6 space-y-5 scroll-mt-20 break-inside-avoid"
+                  className="bg-surface border border-border rounded-2xl p-5 sm:p-6 space-y-5 scroll-mt-20 break-inside-avoid shadow-xs"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-800 pb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-border pb-4">
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-[#1E293B] border border-slate-700 flex items-center justify-center text-cyan-400 shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-primary-soft border border-primary/25 flex items-center justify-center text-primary shrink-0">
                         <Icon size={18} strokeWidth={1.75} />
                       </div>
                       <div className="space-y-1">
-                        <h2 className="text-base sm:text-lg font-bold text-white">{ch.title}</h2>
-                        <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">{ch.summary}</p>
+                        <h2 className="text-base sm:text-lg font-bold text-foreground">{ch.title}</h2>
+                        <p className="text-xs sm:text-sm text-muted leading-relaxed">{ch.summary}</p>
                       </div>
                     </div>
 
@@ -398,7 +396,7 @@ const UserManualPage = () => {
                       {ch.roles.map((r) => (
                         <span
                           key={r}
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${ROLE_BADGE_STYLES[r]}`}
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border ${ROLE_BADGE_STYLES[r]}`}
                         >
                           {r}
                         </span>
@@ -409,12 +407,12 @@ const UserManualPage = () => {
                   {/* Step-by-step SOP */}
                   <ol className="space-y-2.5">
                     {ch.steps.map((step, idx) => (
-                      <li key={idx} className="flex items-start gap-3 text-xs sm:text-sm text-slate-200 leading-relaxed">
-                        <span className="w-6 h-6 rounded-lg bg-[#080C14] border border-slate-700 text-cyan-300 font-mono text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      <li key={idx} className="flex items-start gap-3 text-xs sm:text-sm text-foreground leading-relaxed">
+                        <span className="w-6 h-6 rounded-lg bg-primary-soft border border-primary/25 text-primary-soft-foreground font-mono text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                           {idx + 1}
                         </span>
                         <span className="flex items-start gap-2 pt-0.5">
-                          <CheckCircle2 size={14} strokeWidth={1.75} className="text-emerald-400 shrink-0 mt-1" />
+                          <CheckCircle2 size={14} strokeWidth={1.75} className="text-success shrink-0 mt-1" />
                           <span>{step}</span>
                         </span>
                       </li>
@@ -422,24 +420,24 @@ const UserManualPage = () => {
                   </ol>
 
                   {/* Callout Operasional */}
-                  <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-2.5 text-xs text-amber-200">
-                    <AlertTriangle size={15} strokeWidth={1.75} className="text-amber-400 shrink-0 mt-0.5" />
+                  <div className="p-3.5 rounded-xl bg-warning-bg border border-warning/30 flex items-start gap-2.5 text-xs text-warning">
+                    <AlertTriangle size={15} strokeWidth={1.75} className="text-warning shrink-0 mt-0.5" />
                     <p className="leading-relaxed">
-                      <strong className="text-amber-300">Catatan Pengendalian:</strong> {ch.callout}
+                      <strong className="font-bold">Catatan Pengendalian:</strong> {ch.callout}
                     </p>
                   </div>
 
                   {/* Ilustrasi Screenshot Modul */}
-                  <figure className="rounded-xl overflow-hidden border border-slate-800 bg-[#080C14]">
+                  <figure className="rounded-xl overflow-hidden border border-border bg-subsurface">
                     <img
                       src={ch.screenshot}
                       alt={ch.screenshotCaption}
                       loading="lazy"
-                      className="w-full h-auto object-cover border-b border-slate-800"
+                      className="w-full h-auto object-cover border-b border-border"
                     />
-                    <figcaption className="px-3.5 py-2 text-[11px] text-slate-400 flex items-center justify-between gap-2">
+                    <figcaption className="px-3.5 py-2 bg-surface text-[11px] text-muted flex items-center justify-between gap-2">
                       <span>{ch.screenshotCaption}</span>
-                      <span className="font-mono text-[10px] text-slate-500 uppercase">Modul {ch.number}</span>
+                      <span className="font-mono text-[10px] text-muted-dark uppercase">Modul {ch.number}</span>
                     </figcaption>
                   </figure>
                 </article>
@@ -448,23 +446,23 @@ const UserManualPage = () => {
           )}
 
           {/* Bottom Navigation Card */}
-          <div className="bg-[#0F172A] border border-slate-800 rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print:hidden">
+          <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print:hidden shadow-xs">
             <div>
-              <h3 className="text-sm font-bold text-white">Siap Mencoba Langsung di Outlet Anda?</h3>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <h3 className="text-sm font-bold text-foreground">Siap Mencoba Langsung di Outlet Anda?</h3>
+              <p className="text-xs text-muted mt-0.5">
                 Daftar akun Owner gratis selama 30 hari penuh atau masuk ke dashboard toko Anda.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <Link
                 to="/"
-                className="px-3.5 py-2 rounded-lg bg-[#1E293B] border border-slate-700 text-xs font-semibold text-white hover:bg-slate-700 transition-all active:scale-[0.98]"
+                className="min-h-[40px] inline-flex items-center px-4 py-2 rounded-full bg-subsurface border border-border text-xs font-semibold text-foreground hover:bg-surface-hover transition-all active:scale-[0.98]"
               >
                 Kembali ke Beranda
               </Link>
               <Link
                 to="/login?mode=register"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition-all active:scale-[0.98]"
+                className="min-h-[40px] inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold transition-all active:scale-[0.98]"
               >
                 <span>Daftar Beta 30 Hari</span>
                 <ChevronRight size={14} strokeWidth={2} />

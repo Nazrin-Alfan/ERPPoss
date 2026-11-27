@@ -17,9 +17,16 @@ describe('Phase 3: Dual-Mode ThemeContext & Strangler-Fig Safety', () => {
     for (const route of MIGRATED_LIGHT_ROUTES) {
       expect(resolveSurfaceMode(route, 'auto')).toBe('light')
     }
+    expect(resolveSurfaceMode('/', 'auto')).toBe('light')
+    expect(resolveSurfaceMode('/welcome', 'auto')).toBe('light')
+    expect(resolveSurfaceMode('/panduan', 'auto')).toBe('light')
+    expect(resolveSurfaceMode('/manual', 'auto')).toBe('light')
+    expect(resolveSurfaceMode('/login', 'auto')).toBe('light')
+    expect(resolveSurfaceMode('/forgot-password', 'auto')).toBe('light')
+    expect(resolveSurfaceMode('/reset-password', 'auto')).toBe('light')
   })
 
-  it('keeps unmigrated Phase 4 pages in Pure Carbon Dark D1 during Phase 3 to prevent white-on-white contrast regressions', () => {
+  it('keeps unmigrated Phase 4 pages in Pure Carbon Dark D1 during Wave 4.1 so root / does not swallow app routes', () => {
     expect(resolveSurfaceMode('/dashboard', 'auto')).toBe('dark')
     expect(resolveSurfaceMode('/finance', 'auto')).toBe('dark')
     expect(resolveSurfaceMode('/admin', 'auto')).toBe('dark')
