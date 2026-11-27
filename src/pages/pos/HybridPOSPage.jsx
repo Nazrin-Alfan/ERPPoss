@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase, isCloudBackend } from '../../supabaseClient'
 import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext'
+import RelayLogo from '../../components/brand/RelayLogo'
 import { DEFAULT_TENANT_ID } from '../../constants/erpConfig'
 import { ROLES, isCashier } from '../../constants/roles'
 import { isMerchandiseCategory, EXPENSE_CATEGORIES } from '../../constants/transactionConstants'
@@ -33,7 +36,9 @@ import {
   ShoppingBag,
   Gift,
   ArrowLeft,
-  Users
+  Users,
+  X,
+  Clock
 } from 'lucide-react'
 
 import ThermalReceiptModal from '../../components/pos/ThermalReceiptModal'
@@ -134,62 +139,63 @@ const getMenuTheme = (menuName) => {
   const name = String(menuName || '').toLowerCase()
   if (name.includes('americano') || name.includes('espresso') || name.includes('sanger') || name.includes('kopi') || name.includes('late')) {
     return {
-      gradient: 'from-amber-700/40 via-amber-900/30 to-slate-950',
-      badgeBg: 'bg-amber-500/25 text-amber-300 border border-amber-500/30',
+      gradient: 'bg-subsurface',
+      badgeBg: 'bg-warning-bg text-warning border border-warning/30',
       tag: 'Kopi',
-      emoji: '☕'
+      emoji: 'Kopi'
     }
   }
   if (name.includes('teh') || name.includes('tea')) {
     return {
-      gradient: 'from-emerald-700/40 via-teal-900/30 to-slate-950',
-      badgeBg: 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/30',
+      gradient: 'bg-subsurface',
+      badgeBg: 'bg-success-bg text-success border border-success/30',
       tag: 'Teh Segar',
-      emoji: '🍵'
+      emoji: 'Teh'
     }
   }
   if (name.includes('badak') || name.includes('susu') || name.includes('mineral') || name.includes('air')) {
     return {
-      gradient: 'from-cyan-700/40 via-blue-900/30 to-slate-950',
-      badgeBg: 'bg-cyan-500/25 text-cyan-300 border border-cyan-500/30',
+      gradient: 'bg-subsurface',
+      badgeBg: 'bg-primary-soft text-primary-soft-foreground border border-primary/30',
       tag: 'Minuman Dingin',
-      emoji: '🥤'
+      emoji: 'Dingin'
     }
   }
   if (name.includes('ayam') || name.includes('penyet') || name.includes('geprek')) {
     return {
-      gradient: 'from-rose-700/40 via-red-900/30 to-slate-950',
-      badgeBg: 'bg-rose-500/25 text-rose-300 border border-rose-500/30',
+      gradient: 'bg-subsurface',
+      badgeBg: 'bg-destructive-bg text-destructive border border-destructive/30',
       tag: 'Ayam & Lauk',
-      emoji: '🍗'
+      emoji: 'Lauk'
     }
   }
   if (name.includes('nasi')) {
     return {
-      gradient: 'from-orange-700/40 via-amber-900/30 to-slate-950',
-      badgeBg: 'bg-orange-500/25 text-orange-300 border border-orange-500/30',
+      gradient: 'bg-subsurface',
+      badgeBg: 'bg-warning-bg text-warning border border-warning/30',
       tag: 'Nasi Goreng',
-      emoji: '🍚'
+      emoji: 'Nasi'
     }
   }
   if (name.includes('mie') || name.includes('indomie')) {
     return {
-      gradient: 'from-yellow-700/40 via-amber-900/30 to-slate-950',
-      badgeBg: 'bg-yellow-500/25 text-yellow-300 border border-yellow-500/30',
+      gradient: 'bg-subsurface',
+      badgeBg: 'bg-warning-bg text-warning border border-warning/30',
       tag: 'Indomie',
-      emoji: '🍜'
+      emoji: 'Mie'
     }
   }
   return {
-    gradient: 'from-purple-700/40 via-indigo-900/30 to-slate-950',
-    badgeBg: 'bg-purple-500/25 text-purple-300 border border-purple-500/30',
+    gradient: 'bg-subsurface',
+    badgeBg: 'bg-surface text-foreground border border-border',
     tag: 'Camilan',
-    emoji: '🍟'
+    emoji: 'Snack'
   }
 }
 
 const CafePOS = ({ forcedBusinessType = null } = {}) => {
   const { user, profile, activeTenant } = useAuth()
+  const { isDark } = useTheme()
   const effectiveTenantId = activeTenant?.id || profile?.tenant_id || DEFAULT_TENANT_ID
   const features = getTenantFeatures(forcedBusinessType || activeTenant?.business_type)
   const defaultTab = features.isCarwashOnly ? 'carwash' : 'cafe'
@@ -1917,7 +1923,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
   return (
     <div className="p-2 sm:p-4 md:pb-6 flex flex-col max-w-7xl mx-auto min-h-[calc(100vh-4rem)] w-full max-w-full min-w-0 overflow-x-hidden space-y-3">
       {/* 1. TOP HEADER FULL-WIDTH (BEBAS DARI SCROLL SAMPING & TAMPIL 100% LEGA) */}
-      <div className="glass-panel p-2.5 sm:px-3.5 sm:py-2.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0 relative z-40 w-full max-w-full">
+      <div className="bg-surface border border-border p-2.5 sm:px-3.5 sm:py-2.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0 relative z-40 w-full max-w-full shadow-sm">
         {/* Sisi Kiri: Navigasi Tabs Lengkap */}
         <div className="flex items-center gap-1.5 w-full sm:w-auto min-w-0">
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 flex-nowrap overscroll-x-contain shrink min-w-0">
@@ -1925,11 +1931,12 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
             <div className="flex items-center gap-1 bg-subsurface p-1 rounded-xl border border-border shrink-0">
               {features.hasCafe && (
                 <button
+                  type="button"
                   onClick={() => setActiveTab('cafe')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
                     activeTab === 'cafe'
-                      ? 'bg-primary text-primary-foreground shadow-sm shadow-[#00ffff]/20'
-                      : 'text-muted hover:text-slate-200'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted hover:text-foreground'
                   }`}
                 >
                   <Coffee size={14} />
@@ -1938,11 +1945,12 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
               )}
               {features.hasCarwash && (
                 <button
+                  type="button"
                   onClick={() => setActiveTab('carwash')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
                     activeTab === 'carwash'
-                      ? 'bg-primary text-primary-foreground shadow-sm shadow-[#00ffff]/20'
-                      : 'text-muted hover:text-slate-200'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted hover:text-foreground'
                   }`}
                 >
                   <Car size={14} />
@@ -1950,11 +1958,12 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                 </button>
               )}
               <button
+                type="button"
                 onClick={() => setActiveTab('merchandise')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
                   activeTab === 'merchandise'
-                    ? 'bg-amber-400 text-slate-950 shadow-sm shadow-amber-400/20'
-                    : 'text-muted hover:text-slate-200'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted hover:text-foreground'
                 }`}
               >
                 <ShoppingBag size={14} />
@@ -1962,23 +1971,24 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
               </button>
             </div>
 
-            <span className="text-[#26272d] font-mono px-0.5 shrink-0">|</span>
+            <span className="text-border font-mono px-0.5 shrink-0">|</span>
 
             {/* Grup 2: Audit & Monitoring Lapangan */}
             <div className="flex items-center gap-1 bg-subsurface p-1 rounded-xl border border-border shrink-0">
               <button
+                type="button"
                 onClick={() => setActiveTab('pending')}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 border ${
                   activeTab === 'pending'
-                    ? 'bg-amber-500 text-slate-950 shadow-sm shadow-amber-500/20'
-                    : 'text-muted hover:text-slate-200'
+                    ? 'bg-warning-bg text-warning border-warning/40 shadow-sm'
+                    : 'border-transparent text-muted hover:text-foreground'
                 }`}
               >
                 <ShoppingCart size={13} />
                 <span className="whitespace-nowrap">Bon Pending</span>
                 {pendingBills.length > 0 && (
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                    activeTab === 'pending' ? 'bg-subsurface text-amber-400' : 'bg-amber-500/20 text-amber-400'
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black tabular-nums ${
+                    activeTab === 'pending' ? 'bg-warning text-ink-foreground' : 'bg-warning-bg text-warning'
                   }`}>
                     {pendingBills.length}
                   </span>
@@ -1986,34 +1996,36 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
               </button>
 
               <button
+                type="button"
                 onClick={() => setActiveTab('history')}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
                   activeTab === 'history'
-                    ? 'bg-purple-500 text-white shadow-sm shadow-purple-500/20'
-                    : 'text-muted hover:text-slate-200'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted hover:text-foreground'
                 }`}
               >
                 <History size={13} />
                 <span className="whitespace-nowrap">Riwayat</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                  activeTab === 'history' ? 'bg-subsurface text-purple-300' : 'bg-purple-500/20 text-purple-300'
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black tabular-nums ${
+                  activeTab === 'history' ? 'bg-primary-hover text-primary-foreground' : 'bg-surface text-muted border border-border'
                 }`}>
                   {todayTransactions.length}
                 </span>
               </button>
 
               <button
+                type="button"
                 onClick={() => setActiveTab('inventory')}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-xs transition-all shrink-0 ${
                   activeTab === 'inventory'
-                    ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/20'
-                    : 'text-muted hover:text-slate-200'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted hover:text-foreground'
                 }`}
               >
                 <Boxes size={13} />
                 <span className="whitespace-nowrap">Stok Gudang</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                  activeTab === 'inventory' ? 'bg-subsurface text-amber-300' : 'bg-amber-600/20 text-amber-300'
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black tabular-nums ${
+                  activeTab === 'inventory' ? 'bg-primary-hover text-primary-foreground' : 'bg-surface text-muted border border-border'
                 }`}>
                   {inventoryList.length}
                 </span>
@@ -2021,7 +2033,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
             </div>
           </div>
 
-          <span className="text-[#26272d] font-mono px-0.5 shrink-0 hidden sm:inline">|</span>
+          <span className="text-border font-mono px-0.5 shrink-0 hidden sm:inline">|</span>
 
           {/* Grup 3: Dropdown Operasional Kas & Shift (DI LUAR overflow-x-auto) */}
           <div className="relative shrink-0">
@@ -2030,12 +2042,12 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
               onClick={() => setShowCashOpsMenu(!showCashOpsMenu)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all border shrink-0 ${
                 activeTab === 'expense' || activeTab === 'exchange'
-                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                  : 'bg-surface text-slate-200 hover:text-white border-border hover:border-border-hover'
+                  ? 'bg-destructive-bg text-destructive border-destructive/40'
+                  : 'bg-surface text-foreground hover:bg-surface-hover border-border hover:border-border-hover'
               }`}
               title="Operasional Laci Kasir & Pergantian Shift"
             >
-              <TrendingDown size={13} className="text-rose-400" />
+              <TrendingDown size={13} className="text-destructive" />
               <span className="whitespace-nowrap">
                 {activeTab === 'expense' ? 'Pengeluaran' : activeTab === 'exchange' ? 'Tukar Uang' : 'Shift & Kas'}
               </span>
@@ -2045,15 +2057,15 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
             {showCashOpsMenu && (
               <>
                 <div className="fixed inset-0 z-[60] bg-transparent" onClick={() => setShowCashOpsMenu(false)} />
-                <div className="absolute right-0 sm:left-0 top-full mt-2 w-52 bg-[#121215] border border-[#26272d] rounded-xl p-1.5 shadow-2xl z-[70] space-y-1 animate-slide-up">
+                <div className="absolute right-0 sm:left-0 top-full mt-2 w-52 bg-surface border border-border rounded-xl p-1.5 shadow-2xl z-[70] space-y-1 animate-slide-up">
                   <button
                     type="button"
                     onClick={() => { setActiveTab('expense'); setShowCashOpsMenu(false); }}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-left transition-colors ${
-                      activeTab === 'expense' ? 'bg-rose-500/20 text-rose-300' : 'text-slate-200 hover:bg-subsurface hover:text-white'
+                      activeTab === 'expense' ? 'bg-destructive-bg text-destructive' : 'text-foreground hover:bg-subsurface'
                     }`}
                   >
-                    <TrendingDown size={14} className="text-rose-400" />
+                    <TrendingDown size={14} className="text-destructive" />
                     <span>Catat Pengeluaran Kas</span>
                   </button>
 
@@ -2061,10 +2073,10 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                     type="button"
                     onClick={() => { setActiveTab('exchange'); setShowCashOpsMenu(false); }}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-left transition-colors ${
-                      activeTab === 'exchange' ? 'bg-cyan-500/20 text-cyan-300' : 'text-slate-200 hover:bg-subsurface hover:text-white'
+                      activeTab === 'exchange' ? 'bg-primary-soft text-primary-soft-foreground' : 'text-foreground hover:bg-subsurface'
                     }`}
                   >
-                    <RefreshCw size={14} className="text-cyan-400" />
+                    <RefreshCw size={14} className="text-primary" />
                     <span>Tukar Uang / Tarik Kas</span>
                   </button>
 
@@ -2073,7 +2085,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                   <button
                     type="button"
                     onClick={() => { setShowCashOpsMenu(false); handleTutupKasir(); }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-left text-rose-400 hover:bg-rose-500/20 transition-colors"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-left text-destructive hover:bg-destructive-bg transition-colors"
                   >
                     <AlertCircle size={14} />
                     <span>Tutup Shift Kasir</span>
@@ -2087,13 +2099,13 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
         <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end pt-1 sm:pt-0 border-t border-border/50 sm:border-t-0">
           {/* Status Akun Kasir Login & Shift */}
           <div className="flex items-center gap-1.5 bg-subsurface border border-border rounded-xl px-2.5 py-1 text-xs">
-            <span className="w-2 h-2 rounded-full bg-primary text-primary-foreground animate-pulse shrink-0"></span>
+            <span className="w-2 h-2 rounded-full bg-success animate-pulse shrink-0"></span>
             <span className="text-muted-dark text-[10px] font-semibold hidden sm:inline uppercase tracking-wider">Kasir:</span>
-            <span className="font-bold text-white uppercase text-xs tracking-wide">
+            <span className="font-bold text-foreground uppercase text-xs tracking-wide">
               {profile?.nama || selectedCashier || 'KASIR'}
             </span>
-            <span className="text-slate-700 font-mono">|</span>
-            <span className="text-primary font-bold font-mono text-[11px] bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
+            <span className="text-border font-mono">|</span>
+            <span className="text-primary-soft-foreground font-bold font-mono text-[11px] bg-primary-soft px-1.5 py-0.5 rounded border border-primary/20">
               {getShiftForCashier(profile?.nama || selectedCashier)}
             </span>
           </div>
@@ -2108,11 +2120,11 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                 }
                 setShowCashDrawerDetail(!showCashDrawerDetail)
               }}
-              className="flex items-center gap-2 bg-subsurface hover:bg-[#26272d] border border-border rounded-lg px-2.5 py-1 text-xs transition-colors"
+              className="flex items-center gap-2 bg-subsurface hover:bg-surface-hover border border-border rounded-lg px-2.5 py-1 text-xs transition-colors"
               title="Klik untuk melihat rincian modal & arus kas laci"
             >
               <Wallet size={13} className="text-primary" />
-              <span className="font-bold text-white font-mono text-xs">
+              <span className="font-bold text-foreground font-mono text-xs tabular-nums">
                 {formatRupiah(todayStartingCapital + cashierCash.todayIn - cashierCash.todayOut - (cashierCash.todayExchangeOut || 0))}
               </span>
               <ChevronDown size={12} className={`text-muted-dark transition-transform ${showCashDrawerDetail ? 'rotate-180' : ''}`} />
@@ -2125,46 +2137,47 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                   className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[0.5px]"
                   onClick={() => setShowCashDrawerDetail(false)}
                 />
-                <div className="absolute right-0 top-full mt-2 w-72 bg-[#121215] border border-[#26272d] rounded-xl p-3.5 shadow-2xl z-[70] space-y-2.5 animate-slide-up">
+                <div className="absolute right-0 top-full mt-2 w-72 bg-surface border border-border rounded-xl p-3.5 shadow-2xl z-[70] space-y-2.5 animate-slide-up">
                   <div className="flex items-center justify-between border-b border-border pb-2">
-                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <Wallet size={14} className="text-purple-400" />
+                    <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      <Wallet size={14} className="text-primary" />
                       Rincian Uang Kasir
                     </span>
                     <button
                       type="button"
+                      aria-label="Tutup rincian uang kasir"
                       onClick={() => setShowCashDrawerDetail(false)}
-                      className="text-muted-dark hover:text-white text-xs"
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-dark hover:text-foreground hover:bg-subsurface transition-colors"
                     >
-                      ✕
+                      <X size={14} />
                     </button>
                   </div>
                   <div className="space-y-1.5 text-xs">
                     <div className="flex justify-between items-center text-muted">
                       <span>Modal Awal</span>
-                      <span className="font-mono text-slate-200 font-bold">{formatRupiah(todayStartingCapital)}</span>
+                      <span className="font-mono text-foreground font-bold tabular-nums">{formatRupiah(todayStartingCapital)}</span>
                     </div>
                     <div className="flex justify-between items-center text-muted">
                       <span>Uang Masuk (Cash)</span>
-                      <span className="font-mono text-primary font-bold">+{formatRupiah(cashierCash.todayIn)}</span>
+                      <span className="font-mono text-success font-bold tabular-nums">+{formatRupiah(cashierCash.todayIn)}</span>
                     </div>
                     <div className="flex justify-between items-center text-muted">
                       <span>Uang Keluar (Cash)</span>
-                      <span className="font-mono text-rose-400 font-bold">-{formatRupiah(cashierCash.todayOut)}</span>
+                      <span className="font-mono text-destructive font-bold tabular-nums">-{formatRupiah(cashierCash.todayOut)}</span>
                     </div>
                     {(cashierCash.todayExchangeOut || 0) > 0 && (
                       <div className="flex justify-between items-center text-muted">
                         <span>Tukar Uang (Cash Keluar)</span>
-                        <span className="font-mono text-amber-400 font-bold">-{formatRupiah(cashierCash.todayExchangeOut)}</span>
+                        <span className="font-mono text-warning font-bold tabular-nums">-{formatRupiah(cashierCash.todayExchangeOut)}</span>
                       </div>
                     )}
                     <div className="flex justify-between items-center text-muted">
                       <span>Total QRIS Masuk</span>
-                      <span className="font-mono text-cyan-400 font-bold">{formatRupiah(cashierCash.todayQRIS)}</span>
+                      <span className="font-mono text-primary font-bold tabular-nums">{formatRupiah(cashierCash.todayQRIS)}</span>
                     </div>
-                    <div className="border-t border-border pt-1.5 flex justify-between items-center font-bold text-white">
+                    <div className="border-t border-border pt-1.5 flex justify-between items-center font-bold text-foreground">
                       <span>Sisa Fisik di Laci</span>
-                      <span className="font-mono text-purple-300 font-black">
+                      <span className="font-mono text-primary font-black tabular-nums">
                         {formatRupiah(todayStartingCapital + cashierCash.todayIn - cashierCash.todayOut - (cashierCash.todayExchangeOut || 0))}
                       </span>
                     </div>
@@ -2178,38 +2191,39 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
       {/* 2. AREA KERJA UTAMA: 2-KOLOM SAAT JUALAN, FULL-WIDTH SAAT AUDIT/MONITORING */}
       <div className="flex-1 min-h-0 flex flex-col md:flex-row items-start gap-3 md:gap-4 w-full max-w-full min-w-0 overflow-x-hidden">
-        {/* Kolom Kiri: Pilihan Item / Form / Tabel Audit (64% di tablet landscape) */}
-        <div className={`${isOrderTab ? 'md:w-[64%]' : 'w-full'} flex flex-col flex-1 min-h-0 min-w-0 w-full max-w-full`}>
+        {/* Kolom Kiri: Pilihan Item / Form / Tabel Audit (58% di tablet landscape, 64% di desktop) */}
+        <div className={`${isOrderTab ? 'md:w-[58%] lg:w-[64%]' : 'w-full'} ${isOrderTab && (cart.length > 0 || hasCarwash) ? 'pb-24 md:pb-0' : ''} flex flex-col flex-1 min-h-0 min-w-0 w-full max-w-full`}>
           {/* Tab 1: Menu Cafe */}
           {activeTab === 'cafe' && (
             <div className="flex-1 flex flex-col bg-surface border border-border rounded-xl p-2.5 sm:p-4 min-h-0 w-full max-w-full min-w-0 overflow-hidden">
               {/* Search Bar & Filter Kategori Chips */}
               <div className="space-y-2.5 mb-4 shrink-0 min-w-0">
                 <div className="relative">
-                  <Search className="absolute left-3.5 top-3 text-muted-dark" size={16} />
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark" size={16} />
                   <input
                     type="text"
+                    aria-label="Cari menu cafe"
                     placeholder="Cari makanan, minuman, atau paket bundling..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-primary/60 text-sm"
+                    className="w-full min-h-[44px] pl-10 pr-4 py-2.5 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark focus:outline-none focus:border-ring text-base sm:text-sm"
                   />
                 </div>
 
                 {/* Filter Kategori Chips (Bisa Kustom Dinamis) */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 w-full max-w-full flex-nowrap scrollbar-none overscroll-x-contain">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 w-full max-w-full flex-nowrap no-scrollbar overscroll-x-contain">
                   {cafeCategoriesList.map((cat) => (
                     <button
                       key={cat}
                       type="button"
                       onClick={() => setSelectedCafeCategory(cat)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                      className={`min-h-[36px] px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
                         selectedCafeCategory === cat
-                          ? 'bg-primary text-primary-foreground text-slate-950 shadow-sm shadow-brand-emerald/20'
-                          : 'bg-subsurface border border-border text-muted hover:text-slate-200'
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'bg-subsurface border border-border text-muted hover:text-foreground'
                       }`}
                     >
-                      {cat === 'SEMUA' ? '🌟 Semua Menu' : cat}
+                      {cat === 'SEMUA' ? 'Semua Menu' : cat}
                     </button>
                   ))}
                 </div>
@@ -2217,7 +2231,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
               {/* Grid Item Menu (Scrollable) */}
               <div className="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 content-start min-h-0 w-full max-w-full min-w-0">
-              {filteredMenus.map((menu, idx) => {
+              {filteredMenus.map((menu) => {
                 const theme = getMenuTheme(menu.nama_menu)
                 const inCartItem = cart.find(c => c.nama_menu === menu.nama_menu)
                 return (
@@ -2225,15 +2239,15 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                     key={menu.id || menu.nama_menu}
                     type="button"
                     onClick={() => addToCart({ menu_id: menu.id || null, nama_menu: menu.nama_menu, harga: menu.harga })}
-                    className={`glass-card hover:border-primary/50 p-0 rounded-xl flex flex-col justify-between text-left transition-all duration-300 active:scale-[0.98] group overflow-hidden min-h-[170px] relative w-full min-w-0 ${
-                      inCartItem ? 'border-brand-emerald/60 ring-1 ring-brand-emerald/40 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'border-border'
+                    className={`border hover:border-border-hover p-0 rounded-xl flex flex-col justify-between text-left transition-all duration-200 active:scale-[0.98] group overflow-hidden min-h-[172px] relative w-full min-w-0 ${
+                      inCartItem ? 'bg-selected-surface border-border-active ring-1 ring-ring/40 shadow-sm' : 'bg-surface border-border'
                     }`}
                   >
                     {/* Visual Banner / Gambar Menu */}
-                    <div className={`w-full h-24 relative overflow-hidden bg-gradient-to-br ${theme.gradient} flex items-center justify-center`}>
-                      {/* Fallback Icon & Emoji saat gambar offline/error/loading */}
-                      <div className="fallback-placeholder absolute inset-0 flex items-center justify-center text-3xl drop-shadow-lg pointer-events-none transition-opacity">
-                        <span>{theme.emoji}</span>
+                    <div className={`w-full h-24 relative overflow-hidden ${theme.gradient} flex items-center justify-center border-b border-border/40`}>
+                      {/* Fallback Icon saat gambar offline/error/loading */}
+                      <div className="fallback-placeholder absolute inset-0 flex flex-col items-center justify-center gap-1 text-muted pointer-events-none transition-opacity">
+                        <Coffee size={24} />
                       </div>
 
                       {/* Foto Menu dengan graceful fallback */}
@@ -2241,7 +2255,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                         src={menu.foto_url || getMenuPhoto(menu.nama_menu)}
                         alt={menu.nama_menu}
                         loading="lazy"
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 relative z-10"
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 relative z-10"
                         onLoad={(e) => {
                           const placeholder = e.currentTarget.parentElement.querySelector('.fallback-placeholder');
                           if (placeholder) placeholder.style.display = 'none';
@@ -2254,12 +2268,12 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                       />
                       
                       {/* Gradient Overlay di atas gambar */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent pointer-events-none z-20"></div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none z-20"></div>
 
                       {/* Kategori Badge di sudut kiri atas */}
                       <span className={`absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded-full font-extrabold uppercase backdrop-blur-md shadow-sm z-30 ${
                         menu.is_bundling
-                          ? 'bg-rose-500/90 text-white'
+                          ? 'bg-destructive-solid text-white'
                           : theme.badgeBg
                       }`}>
                         {menu.is_bundling ? 'Bundling' : theme.tag}
@@ -2267,23 +2281,27 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
                       {/* Counter Badge jika sudah ada di cart */}
                       {inCartItem && (
-                        <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground text-slate-950 font-black text-xs flex items-center justify-center shadow-lg shadow-brand-emerald/30 animate-pop-in z-30">
+                        <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground font-black text-xs flex items-center justify-center shadow-sm animate-pop-in z-30 tabular-nums">
                           {inCartItem.qty}
                         </span>
                       )}
                     </div>
 
                     {/* Informasi Menu & Harga */}
-                    <div className="p-3 flex-1 flex flex-col justify-between bg-subsurface backdrop-blur-md relative w-full">
-                      <h4 className="font-bold text-xs text-slate-100 group-hover:text-primary transition-colors line-clamp-2 leading-tight">
+                    <div className={`p-3 flex-1 flex flex-col justify-between relative w-full ${inCartItem ? 'bg-selected-surface' : 'bg-surface'}`}>
+                      <h4 className="font-bold text-xs text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-tight">
                         {menu.nama_menu}
                       </h4>
-                      <div className="mt-2 flex justify-between items-center">
-                        <span className="text-xs font-bold text-primary font-mono">
+                      <div className="mt-2 flex justify-between items-center gap-1.5">
+                        <span className="text-xs font-bold text-foreground font-mono tabular-nums">
                           {formatRupiah(menu.harga)}
                         </span>
-                        <span className="w-6 h-6 rounded-lg bg-subsurface text-muted flex items-center justify-center font-bold text-xs group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                          <Plus size={12} />
+                        <span className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all border shrink-0 ${
+                          inCartItem
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-subsurface border-border text-foreground group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary'
+                        }`}>
+                          <Plus size={14} />
                         </span>
                       </div>
                     </div>
@@ -2314,23 +2332,24 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
         {/* Tab 2: Cuci Mobil (Carwash) */}
         {activeTab === 'carwash' && (
-          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-surface border border-border rounded-xl p-6 overflow-y-auto space-y-6">
-            <div className="flex items-center justify-between">
+          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-surface border border-border rounded-xl p-4 sm:p-6 overflow-y-auto space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               <div>
-                <h3 className="text-lg font-bold text-white">Layanan Cuci Mobil</h3>
-                <p className="text-xs text-muted-dark mt-0.5">Lengkapi form transaksi cucian mobil pelanggan</p>
+                <h3 className="text-lg font-bold text-foreground">Layanan Cuci Mobil</h3>
+                <p className="text-xs text-muted mt-0.5">Lengkapi form transaksi cucian mobil pelanggan</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={handleOpenCrewCommissionModal}
-                  className="text-xs font-bold text-[#00ffff] bg-[#00ffff]/10 hover:bg-[#00ffff]/20 px-2.5 py-1 rounded-full border border-[#00ffff]/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
+                  className="min-h-[38px] text-xs font-bold text-primary-soft-foreground bg-primary-soft hover:bg-primary/20 px-3 py-1.5 rounded-full border border-primary/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
                 >
                   <Users size={13} />
                   <span>Komisi Kru Hari Ini</span>
                 </button>
-                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
-                  ✓ Masuk ke Transaksi
+                <span className="min-h-[38px] text-xs font-bold text-success bg-success-bg px-3 py-1.5 rounded-full border border-success/30 flex items-center gap-1">
+                  <Check size={13} />
+                  <span>Masuk ke Transaksi</span>
                 </span>
               </div>
             </div>
@@ -2339,7 +2358,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
               {/* Plat Nomor */}
               <div className="flex flex-col">
                 <label className="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
-                  Plat Nomor Kendaraan <span className="text-rose-400">*</span>
+                  Plat Nomor Kendaraan <span className="text-destructive">*</span>
                 </label>
                 <input
                   type="text"
@@ -2350,7 +2369,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                     setCarwashForm(prev => ({ ...prev, platNomor: val }))
                     if (!hasCarwash) setHasCarwash(true)
                   }}
-                  className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-primary text-sm uppercase font-mono tracking-widest font-bold"
+                  className="w-full min-h-[44px] px-4 py-2 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark focus:outline-none focus:border-ring text-base sm:text-sm uppercase font-mono tracking-widest font-bold"
                 />
               </div>
 
@@ -2359,16 +2378,16 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                 <label className="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">
                   Bay Pengerjaan / Lokasi Antre
                 </label>
-                <div className="grid grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                   {['Bay 1', 'Bay 2', 'Bay 3', 'Antre Luar'].map((b) => (
                     <button
                       key={b}
                       type="button"
                       onClick={() => setCarwashForm(prev => ({ ...prev, bay: b }))}
-                      className={`py-2 px-1 rounded-lg font-bold text-xs transition-all border active:scale-[0.98] ${
+                      className={`min-h-[44px] py-2 px-1 rounded-xl font-bold text-xs transition-all border active:scale-[0.98] ${
                         (carwashForm.bay || 'Bay 1') === b
                           ? 'bg-primary text-primary-foreground border-primary shadow-xs font-black'
-                          : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
+                          : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-foreground'
                       }`}
                     >
                       {b}
@@ -2402,7 +2421,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                     placeholder="Contoh: Avanza, Fortuner, Civic"
                     value={carwashForm.model}
                     onChange={(e) => setCarwashForm(prev => ({ ...prev, model: e.target.value }))}
-                    className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-primary text-sm"
+                    className="w-full min-h-[44px] px-4 py-2 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark focus:outline-none focus:border-ring text-base sm:text-sm"
                   />
                 </div>
 
@@ -2416,7 +2435,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                     placeholder="Contoh: 081234567890"
                     value={carwashForm.noTelepon}
                     onChange={(e) => setCarwashForm(prev => ({ ...prev, noTelepon: e.target.value }))}
-                    className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-primary text-sm"
+                    className="w-full min-h-[44px] px-4 py-2 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark focus:outline-none focus:border-ring text-base sm:text-sm"
                   />
                 </div>
 
@@ -2452,9 +2471,9 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                         key={u}
                         type="button"
                         onClick={() => setCarwashForm(prev => ({ ...prev, ukuran: u }))}
-                        className={`py-2 rounded-lg font-bold text-xs transition-all border active:scale-[0.98] ${carwashForm.ukuran === u
+                        className={`min-h-[44px] py-2 rounded-xl font-bold text-xs transition-all border active:scale-[0.98] ${carwashForm.ukuran === u
                           ? 'bg-primary text-primary-foreground border-primary shadow-xs font-black'
-                          : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
+                          : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-foreground'
                           }`}
                       >
                         {u}
@@ -2474,7 +2493,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                       placeholder="Masukkan harga custom..."
                       value={carwashForm.customHarga}
                       onChange={(e) => setCarwashForm(prev => ({ ...prev, customHarga: parseFloat(e.target.value) || 0 }))}
-                      className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-white focus:outline-none focus:border-primary text-sm font-bold text-primary"
+                      className="w-full min-h-[44px] px-4 py-2 bg-subsurface border border-border rounded-xl focus:outline-none focus:border-ring text-base sm:text-sm font-bold font-mono tabular-nums text-foreground"
                     />
                   </div>
                 )}
@@ -2490,9 +2509,9 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                         key={v}
                         type="button"
                         onClick={() => setCarwashForm(prev => ({ ...prev, variant: v }))}
-                        className={`py-2 rounded-lg font-bold text-xs transition-all border active:scale-[0.98] ${carwashForm.variant === v
+                        className={`min-h-[44px] py-2 rounded-xl font-bold text-xs transition-all border active:scale-[0.98] ${carwashForm.variant === v
                           ? 'bg-primary text-primary-foreground border-primary shadow-xs font-black'
-                          : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
+                          : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-foreground'
                           }`}
                       >
                         {v}
@@ -2545,9 +2564,9 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                         key={k}
                         type="button"
                         onClick={() => setCarwashForm(prev => ({ ...prev, kehadiran: k }))}
-                        className={`py-2 rounded-lg font-bold text-xs transition-all border active:scale-[0.98] ${carwashForm.kehadiran === k
+                        className={`min-h-[44px] py-2 rounded-xl font-bold text-xs transition-all border active:scale-[0.98] ${carwashForm.kehadiran === k
                           ? 'bg-primary text-primary-foreground border-primary shadow-xs font-black'
-                          : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
+                          : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-foreground'
                           }`}
                       >
                         {k}
@@ -2559,14 +2578,14 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                 {/* Total Tarif Carwash */}
                 <div className="flex flex-col justify-end p-3.5 rounded-xl bg-subsurface border border-border">
                   <span className="text-[10px] uppercase tracking-wider font-bold text-muted-dark">Estimasi Tarif Cuci</span>
-                  <span className="text-2xl font-black font-mono text-primary mt-0.5">{formatRupiah(carwashForm.harga)}</span>
+                  <span className="text-2xl font-black font-mono text-foreground mt-0.5 tabular-nums">{formatRupiah(carwashForm.harga)}</span>
                 </div>
 
                 {/* Walkaround Inspection & Catatan Khusus Kendaraan (Estafet Detailing) */}
                 <div className="col-span-1 md:col-span-2 p-3.5 rounded-xl bg-surface border border-border space-y-3">
                   <div className="flex items-center justify-between border-b border-border pb-2">
-                    <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                      <span>🔍</span>
+                    <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      <Search size={14} className="text-primary" />
                       <span>Inspeksi Walkaround & Kondisi Masuk</span>
                     </span>
                     <span className="text-[10px] text-muted-dark font-medium">Cegah komplain baret/barang</span>
@@ -2581,10 +2600,10 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                             key={cond}
                             type="button"
                             onClick={() => setCarwashForm(prev => ({ ...prev, kondisi_bodi: cond }))}
-                            className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all ${
+                            className={`min-h-[38px] py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all border ${
                               carwashForm.kondisi_bodi === cond
-                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs'
-                                : 'bg-subsurface text-muted border border-border hover:text-slate-200'
+                                ? 'bg-warning-bg text-warning border-warning/40 shadow-xs'
+                                : 'bg-subsurface text-muted border-border hover:text-foreground'
                             }`}
                           >
                             {cond}
@@ -2601,10 +2620,10 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                             key={val}
                             type="button"
                             onClick={() => setCarwashForm(prev => ({ ...prev, barang_berharga: val }))}
-                            className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all ${
+                            className={`min-h-[38px] py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all border ${
                               carwashForm.barang_berharga === val
-                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-xs'
-                                : 'bg-subsurface text-muted border border-border hover:text-slate-200'
+                                ? 'bg-success-bg text-success border-success/40 shadow-xs'
+                                : 'bg-subsurface text-muted border-border hover:text-foreground'
                             }`}
                           >
                             {val}
@@ -2621,7 +2640,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                       placeholder="Cth: Velg baru repaint, kaca film baru 2 hari, wiper getas..."
                       value={carwashForm.catatan_kendaraan}
                       onChange={(e) => setCarwashForm(prev => ({ ...prev, catatan_kendaraan: e.target.value }))}
-                      className="w-full bg-subsurface border border-border rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-muted-dark focus:outline-hidden focus:border-primary"
+                      className="w-full min-h-[44px] bg-subsurface border border-border rounded-xl px-3 py-2 text-base sm:text-xs text-foreground placeholder:text-muted-dark focus:outline-none focus:border-ring"
                     />
                   </div>
                 </div>
@@ -2634,11 +2653,11 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
           <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-surface border border-border rounded-xl p-4 md:p-6 overflow-y-auto space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-border">
               <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <ShoppingBag className="w-5 h-5 text-amber-400" />
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                  <ShoppingBag className="w-5 h-5 text-primary" />
                   <span>Merchandise & Produk Retail</span>
                 </h3>
-                <p className="text-xs text-muted-dark mt-0.5">Penjualan produk fisik carwash: parfum, lap microfiber, aksesoris & semir mobil</p>
+                <p className="text-xs text-muted mt-0.5">Penjualan produk fisik carwash: parfum, lap microfiber, aksesoris & semir mobil</p>
               </div>
             </div>
 
@@ -2654,22 +2673,23 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
         {/* Tab 3: Tagihan Pending */}
         {activeTab === 'pending' && (
-          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-surface border border-border rounded-xl p-6 overflow-y-auto space-y-4">
+          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-surface border border-border rounded-xl p-4 sm:p-6 overflow-y-auto space-y-4">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
               <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                   <span>Daftar Tagihan Pending (Bon)</span>
-                  <span className="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-black">
+                  <span className="text-xs bg-warning-bg text-warning border border-warning/30 px-2 py-0.5 rounded-full font-black tabular-nums">
                     {pendingBills.length} Bon
                   </span>
                 </h3>
-                <p className="text-xs text-muted-dark mt-0.5">Daftar struk transaksi yang belum dilunasi oleh pelanggan</p>
+                <p className="text-xs text-muted mt-0.5">Daftar struk transaksi yang belum dilunasi oleh pelanggan</p>
               </div>
 
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
                   onClick={fetchPendingBills}
-                  className="px-3 py-1.5 bg-subsurface hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
+                  className="min-h-[38px] px-3 py-1.5 bg-subsurface hover:bg-surface-hover border border-border text-foreground rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
                   title="Muat ulang tagihan pending"
                 >
                   <RefreshCw size={13} />
@@ -2680,20 +2700,23 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
             {/* Search Bar Tagihan Pending */}
             <div className="relative">
-              <Search className="absolute left-3.5 top-3 text-muted-dark" size={15} />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark" size={15} />
               <input
                 type="text"
+                aria-label="Cari tagihan pending"
                 placeholder="Cari nomor struk, nama kasir, plat nomor, menu cafe, atau paket cuci..."
                 value={pendingSearchQuery}
                 onChange={(e) => setPendingSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 bg-subsurface border border-border rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 text-xs transition-colors"
+                className="w-full min-h-[44px] pl-10 pr-10 py-2.5 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark focus:outline-none focus:border-ring text-base sm:text-xs transition-colors"
               />
               {pendingSearchQuery && (
                 <button
+                  type="button"
+                  aria-label="Hapus pencarian bon pending"
                   onClick={() => setPendingSearchQuery('')}
-                  className="absolute right-3.5 top-2.5 text-muted-dark hover:text-white text-xs font-bold p-1"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 min-w-[32px] min-h-[32px] flex items-center justify-center text-muted-dark hover:text-foreground rounded-lg transition-colors"
                 >
-                  ✕
+                  <X size={14} />
                 </button>
               )}
             </div>
@@ -2703,17 +2726,18 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                 {pendingBills.length === 0 ? (
                   <>
                     <CheckCircle size={36} className="mb-2 text-primary/60" />
-                    <p className="text-sm font-semibold">Semua tagihan bersih!</p>
-                    <p className="text-xs text-slate-700 mt-0.5">Tidak ada bill gantung yang pending.</p>
+                    <p className="text-sm font-semibold text-foreground">Semua tagihan bersih!</p>
+                    <p className="text-xs text-muted mt-0.5">Tidak ada bill gantung yang pending.</p>
                   </>
                 ) : (
                   <>
                     <Search size={36} className="mb-2 text-muted-dark" />
-                    <p className="text-sm font-semibold text-muted">Pencarian Tidak Ditemukan</p>
-                    <p className="text-xs text-muted-dark mt-0.5">Tidak ada tagihan pending yang cocok dengan "{pendingSearchQuery}"</p>
+                    <p className="text-sm font-semibold text-foreground">Pencarian Tidak Ditemukan</p>
+                    <p className="text-xs text-muted mt-0.5">Tidak ada tagihan pending yang cocok dengan "{pendingSearchQuery}"</p>
                     <button
+                      type="button"
                       onClick={() => setPendingSearchQuery('')}
-                      className="mt-3 px-3 py-1.5 bg-subsurface hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-colors"
+                      className="mt-3 min-h-[38px] px-3 py-1.5 bg-subsurface hover:bg-surface-hover border border-border text-foreground rounded-xl text-xs font-bold transition-colors"
                     >
                       Reset Filter Pencarian
                     </button>
@@ -2722,8 +2746,8 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="text-[11px] text-muted font-medium">
-                  Menampilkan <span className="text-white font-bold">{filteredPendingBills.length}</span> dari {pendingBills.length} tagihan pending
+                <div className="text-[11px] text-muted font-medium tabular-nums">
+                  Menampilkan <span className="text-foreground font-bold">{filteredPendingBills.length}</span> dari {pendingBills.length} tagihan pending
                 </div>
                 {filteredPendingBills.map(bill => {
                   const dateStr = parseDateSafe(bill.created_at).toLocaleString('id-ID', {
@@ -2732,40 +2756,42 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                   })
 
                   return (
-                    <div key={bill.id} className="glass-card p-4 rounded-xl border border-border hover:border-border-hover/60 transition-all flex flex-col justify-between md:flex-row md:items-center gap-4">
+                    <div key={bill.id} className="bg-subsurface p-4 rounded-xl border border-border hover:border-border-hover transition-all flex flex-col justify-between md:flex-row md:items-center gap-4">
                       <div className="space-y-1 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-mono text-sm font-black text-primary uppercase">
                             #{bill.id.substring(0, 8)}
                           </span>
-                          <span className="text-[10px] bg-subsurface text-muted px-2 py-0.5 rounded font-bold">
+                          <span className="text-[10px] bg-surface border border-border text-muted px-2 py-0.5 rounded font-bold">
                             Kasir: {bill.kasir}
                           </span>
                           <span className="text-[10px] text-muted-dark">{dateStr}</span>
-                          <span className="text-[9px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-extrabold uppercase">
+                          <span className="text-[9px] bg-warning-bg text-warning border border-warning/30 px-1.5 py-0.5 rounded font-extrabold uppercase">
                             PENDING
                           </span>
                         </div>
 
                         {/* Bill Items Detail */}
-                        <div className="text-xs text-muted space-y-0.5 pt-1.5 border-t border-border/50 mt-1">
+                        <div className="text-xs text-muted space-y-1 pt-1.5 border-t border-border/50 mt-1">
                           {bill.cafe?.map((item, idx) => (
-                            <span key={idx} className="block text-[11px]">
-                              ☕ {item.nama_menu} x{item.jumlah} ({formatRupiah(item.harga_satuan * item.jumlah)})
+                            <span key={idx} className="flex items-center gap-1.5 text-[11px] tabular-nums">
+                              <Coffee size={12} className="text-muted shrink-0" />
+                              <span>{item.nama_menu} x{item.jumlah} ({formatRupiah(item.harga_satuan * item.jumlah)})</span>
                             </span>
                           ))}
                           {bill.carwash?.map((item, idx) => (
-                            <span key={idx} className="block text-[11px]">
-                              🧼 Carwash: {item.paket} {item.plat_nomor ? `(${item.merk_mobil ? item.merk_mobil + ' - ' : ''}${item.plat_nomor})` : ''} - ({formatRupiah(item.harga)})
+                            <span key={idx} className="flex items-center gap-1.5 text-[11px] tabular-nums">
+                              <Car size={12} className="text-primary shrink-0" />
+                              <span>Carwash: {item.paket} {item.plat_nomor ? `(${item.merk_mobil ? item.merk_mobil + ' - ' : ''}${item.plat_nomor})` : ''} - ({formatRupiah(item.harga)})</span>
                             </span>
                           ))}
                         </div>
                       </div>
 
                       {/* Right Action / Settle */}
-                      <div className="flex flex-col items-end gap-2 shrink-0 self-start md:self-center">
-                        <span className="text-sm font-black text-primary">{formatRupiah(bill.total_harga)}</span>
-                        <div className="flex gap-2 flex-wrap justify-end">
+                      <div className="flex flex-col items-start md:items-end gap-2 shrink-0 self-stretch md:self-center">
+                        <span className="text-sm font-black text-foreground font-mono tabular-nums">{formatRupiah(bill.total_harga)}</span>
+                        <div className="flex gap-2 flex-wrap justify-start md:justify-end">
                           <button
                             type="button"
                             onClick={() => {
@@ -2793,27 +2819,29 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                               })
                               setActiveReceipt(receipt)
                             }}
-                            className="px-2.5 py-1.5 bg-subsurface hover:bg-slate-700 border border-[#3f414a] text-slate-200 font-bold rounded-lg text-xs transition-colors flex items-center gap-1.5 shadow-sm"
+                            className="min-h-[38px] px-3 py-1.5 bg-surface hover:bg-surface-hover border border-border text-foreground font-bold rounded-xl text-xs transition-colors flex items-center gap-1.5 shadow-sm"
                             title="Pratinjau, Cetak Thermal atau Kirim WA Bukti Order"
                           >
-                            <FileText size={12} className="text-amber-400" />
+                            <FileText size={12} className="text-warning" />
                             <span>Bukti Order</span>
                           </button>
                           <button
+                            type="button"
                             onClick={() => {
                               setSettlingBill({ ...bill, attemptKey: `${bill.id}:settle:${effectiveTenantId}` })
                               setSettlePaymentMethod(paymentMethods[0]?.nama || 'CASH')
                               setSettleCashReceived('')
                               setSettleSurcharge({ enabled: false, nominal: 50000, keterangan: 'Biaya Inap Kendaraan (1 Malam)' })
                             }}
-                            className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition-colors flex items-center gap-1"
+                            className="min-h-[38px] px-3.5 py-1.5 bg-primary hover:bg-primary-hover text-primary-foreground font-bold rounded-full text-xs transition-colors flex items-center gap-1"
                           >
                             <Check size={12} />
                             Lunasi
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleCancelBill(bill.id)}
-                            className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/30 text-rose-400 font-bold rounded-lg text-xs transition-colors"
+                            className="min-h-[38px] px-3 py-1.5 bg-destructive-bg hover:opacity-90 border border-destructive/30 text-destructive font-bold rounded-xl text-xs transition-colors"
                           >
                             Batalkan
                           </button>
@@ -2829,42 +2857,46 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
         {/* Tab 4: Riwayat/Daftar Transaksi Hari Ini */}
         {activeTab === 'history' && (
-          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-surface border border-border rounded-xl p-6 overflow-y-auto space-y-4">
+          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-surface border border-border rounded-xl p-4 sm:p-6 overflow-y-auto space-y-4">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
               <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                   <span>Daftar Riwayat Transaksi</span>
-                  <span className="text-xs bg-primary text-primary-foreground/20 text-primary border border-brand-blue/30 px-2 py-0.5 rounded-full font-black">
+                  <span className="text-xs bg-primary-soft text-primary-soft-foreground border border-primary/30 px-2 py-0.5 rounded-full font-black tabular-nums">
                     {todayTransactions.length} Transaksi
                   </span>
                 </h3>
-                <p className="text-xs text-muted-dark mt-0.5">Daftar seluruh transaksi kasir berdasarkan tanggal terpilih</p>
+                <p className="text-xs text-muted mt-0.5">Daftar seluruh transaksi kasir berdasarkan tanggal terpilih</p>
               </div>
 
               {/* Date Filter & Actions */}
               <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1.5 bg-subsurface border border-border rounded-lg px-2.5 py-1 text-xs">
+                <div className="flex items-center gap-1.5 bg-subsurface border border-border rounded-xl px-2.5 py-1 text-xs">
                   <Calendar size={13} className="text-muted" />
                   <input
                     type="date"
+                    aria-label="Filter tanggal riwayat transaksi"
                     value={historyDate}
                     onChange={(e) => setHistoryDate(e.target.value)}
-                    className="bg-transparent text-white text-xs focus:outline-none cursor-pointer"
+                    className="bg-transparent text-foreground text-base sm:text-xs focus:outline-none cursor-pointer"
                   />
                 </div>
                 <button
+                  type="button"
                   onClick={() => setHistoryDate(new Date().toLocaleDateString('en-CA'))}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors ${
+                  className={`min-h-[38px] px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
                     historyDate === new Date().toLocaleDateString('en-CA')
-                      ? 'bg-primary text-primary-foreground text-white'
-                      : 'bg-subsurface hover:bg-slate-700 text-slate-200'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-subsurface hover:bg-surface-hover border border-border text-foreground'
                   }`}
                 >
                   Hari Ini
                 </button>
                 <button
+                  type="button"
+                  aria-label="Muat ulang riwayat transaksi"
                   onClick={() => fetchTodayTransactions(historyDate)}
-                  className="p-1.5 bg-subsurface hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-all"
+                  className="min-w-[38px] min-h-[38px] p-2 bg-subsurface hover:bg-surface-hover border border-border text-foreground rounded-xl text-xs font-bold transition-all flex items-center justify-center"
                   title="Muat ulang riwayat"
                 >
                   <RefreshCw size={13} />
@@ -2874,20 +2906,23 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
             {/* Search Bar Transaksi */}
             <div className="relative">
-              <Search className="absolute left-3.5 top-3 text-muted-dark" size={15} />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark" size={15} />
               <input
                 type="text"
+                aria-label="Cari riwayat transaksi"
                 placeholder="Cari ID struk, kasir, nama pelanggan, metode (CASH/QRIS), plat mobil, menu..."
                 value={historySearchQuery}
                 onChange={(e) => setHistorySearchQuery(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 bg-subsurface border border-border rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-primary text-xs transition-colors"
+                className="w-full min-h-[44px] pl-10 pr-10 py-2.5 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark focus:outline-none focus:border-ring text-base sm:text-xs transition-colors"
               />
               {historySearchQuery && (
                 <button
+                  type="button"
+                  aria-label="Hapus pencarian riwayat transaksi"
                   onClick={() => setHistorySearchQuery('')}
-                  className="absolute right-3.5 top-2.5 text-muted-dark hover:text-white text-xs font-bold p-1"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 min-w-[32px] min-h-[32px] flex items-center justify-center text-muted-dark hover:text-foreground rounded-lg transition-colors"
                 >
-                  ✕
+                  <X size={14} />
                 </button>
               )}
             </div>
@@ -2896,12 +2931,13 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-muted-dark">
                 {todayTransactions.length === 0 ? (
                   <>
-                    <History size={36} className="mb-2 text-slate-700" />
-                    <p className="text-sm font-semibold">Belum ada transaksi pada tanggal ini</p>
-                    <p className="text-xs text-slate-700 mt-0.5">Pilih tanggal lain atau kembali ke transaksi hari ini.</p>
+                    <History size={36} className="mb-2 text-muted-dark" />
+                    <p className="text-sm font-semibold text-foreground">Belum ada transaksi pada tanggal ini</p>
+                    <p className="text-xs text-muted mt-0.5">Pilih tanggal lain atau kembali ke transaksi hari ini.</p>
                     <button
+                      type="button"
                       onClick={() => setHistoryDate(new Date().toLocaleDateString('en-CA'))}
-                      className="mt-3 px-3 py-1.5 bg-primary text-primary-foreground hover:bg-blue-600 text-white rounded-lg text-xs font-bold transition-colors"
+                      className="mt-3 min-h-[38px] px-4 py-1.5 bg-primary hover:bg-primary-hover text-primary-foreground rounded-full text-xs font-bold transition-colors"
                     >
                       Pilih Hari Ini
                     </button>
@@ -2909,11 +2945,12 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                 ) : (
                   <>
                     <Search size={36} className="mb-2 text-muted-dark" />
-                    <p className="text-sm font-semibold text-muted">Pencarian Tidak Ditemukan</p>
-                    <p className="text-xs text-muted-dark mt-0.5">Tidak ada transaksi yang cocok dengan "{historySearchQuery}"</p>
+                    <p className="text-sm font-semibold text-foreground">Pencarian Tidak Ditemukan</p>
+                    <p className="text-xs text-muted mt-0.5">Tidak ada transaksi yang cocok dengan "{historySearchQuery}"</p>
                     <button
+                      type="button"
                       onClick={() => setHistorySearchQuery('')}
-                      className="mt-3 px-3 py-1.5 bg-subsurface hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-colors"
+                      className="mt-3 min-h-[38px] px-3 py-1.5 bg-subsurface hover:bg-surface-hover border border-border text-foreground rounded-xl text-xs font-bold transition-colors"
                     >
                       Reset Filter Pencarian
                     </button>
@@ -2922,11 +2959,11 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex items-center justify-between text-[11px] text-muted font-medium">
+                <div className="flex items-center justify-between text-[11px] text-muted font-medium tabular-nums">
                   <div>
-                    Menampilkan <span className="text-white font-bold">{filteredTodayTransactions.length}</span> dari {todayTransactions.length} transaksi ({historyDate})
+                    Menampilkan <span className="text-foreground font-bold">{filteredTodayTransactions.length}</span> dari {todayTransactions.length} transaksi ({historyDate})
                   </div>
-                  <div className="text-primary font-bold font-mono">
+                  <div className="text-foreground font-bold font-mono">
                     Total: {formatRupiah(filteredTodayTransactions.reduce((acc, t) => t.status_bayar === 'Selesai' ? acc + (t.total_harga || 0) : acc, 0))}
                   </div>
                 </div>
@@ -2937,44 +2974,45 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                   const merkWash = tx.carwash?.[0]?.merk_mobil
                   const platWash = tx.carwash?.[0]?.plat_nomor
                   return (
-                    <div key={tx.id} className="glass-card p-4 rounded-xl border border-border hover:border-slate-750 transition-all flex flex-col justify-between md:flex-row md:items-center gap-4">
+                    <div key={tx.id} className="bg-subsurface p-4 rounded-xl border border-border hover:border-border-hover transition-all flex flex-col justify-between md:flex-row md:items-center gap-4">
                       <div className="space-y-1 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-mono text-xs font-bold text-muted uppercase">
                             #{tx.id.substring(0, 8)}
                           </span>
-                          <span className="text-[10px] bg-subsurface text-muted px-2 py-0.5 rounded font-bold">
+                          <span className="text-[10px] bg-surface border border-border text-muted px-2 py-0.5 rounded font-bold">
                             {tx.kasir}
                           </span>
-                          <span className="text-[10px] text-muted-dark font-medium">
-                            ⏱️ {tx.jam || '00:00'}
+                          <span className="text-[10px] text-muted-dark font-medium flex items-center gap-1 font-mono tabular-nums">
+                            <Clock size={11} />
+                            <span>{tx.jam || '00:00'}</span>
                           </span>
-                          <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase ${isSelesai
-                            ? 'bg-primary text-primary-foreground/15 text-primary'
+                          <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase border ${isSelesai
+                            ? 'bg-success-bg text-success border-success/30'
                             : tx.status_bayar === 'Batal'
-                              ? 'bg-rose-500/15 text-rose-450 border border-rose-500/15'
-                              : 'bg-amber-500/15 text-amber-500'
+                              ? 'bg-destructive-bg text-destructive border-destructive/30'
+                              : 'bg-warning-bg text-warning border-warning/30'
                             }`}>
                             {tx.status_bayar}
                           </span>
-                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${isCash
-                            ? 'bg-purple-500/15 text-purple-400'
-                            : 'bg-emerald-500/15 text-emerald-400'
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase border ${isCash
+                            ? 'bg-primary-soft text-primary-soft-foreground border-primary/30'
+                            : 'bg-success-bg text-success border-success/30'
                             }`}>
                             {tx.metode_bayar}
                           </span>
                           {merkWash && (
-                            <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded uppercase ${isSelesai
-                              ? 'bg-green-500/15 text-green-400'
-                              : 'bg-red-500/15 text-red-400'
+                            <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded uppercase border ${isSelesai
+                              ? 'bg-success-bg text-success border-success/30'
+                              : 'bg-destructive-bg text-destructive border-destructive/30'
                               }`}>
                               {merkWash}
                             </span>
                           )}
                           {platWash && (
-                            <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded uppercase ${isSelesai
-                              ? 'bg-green-500/15 text-green-400'
-                              : 'bg-red-500/15 text-red-400'
+                            <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded uppercase border font-mono ${isSelesai
+                              ? 'bg-success-bg text-success border-success/30'
+                              : 'bg-destructive-bg text-destructive border-destructive/30'
                               }`}>
                               {platWash}
                             </span>
@@ -2982,23 +3020,25 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                         </div>
 
                         {/* Transaction Detail Items */}
-                        <div className="text-xs text-muted space-y-0.5 pt-1.5 border-t border-border/50 mt-1">
+                        <div className="text-xs text-muted space-y-1 pt-1.5 border-t border-border/50 mt-1">
                           {tx.cafe?.map((item, idx) => (
-                            <span key={idx} className="block text-[11px]">
-                              ☕ {item.nama_menu} x{item.jumlah} ({formatRupiah(item.harga_satuan * item.jumlah)})
+                            <span key={idx} className="flex items-center gap-1.5 text-[11px] tabular-nums">
+                              <Coffee size={12} className="text-muted shrink-0" />
+                              <span>{item.nama_menu} x{item.jumlah} ({formatRupiah(item.harga_satuan * item.jumlah)})</span>
                             </span>
                           ))}
                           {tx.carwash?.map((item, idx) => (
-                            <span key={idx} className="block text-[11px]">
-                              🧼 Carwash: {item.paket} {item.plat_nomor ? `(${item.merk_mobil ? item.merk_mobil + ' - ' : ''}${item.plat_nomor})` : ''} - ({formatRupiah(item.harga)})
+                            <span key={idx} className="flex items-center gap-1.5 text-[11px] tabular-nums">
+                              <Car size={12} className="text-primary shrink-0" />
+                              <span>Carwash: {item.paket} {item.plat_nomor ? `(${item.merk_mobil ? item.merk_mobil + ' - ' : ''}${item.plat_nomor})` : ''} - ({formatRupiah(item.harga)})</span>
                             </span>
                           ))}
                         </div>
                       </div>
 
-                      <div className="flex flex-col items-end gap-2 shrink-0 self-start md:self-center">
-                        <span className="text-sm font-black text-white">{formatRupiah(tx.total_harga)}</span>
-                        <div className="flex gap-1.5 flex-wrap justify-end">
+                      <div className="flex flex-col items-start md:items-end gap-2 shrink-0 self-stretch md:self-center">
+                        <span className="text-sm font-black text-foreground font-mono tabular-nums">{formatRupiah(tx.total_harga)}</span>
+                        <div className="flex gap-1.5 flex-wrap justify-start md:justify-end">
                           {/* Tombol Cetak Struk Bukti Pembayaran / Bukti Order */}
                           <button
                             type="button"
@@ -3029,15 +3069,16 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                                   })
                               setActiveReceipt(receipt)
                             }}
-                            className="px-2 py-1 bg-subsurface hover:bg-slate-700 border border-[#3f414a] text-slate-200 font-bold rounded text-[10px] transition-colors flex items-center gap-1 shadow-sm"
+                            className="min-h-[34px] px-2.5 py-1 bg-surface hover:bg-surface-hover border border-border text-foreground font-bold rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm"
                             title="Cetak Struk Thermal atau Kirim WhatsApp"
                           >
-                            <Printer size={11} className={isSelesai ? 'text-primary' : 'text-amber-400'} />
+                            <Printer size={11} className={isSelesai ? 'text-primary' : 'text-warning'} />
                             <span>{isSelesai ? 'Struk' : 'Order'}</span>
                           </button>
 
                           {tx.status_bayar !== 'Batal' && (
                             <button
+                              type="button"
                               onClick={() => handleStartEditTransaction({
                                 id_struk: tx.id,
                                 metode_bayar: tx.metode_bayar,
@@ -3045,7 +3086,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                                 nominal_cash: tx.nominal_cash,
                                 nominal_qris: tx.nominal_qris
                               })}
-                              className="px-2.5 py-1 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded text-[10px] transition-colors"
+                              className="min-h-[34px] px-2.5 py-1 bg-primary-soft hover:bg-primary/20 text-primary-soft-foreground border border-primary/30 font-bold rounded-lg text-[10px] transition-colors"
                             >
                               Edit
                             </button>
@@ -3053,19 +3094,21 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                           {!isSelesai && tx.status_bayar === 'Pending' && (
                             <>
                               <button
+                                type="button"
                                 onClick={() => {
                                   setSettlingBill({ ...tx, attemptKey: `${tx.id}:settle:${effectiveTenantId}` })
                                   setSettlePaymentMethod(paymentMethods[0]?.nama || 'CASH')
                                   setSettleCashReceived('')
                                 }}
-                                className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded text-[10px] transition-colors flex items-center gap-1"
+                                className="min-h-[34px] px-2.5 py-1 bg-primary hover:bg-primary-hover text-primary-foreground font-bold rounded-full text-[10px] transition-colors flex items-center gap-1"
                               >
                                 <Check size={10} />
                                 Lunasi
                               </button>
                               <button
+                                type="button"
                                 onClick={() => handleCancelBill(tx.id)}
-                                className="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/30 text-rose-400 font-bold rounded text-[10px] transition-colors"
+                                className="min-h-[34px] px-2.5 py-1 bg-destructive-bg hover:opacity-90 border border-destructive/30 text-destructive font-bold rounded-lg text-[10px] transition-colors"
                               >
                                 Batalkan
                               </button>
@@ -3073,8 +3116,9 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                           )}
                           {isSelesai && tx.status_bayar === 'Selesai' && (
                             <button
+                              type="button"
                               onClick={() => handleCancelPaidTransaction(tx)}
-                              className="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/30 text-rose-450 font-bold rounded text-[10px] transition-colors"
+                              className="min-h-[34px] px-2.5 py-1 bg-destructive-bg hover:opacity-90 border border-destructive/30 text-destructive font-bold rounded-lg text-[10px] transition-colors"
                             >
                               Batalkan
                             </button>
@@ -3091,27 +3135,28 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
         {/* Tab: Stok Gudang (Pemantauan Kasir / Stock Opname) */}
         {activeTab === 'inventory' && (
-          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-surface border border-border rounded-xl p-6 overflow-y-auto space-y-5">
+          <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-surface border border-border rounded-xl p-4 sm:p-6 overflow-y-auto space-y-5">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
               <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Boxes className="text-amber-500" size={20} />
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                  <Boxes className="text-warning" size={20} />
                   <span>Stok Gudang & Bahan Baku</span>
-                  <span className="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-black">
+                  <span className="text-xs bg-warning-bg text-warning border border-warning/30 px-2 py-0.5 rounded-full font-black tabular-nums">
                     {inventoryList.length} Item
                   </span>
                 </h3>
-                <p className="text-xs text-muted-dark mt-0.5">
+                <p className="text-xs text-muted mt-0.5">
                   Pemantauan sisa persediaan fisik untuk pencocokan lapangan (Stock Opname) oleh kasir
                 </p>
               </div>
 
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
                   onClick={fetchInventory}
                   disabled={inventoryLoading}
-                  className="px-3 py-1.5 bg-subsurface hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 disabled:opacity-50"
+                  className="min-h-[38px] px-3 py-1.5 bg-subsurface hover:bg-surface-hover border border-border text-foreground rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 disabled:opacity-50"
                   title="Muat ulang data stok gudang"
                 >
                   <RefreshCw size={13} className={inventoryLoading ? 'animate-spin' : ''} />
@@ -3121,60 +3166,60 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
             </div>
 
             {/* Read-Only Notice Banner */}
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3.5 flex items-start gap-3">
-              <Info className="text-amber-400 shrink-0 mt-0.5" size={18} />
-              <div className="text-xs text-amber-200/90 leading-relaxed">
-                <span className="font-bold text-amber-300">Mode Pemantauan Kasir (Hanya Pantau / Read-Only):</span>{' '}
+            <div className="bg-warning-bg border border-warning/30 rounded-xl p-3.5 flex items-start gap-3">
+              <Info className="text-warning shrink-0 mt-0.5" size={18} />
+              <div className="text-xs text-muted leading-relaxed">
+                <span className="font-bold text-warning">Mode Pemantauan Kasir (Hanya Pantau / Read-Only):</span>{' '}
                 Halaman ini khusus digunakan kasir untuk mencocokkan stok fisik di gudang dengan catatan sistem.
                 Penambahan stok masuk (restok), edit kuantitas, dan penyesuaian master bahan baku dikelola langsung oleh{' '}
-                <span className="font-semibold text-white">Owner/Admin</span> di halaman Kelola Admin.
+                <span className="font-semibold text-foreground">Owner/Admin</span> di halaman Kelola Admin.
               </div>
             </div>
 
             {/* Mini Summary Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="glass-card p-3.5 rounded-xl border border-border flex items-center justify-between">
+              <div className="bg-subsurface p-3.5 rounded-xl border border-border flex items-center justify-between">
                 <div>
                   <p className="text-[11px] text-muted font-medium">Total Bahan Baku</p>
-                  <p className="text-lg font-black text-white mt-0.5">{inventoryList.length}</p>
+                  <p className="text-lg font-black text-foreground mt-0.5 font-mono tabular-nums">{inventoryList.length}</p>
                 </div>
-                <div className="w-9 h-9 rounded-lg bg-subsurface flex items-center justify-center text-muted">
+                <div className="w-9 h-9 rounded-lg bg-surface border border-border flex items-center justify-center text-muted">
                   <Package size={18} />
                 </div>
               </div>
 
-              <div className="glass-card p-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 flex items-center justify-between">
+              <div className="bg-success-bg p-3.5 rounded-xl border border-success/30 flex items-center justify-between">
                 <div>
-                  <p className="text-[11px] text-emerald-400 font-medium">Stok Aman</p>
-                  <p className="text-lg font-black text-emerald-400 mt-0.5">
+                  <p className="text-[11px] text-success font-medium">Stok Aman</p>
+                  <p className="text-lg font-black text-success mt-0.5 font-mono tabular-nums">
                     {inventoryList.filter((i) => (Number(i.stok) || 0) > 10).length}
                   </p>
                 </div>
-                <div className="w-9 h-9 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <div className="w-9 h-9 rounded-lg bg-surface border border-success/30 flex items-center justify-center text-success">
                   <CheckCircle size={18} />
                 </div>
               </div>
 
-              <div className="glass-card p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5 flex items-center justify-between">
+              <div className="bg-warning-bg p-3.5 rounded-xl border border-warning/30 flex items-center justify-between">
                 <div>
-                  <p className="text-[11px] text-amber-400 font-medium">Stok Menipis (1-10)</p>
-                  <p className="text-lg font-black text-amber-400 mt-0.5">
+                  <p className="text-[11px] text-warning font-medium">Stok Menipis (1-10)</p>
+                  <p className="text-lg font-black text-warning mt-0.5 font-mono tabular-nums">
                     {inventoryList.filter((i) => (Number(i.stok) || 0) > 0 && (Number(i.stok) || 0) <= 10).length}
                   </p>
                 </div>
-                <div className="w-9 h-9 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400">
+                <div className="w-9 h-9 rounded-lg bg-surface border border-warning/30 flex items-center justify-center text-warning">
                   <AlertTriangle size={18} />
                 </div>
               </div>
 
-              <div className="glass-card p-3.5 rounded-xl border border-rose-500/20 bg-rose-500/5 flex items-center justify-between">
+              <div className="bg-destructive-bg p-3.5 rounded-xl border border-destructive/30 flex items-center justify-between">
                 <div>
-                  <p className="text-[11px] text-rose-400 font-medium">Habis / Kritis (≤ 0)</p>
-                  <p className="text-lg font-black text-rose-400 mt-0.5">
+                  <p className="text-[11px] text-destructive font-medium">Habis / Kritis (≤ 0)</p>
+                  <p className="text-lg font-black text-destructive mt-0.5 font-mono tabular-nums">
                     {inventoryList.filter((i) => (Number(i.stok) || 0) <= 0).length}
                   </p>
                 </div>
-                <div className="w-9 h-9 rounded-lg bg-rose-500/20 flex items-center justify-center text-rose-400">
+                <div className="w-9 h-9 rounded-lg bg-surface border border-destructive/30 flex items-center justify-center text-destructive">
                   <AlertCircle size={18} />
                 </div>
               </div>
@@ -3184,20 +3229,23 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
             <div className="flex flex-col sm:flex-row gap-2.5 sm:items-center justify-between">
               {/* Search Bar */}
               <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-3 text-muted-dark" size={15} />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark" size={15} />
                 <input
                   type="text"
+                  aria-label="Cari bahan baku di stok gudang"
                   placeholder="Cari nama bahan baku (kopi, gula, teh...), kode (BK-01), atau satuan..."
                   value={inventorySearchQuery}
                   onChange={(e) => setInventorySearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 bg-subsurface border border-border rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 text-xs transition-colors"
+                  className="w-full min-h-[44px] pl-10 pr-10 py-2.5 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark focus:outline-none focus:border-ring text-base sm:text-xs transition-colors"
                 />
                 {inventorySearchQuery && (
                   <button
+                    type="button"
+                    aria-label="Hapus pencarian stok gudang"
                     onClick={() => setInventorySearchQuery('')}
-                    className="absolute right-3.5 top-2.5 text-muted-dark hover:text-white text-xs font-bold p-1"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 min-w-[32px] min-h-[32px] flex items-center justify-center text-muted-dark hover:text-foreground rounded-lg transition-colors"
                   >
-                    ✕
+                    <X size={14} />
                   </button>
                 )}
               </div>
@@ -3212,11 +3260,12 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                 ].map((tab) => (
                   <button
                     key={tab.id}
+                    type="button"
                     onClick={() => setInventoryFilter(tab.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                    className={`min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors ${
                       inventoryFilter === tab.id
-                        ? 'bg-amber-500 text-slate-950'
-                        : 'bg-subsurface text-muted hover:text-white'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-subsurface border border-border text-muted hover:text-foreground'
                     }`}
                   >
                     {tab.label}
@@ -3229,19 +3278,20 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
             {filteredInventory.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-muted-dark">
                 <Search size={36} className="mb-2 text-muted-dark" />
-                <p className="text-sm font-semibold text-muted">Tidak ada data bahan baku yang cocok</p>
-                <p className="text-xs text-muted-dark mt-0.5">
+                <p className="text-sm font-semibold text-foreground">Tidak ada data bahan baku yang cocok</p>
+                <p className="text-xs text-muted mt-0.5">
                   {inventorySearchQuery
                     ? `Tidak ditemukan hasil untuk "${inventorySearchQuery}"`
                     : 'Belum ada data bahan baku tersimpan.'}
                 </p>
                 {(inventorySearchQuery || inventoryFilter !== 'ALL') && (
                   <button
+                    type="button"
                     onClick={() => {
                       setInventorySearchQuery('')
                       setInventoryFilter('ALL')
                     }}
-                    className="mt-3 px-3 py-1.5 bg-subsurface hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-colors"
+                    className="mt-3 min-h-[38px] px-3 py-1.5 bg-subsurface hover:bg-surface-hover border border-border text-foreground rounded-xl text-xs font-bold transition-colors"
                   >
                     Reset Filter
                   </button>
@@ -3272,7 +3322,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                   {
                     key: 'nama_produk',
                     label: 'Nama Bahan Baku',
-                    className: 'font-semibold text-white',
+                    className: 'font-semibold text-foreground',
                   },
                   {
                     key: 'satuan',
@@ -3312,17 +3362,17 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                       const isSafe = stokVal > 10
                       const isLow = stokVal > 0 && stokVal <= 10
                       return isSafe ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-primary-soft text-primary-soft-foreground border border-primary/20">
                           <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                           Aman
                         </span>
                       ) : isLow ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-warning/10 text-warning border border-warning/20">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-warning-bg text-warning border border-warning/20">
                           <span className="w-1.5 h-1.5 rounded-full bg-warning" />
                           Menipis
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-destructive/10 text-destructive border border-destructive/20">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-destructive-bg text-destructive border border-destructive/20">
                           <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
                           Habis
                         </span>
@@ -3348,22 +3398,22 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
         {/* Tab 5: Catat Pengeluaran Kasir */}
         {activeTab === 'expense' && (
-          <div className="glass-panel p-4 sm:p-6 rounded-xl border border-border flex-1 flex flex-col min-h-0 overflow-y-auto space-y-6">
+          <div className="bg-surface p-4 sm:p-6 rounded-xl border border-border flex-1 flex flex-col min-h-0 overflow-y-auto space-y-6">
             <div>
-              <h3 className="text-lg font-bold text-white">Catat Pengeluaran Laci Kasir</h3>
-              <p className="text-xs text-muted-dark mt-0.5">Catat pengeluaran operasional hari ini menggunakan uang dari laci kasir</p>
+              <h3 className="text-lg font-bold text-foreground">Catat Pengeluaran Laci Kasir</h3>
+              <p className="text-xs text-muted mt-0.5">Catat pengeluaran operasional hari ini menggunakan uang dari laci kasir</p>
             </div>
 
             {/* Alert Notifications */}
             {error && (
-              <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2.5 animate-shake">
-                <AlertCircle size={16} className="shrink-0 text-rose-400" />
+              <div className="p-3.5 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-xs flex items-center gap-2.5 animate-shake">
+                <AlertCircle size={16} className="shrink-0 text-destructive" />
                 <span>{error}</span>
               </div>
             )}
             {success && (
-              <div className="p-3.5 rounded-xl bg-primary/10 border border-brand-emerald/30 text-primary text-xs flex items-center gap-2.5 animate-fade-in">
-                <CheckCircle size={16} className="shrink-0 text-primary" />
+              <div className="p-3.5 rounded-xl bg-success-bg border border-success/30 text-success text-xs flex items-center gap-2.5 animate-fade-in">
+                <CheckCircle size={16} className="shrink-0 text-success" />
                 <span>Pengeluaran berhasil dicatat ke laci kasir!</span>
               </div>
             )}
@@ -3376,7 +3426,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                     type="date"
                     value={posExpenseForm.tanggal}
                     onChange={(e) => setPosExpenseForm(prev => ({ ...prev, tanggal: e.target.value }))}
-                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary"
+                    className="w-full min-h-[44px] bg-subsurface border border-border rounded-xl px-3 py-2 text-foreground text-base sm:text-sm focus:outline-none focus:border-ring"
                     required
                   />
                 </div>
@@ -3407,7 +3457,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                       { value: 'Bersama', label: 'Kedua Usaha (Bersama)' }
                     ]}
                     size="md"
-                    variant="emerald"
+                    variant="blue"
                     className="w-full"
                   />
                 </div>
@@ -3429,7 +3479,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                       placeholder="Ketik kategori pengeluaran..."
                       value={posExpenseForm.kategori}
                       onChange={(e) => setPosExpenseForm(prev => ({ ...prev, kategori: e.target.value }))}
-                      className="w-full bg-surface border border-brand-emerald rounded-xl px-3 py-2 text-white text-sm focus:outline-none"
+                      className="w-full min-h-[44px] bg-subsurface border border-border-active rounded-xl px-3 py-2 text-foreground text-base sm:text-sm focus:outline-none"
                       autoFocus
                     />
                   ) : (
@@ -3467,7 +3517,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                       }}
                       options={filteredCashierCategories.length > 0 ? [
                         ...filteredCashierCategories.map(c => ({ value: c.nama_kategori, label: c.nama_kategori })),
-                        { value: '__CUSTOM__', label: '✨ + Custom (Ketik Sendiri)...' }
+                        { value: '__CUSTOM__', label: '+ Custom (Ketik Sendiri)...' }
                       ] : [
                         { value: 'Operasional', label: 'Operasional' },
                         { value: 'Bahan Baku', label: 'Bahan Baku' },
@@ -3475,10 +3525,10 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                         { value: 'Casbon', label: 'Casbon Karyawan' },
                         { value: 'Ambil Uang Paketan', label: 'Ambil Uang Paketan' },
                         { value: 'Lain-lain', label: 'Lain-lain' },
-                        { value: '__CUSTOM__', label: '✨ + Custom (Ketik Sendiri)...' }
+                        { value: '__CUSTOM__', label: '+ Custom (Ketik Sendiri)...' }
                       ]}
                       size="md"
-                      variant="emerald"
+                      variant="blue"
                       className="w-full"
                     />
                   )}
@@ -3505,7 +3555,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                         ...(staffOptions.length > 0 ? staffOptions : anggotaOptions).map(name => ({ value: name, label: name }))
                       ]}
                       size="md"
-                      variant="emerald"
+                      variant="blue"
                       className="w-full"
                     />
                   </div>
@@ -3513,9 +3563,9 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
                 {/* Input Khusus Restock Bahan Baku Cafe */}
                 {String(posExpenseForm.kategori || '').toLowerCase().includes('bahan') && (
-                  <div className="md:col-span-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-3">
+                  <div className="md:col-span-3 p-3.5 rounded-xl bg-warning-bg border border-warning/30 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5 uppercase">
+                      <span className="text-xs font-bold text-warning flex items-center gap-1.5 uppercase">
                         <Package size={14} />
                         Sinkronisasi Stok Gudang (Bahan Baku)
                       </span>
@@ -3550,7 +3600,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                             }))
                           ]}
                           size="md"
-                          variant="emerald"
+                          variant="blue"
                           className="w-full"
                         />
                       </div>
@@ -3564,9 +3614,9 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                             placeholder="Contoh: 5"
                             value={posExpenseForm.qty}
                             onChange={(e) => setPosExpenseForm(prev => ({ ...prev, qty: e.target.value }))}
-                            className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-amber-400"
+                            className="w-full min-h-[44px] bg-subsurface border border-border rounded-xl px-3 py-2 text-foreground text-base sm:text-sm font-mono focus:outline-none focus:border-ring"
                           />
-                          <span className="text-xs font-bold text-amber-400 font-mono px-2 shrink-0">
+                          <span className="text-xs font-bold text-warning font-mono px-2 shrink-0">
                             {inventoryList.find(i => (
                               (i.id && String(i.id) === String(posExpenseForm.id_bahan_baku)) ||
                               (i.id_bahan_baku && String(i.id_bahan_baku) === String(posExpenseForm.id_bahan_baku)) ||
@@ -3587,7 +3637,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                   placeholder="Contoh: Beli es batu, isi ulang gas, sabun cuci"
                   value={posExpenseForm.keterangan}
                   onChange={(e) => setPosExpenseForm(prev => ({ ...prev, keterangan: e.target.value }))}
-                  className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary"
+                  className="w-full min-h-[44px] bg-subsurface border border-border rounded-xl px-3 py-2 text-foreground text-base sm:text-sm placeholder:text-muted-dark focus:outline-none focus:border-ring"
                 />
               </div>
 
@@ -3598,14 +3648,14 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                   placeholder="0"
                   value={posExpenseForm.nominal}
                   onChange={(e) => setPosExpenseForm(prev => ({ ...prev, nominal: e.target.value }))}
-                  className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-primary"
+                  className="w-full min-h-[44px] bg-subsurface border border-border rounded-xl px-3 py-2 text-foreground text-base sm:text-sm font-mono tabular-nums focus:outline-none focus:border-ring"
                 />
               </div>
 
               {(String(posExpenseForm.kategori || '').toLowerCase().includes('casbon') || 
                 String(posExpenseForm.kategori || '').toLowerCase().includes('kasbon') || 
                 String(posExpenseForm.kategori || '').toLowerCase().includes('paketan')) && (
-                <p className="text-[10px] text-amber-500 font-medium italic">
+                <p className="text-[10px] text-warning font-medium italic">
                   * Catatan: Input satu per satu per karyawan jika kasbon/ambil paketan diwakili atau diambil oleh lebih dari 1 orang.
                 </p>
               )}
@@ -3625,7 +3675,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                         karyawan_id: ''
                       })
                     }}
-                    className="flex-1 py-2.5 bg-subsurface hover:bg-slate-700 text-slate-350 font-bold rounded-lg text-sm transition-all"
+                    className="flex-1 min-h-[44px] py-2.5 bg-subsurface hover:bg-surface-hover border border-border text-foreground font-bold rounded-xl text-sm transition-all"
                   >
                     Batal Edit
                   </button>
@@ -3633,7 +3683,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 disabled:bg-subsurface text-slate-950 font-bold rounded-lg text-sm transition-all"
+                  className="flex-1 min-h-[44px] py-2.5 bg-destructive-solid hover:opacity-90 disabled:opacity-50 text-white font-bold rounded-full text-sm transition-all"
                 >
                   {loading ? 'Menyimpan...' : (editingExpenseId ? 'Simpan Perubahan' : 'Catat Pengeluaran')}
                 </button>
@@ -3641,7 +3691,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
             </form>
 
             <div className="border-t border-border pt-6">
-              <h4 className="font-bold text-sm text-white mb-3">Daftar Pengeluaran Hari Ini</h4>
+              <h4 className="font-bold text-sm text-foreground mb-3">Daftar Pengeluaran Hari Ini</h4>
               <OperationalTable
                 data={todayExpenses}
                 keyExtractor={(exp) => exp.id || exp.id_pengeluaran}
@@ -3656,7 +3706,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                   {
                     key: 'nama_pengeluaran',
                     label: 'Keterangan',
-                    className: 'font-medium text-white',
+                    className: 'font-medium text-foreground',
                   },
                   {
                     key: 'jenis',
@@ -3682,12 +3732,14 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                     render: (_, exp) => (
                       <div className="flex items-center justify-center gap-2">
                         <button
+                          type="button"
                           onClick={() => handleStartEditPosExpense(exp)}
                           className="text-warning hover:underline font-bold text-[11px]"
                         >
                           Edit
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleDeletePosExpense(exp.id || exp.id_pengeluaran)}
                           className="text-destructive hover:underline font-bold text-[11px]"
                         >
@@ -3704,10 +3756,10 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
         {/* Tab 6: Tukar Uang / Tarik Tunai QRIS */}
         {activeTab === 'exchange' && (
-          <div className="glass-panel p-6 rounded-xl border border-border flex-1 flex flex-col min-h-0 overflow-y-auto space-y-6">
+          <div className="bg-surface p-4 sm:p-6 rounded-xl border border-border flex-1 flex flex-col min-h-0 overflow-y-auto space-y-6">
             <div>
-              <h3 className="text-lg font-bold text-white">Tukar Uang (Cash Out / QRIS ke Tunai)</h3>
-              <p className="text-xs text-muted-dark mt-0.5">Catat transaksi penukaran uang: pelanggan transfer QRIS ke toko, kasir memberikan uang tunai dari laci</p>
+              <h3 className="text-lg font-bold text-foreground">Tukar Uang (Cash Out / QRIS ke Tunai)</h3>
+              <p className="text-xs text-muted mt-0.5">Catat transaksi penukaran uang: pelanggan transfer QRIS ke toko, kasir memberikan uang tunai dari laci</p>
             </div>
 
             <form onSubmit={handleSaveExchange} className="space-y-4 max-w-xl shrink-0">
@@ -3726,7 +3778,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                       }
                     }}
                     placeholder="Contoh: 100000"
-                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary font-mono font-bold"
+                    className="w-full min-h-[44px] bg-subsurface border border-border rounded-xl px-3 py-2 text-foreground text-base sm:text-sm focus:outline-none focus:border-ring font-mono font-bold tabular-nums"
                     required
                   />
                 </div>
@@ -3738,7 +3790,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                     value={exchangeQris}
                     onChange={(e) => setExchangeQris(e.target.value)}
                     placeholder="Contoh: 102000"
-                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary font-mono font-bold"
+                    className="w-full min-h-[44px] bg-subsurface border border-border rounded-xl px-3 py-2 text-foreground text-base sm:text-sm focus:outline-none focus:border-ring font-mono font-bold tabular-nums"
                     required
                   />
                 </div>
@@ -3752,13 +3804,13 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                     value={exchangeCustomer}
                     onChange={(e) => setExchangeCustomer(e.target.value)}
                     placeholder="Contoh: Pelanggan Budi / Owner Raka (Tukar Cash)"
-                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary"
+                    className="w-full min-h-[44px] bg-subsurface border border-border rounded-xl px-3 py-2 text-foreground text-base sm:text-sm placeholder:text-muted-dark focus:outline-none focus:border-ring"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-muted mb-1.5 uppercase">Estimasi Biaya Admin (Pendapatan Fee)</label>
-                  <div className="w-full bg-subsurface border border-slate-850 rounded-lg px-3 py-2 text-primary text-sm font-mono font-bold">
+                  <div className="w-full min-h-[44px] flex items-center bg-subsurface border border-border rounded-xl px-3 py-2 text-primary text-sm font-mono font-bold tabular-nums">
                     {formatRupiah(Math.max(0, parseFloat(exchangeQris || 0) - parseFloat(exchangeCash || 0)))}
                   </div>
                 </div>
@@ -3767,14 +3819,14 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 bg-cyan-500 hover:bg-cyan-400 disabled:bg-subsurface text-slate-950 font-bold rounded-lg text-sm transition-all"
+                className="w-full min-h-[44px] py-2.5 bg-primary hover:bg-primary-hover disabled:opacity-50 text-primary-foreground font-bold rounded-full text-sm transition-all"
               >
                 {loading ? 'Memproses...' : 'Catat Perpindahan Saldo (Tukar Uang)'}
               </button>
             </form>
 
             <div className="border-t border-border pt-6">
-              <h4 className="font-bold text-sm text-white mb-1">Informasi Cara Kerja Tukar Uang:</h4>
+              <h4 className="font-bold text-sm text-foreground mb-1">Informasi Cara Kerja Tukar Uang:</h4>
               <p className="text-xs text-muted leading-relaxed">
                 Fitur ini mencatat <strong>Perpindahan Saldo (Mutasi Internal)</strong>: uang tunai keluar dari laci kasir (mengurangi saldo cash laci) dan uang transfer masuk ke rekening bank/QRIS toko (menambah saldo rekening). Transaksi ini <strong>TIDAK masuk ke beban pengeluaran operasional</strong> dan <strong>TIDAK masuk ke omzet penjualan</strong>. Jika ada biaya admin, selisihnya dicatat sebagai pendapatan lain-lain.
               </p>
@@ -3783,19 +3835,19 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
         )}
       </div>
 
-      {/* Kolom Kanan: Rincian Belanja & Checkout (36% di tablet landscape) */}
+      {/* Kolom Kanan: Rincian Belanja & Checkout (42% di tablet landscape, 36% di desktop) */}
       {isOrderTab && (
-        <div className="hidden md:flex md:w-[36%] bg-surface border border-border p-4 rounded-xl flex-col h-[calc(100vh-5.5rem)] max-h-[calc(100vh-5.5rem)] min-w-0 shrink-0 sticky top-2">
+        <div className="hidden md:flex md:w-[42%] lg:w-[36%] bg-surface border border-border p-4 rounded-xl flex-col h-[calc(100vh-5.5rem)] max-h-[calc(100vh-5.5rem)] min-w-0 shrink-0 sticky top-2 shadow-sm">
           <div className="flex items-center justify-between border-b border-border pb-3 mb-2 shrink-0">
             <div className="flex items-center gap-2">
               <ShoppingCart className="text-primary" size={20} />
-              <h3 className="font-bold text-base text-white">Struk Belanja</h3>
+              <h3 className="font-bold text-base text-foreground">Struk Belanja</h3>
             </div>
             {cart.length > 0 && (
               <button
                 type="button"
                 onClick={() => setCart([])}
-                className="text-[11px] text-rose-400 hover:text-rose-300 font-semibold hover:underline"
+                className="text-[11px] text-destructive hover:underline font-semibold"
               >
                 Kosongkan
               </button>
@@ -3806,14 +3858,14 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
           <div className="flex-1 min-h-0 overflow-y-auto space-y-2.5 pr-1">
             {/* Alert Popups */}
             {success && (
-              <div className="p-3 rounded-xl bg-primary text-primary-foreground/10 border border-brand-emerald/20 text-primary text-xs flex items-center gap-2 shrink-0">
+              <div className="p-3 rounded-xl bg-success-bg border border-success/30 text-success text-xs flex items-center gap-2 shrink-0">
                 <CheckCircle size={15} />
                 <span>Transaksi berhasil disimpan!</span>
               </div>
             )}
 
             {error && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2 shrink-0">
+              <div className="p-3 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-xs flex items-center gap-2 shrink-0">
                 <AlertCircle size={15} />
                 <span>{error}</span>
               </div>
@@ -3821,15 +3873,15 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
             {/* Quick Header: Tipe Pesanan & Meja/Nomor Antrean Akrilik */}
             {hasCarwash ? (
-              <div className="bg-surface p-2.5 rounded-xl border border-border space-y-2 shrink-0">
+              <div className="bg-subsurface p-2.5 rounded-xl border border-border space-y-2 shrink-0">
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => setCarwashForm(prev => ({ ...prev, kehadiran: 'TUNGGU' }))}
-                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
+                    className={`min-h-[38px] flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
                       carwashForm.kehadiran === 'TUNGGU'
                         ? 'bg-primary text-primary-foreground border-primary shadow-xs font-black'
-                        : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
+                        : 'bg-surface text-muted border-border hover:border-border-hover hover:text-foreground'
                     }`}
                   >
                     <Coffee size={13} />
@@ -3838,10 +3890,10 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                   <button
                     type="button"
                     onClick={() => setCarwashForm(prev => ({ ...prev, kehadiran: 'TINGGAL' }))}
-                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
+                    className={`min-h-[38px] flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
                       carwashForm.kehadiran === 'TINGGAL'
                         ? 'bg-primary text-primary-foreground border-primary shadow-xs font-black'
-                        : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
+                        : 'bg-surface text-muted border-border hover:border-border-hover hover:text-foreground'
                     }`}
                   >
                     <Car size={13} />
@@ -3854,20 +3906,20 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                     placeholder={carwashForm.kehadiran === 'TUNGGU' ? "No. Meja Tunggu / Pager (#12)" : "No. WA / HP Pemilik Mobil"}
                     value={tableOrQueueNumber}
                     onChange={(e) => setTableOrQueueNumber(e.target.value)}
-                    className="w-full bg-subsurface border border-border rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-muted-dark focus:outline-hidden focus:border-primary"
+                    className="w-full min-h-[38px] bg-surface border border-border rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-foreground placeholder:text-muted-dark focus:outline-none focus:border-ring"
                   />
                 </div>
               </div>
             ) : (
-              <div className="bg-surface p-2.5 rounded-xl border border-border space-y-2 shrink-0">
+              <div className="bg-subsurface p-2.5 rounded-xl border border-border space-y-2 shrink-0">
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => setOrderType('DINE IN')}
-                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
+                    className={`min-h-[38px] flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
                       orderType === 'DINE IN'
                         ? 'bg-primary text-primary-foreground border-primary shadow-xs'
-                        : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
+                        : 'bg-surface text-muted border-border hover:border-border-hover hover:text-foreground'
                     }`}
                   >
                     <Coffee size={13} />
@@ -3876,10 +3928,10 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                   <button
                     type="button"
                     onClick={() => setOrderType('TAKE AWAY')}
-                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
+                    className={`min-h-[38px] flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
                       orderType === 'TAKE AWAY'
                         ? 'bg-primary text-primary-foreground border-primary shadow-xs'
-                        : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
+                        : 'bg-surface text-muted border-border hover:border-border-hover hover:text-foreground'
                     }`}
                   >
                     <ShoppingBag size={13} />
@@ -3892,7 +3944,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                     placeholder={orderType === 'DINE IN' ? "No. Meja / No. Akrilik / Pager (Cth: #12)" : "Nama / Panggilan Pembungkus"}
                     value={tableOrQueueNumber}
                     onChange={(e) => setTableOrQueueNumber(e.target.value)}
-                    className="w-full bg-subsurface border border-border rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-muted-dark focus:outline-hidden focus:border-primary"
+                    className="w-full min-h-[38px] bg-surface border border-border rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-foreground placeholder:text-muted-dark focus:outline-none focus:border-ring"
                   />
                 </div>
               </div>
@@ -3902,57 +3954,60 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
           <div className="max-h-[320px] overflow-y-auto space-y-2 pr-1 my-1">
             {cart.length === 0 && !hasCarwash && (
               <div className="flex flex-col items-center justify-center text-muted-dark text-xs py-5">
-                <ShoppingCart size={28} className="mb-2 text-slate-700" />
-                <p className="font-semibold text-muted">Belum ada menu dipilih</p>
-                <p className="text-[11px] text-muted-dark mt-0.5">Klik menu di samping untuk menambahkan ke struk.</p>
+                <ShoppingCart size={28} className="mb-2 text-muted-dark opacity-70" />
+                <p className="font-semibold text-foreground">Belum ada menu dipilih</p>
+                <p className="text-[11px] text-muted-dark mt-0.5 text-center">Klik menu di samping untuk menambahkan ke struk.</p>
               </div>
             )}
 
             {/* List Item Cafe */}
             {cart.map((item) => (
-              <div key={item.nama_menu} className="p-2 rounded-xl bg-surface border border-border hover:border-border-hover transition-all shrink-0">
-                <div className="flex justify-between items-start">
-                  <div className="overflow-hidden mr-2">
-                    <h5 className="font-bold text-xs text-white truncate">{item.nama_menu}</h5>
-                    <span className="text-[10px] text-emerald-400 font-mono font-bold">{formatRupiah(item.harga)}</span>
+              <div key={item.nama_menu} className="p-2.5 rounded-xl bg-subsurface border border-border hover:border-border-hover transition-all shrink-0">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="overflow-hidden min-w-0">
+                    <h5 className="font-bold text-xs text-foreground truncate">{item.nama_menu}</h5>
+                    <span className="text-[10px] text-foreground font-mono font-bold tabular-nums">{formatRupiah(item.harga)}</span>
                     {item.catatan && (
-                      <div className="mt-1 flex items-center gap-1 text-[10px] text-amber-300 bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-800/50">
-                        <span>📝</span>
+                      <div className="mt-1 flex items-center gap-1 text-[10px] text-warning bg-warning-bg px-1.5 py-0.5 rounded border border-warning/30">
+                        <FileText size={10} className="shrink-0" />
                         <span className="truncate">{item.catatan}</span>
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
                         setActiveNoteMenu(item.nama_menu)
                         setActiveNoteText(item.catatan || '')
                       }}
-                      className="px-1.5 py-1 rounded-lg bg-subsurface hover:bg-slate-700 text-slate-200 text-[10px] font-medium transition-colors"
+                      className="min-h-[34px] px-2 py-1 rounded-lg bg-surface hover:bg-surface-hover border border-border text-foreground text-[10px] font-semibold transition-colors"
                       title="Tambah Catatan Rasa"
                     >
                       {item.catatan ? 'Edit Rasa' : '+ Catatan'}
                     </button>
                     <button
                       type="button"
+                      aria-label={`Kurangi ${item.nama_menu}`}
                       onClick={() => updateQty(item.nama_menu, -1)}
-                      className="w-9 h-9 rounded-xl bg-subsurface hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors font-bold text-xs tap-tactile"
+                      className="w-8 h-8 rounded-full bg-surface hover:bg-surface-hover border border-border text-foreground flex items-center justify-center transition-colors font-bold text-xs tap-tactile"
                     >
                       <Minus size={13} strokeWidth={2} />
                     </button>
-                    <span className="text-sm font-black text-white w-6 text-center font-mono">{item.qty}</span>
+                    <span className="text-sm font-black text-foreground w-5 text-center font-mono tabular-nums">{item.qty}</span>
                     <button
                       type="button"
+                      aria-label={`Tambah ${item.nama_menu}`}
                       onClick={() => updateQty(item.nama_menu, 1)}
-                      className="w-9 h-9 rounded-xl bg-subsurface hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors font-bold text-xs tap-tactile"
+                      className="w-8 h-8 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground flex items-center justify-center transition-colors font-bold text-xs tap-tactile"
                     >
                       <Plus size={13} strokeWidth={2} />
                     </button>
                     <button
                       type="button"
+                      aria-label={`Hapus ${item.nama_menu}`}
                       onClick={() => removeFromCart(item.nama_menu)}
-                      className="text-rose-400 hover:text-rose-500 p-1 ml-0.5 transition-colors"
+                      className="text-destructive hover:opacity-80 p-1 ml-0.5 transition-colors"
                       title="Hapus dari pesanan"
                     >
                       <Trash2 size={13} />
@@ -3967,32 +4022,35 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
               <div className="p-3 rounded-xl bg-subsurface border border-border hover:border-border-hover transition-all relative">
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="text-[9px] bg-primary/15 text-primary border border-primary/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Carwash</span>
-                    <h5 className="font-bold text-xs text-white mt-1.5">{carwashForm.paket}</h5>
-                    <div className="flex items-center gap-1.5 mt-1 font-mono text-xs">
+                    <span className="text-[9px] bg-primary-soft text-primary-soft-foreground border border-primary/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Carwash</span>
+                    <h5 className="font-bold text-xs text-foreground mt-1.5">{carwashForm.paket}</h5>
+                    <div className="flex items-center gap-1.5 mt-1 font-mono text-xs flex-wrap">
                       {carwashForm.platNomor ? (
-                        <span className="font-extrabold text-white bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700">
+                        <span className="font-extrabold text-foreground bg-surface px-2 py-0.5 rounded border border-border">
                           {carwashForm.platNomor}
                         </span>
                       ) : (
-                        <span className="text-[10px] text-rose-400 font-bold bg-rose-500/20 px-2 py-0.5 rounded border border-rose-500/30">
-                          ⚠️ Plat Belum Diisi
+                        <span className="text-[10px] text-destructive font-bold bg-destructive-bg px-2 py-0.5 rounded border border-destructive/30 inline-flex items-center gap-1">
+                          <AlertTriangle size={11} />
+                          <span>Plat Belum Diisi</span>
                         </span>
                       )}
                       <span className="text-[11px] text-muted">• {carwashForm.ukuran} • {carwashForm.variant}</span>
                     </div>
                   </div>
                   <button
+                    type="button"
+                    aria-label="Hapus item carwash"
                     onClick={() => setHasCarwash(false)}
-                    className="text-rose-400 hover:text-rose-300 p-1 shrink-0 transition-colors"
+                    className="text-destructive hover:opacity-80 p-1 shrink-0 transition-colors"
                     title="Hapus carwash dari transaksi"
                   >
                     <Trash2 size={13} />
                   </button>
                 </div>
-                <div className="mt-2.5 flex justify-between items-center border-t border-border pt-2 text-[10px] text-muted-dark">
+                <div className="mt-2.5 flex justify-between items-center border-t border-border pt-2 text-[10px] text-muted">
                   <span>Pencuci: {carwashForm.anggota1} {carwashForm.anggota2 && `+ ${carwashForm.anggota2}`}</span>
-                  <span className="font-mono font-bold text-primary text-xs">{formatRupiah(carwashForm.harga)}</span>
+                  <span className="font-mono font-bold text-foreground text-xs tabular-nums">{formatRupiah(carwashForm.harga)}</span>
                 </div>
               </div>
             )}
@@ -4002,15 +4060,15 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
         <div className="border-t border-border pt-3 mt-3 space-y-3">
           <div className="space-y-1.5 text-xs text-muted">
             {cart.length > 0 && (
-              <div className="flex justify-between">
+              <div className="flex justify-between tabular-nums">
                 <span>Total Cafe</span>
-                <span>{formatRupiah(cafeTotal)}</span>
+                <span className="font-mono text-foreground">{formatRupiah(cafeTotal)}</span>
               </div>
             )}
              {hasCarwash && (
-               <div className="flex justify-between">
+               <div className="flex justify-between tabular-nums">
                  <span>Total Carwash</span>
-                 <span>{formatRupiah(carwashTotal)}</span>
+                 <span className="font-mono text-foreground">{formatRupiah(carwashTotal)}</span>
                </div>
              )}
              
@@ -4039,12 +4097,15 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                    className="w-full"
                  />
                  {diskonCarwashNominal > 0 && (
-                   <span className="text-[10px] text-primary font-semibold block">Potongan: -{formatRupiah(diskonCarwashNominal)}</span>
+                   <span className="text-[10px] text-primary font-semibold block tabular-nums">Potongan: -{formatRupiah(diskonCarwashNominal)}</span>
                  )}
                  {claimedLoyaltyReward.isClaimed && (
-                   <div className="flex items-center justify-between text-amber-300 bg-amber-500/15 p-1.5 rounded border border-amber-500/30 text-[11px] my-1">
-                     <span className="font-bold truncate">🎁 Hadiah: {claimedLoyaltyReward.title}</span>
-                     <span className="font-mono font-bold">-{formatRupiah(loyaltyRewardDiskonNominal)}</span>
+                   <div className="flex items-center justify-between text-warning bg-warning-bg p-1.5 rounded border border-warning/30 text-[11px] my-1">
+                     <span className="font-bold truncate inline-flex items-center gap-1">
+                       <Gift size={12} className="shrink-0" />
+                       <span>Hadiah: {claimedLoyaltyReward.title}</span>
+                     </span>
+                     <span className="font-mono font-bold tabular-nums">-{formatRupiah(loyaltyRewardDiskonNominal)}</span>
                    </div>
                  )}
                </div>
@@ -4075,19 +4136,19 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                    className="w-full"
                  />
                  {diskonCafeNominal > 0 && (
-                   <span className="text-[10px] text-primary font-semibold block">Potongan: -{formatRupiah(diskonCafeNominal)}</span>
+                   <span className="text-[10px] text-primary font-semibold block tabular-nums">Potongan: -{formatRupiah(diskonCafeNominal)}</span>
                  )}
                </div>
              )}
 
-             <div className="flex justify-between text-base font-extrabold text-white pt-2 border-t border-border/50">
+             <div className="flex justify-between text-base font-extrabold text-foreground pt-2 border-t border-border/50 tabular-nums">
                <span>Total Bayar</span>
-               <span className="text-primary">{formatRupiah(grandTotal)}</span>
+               <span className="text-primary font-mono">{formatRupiah(grandTotal)}</span>
              </div>
              </div>
 
              {/* Pilihan Metode Bayar & Status Transaksi */}
-             <div className="grid grid-cols-2 gap-2 p-3 bg-surface rounded-xl border border-border my-1">
+             <div className="grid grid-cols-2 gap-2 p-3 bg-subsurface rounded-xl border border-border my-1">
              <div>
                <label className="text-[10px] text-muted uppercase tracking-wider font-extrabold block mb-1">Metode Bayar</label>
                <CustomSelect
@@ -4098,7 +4159,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                    { value: 'SPLIT', label: 'SPLIT (Cash + QRIS)' }
                  ]}
                  size="xs"
-                 variant="emerald"
+                 variant="blue"
                  className="w-full"
                />
              </div>
@@ -4112,14 +4173,14 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                    { value: 'Pending', label: 'Pending (Bon)' }
                  ]}
                  size="xs"
-                 variant="emerald"
+                 variant="blue"
                  className="w-full"
                />
              </div>
              </div>
 
                  {selectedPayment === 'SPLIT' && (
-             <div className="p-3.5 rounded-xl bg-surface border border-slate-850 space-y-3 my-1">
+             <div className="p-3.5 rounded-xl bg-subsurface border border-border space-y-3 my-1">
                <span className="text-[10px] text-muted-dark uppercase tracking-wider font-extrabold block">Pembayaran Terpisah (Split)</span>
                <div className="space-y-1">
                  <label className="text-[10px] text-muted font-semibold block">Tunai (Cash):</label>
@@ -4133,7 +4194,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                      setSplitQrisAmount(Math.max(0, grandTotal - parsed).toString())
                    }}
                    placeholder="Contoh: 50000"
-                   className="w-full bg-subsurface border border-border rounded-lg py-1.5 px-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
+                   className="w-full min-h-[38px] bg-surface border border-border rounded-lg py-1.5 px-3 text-foreground text-base sm:text-xs font-bold font-mono tabular-nums focus:outline-none focus:border-ring"
                  />
                </div>
                <div className="space-y-1">
@@ -4148,7 +4209,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                      setSplitCashAmount(Math.max(0, grandTotal - parsed).toString())
                    }}
                    placeholder="Contoh: 50000"
-                   className="w-full bg-subsurface border border-border rounded-lg py-1.5 px-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
+                   className="w-full min-h-[38px] bg-surface border border-border rounded-lg py-1.5 px-3 text-foreground text-base sm:text-xs font-bold font-mono tabular-nums focus:outline-none focus:border-ring"
                  />
                </div>
              </div>
@@ -4156,28 +4217,45 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
            {/* Input Uang Diterima & Kembalian */}
            {paymentStatus === 'Selesai' && (selectedPayment === 'CASH' || selectedPayment === 'SPLIT' || (selectedPayment || '').toUpperCase().includes('CASH') || (selectedPayment || '').toUpperCase().includes('TUNAI')) && (
-             <div className="p-3.5 rounded-xl bg-surface border border-slate-850 space-y-3 my-1">
+             <div className="p-3.5 rounded-xl bg-subsurface border border-border space-y-2.5 my-1">
                <span className="text-[10px] text-muted-dark uppercase tracking-wider font-extrabold block">Kalkulator Kembalian</span>
                <div className="space-y-1">
                  <label className="text-[10px] text-muted font-semibold block">Uang Diterima (Cash):</label>
                  <div className="relative">
-                   <span className="absolute left-3 top-1.5 text-xs text-muted-dark font-bold font-mono">Rp</span>
+                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-dark font-bold font-mono">Rp</span>
                    <input
                      type="number"
                      value={uangDiterima}
                      onChange={(e) => setUangDiterima(e.target.value)}
                      placeholder="Contoh: 100000"
-                     className="w-full bg-subsurface border border-border rounded-lg py-1.5 pl-8 pr-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
+                     className="w-full min-h-[38px] bg-surface border border-border rounded-lg py-1.5 pl-8 pr-3 text-foreground text-base sm:text-xs font-bold font-mono tabular-nums focus:outline-none focus:border-ring"
                    />
                  </div>
+               </div>
+               <div className="grid grid-cols-4 gap-1.5">
+                 {[
+                   { label: 'Uang Pas', val: grandTotal },
+                   { label: '50rb', val: 50000 },
+                   { label: '100rb', val: 100000 },
+                   { label: '200rb', val: 200000 }
+                 ].map((chip) => (
+                   <button
+                     key={chip.label}
+                     type="button"
+                     onClick={() => setUangDiterima(String(chip.val))}
+                     className="min-h-[32px] py-1 px-1.5 rounded-lg bg-surface hover:bg-surface-hover border border-border text-foreground text-[10px] font-bold transition-all active:scale-[0.98]"
+                   >
+                     {chip.label}
+                   </button>
+                 ))}
                </div>
                {uangDiterima && (
                  <div className="flex justify-between items-center text-xs border-t border-border/50 pt-2">
                    <span className="text-muted">Kembalian:</span>
                    {isUangKurang ? (
-                     <span className="font-mono font-bold text-rose-450 uppercase text-[10px]">Kurang {formatRupiah(Math.abs(kembalian))}</span>
+                     <span className="font-mono font-bold text-destructive uppercase text-[10px] tabular-nums">Kurang {formatRupiah(Math.abs(kembalian))}</span>
                    ) : (
-                     <span className="font-mono font-black text-primary text-sm">{formatRupiah(kembalian)}</span>
+                     <span className="font-mono font-black text-success text-sm tabular-nums">{formatRupiah(kembalian)}</span>
                    )}
                  </div>
                )}
@@ -4185,10 +4263,10 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
            )}
 
            {editingStrukId && (
-             <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2 my-1 text-xs">
+             <div className="p-3.5 rounded-xl bg-warning-bg border border-warning/30 space-y-2 my-1 text-xs">
                <div className="flex items-center justify-between">
-                 <span className="text-xs font-bold text-amber-400">Mode Edit Aktif</span>
-                 <span className="text-[10px] bg-amber-500/20 text-amber-350 px-2 py-0.5 rounded-md font-mono">#{editingStrukId.substring(0, 8)}</span>
+                 <span className="text-xs font-bold text-warning">Mode Edit Aktif</span>
+                 <span className="text-[10px] bg-surface border border-warning/30 text-warning px-2 py-0.5 rounded-md font-mono">#{editingStrukId.substring(0, 8)}</span>
                </div>
                <p className="text-[10px] text-muted leading-relaxed">
                  Anda sedang mengubah transaksi ini. Klik "Simpan Perubahan" untuk memperbarui database.
@@ -4196,7 +4274,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                <button
                  type="button"
                  onClick={handleCancelEditTransaction}
-                 className="w-full py-1.5 bg-subsurface hover:bg-slate-700 active:bg-slate-750 text-slate-350 font-bold rounded-lg text-[10px] transition-colors"
+                 className="w-full min-h-[36px] py-1.5 bg-surface hover:bg-surface-hover border border-border text-foreground font-bold rounded-lg text-[10px] transition-colors"
                >
                  Batal Edit
                  </button>
@@ -4209,13 +4287,14 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                  <div className="border-t border-border pt-3 mt-auto shrink-0 space-y-2.5">
                  <div className="flex justify-between items-center px-1">
                  <span className="text-xs uppercase tracking-wider text-muted font-bold">Total Bayar</span>
-                 <span className="text-xl font-black text-primary font-mono">{formatRupiah(grandTotal)}</span>
+                 <span className="text-xl font-black text-foreground font-mono tabular-nums">{formatRupiah(grandTotal)}</span>
                  </div>
 
                  <button
+                 type="button"
                  onClick={handleCheckout}
                  disabled={loading || (cart.length === 0 && !hasCarwash) || isUangKurang}
-                 className="w-full h-12 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black rounded-xl shadow-lg shadow-emerald-950/40 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 tap-tactile cursor-pointer"
+                 className="w-full h-14 bg-primary hover:bg-primary-hover text-primary-foreground font-extrabold rounded-full shadow-sm transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 tap-tactile cursor-pointer"
                  >
                  {loading ? 'Memproses Transaksi...' : editingStrukId ? 'Simpan Perubahan' : `Simpan & Cetak (${paymentStatus})`}
                  </button>
@@ -4224,129 +4303,167 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                  )}
            </div>
 
-           {/* Floating Cart Bar for Mobile */}
+           {/* M2A: Floating Sticky Cart Bar for Mobile (Positioned cleanly at bottom-20 above 64px Bottom Nav) */}
            {(cart.length > 0 || hasCarwash) && !showMobileCart ? (
            <button
+           type="button"
            onClick={() => setShowMobileCart(true)}
-           className="md:hidden fixed bottom-5 left-4 right-4 z-30 bg-surface border border-emerald-500/40 p-3.5 rounded-2xl flex items-center justify-between shadow-2xl animate-slide-up text-left group transition-transform active:scale-[0.98] tap-tactile"
+           data-testid="mobile-sticky-cart-bar"
+           className="md:hidden fixed bottom-20 left-3 right-3 z-30 bg-surface border border-border-active/60 p-3 rounded-2xl flex items-center justify-between shadow-2xl animate-slide-up text-left group transition-transform active:scale-[0.98] tap-tactile"
            >
            <div className="flex items-center gap-3 pointer-events-none">
-             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 relative">
+             <div className="w-10 h-10 rounded-xl bg-primary-soft flex items-center justify-center text-primary-soft-foreground border border-primary/30 relative">
                <ShoppingCart size={18} strokeWidth={1.75} />
-               <span className="absolute -top-1.5 -right-1.5 bg-emerald-500 text-slate-950 text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center shadow-sm">
+               <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center shadow-sm tabular-nums">
                  {cart.reduce((sum, item) => sum + item.qty, 0) + (hasCarwash ? 1 : 0)}
                </span>
              </div>
              <div>
                <span className="block text-[9px] uppercase tracking-wider font-bold text-muted">Total Tagihan</span>
-               <span className="text-sm font-black font-mono text-emerald-400">{formatRupiah(grandTotal)}</span>
+               <span className="text-sm font-black font-mono text-foreground tabular-nums">{formatRupiah(grandTotal)}</span>
              </div>
            </div>
-           <div className="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-md pointer-events-none">
-             Lihat Detail <ChevronUp size={14} strokeWidth={1.75} />
+           <div className="min-h-[40px] px-4 py-2 bg-primary text-primary-foreground font-bold rounded-full text-xs transition-all flex items-center gap-1.5 shadow-sm pointer-events-none">
+             <span>Checkout</span>
+             <ChevronUp size={14} strokeWidth={2} />
            </div>
            </button>
            ) : null}
 
-           {/* Mobile Cart Overlay/Drawer */}
-           {showMobileCart && (
-           <div className="md:hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[80] flex flex-col justify-end animate-fade-in">
+           {/* M2B: Mobile Cart Bottom-Sheet Overlay/Drawer via Portal so it overlays bottom-nav cleanly */}
+           {showMobileCart && typeof document !== 'undefined' && createPortal(
+           <div className="md:hidden fixed inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-sm z-[80] flex flex-col justify-end animate-fade-in">
            {/* Backdrop click area to close */}
            <div className="absolute inset-0" onClick={() => setShowMobileCart(false)}></div>
 
-           <div className="relative bg-[#121215] border-t border-[#26272d] rounded-t-3xl max-h-[82vh] flex flex-col p-4 sm:p-5 animate-slide-up shadow-2xl overflow-hidden">
+           <div
+             data-testid="mobile-cart-drawer"
+             className="relative bg-surface border-t border-border rounded-t-[24px] max-h-[88dvh] flex flex-col animate-slide-up shadow-2xl overflow-hidden"
+           >
+            {/* Top Drag Handle */}
+            <div className="w-10 h-1 rounded-full bg-border-hover mx-auto mt-2.5 mb-1 shrink-0" />
+
             {/* Header of Mobile Cart */}
-            <div className="flex items-center justify-between border-b border-[#26272d] pb-3 mb-2 shrink-0">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3 shrink-0">
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowMobileCart(false)}
-                  className="flex items-center gap-1 text-xs font-bold text-slate-200 hover:text-white px-2.5 py-1.5 rounded-lg bg-subsurface border border-border transition-colors active:scale-95"
-                >
-                  <ArrowLeft size={14} className="text-primary" />
-                  <span>Kembali</span>
-                </button>
-                <div className="flex items-center gap-1.5 ml-1">
-                  <ShoppingCart className="text-primary" size={16} />
-                  <h3 className="font-bold text-sm sm:text-base text-white">Struk Belanja ({cart.reduce((sum, item) => sum + item.qty, 0) + (hasCarwash ? 1 : 0)})</h3>
-                </div>
+                <ShoppingCart className="text-primary" size={18} />
+                <h3 className="font-bold text-base text-foreground tabular-nums">
+                  Keranjang & Pembayaran ({cart.reduce((sum, item) => sum + item.qty, 0) + (hasCarwash ? 1 : 0)})
+                </h3>
               </div>
               <button
                 type="button"
+                aria-label="Tutup keranjang belanja"
                 onClick={() => setShowMobileCart(false)}
-                className="text-xs font-bold text-muted hover:text-white px-3 py-1.5 rounded-lg bg-subsurface border border-border transition-colors"
+                className="w-10 h-10 rounded-full bg-subsurface border border-border text-muted hover:text-foreground flex items-center justify-center transition-colors"
               >
-                ✕ Tutup
+                <X size={18} />
               </button>
             </div>
 
             {/* Scrollable Content Container */}
-            <div className="flex-1 overflow-y-auto overscroll-contain pr-1 -mr-1 space-y-3">
+            <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-3">
             {/* Alert Popups in Mobile Cart */}
             {success && (
-              <div className="p-3.5 rounded-xl bg-primary/10 border border-brand-emerald/20 text-primary text-xs flex items-center gap-2.5 shrink-0">
+              <div className="p-3.5 rounded-xl bg-success-bg border border-success/30 text-success text-xs flex items-center gap-2.5 shrink-0">
                 <CheckCircle size={16} />
                 <span>Transaksi berhasil disimpan!</span>
               </div>
             )}
 
             {error && (
-              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2.5 shrink-0">
+              <div className="p-3.5 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-xs flex items-center gap-2.5 shrink-0">
                 <AlertCircle size={16} />
                 <span>{error}</span>
               </div>
             )}
 
-            {/* Quick Mobile Header: Tipe Pesanan & Meja/Nomor Antrean Akrilik */}
-            <div className="bg-surface p-2.5 rounded-xl border border-border space-y-2 shrink-0">
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setOrderType('DINE IN')}
-                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
-                    orderType === 'DINE IN'
-                      ? 'bg-primary text-primary-foreground border-primary shadow-xs'
-                      : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
-                  }`}
-                >
-                  <Coffee size={13} />
-                  <span>Dine In</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setOrderType('TAKE AWAY')}
-                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
-                    orderType === 'TAKE AWAY'
-                      ? 'bg-primary text-primary-foreground border-primary shadow-xs'
-                      : 'bg-subsurface text-muted border-border hover:border-border-hover hover:text-white'
-                  }`}
-                >
-                  <ShoppingBag size={13} />
-                  <span>Take Away</span>
-                </button>
+            {/* Quick Mobile Header: Carwash (Ditunggu / Ditinggal) or Cafe (Dine In / Take Away) */}
+            {hasCarwash ? (
+              <div className="bg-subsurface p-2.5 rounded-xl border border-border space-y-2 shrink-0">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setCarwashForm(prev => ({ ...prev, kehadiran: 'TUNGGU' }))}
+                    className={`min-h-[42px] flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
+                      carwashForm.kehadiran === 'TUNGGU'
+                        ? 'bg-primary text-primary-foreground border-primary shadow-xs font-black'
+                        : 'bg-surface text-muted border-border hover:border-border-hover hover:text-foreground'
+                    }`}
+                  >
+                    <Coffee size={13} />
+                    <span>Ditunggu di Cafe</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCarwashForm(prev => ({ ...prev, kehadiran: 'TINGGAL' }))}
+                    className={`min-h-[42px] flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
+                      carwashForm.kehadiran === 'TINGGAL'
+                        ? 'bg-primary text-primary-foreground border-primary shadow-xs font-black'
+                        : 'bg-surface text-muted border-border hover:border-border-hover hover:text-foreground'
+                    }`}
+                  >
+                    <Car size={13} />
+                    <span>Mobil Ditinggal</span>
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  placeholder={carwashForm.kehadiran === 'TUNGGU' ? "No. Meja Tunggu / Pager (#12)" : "No. WA / HP Pemilik Mobil"}
+                  value={tableOrQueueNumber}
+                  onChange={(e) => setTableOrQueueNumber(e.target.value)}
+                  className="w-full min-h-[44px] bg-surface border border-border rounded-lg px-3 py-2 text-base sm:text-xs text-foreground placeholder:text-muted-dark focus:outline-none focus:border-ring"
+                />
               </div>
-              <div>
+            ) : (
+              <div className="bg-subsurface p-2.5 rounded-xl border border-border space-y-2 shrink-0">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setOrderType('DINE IN')}
+                    className={`min-h-[42px] flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
+                      orderType === 'DINE IN'
+                        ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                        : 'bg-surface text-muted border-border hover:border-border-hover hover:text-foreground'
+                    }`}
+                  >
+                    <Coffee size={13} />
+                    <span>Dine In</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOrderType('TAKE AWAY')}
+                    className={`min-h-[42px] flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
+                      orderType === 'TAKE AWAY'
+                        ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                        : 'bg-surface text-muted border-border hover:border-border-hover hover:text-foreground'
+                    }`}
+                  >
+                    <ShoppingBag size={13} />
+                    <span>Take Away</span>
+                  </button>
+                </div>
                 <input
                   type="text"
                   placeholder={orderType === 'DINE IN' ? "No. Meja / Akrilik / Pager (#12)" : "Nama Pembungkus"}
                   value={tableOrQueueNumber}
                   onChange={(e) => setTableOrQueueNumber(e.target.value)}
-                  className="w-full bg-subsurface border border-border rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-muted-dark focus:outline-hidden focus:border-primary"
+                  className="w-full min-h-[44px] bg-surface border border-border rounded-lg px-3 py-2 text-base sm:text-xs text-foreground placeholder:text-muted-dark focus:outline-none focus:border-ring"
                 />
               </div>
-            </div>
+            )}
 
             {/* List Cart Items */}
             <div className="space-y-2">
               {cart.map((item) => (
-                <div key={item.nama_menu} className="p-2 rounded-xl bg-subsurface border border-slate-850">
-                  <div className="flex justify-between items-start">
-                    <div className="overflow-hidden mr-2">
-                      <h5 className="font-bold text-xs text-white truncate">{item.nama_menu}</h5>
-                      <span className="text-[10px] text-emerald-400 font-mono font-bold">{formatRupiah(item.harga)}</span>
+                <div key={item.nama_menu} className="p-2.5 rounded-xl bg-subsurface border border-border">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="overflow-hidden min-w-0">
+                      <h5 className="font-bold text-xs text-foreground truncate">{item.nama_menu}</h5>
+                      <span className="text-[10px] text-foreground font-mono font-bold tabular-nums">{formatRupiah(item.harga)}</span>
                       {item.catatan && (
-                        <div className="mt-1 flex items-center gap-1 text-[10px] text-amber-300 bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-800/50">
-                          <span>📝</span>
+                        <div className="mt-1 flex items-center gap-1 text-[10px] text-warning bg-warning-bg px-1.5 py-0.5 rounded border border-warning/30">
+                          <FileText size={10} className="shrink-0" />
                           <span className="truncate">{item.catatan}</span>
                         </div>
                       )}
@@ -4358,29 +4475,35 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                           setActiveNoteMenu(item.nama_menu)
                           setActiveNoteText(item.catatan || '')
                         }}
-                        className="px-1.5 py-1 rounded bg-subsurface hover:bg-slate-700 text-slate-200 text-[10px]"
+                        className="min-h-[36px] px-2 py-1 rounded-lg bg-surface hover:bg-surface-hover border border-border text-foreground text-[10px] font-semibold"
                         title="Catatan Rasa"
                       >
                         {item.catatan ? 'Edit' : '+ Catatan'}
                       </button>
                       <button
+                        type="button"
+                        aria-label={`Kurangi ${item.nama_menu}`}
                         onClick={() => updateQty(item.nama_menu, -1)}
-                        className="w-9 h-9 rounded-xl bg-subsurface hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors tap-tactile"
+                        className="w-10 h-10 rounded-full bg-surface hover:bg-surface-hover border border-border text-foreground flex items-center justify-center transition-colors tap-tactile"
                       >
-                        <Minus size={13} strokeWidth={2} />
+                        <Minus size={14} strokeWidth={2} />
                       </button>
-                      <span className="text-sm font-bold text-white w-6 text-center font-mono">{item.qty}</span>
+                      <span className="text-sm font-bold text-foreground w-6 text-center font-mono tabular-nums">{item.qty}</span>
                       <button
+                        type="button"
+                        aria-label={`Tambah ${item.nama_menu}`}
                         onClick={() => updateQty(item.nama_menu, 1)}
-                        className="w-9 h-9 rounded-xl bg-subsurface hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors tap-tactile"
+                        className="w-10 h-10 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground flex items-center justify-center transition-colors tap-tactile"
                       >
-                        <Plus size={13} strokeWidth={2} />
+                        <Plus size={14} strokeWidth={2} />
                       </button>
                       <button
+                        type="button"
+                        aria-label={`Hapus ${item.nama_menu}`}
                         onClick={() => removeFromCart(item.nama_menu)}
-                        className="text-rose-400 hover:text-rose-500 p-1 ml-0.5"
+                        className="text-destructive hover:opacity-80 p-1.5 ml-0.5"
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
@@ -4388,53 +4511,56 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
               ))}
 
               {hasCarwash && (
-                <div className="p-3 rounded-xl bg-subsurface border border-border hover:border-border-hover transition-all relative">
+                <div className="p-3 rounded-xl bg-subsurface border border-border transition-all relative">
                   <div className="flex justify-between items-start">
                     <div>
-                      <span className="text-[9px] bg-primary/15 text-primary border border-primary/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Carwash</span>
-                      <h5 className="font-bold text-xs text-white mt-1.5">{carwashForm.paket}</h5>
-                      <div className="flex items-center gap-1.5 mt-1 font-mono text-xs">
+                      <span className="text-[9px] bg-primary-soft text-primary-soft-foreground border border-primary/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Carwash</span>
+                      <h5 className="font-bold text-xs text-foreground mt-1.5">{carwashForm.paket}</h5>
+                      <div className="flex items-center gap-1.5 mt-1 font-mono text-xs flex-wrap">
                         {carwashForm.platNomor ? (
-                          <span className="font-extrabold text-white bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700">
+                          <span className="font-extrabold text-foreground bg-surface px-2 py-0.5 rounded border border-border">
                             {carwashForm.platNomor}
                           </span>
                         ) : (
-                          <span className="text-[10px] text-rose-400 font-bold bg-rose-500/20 px-2 py-0.5 rounded border border-rose-500/30">
-                            ⚠️ Plat Belum Diisi
+                          <span className="text-[10px] text-destructive font-bold bg-destructive-bg px-2 py-0.5 rounded border border-destructive/30 inline-flex items-center gap-1">
+                            <AlertTriangle size={11} />
+                            <span>Plat Belum Diisi</span>
                           </span>
                         )}
                         <span className="text-[11px] text-muted">• {carwashForm.ukuran} • {carwashForm.variant}</span>
                       </div>
                     </div>
                     <button
+                      type="button"
+                      aria-label="Hapus item carwash"
                       onClick={() => setHasCarwash(false)}
-                      className="text-rose-400 hover:text-rose-300 p-1 shrink-0 transition-colors"
+                      className="text-destructive hover:opacity-80 p-1 shrink-0 transition-colors"
                       title="Hapus carwash dari transaksi"
                     >
-                      <Trash2 size={13} />
+                      <Trash2 size={14} />
                     </button>
                   </div>
-                  <div className="mt-2.5 flex justify-between items-center border-t border-border pt-2 text-[10px] text-muted-dark">
+                  <div className="mt-2.5 flex justify-between items-center border-t border-border pt-2 text-[10px] text-muted">
                     <span>Pencuci: {carwashForm.anggota1} {carwashForm.anggota2 && `+ ${carwashForm.anggota2}`}</span>
-                    <span className="font-mono font-bold text-primary text-xs">{formatRupiah(carwashForm.harga)}</span>
+                    <span className="font-mono font-bold text-foreground text-xs tabular-nums">{formatRupiah(carwashForm.harga)}</span>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Ringkasan & Checkout Button */}
-            <div className="border-t border-border pt-4 shrink-0 space-y-4">
+            {/* Ringkasan & Pembayaran Mobile */}
+            <div className="border-t border-border pt-3.5 shrink-0 space-y-3">
               <div className="space-y-1.5 text-xs text-muted">
                 {cart.length > 0 && (
-                  <div className="flex justify-between">
+                  <div className="flex justify-between tabular-nums">
                     <span>Total Cafe</span>
-                    <span>{formatRupiah(cafeTotal)}</span>
+                    <span className="font-mono text-foreground">{formatRupiah(cafeTotal)}</span>
                   </div>
                 )}
                 {hasCarwash && (
-                  <div className="flex justify-between">
+                  <div className="flex justify-between tabular-nums">
                     <span>Total Carwash</span>
-                    <span>{formatRupiah(carwashTotal)}</span>
+                    <span className="font-mono text-foreground">{formatRupiah(carwashTotal)}</span>
                   </div>
                 )}
 
@@ -4463,12 +4589,15 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                       className="w-full"
                     />
                     {diskonCarwashNominal > 0 && (
-                      <span className="text-[10px] text-primary font-semibold block">Potongan: -{formatRupiah(diskonCarwashNominal)}</span>
+                      <span className="text-[10px] text-primary font-semibold block tabular-nums">Potongan: -{formatRupiah(diskonCarwashNominal)}</span>
                     )}
                     {claimedLoyaltyReward.isClaimed && (
-                      <div className="flex items-center justify-between text-amber-300 bg-amber-500/15 p-1.5 rounded border border-amber-500/30 text-[11px] my-1">
-                        <span className="font-bold truncate">🎁 Hadiah: {claimedLoyaltyReward.title}</span>
-                        <span className="font-mono font-bold">-{formatRupiah(loyaltyRewardDiskonNominal)}</span>
+                      <div className="flex items-center justify-between text-warning bg-warning-bg p-1.5 rounded border border-warning/30 text-[11px] my-1">
+                        <span className="font-bold truncate inline-flex items-center gap-1">
+                          <Gift size={12} className="shrink-0" />
+                          <span>Hadiah: {claimedLoyaltyReward.title}</span>
+                        </span>
+                        <span className="font-mono font-bold tabular-nums">-{formatRupiah(loyaltyRewardDiskonNominal)}</span>
                       </div>
                     )}
                   </div>
@@ -4499,19 +4628,14 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                       className="w-full"
                     />
                     {diskonCafeNominal > 0 && (
-                      <span className="text-[10px] text-primary font-semibold block">Potongan: -{formatRupiah(diskonCafeNominal)}</span>
+                      <span className="text-[10px] text-primary font-semibold block tabular-nums">Potongan: -{formatRupiah(diskonCafeNominal)}</span>
                     )}
                   </div>
                 )}
-
-                <div className="flex justify-between text-base font-extrabold text-white pt-2 border-t border-border/50">
-                  <span>Total Bayar</span>
-                  <span className="text-primary">{formatRupiah(grandTotal)}</span>
-                </div>
               </div>
 
               {/* Pilihan Metode Bayar & Status Mobile */}
-              <div className="grid grid-cols-2 gap-2 p-3 bg-subsurface rounded-xl border border-slate-850 my-1">
+              <div className="grid grid-cols-2 gap-2 p-3 bg-subsurface rounded-xl border border-border">
                 <div>
                   <label className="text-[10px] text-muted uppercase tracking-wider font-extrabold block mb-1">Metode Bayar</label>
                   <CustomSelect
@@ -4522,7 +4646,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                       { value: 'SPLIT', label: 'SPLIT (Cash + QRIS)' }
                     ]}
                     size="xs"
-                    variant="emerald"
+                    variant="blue"
                     className="w-full"
                   />
                 </div>
@@ -4536,36 +4660,92 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                       { value: 'Pending', label: 'Pending (Bon)' }
                     ]}
                     size="xs"
-                    variant="emerald"
+                    variant="blue"
                     className="w-full"
                   />
                 </div>
               </div>
 
+              {/* Pembayaran Split Mobile */}
+              {selectedPayment === 'SPLIT' && (
+                <div className="p-3.5 rounded-xl bg-subsurface border border-border space-y-2.5">
+                  <span className="text-[10px] text-muted-dark uppercase tracking-wider font-extrabold block">Pembayaran Terpisah (Split)</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-muted font-semibold block">Tunai (Cash):</label>
+                      <input
+                        type="number"
+                        value={splitCashAmount}
+                        onChange={(e) => {
+                          const cashVal = e.target.value
+                          setSplitCashAmount(cashVal)
+                          const parsed = parseFloat(cashVal || 0)
+                          setSplitQrisAmount(Math.max(0, grandTotal - parsed).toString())
+                        }}
+                        placeholder="50000"
+                        className="w-full min-h-[44px] bg-surface border border-border rounded-lg py-1.5 px-2.5 text-foreground text-base sm:text-xs font-bold font-mono tabular-nums focus:outline-none focus:border-ring"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-muted font-semibold block">Non-Tunai (QRIS):</label>
+                      <input
+                        type="number"
+                        value={splitQrisAmount}
+                        onChange={(e) => {
+                          const qrisVal = e.target.value
+                          setSplitQrisAmount(qrisVal)
+                          const parsed = parseFloat(qrisVal || 0)
+                          setSplitCashAmount(Math.max(0, grandTotal - parsed).toString())
+                        }}
+                        placeholder="50000"
+                        className="w-full min-h-[44px] bg-surface border border-border rounded-lg py-1.5 px-2.5 text-foreground text-base sm:text-xs font-bold font-mono tabular-nums focus:outline-none focus:border-ring"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Input Uang Diterima & Kembalian Mobile */}
-              {paymentStatus === 'Selesai' && (selectedPayment === 'CASH' || selectedPayment === 'SPLIT') && (
-                <div className="p-3.5 rounded-xl bg-subsurface border border-slate-850 space-y-3 my-1">
+              {paymentStatus === 'Selesai' && (selectedPayment === 'CASH' || selectedPayment === 'SPLIT' || (selectedPayment || '').toUpperCase().includes('CASH') || (selectedPayment || '').toUpperCase().includes('TUNAI')) && (
+                <div className="p-3.5 rounded-xl bg-subsurface border border-border space-y-2.5">
                   <span className="text-[10px] text-muted-dark uppercase tracking-wider font-extrabold block">Kalkulator Kembalian</span>
                   <div className="space-y-1">
                     <label className="text-[10px] text-muted font-semibold block">Uang Diterima (Cash):</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1.5 text-xs text-muted-dark font-bold font-mono">Rp</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-dark font-bold font-mono">Rp</span>
                       <input
                         type="number"
                         value={uangDiterima}
                         onChange={(e) => setUangDiterima(e.target.value)}
                         placeholder="Contoh: 100000"
-                        className="w-full bg-surface border border-border rounded-lg py-1.5 pl-8 pr-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
+                        className="w-full min-h-[44px] bg-surface border border-border rounded-lg py-2 pl-8 pr-3 text-foreground text-base sm:text-xs font-bold font-mono tabular-nums focus:outline-none focus:border-ring"
                       />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[
+                      { label: 'Uang Pas', val: grandTotal },
+                      { label: '50rb', val: 50000 },
+                      { label: '100rb', val: 100000 },
+                      { label: '200rb', val: 200000 }
+                    ].map((chip) => (
+                      <button
+                        key={chip.label}
+                        type="button"
+                        onClick={() => setUangDiterima(String(chip.val))}
+                        className="min-h-[36px] py-1 px-1.5 rounded-lg bg-surface hover:bg-surface-hover border border-border text-foreground text-[11px] font-bold transition-all active:scale-[0.98]"
+                      >
+                        {chip.label}
+                      </button>
+                    ))}
                   </div>
                   {uangDiterima && (
                     <div className="flex justify-between items-center text-xs border-t border-border/50 pt-2">
                       <span className="text-muted">Kembalian:</span>
                       {isUangKurang ? (
-                        <span className="font-mono font-bold text-rose-450 uppercase text-[10px]">Kurang {formatRupiah(Math.abs(kembalian))}</span>
+                        <span className="font-mono font-bold text-destructive uppercase text-[10px] tabular-nums">Kurang {formatRupiah(Math.abs(kembalian))}</span>
                       ) : (
-                        <span className="font-mono font-black text-primary text-sm">{formatRupiah(kembalian)}</span>
+                        <span className="font-mono font-black text-success text-sm tabular-nums">{formatRupiah(kembalian)}</span>
                       )}
                     </div>
                   )}
@@ -4573,10 +4753,10 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
               )}
 
               {editingStrukId && (
-                <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2 my-1 text-xs">
+                <div className="p-3.5 rounded-xl bg-warning-bg border border-warning/30 space-y-2 text-xs">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-amber-400">Mode Edit Aktif</span>
-                    <span className="text-[10px] bg-amber-500/20 text-amber-350 px-2 py-0.5 rounded-md font-mono">#{editingStrukId.substring(0, 8)}</span>
+                    <span className="text-xs font-bold text-warning">Mode Edit Aktif</span>
+                    <span className="text-[10px] bg-surface border border-warning/30 text-warning px-2 py-0.5 rounded-md font-mono">#{editingStrukId.substring(0, 8)}</span>
                   </div>
                   <p className="text-[10px] text-muted leading-relaxed">
                     Anda sedang mengubah transaksi ini. Klik "Simpan Perubahan" untuk memperbarui database.
@@ -4587,47 +4767,57 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                       handleCancelEditTransaction();
                       setShowMobileCart(false);
                     }}
-                    className="w-full py-1.5 bg-subsurface hover:bg-slate-700 active:bg-slate-750 text-slate-350 font-bold rounded-lg text-[10px] transition-colors"
+                    className="w-full min-h-[38px] py-1.5 bg-surface hover:bg-surface-hover border border-border text-foreground font-bold rounded-lg text-[10px] transition-colors"
                   >
                     Batal Edit
                   </button>
                 </div>
               )}
+            </div>
+            </div>
 
+            {/* Pinned Sticky Footer of Mobile Bottom Sheet */}
+            <div className="px-4 py-3.5 border-t border-border bg-surface shrink-0 space-y-2.5">
+              <div className="flex justify-between items-center">
+                <span className="text-xs uppercase tracking-wider text-muted font-bold">Total Bayar</span>
+                <span className="text-xl font-black text-foreground font-mono tabular-nums">{formatRupiah(grandTotal)}</span>
+              </div>
               <button
+                type="button"
                 onClick={() => {
                   handleCheckout();
                   setShowMobileCart(false);
                 }}
                 disabled={loading || (cart.length === 0 && !hasCarwash) || isUangKurang}
-                className="w-full py-3.5 bg-primary hover:bg-primary/90 active:scale-[0.98] text-primary-foreground font-black rounded-xl shadow-lg shadow-[#00ffff]/10 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full h-14 bg-primary hover:bg-primary-hover active:scale-[0.98] text-primary-foreground font-extrabold rounded-full shadow-sm transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {loading ? 'Memproses Transaksi...' : editingStrukId ? 'Simpan Perubahan' : `Simpan & Cetak (${paymentStatus})`}
               </button>
             </div>
-            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL: Selesaikan Pembayaran Pending */}
       {settlingBill && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 z-[60] animate-fade-in">
-          <div className="glass-panel w-full max-w-md rounded-2xl shadow-2xl border border-zinc-700/80 bg-[#121215] flex flex-col max-h-[90dvh] overflow-hidden animate-pop-in">
+        <div className="fixed inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-md flex items-center justify-center p-3 sm:p-4 z-[60] animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl shadow-2xl border border-border bg-surface flex flex-col max-h-[90dvh] overflow-hidden animate-pop-in">
             {/* Header (Shrink-0 / Fixed di Atas) */}
-            <div className="flex justify-between items-center px-5 py-3.5 border-b border-zinc-800 bg-[#121215] shrink-0">
+            <div className="flex justify-between items-center px-5 py-3.5 border-b border-border bg-surface shrink-0">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                <h3 className="text-sm sm:text-base font-bold text-white tracking-wide">
+                <h3 className="text-sm sm:text-base font-bold text-foreground tracking-wide">
                   Pelunasan Tagihan #{settlingBill.id.substring(0, 8)}
                 </h3>
               </div>
               <button
                 type="button"
+                aria-label="Tutup modal pelunasan"
                 onClick={() => setSettlingBill(null)}
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                className="min-w-[38px] min-h-[38px] rounded-xl flex items-center justify-center text-muted hover:text-foreground hover:bg-subsurface transition-colors"
               >
-                ✕
+                <X size={16} />
               </button>
             </div>
 
@@ -4639,47 +4829,47 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                   <>
                     {/* Bodi Modal yang Dapat Di-Scroll Secara Mandiri */}
                     <div className="p-4 sm:p-5 overflow-y-auto space-y-3.5 flex-1 overscroll-contain">
-                      <div className="p-4 rounded-xl bg-surface/60 border border-border space-y-1.5 text-xs">
+                      <div className="p-4 rounded-xl bg-subsurface border border-border space-y-1.5 text-xs">
                         <div className="flex justify-between">
                           <span className="text-muted">Tagihan Layanan:</span>
-                          <span className="font-bold text-slate-200 font-mono">{formatRupiah(settlingBill.total_harga)}</span>
+                          <span className="font-bold text-foreground font-mono tabular-nums">{formatRupiah(settlingBill.total_harga)}</span>
                         </div>
                         {parseFloat(settlingBill.pajak || 0) > 0 && (
-                          <div className="flex justify-between text-slate-300">
-                            <span className="text-muted">Termasuk Pajak:</span>
-                            <span className="font-bold font-mono tabular-nums">{formatRupiah(parseFloat(settlingBill.pajak || 0))}</span>
+                          <div className="flex justify-between text-muted">
+                            <span>Termasuk Pajak:</span>
+                            <span className="font-bold text-foreground font-mono tabular-nums">{formatRupiah(parseFloat(settlingBill.pajak || 0))}</span>
                           </div>
                         )}
                         {settleSurcharge.enabled && (
-                          <div className="flex justify-between text-amber-400 font-medium">
+                          <div className="flex justify-between text-warning font-medium">
                             <span>{settleSurcharge.keterangan || 'Cas Inap'}:</span>
-                            <span className="font-bold font-mono">+{formatRupiah(settleSurcharge.nominal || 0)}</span>
+                            <span className="font-bold font-mono tabular-nums">+{formatRupiah(settleSurcharge.nominal || 0)}</span>
                           </div>
                         )}
                         <div className="flex justify-between pt-1.5 border-t border-border">
-                          <span className="text-white font-bold">Total Pelunasan:</span>
-                          <span className="font-black text-primary text-base font-mono">{formatRupiah(finalTotalToPay)}</span>
+                          <span className="text-foreground font-bold">Total Pelunasan:</span>
+                          <span className="font-black text-primary text-base font-mono tabular-nums">{formatRupiah(finalTotalToPay)}</span>
                         </div>
                         <div className="flex justify-between text-muted text-[11px]">
                           <span>Kasir Pembuka:</span>
-                          <span className="text-slate-200 font-bold">{settlingBill.kasir}</span>
+                          <span className="text-foreground font-bold">{settlingBill.kasir}</span>
                         </div>
                       </div>
 
                       {/* Fitur Cas Inap / Biaya Tambahan Mobil Menginap */}
-                      <div className="p-3.5 rounded-xl bg-surface border border-border space-y-2.5">
+                      <div className="p-3.5 rounded-xl bg-subsurface border border-border space-y-2.5">
                         <div className="flex items-center justify-between">
-                          <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-amber-400">
+                          <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-warning">
                             <input
                               type="checkbox"
                               checked={settleSurcharge.enabled}
                               onChange={(e) => setSettleSurcharge(prev => ({ ...prev, enabled: e.target.checked }))}
-                              className="rounded bg-subsurface border-[#3f414a] text-amber-500 focus:ring-0 w-4 h-4 cursor-pointer"
+                              className="rounded bg-surface border-border text-primary focus:ring-0 w-4 h-4 cursor-pointer"
                             />
                             <span>Tambah Biaya Inap / Cas Keterlambatan</span>
                           </label>
                           {settleSurcharge.enabled && (
-                            <span className="text-[10px] font-bold text-primary bg-primary text-primary-foreground/15 px-2 py-0.5 rounded font-mono">
+                            <span className="text-[10px] font-bold text-warning bg-warning-bg border border-warning/30 px-2 py-0.5 rounded font-mono tabular-nums">
                               +{formatRupiah(settleSurcharge.nominal || 0)}
                             </span>
                           )}
@@ -4692,10 +4882,10 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                               <button
                                 type="button"
                                 onClick={() => setSettleSurcharge(prev => ({ ...prev, nominal: 50000, keterangan: 'Biaya Inap Kendaraan (1 Malam)' }))}
-                                className={`px-2.5 py-1 text-[10px] rounded-lg font-bold border transition-colors ${
+                                className={`min-h-[34px] px-2.5 py-1 text-[10px] rounded-lg font-bold border transition-colors ${
                                   settleSurcharge.nominal === 50000 
-                                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' 
-                                    : 'bg-subsurface text-muted border-border hover:text-white'
+                                    ? 'bg-warning-bg text-warning border-warning/40' 
+                                    : 'bg-surface text-muted border-border hover:text-foreground'
                                 }`}
                               >
                                 1 Malam (50rb)
@@ -4703,10 +4893,10 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                               <button
                                 type="button"
                                 onClick={() => setSettleSurcharge(prev => ({ ...prev, nominal: 100000, keterangan: 'Biaya Inap Kendaraan (2 Malam)' }))}
-                                className={`px-2.5 py-1 text-[10px] rounded-lg font-bold border transition-colors ${
+                                className={`min-h-[34px] px-2.5 py-1 text-[10px] rounded-lg font-bold border transition-colors ${
                                   settleSurcharge.nominal === 100000 
-                                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' 
-                                    : 'bg-subsurface text-muted border-border hover:text-white'
+                                    ? 'bg-warning-bg text-warning border-warning/40' 
+                                    : 'bg-surface text-muted border-border hover:text-foreground'
                                 }`}
                               >
                                 2 Malam (100rb)
@@ -4714,10 +4904,10 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                               <button
                                 type="button"
                                 onClick={() => setSettleSurcharge(prev => ({ ...prev, nominal: 35000, keterangan: 'Cas Keterlambatan Pengambilan' }))}
-                                className={`px-2.5 py-1 text-[10px] rounded-lg font-bold border transition-colors ${
+                                className={`min-h-[34px] px-2.5 py-1 text-[10px] rounded-lg font-bold border transition-colors ${
                                   settleSurcharge.nominal === 35000 
-                                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' 
-                                    : 'bg-subsurface text-muted border-border hover:text-white'
+                                    ? 'bg-warning-bg text-warning border-warning/40' 
+                                    : 'bg-surface text-muted border-border hover:text-foreground'
                                 }`}
                               >
                                 Telat Ambil (35rb)
@@ -4731,7 +4921,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                                   type="number"
                                   value={settleSurcharge.nominal}
                                   onChange={(e) => setSettleSurcharge(prev => ({ ...prev, nominal: parseFloat(e.target.value) || 0 }))}
-                                  className="w-full bg-subsurface border border-border rounded-lg px-2.5 py-1.5 text-white text-xs font-mono font-bold focus:outline-none focus:border-amber-500"
+                                  className="w-full min-h-[44px] bg-surface border border-border rounded-lg px-2.5 py-1.5 text-foreground text-base sm:text-xs font-mono font-bold tabular-nums focus:outline-none focus:border-ring"
                                 />
                               </div>
                               <div>
@@ -4741,7 +4931,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                                   value={settleSurcharge.keterangan}
                                   onChange={(e) => setSettleSurcharge(prev => ({ ...prev, keterangan: e.target.value }))}
                                   placeholder="Contoh: Biaya Inap 1 Malam"
-                                  className="w-full bg-subsurface border border-border rounded-lg px-2.5 py-1.5 text-white text-xs focus:outline-none focus:border-amber-500"
+                                  className="w-full min-h-[44px] bg-surface border border-border rounded-lg px-2.5 py-1.5 text-foreground text-base sm:text-xs focus:outline-none focus:border-ring"
                                 />
                               </div>
                             </div>
@@ -4756,7 +4946,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                         <select
                           value={settlePaymentMethod}
                           onChange={(e) => setSettlePaymentMethod(e.target.value)}
-                          className="w-full bg-surface border border-slate-850 rounded-lg py-2 px-3 text-white text-sm"
+                          className="w-full min-h-[44px] bg-subsurface border border-border rounded-xl py-2 px-3 text-foreground text-base sm:text-sm"
                           required
                         >
                           {paymentMethods.map(p => (
@@ -4766,8 +4956,8 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                       </div>
 
                       {settlePaymentMethod === 'SPLIT' && (
-                        <div className="p-3.5 rounded-xl bg-subsurface border border-slate-850 space-y-3 my-1">
-                          <span className="text-[10px] text-muted-dark uppercase tracking-wider font-extrabold block text-muted">Pembayaran Terpisah (Split)</span>
+                        <div className="p-3.5 rounded-xl bg-subsurface border border-border space-y-3 my-1">
+                          <span className="text-[10px] text-muted uppercase tracking-wider font-extrabold block">Pembayaran Terpisah (Split)</span>
                           <div className="space-y-1">
                             <label className="text-[10px] text-muted-dark font-semibold block">Tunai (Cash):</label>
                             <input
@@ -4780,7 +4970,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                                 setSplitQrisAmount(Math.max(0, finalTotalToPay - parsed).toString())
                               }}
                               placeholder="Contoh: 50000"
-                              className="w-full bg-surface border border-border rounded-lg py-1.5 px-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
+                              className="w-full min-h-[44px] bg-surface border border-border rounded-lg py-1.5 px-3 text-foreground text-base sm:text-xs font-bold font-mono tabular-nums focus:outline-none focus:border-ring"
                               required
                             />
                           </div>
@@ -4796,7 +4986,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                                 setSplitCashAmount(Math.max(0, finalTotalToPay - parsed).toString())
                               }}
                               placeholder="Contoh: 50000"
-                              className="w-full bg-surface border border-border rounded-lg py-1.5 px-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
+                              className="w-full min-h-[44px] bg-surface border border-border rounded-lg py-1.5 px-3 text-foreground text-base sm:text-xs font-bold font-mono tabular-nums focus:outline-none focus:border-ring"
                               required
                             />
                           </div>
@@ -4810,20 +5000,20 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                         const isSKurang = settleCashReceived && sKembalian < 0
 
                         return (
-                          <div className="p-3.5 rounded-xl bg-surface border border-border space-y-3 my-1">
+                          <div className="p-3.5 rounded-xl bg-subsurface border border-border space-y-3 my-1">
                             <span className="text-[10px] text-muted uppercase tracking-wider font-extrabold block">Kalkulator Kembalian Pelunasan</span>
                             <div className="space-y-1">
                               <label className="text-[10px] text-muted font-semibold block">
                                 Uang Diterima dari Pelanggan (Cash):
                               </label>
                               <div className="relative">
-                                <span className="absolute left-3 top-2 text-xs text-muted-dark font-bold font-mono">Rp</span>
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-dark font-bold font-mono">Rp</span>
                                 <input
                                   type="number"
                                   value={settleCashReceived}
                                   onChange={(e) => setSettleCashReceived(e.target.value)}
                                   placeholder={targetCash ? `Contoh: ${targetCash}` : 'Contoh: 100000'}
-                                  className="w-full bg-subsurface border border-border rounded-lg py-2 pl-8 pr-3 text-white text-xs font-bold font-mono focus:outline-none focus:border-primary"
+                                  className="w-full min-h-[44px] bg-surface border border-border rounded-lg py-2 pl-8 pr-3 text-foreground text-base sm:text-xs font-bold font-mono tabular-nums focus:outline-none focus:border-ring"
                                 />
                               </div>
                             </div>
@@ -4831,9 +5021,9 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                               <div className="flex justify-between items-center text-xs border-t border-border/60 pt-2">
                                 <span className="text-muted">Kembalian Pelanggan:</span>
                                 {isSKurang ? (
-                                  <span className="font-mono font-bold text-rose-450 uppercase text-[10px]">Kurang {formatRupiah(Math.abs(sKembalian))}</span>
+                                  <span className="font-mono font-bold text-destructive uppercase text-[10px] tabular-nums">Kurang {formatRupiah(Math.abs(sKembalian))}</span>
                                 ) : (
-                                  <span className="font-mono font-black text-primary text-sm">{formatRupiah(sKembalian)}</span>
+                                  <span className="font-mono font-black text-success text-sm tabular-nums">{formatRupiah(sKembalian)}</span>
                                 )}
                               </div>
                             )}
@@ -4843,18 +5033,18 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                     </div>
 
                     {/* Footer Tetap / Sticky di Bagian Bawah (Tidak Pernah Terpotong) */}
-                    <div className="px-5 py-3.5 border-t border-zinc-800 bg-[#18181c] flex items-center justify-end gap-3 shrink-0">
+                    <div className="px-5 py-3.5 border-t border-border bg-surface flex items-center justify-end gap-3 shrink-0">
                       <button
                         type="button"
                         onClick={() => setSettlingBill(null)}
-                        className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold rounded-xl text-xs sm:text-sm transition-all active:scale-[0.98]"
+                        className="min-h-[44px] px-4 py-2 bg-subsurface hover:bg-surface-hover border border-border text-foreground font-bold rounded-xl text-xs sm:text-sm transition-all active:scale-[0.98]"
                       >
                         Batal
                       </button>
                       <button
                         type="submit"
                         disabled={loading || ((settlePaymentMethod === 'CASH' || settlePaymentMethod === 'SPLIT') && settleCashReceived && (parseFloat(settleCashReceived) < (settlePaymentMethod === 'SPLIT' ? (parseFloat(splitCashAmount) || 0) : finalTotalToPay)))}
-                        className="px-4 py-2 bg-primary text-primary-foreground hover:bg-emerald-500 active:bg-emerald-600 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all active:scale-[0.98] disabled:opacity-50"
+                        className="min-h-[44px] px-5 py-2 bg-primary hover:bg-primary-hover text-primary-foreground font-bold rounded-full text-xs sm:text-sm shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
                       >
                         {loading ? 'Memproses...' : 'Konfirmasi Lunas & Cetak Struk'}
                       </button>
@@ -4869,13 +5059,11 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
       {/* MODAL: Input Modal Hari Ini */}
       {showModalModal && (
-        <div className="fixed inset-0 bg-subsurface backdrop-blur-md flex items-center justify-center p-4 z-[70] animate-fade-in">
-          <div className="glass-panel w-full max-w-md p-6 rounded-2xl shadow-2xl border border-border animate-pop-in">
+        <div className="fixed inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-md flex items-center justify-center p-4 z-[70] animate-fade-in">
+          <div className="bg-surface w-full max-w-md p-6 rounded-2xl shadow-2xl border border-border animate-pop-in">
             <div className="text-center mb-5">
-              <div className="w-12 h-12 mx-auto rounded-xl bg-gradient-to-tr from-brand-emerald to-brand-blue flex items-center justify-center font-bold text-lg text-slate-900 shadow-md mb-3">
-                JB
-              </div>
-              <h3 className="text-lg font-bold text-white">Masukkan Modal Kasir Hari Ini</h3>
+              <RelayLogo size="md" variant={isDark ? 'dark' : 'light'} className="mx-auto mb-3 justify-center" />
+              <h3 className="text-lg font-bold text-foreground">Masukkan Modal Kasir Hari Ini</h3>
               <p className="text-muted text-xs mt-1">Isi saldo kas awal laci kasir atau lewati untuk langsung melihat menu.</p>
             </div>
 
@@ -4889,7 +5077,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                   placeholder="0 jika tanpa kas awal"
                   value={startingCapitalInput}
                   onChange={(e) => setStartingCapitalInput(e.target.value)}
-                  className="w-full bg-surface border border-border rounded-xl py-3 px-4 text-white text-sm text-center font-bold text-primary focus:outline-none focus:border-primary placeholder-slate-700"
+                  className="w-full min-h-[48px] bg-subsurface border border-border rounded-xl py-3 px-4 text-foreground text-base text-center font-mono font-black tabular-nums focus:outline-none focus:border-ring placeholder:text-muted-dark"
                   required
                   min="0"
                 />
@@ -4901,7 +5089,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                       key={amt}
                       type="button"
                       onClick={() => setStartingCapitalInput(String(amt))}
-                      className="py-1 px-1.5 text-[10px] font-bold bg-subsurface hover:bg-slate-800 text-slate-300 rounded-lg border border-border transition-all active:scale-95"
+                      className="min-h-[40px] py-1 px-1.5 text-xs font-bold bg-subsurface hover:bg-surface-hover text-foreground rounded-lg border border-border transition-all active:scale-95 font-mono tabular-nums"
                     >
                       {amt === 0 ? 'Rp 0' : `${amt / 1000}rb`}
                     </button>
@@ -4910,7 +5098,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
               </div>
 
               {error && (
-                <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs text-center">
+                <div className="p-3 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-xs text-center">
                   {error}
                 </div>
               )}
@@ -4919,14 +5107,14 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                 <button
                   type="button"
                   onClick={() => setShowModalModal(false)}
-                  className="flex-1 py-3 bg-subsurface hover:bg-slate-800 text-slate-300 font-bold rounded-xl border border-border transition-all text-xs tap-tactile"
+                  className="flex-1 min-h-[44px] py-3 bg-subsurface hover:bg-surface-hover text-foreground font-bold rounded-xl border border-border transition-all text-xs tap-tactile"
                 >
                   Lewati (Lihat Menu Saja)
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 py-3 bg-primary text-primary-foreground hover:bg-emerald-500 active:bg-emerald-600 font-bold rounded-xl shadow-lg shadow-brand-emerald/10 transition-all text-xs disabled:opacity-50 tap-tactile"
+                  className="flex-1 min-h-[44px] py-3 bg-primary hover:bg-primary-hover text-primary-foreground font-bold rounded-full shadow-sm transition-all text-xs disabled:opacity-50 tap-tactile"
                 >
                   {loading ? 'Menyimpan...' : 'Mulai Shift'}
                 </button>
@@ -4938,28 +5126,28 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
       {/* CUSTOM MODAL: Alert / Confirm */}
       {customAlert && (
-        <div className="fixed inset-0 bg-subsurface backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">
-          <div className="glass-panel w-full max-w-sm p-6 rounded-2xl shadow-2xl border border-border shadow-[0_0_50px_rgba(16,185,129,0.08)] animate-pop-in text-center">
+        <div className="fixed inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">
+          <div className="bg-surface w-full max-w-sm p-6 rounded-2xl shadow-2xl border border-border animate-pop-in text-center">
             <div className="mb-4">
               {customAlert.title === 'Sukses' ? (
-                <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/10 flex items-center justify-center">
-                  <CheckCircle className="text-emerald-400" size={24} />
+                <div className="w-12 h-12 mx-auto rounded-full bg-success-bg border border-success/30 flex items-center justify-center">
+                  <CheckCircle className="text-success" size={24} />
                 </div>
               ) : customAlert.title === 'Error' || customAlert.title === 'Hapus Pengeluaran' || customAlert.title === 'Batalkan Transaksi' ? (
-                <div className="w-12 h-12 mx-auto rounded-full bg-rose-500/10 flex items-center justify-center">
-                  <AlertCircle className="text-rose-400" size={24} />
+                <div className="w-12 h-12 mx-auto rounded-full bg-destructive-bg border border-destructive/30 flex items-center justify-center">
+                  <AlertCircle className="text-destructive" size={24} />
                 </div>
               ) : (
-                <div className="w-12 h-12 mx-auto rounded-full bg-amber-500/10 flex items-center justify-center">
-                  <AlertCircle className="text-amber-400" size={24} />
+                <div className="w-12 h-12 mx-auto rounded-full bg-warning-bg border border-warning/30 flex items-center justify-center">
+                  <AlertCircle className="text-warning" size={24} />
                 </div>
               )}
             </div>
 
-            <h4 className="text-base font-extrabold text-white mb-2">
+            <h4 className="text-base font-extrabold text-foreground mb-2">
               {customAlert.title}
             </h4>
-            <p className="text-xs text-slate-350 leading-relaxed mb-6">
+            <p className="text-xs text-muted leading-relaxed mb-6">
               {customAlert.message}
             </p>
 
@@ -4968,7 +5156,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                 <button
                   type="button"
                   onClick={customAlert.onCancel}
-                  className="px-4 py-2 bg-subsurface hover:bg-slate-700 active:scale-95 text-slate-200 font-bold rounded-xl text-xs transition-all w-24"
+                  className="min-h-[44px] px-4 py-2 bg-subsurface hover:bg-surface-hover border border-border active:scale-95 text-foreground font-bold rounded-xl text-xs transition-all w-24"
                 >
                   Batal
                 </button>
@@ -4976,9 +5164,9 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
               <button
                 type="button"
                 onClick={customAlert.onConfirm}
-                className={`px-4 py-2 active:scale-95 font-bold rounded-xl text-xs transition-all w-24 ${customAlert.title === 'Error' || customAlert.title === 'Hapus Pengeluaran' || customAlert.title === 'Batalkan Transaksi'
-                  ? 'bg-rose-500 hover:bg-rose-600 text-white'
-                  : 'bg-primary text-primary-foreground hover:bg-emerald-500 text-slate-950'
+                className={`min-h-[44px] px-4 py-2 active:scale-95 font-bold rounded-full text-xs transition-all w-24 ${customAlert.title === 'Error' || customAlert.title === 'Hapus Pengeluaran' || customAlert.title === 'Batalkan Transaksi'
+                  ? 'bg-destructive-solid hover:opacity-90 text-white'
+                  : 'bg-primary hover:bg-primary-hover text-primary-foreground'
                   }`}
               >
                 {customAlert.type === 'confirm' ? 'Ya' : 'OK'}
@@ -4990,22 +5178,23 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
       {/* MODAL: Catatan Rasa / Modifier Menu (Cafe & Resto) */}
       {activeNoteMenu && (
-        <div className="fixed inset-0 bg-subsurface backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">
-          <div className="glass-panel w-full max-w-md p-5 rounded-2xl shadow-2xl border border-border animate-pop-in">
+        <div className="fixed inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">
+          <div className="bg-surface w-full max-w-md p-5 rounded-2xl shadow-2xl border border-border animate-pop-in">
             <div className="flex items-center justify-between pb-3 border-b border-border mb-3">
               <div>
-                <h4 className="text-sm font-bold text-white">Catatan & Preferensi Menu</h4>
+                <h4 className="text-sm font-bold text-foreground">Catatan & Preferensi Menu</h4>
                 <p className="text-xs text-primary font-semibold truncate max-w-[280px]">{activeNoteMenu}</p>
               </div>
               <button
                 type="button"
+                aria-label="Tutup modal catatan menu"
                 onClick={() => {
                   setActiveNoteMenu(null)
                   setActiveNoteText('')
                 }}
-                className="text-muted hover:text-white p-1 text-sm font-bold"
+                className="min-w-[38px] min-h-[38px] rounded-xl flex items-center justify-center text-muted hover:text-foreground hover:bg-subsurface transition-colors"
               >
-                ✕
+                <X size={16} />
               </button>
             </div>
 
@@ -5036,7 +5225,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                           return `${prev}, ${preset}`
                         })
                       }}
-                      className="px-2.5 py-1 rounded-lg text-xs bg-subsurface hover:bg-slate-700 text-slate-200 border border-[#3f414a] active:scale-95 transition-all"
+                      className="min-h-[36px] px-2.5 py-1 rounded-lg text-xs bg-subsurface hover:bg-surface-hover text-foreground border border-border active:scale-95 transition-all"
                     >
                       +{preset}
                     </button>
@@ -5053,7 +5242,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                   placeholder="Cth: Less sugar, es sedikit, gelas sedang..."
                   value={activeNoteText}
                   onChange={(e) => setActiveNoteText(e.target.value)}
-                  className="w-full bg-surface border border-border rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-primary"
+                  className="w-full min-h-[44px] bg-subsurface border border-border rounded-xl px-3 py-2 text-base sm:text-xs text-foreground placeholder:text-muted-dark focus:outline-none focus:border-ring"
                   autoFocus
                 />
               </div>
@@ -5062,7 +5251,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                 <button
                   type="button"
                   onClick={() => handleSetItemNote(activeNoteMenu, '')}
-                  className="px-3 py-2 rounded-xl text-xs text-rose-400 hover:bg-rose-950/30 transition-colors"
+                  className="min-h-[40px] px-3 py-2 rounded-xl text-xs text-destructive hover:bg-destructive-bg transition-colors font-semibold"
                 >
                   Hapus Catatan
                 </button>
@@ -5073,14 +5262,14 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                       setActiveNoteMenu(null)
                       setActiveNoteText('')
                     }}
-                    className="px-3 py-2 rounded-xl text-xs bg-subsurface hover:bg-slate-700 text-slate-200 font-semibold transition-colors"
+                    className="min-h-[40px] px-3.5 py-2 rounded-xl text-xs bg-subsurface hover:bg-surface-hover border border-border text-foreground font-semibold transition-colors"
                   >
                     Batal
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSetItemNote(activeNoteMenu, activeNoteText.trim())}
-                    className="px-4 py-2 rounded-xl text-xs bg-primary text-primary-foreground hover:bg-emerald-500 text-slate-950 font-bold shadow-md transition-colors"
+                    className="min-h-[40px] px-4 py-2 rounded-full text-xs bg-primary hover:bg-primary-hover text-primary-foreground font-bold shadow-sm transition-colors"
                   >
                     Simpan Catatan
                   </button>

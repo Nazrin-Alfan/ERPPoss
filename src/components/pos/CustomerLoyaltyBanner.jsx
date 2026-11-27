@@ -79,12 +79,27 @@ export const CustomerLoyaltyBanner = ({
     return null
   }
 
+const getSegmentBadgeClass = (code) => {
+  switch (code) {
+    case 'VIP':
+      return 'bg-success-bg text-success border-success/30'
+    case 'LOYAL':
+      return 'bg-primary-soft text-primary-soft-foreground border-primary/30'
+    case 'AT_RISK':
+      return 'bg-destructive-bg text-destructive border-destructive/30'
+    case 'NEED_ATTENTION':
+      return 'bg-warning-bg text-warning border-warning/30'
+    default:
+      return 'bg-subsurface text-muted border-border'
+  }
+}
+
   // Loading skeleton
   if (loading) {
     return (
-      <div className="p-3 rounded-xl bg-[#121215] border border-[#26272d] animate-pulse flex items-center justify-between gap-3 text-xs text-[#bbcbb2]">
+      <div className="p-3 rounded-xl bg-surface border border-border animate-pulse flex items-center justify-between gap-3 text-xs text-muted">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full bg-slate-800" />
+          <div className="w-4 h-4 rounded-full bg-subsurface" />
           <span>Memeriksa database CRM & status loyalitas {plateNumber.toUpperCase()}...</span>
         </div>
       </div>
@@ -94,11 +109,12 @@ export const CustomerLoyaltyBanner = ({
   // Customer not found in history -> New Customer intake
   if (!customerData) {
     return (
-      <div className="p-3 rounded-xl bg-[#121215] border border-[#26272d] flex items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2 text-white">
-          <Sparkles size={15} className="text-amber-400 shrink-0" />
+      <div className="p-3 rounded-xl bg-surface border border-border flex items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 text-foreground">
+          <Sparkles size={15} className="text-warning shrink-0" />
           <span>
-            <strong className="text-white font-mono">{plateNumber.toUpperCase()}</strong> belum tercatat di CRM (Pelanggan Baru). Data yang kasir masukkan akan otomatis didaftarkan.
+            <strong className="text-foreground font-mono mr-1">{plateNumber.toUpperCase()}</strong>
+            {' '}belum tercatat di CRM (Pelanggan Baru). Data yang kasir masukkan akan otomatis didaftarkan.
           </span>
         </div>
       </div>
@@ -118,10 +134,10 @@ export const CustomerLoyaltyBanner = ({
 
   // Segment icon helper
   const renderSegmentIcon = () => {
-    if (segment.code === 'VIP') return <Crown size={14} className="text-[#00ffff]" />
-    if (segment.code === 'LOYAL') return <Car size={14} className="text-[#00ffff]" />
-    if (segment.code === 'AT_RISK') return <AlertTriangle size={14} className="text-rose-400" />
-    return <Sparkles size={14} className="text-amber-400" />
+    if (segment.code === 'VIP') return <Crown size={14} className="text-primary" />
+    if (segment.code === 'LOYAL') return <Car size={14} className="text-primary" />
+    if (segment.code === 'AT_RISK') return <AlertTriangle size={14} className="text-destructive" />
+    return <Sparkles size={14} className="text-warning" />
   }
 
   const handleApplyClick = () => {
@@ -153,70 +169,70 @@ export const CustomerLoyaltyBanner = ({
   return (
     <div className={`p-3.5 rounded-xl border transition-all text-xs space-y-2.5 ${
       loyalty?.isRewardReady
-        ? 'bg-amber-950/20 border-amber-500/40 shadow-lg shadow-amber-500/5 ring-1 ring-amber-500/20'
-        : 'bg-[#121215] border-[#26272d]'
+        ? 'bg-warning-bg border-warning/40 ring-1 ring-warning/20'
+        : 'bg-surface border-border'
     }`}>
       {/* Top Header: Badge, Segment, Visits */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-black font-mono text-sm text-white tracking-wide">
+          <span className="font-black font-mono text-sm text-foreground tracking-wide">
             {plateNumber.toUpperCase()}
           </span>
 
           {/* Segment Badge */}
-          <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold border flex items-center gap-1 ${segment.badgeClass}`}>
+          <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold border flex items-center gap-1 ${getSegmentBadgeClass(segment.code)}`}>
             {renderSegmentIcon()}
             {segment.label}
           </span>
 
           {/* Visit count */}
-          <span className="text-[11px] text-[#bbcbb2] font-mono">
-            Kunjungan ke-<strong className="text-white font-bold">{totalVisits + 1}</strong> ({totalVisits}x tercatat)
+          <span className="text-[11px] text-muted font-mono tabular-nums">
+            Kunjungan ke-<strong className="text-foreground font-bold">{totalVisits + 1}</strong> ({totalVisits}x tercatat)
           </span>
         </div>
 
         {/* Loyalty Stamp Pill */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#18181c] border border-[#26272d] text-[11px] font-mono">
-          <Gift size={13} className="text-amber-400" />
-          <span className="text-[#bbcbb2]">Loyalty:</span>
-          <span className="font-bold text-amber-300 tabular-nums">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-subsurface border border-border text-[11px] font-mono">
+          <Gift size={13} className="text-warning" />
+          <span className="text-muted">Loyalty:</span>
+          <span className="font-bold text-warning tabular-nums">
             {loyalty.stamps} / {loyalty.stampTarget} Stamp
           </span>
         </div>
       </div>
 
       {/* Middle Info: Customer Details & Notes */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 py-1.5 px-2.5 rounded-lg bg-[#18181c] border border-[#26272d] text-[11px] text-white">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 py-1.5 px-2.5 rounded-lg bg-subsurface border border-border text-[11px] text-foreground">
         <div className="flex items-center gap-1.5 truncate">
-          <Car size={13} className="text-[#6b7367] shrink-0" />
-          <span className="text-[#bbcbb2]">Model:</span>
-          <span className="font-semibold text-white truncate">{model || 'Standar'}</span>
+          <Car size={13} className="text-muted-dark shrink-0" />
+          <span className="text-muted">Model:</span>
+          <span className="font-semibold text-foreground truncate">{model || 'Standar'}</span>
         </div>
 
         <div className="flex items-center gap-1.5 truncate">
-          <Phone size={13} className="text-[#6b7367] shrink-0" />
-          <span className="text-[#bbcbb2]">WA:</span>
-          <span className="font-mono text-white truncate">{noTelepon || 'Belum ada'}</span>
+          <Phone size={13} className="text-muted-dark shrink-0" />
+          <span className="text-muted">WA:</span>
+          <span className="font-mono text-foreground truncate">{noTelepon || 'Belum ada'}</span>
         </div>
 
         <div className="flex items-center gap-1.5 truncate sm:col-span-1">
-          <FileText size={13} className="text-[#6b7367] shrink-0" />
-          <span className="text-[#bbcbb2]">Catatan:</span>
-          <span className="text-amber-200 truncate italic">{catatanKhusus || 'Tidak ada catatan'}</span>
+          <FileText size={13} className="text-muted-dark shrink-0" />
+          <span className="text-muted">Catatan:</span>
+          <span className="text-warning truncate italic">{catatanKhusus || 'Tidak ada catatan'}</span>
         </div>
       </div>
 
       {/* Reward Ready Alert Box if eligible */}
       {loyalty?.isRewardReady && (
-        <div className="p-2.5 rounded-lg bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/40 flex items-center justify-between gap-3">
+        <div className="p-2.5 rounded-lg bg-warning-bg border border-warning/40 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Gift size={16} className="text-amber-400 shrink-0 animate-bounce" />
+            <Gift size={16} className="text-warning shrink-0" />
             <div>
-              <span className="text-xs font-black text-amber-300 block">
-                🎁 REWARD LOYALTY SIAP DIKLAIM!
+              <span className="text-xs font-black text-warning block">
+                REWARD LOYALTY SIAP DIKLAIM!
               </span>
-              <span className="text-[11px] text-white">
-                Hak Hadiah: <strong className="text-white underline">{loyalty.rewardTitle}</strong>
+              <span className="text-[11px] text-foreground">
+                Hak Hadiah: <strong className="text-foreground underline">{loyalty.rewardTitle}</strong>
               </span>
             </div>
           </div>
@@ -226,10 +242,10 @@ export const CustomerLoyaltyBanner = ({
             onClick={handleToggleReward}
             disabled={!rewardCheckoutEnabled}
             aria-describedby={!rewardCheckoutEnabled ? "pos-reward-unavailable" : undefined}
-            className={`px-3 py-1.5 rounded-lg font-black text-xs transition-all flex items-center gap-1.5 active:scale-[0.98] ${
+            className={`min-h-[40px] px-3.5 py-1.5 rounded-full font-bold text-xs transition-all flex items-center gap-1.5 active:scale-[0.98] disabled:opacity-50 ${
               isRewardClaimed
-                ? 'bg-[#00ffff] hover:bg-[#00ffff]/90 text-[#0f0f0f] font-bold shadow-sm active:scale-[0.98]'
-                : 'bg-[#ffc71f] hover:bg-[#ffc71f]/90 text-[#0f0f0f] font-bold shadow-sm active:scale-[0.98]'
+                ? 'bg-success-bg text-success border border-success/30 shadow-sm'
+                : 'bg-primary hover:bg-primary-hover text-primary-foreground shadow-sm'
             }`}
           >
             {isRewardClaimed ? (
@@ -248,15 +264,15 @@ export const CustomerLoyaltyBanner = ({
       )}
 
       {loyalty?.isRewardReady && !rewardCheckoutEnabled && (
-        <p id="pos-reward-unavailable" className="text-xs text-amber-200">
+        <p id="pos-reward-unavailable" className="text-xs text-warning">
           Hadiah loyalty belum dapat digunakan pada transaksi kasir. Hubungi pengelola toko.
         </p>
       )}
 
       {/* Action Strip: 1-Click Auto Fill */}
       <div className="flex items-center justify-between pt-1">
-        <span className="text-[10px] text-[#6b7367]">
-          Total Belanja Tercatat: <strong className="text-white font-mono">{formatRupiah(totalSpent)}</strong>
+        <span className="text-[10px] text-muted-dark tabular-nums">
+          Total Belanja Tercatat: <strong className="text-foreground font-mono">{formatRupiah(totalSpent)}</strong>
         </span>
 
         {(model !== 'Mobil' || noTelepon || catatanKhusus) && (
@@ -264,20 +280,20 @@ export const CustomerLoyaltyBanner = ({
             type="button"
             onClick={handleApplyClick}
             disabled={applied}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1.5 active:scale-[0.98] ${
+            className={`min-h-[36px] px-3 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1.5 active:scale-[0.98] ${
               applied
-                ? 'bg-[#00ffff]/20 border-[#00ffff]/40 text-[#00ffff]'
-                : 'bg-[#18181c] hover:bg-[#26272d] border-[#26272d] text-white'
+                ? 'bg-selected-surface border-border-active text-primary'
+                : 'bg-subsurface hover:bg-surface-hover border-border text-foreground'
             }`}
           >
             {applied ? (
               <>
-                <CheckCircle2 size={13} className="text-[#00ffff]" />
+                <CheckCircle2 size={13} className="text-primary" />
                 <span>Data Profil Diterapkan!</span>
               </>
             ) : (
               <>
-                <UserCheck size={13} className="text-[#00ffff]" />
+                <UserCheck size={13} className="text-primary" />
                 <span>Gunakan Data Profil</span>
               </>
             )}

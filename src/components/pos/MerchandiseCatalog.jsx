@@ -73,12 +73,12 @@ export const DEFAULT_MERCHANDISE_ITEMS = [
 
 const getMerchandiseVisual = (name = '') => {
   const n = name.toLowerCase()
-  if (n.includes('kopi')) return { emoji: '☕', gradient: 'from-amber-700/40 via-amber-900/30 to-slate-950', badge: 'Parfum' }
-  if (n.includes('vanila') || n.includes('parfum')) return { emoji: '🌸', gradient: 'from-pink-700/40 via-rose-900/30 to-slate-950', badge: 'Parfum' }
-  if (n.includes('microfiber') || n.includes('kain')) return { emoji: '✨', gradient: 'from-cyan-700/40 via-blue-900/30 to-slate-950', badge: 'Lap Micro' }
-  if (n.includes('kanebo') || n.includes('chamois')) return { emoji: '🧽', gradient: 'from-yellow-700/40 via-amber-900/30 to-slate-950', badge: 'Kanebo' }
-  if (n.includes('semir') || n.includes('tire') || n.includes('spray')) return { emoji: '🧴', gradient: 'from-emerald-700/40 via-teal-900/30 to-slate-950', badge: 'Detailing' }
-  return { emoji: '🛍️', gradient: 'from-purple-700/40 via-slate-900/30 to-slate-950', badge: 'Retail' }
+  if (n.includes('kopi')) return { toneClass: 'bg-warning-bg text-warning border border-warning/30', badge: 'Parfum' }
+  if (n.includes('vanila') || n.includes('parfum')) return { toneClass: 'bg-primary-soft text-primary-soft-foreground border border-primary/30', badge: 'Parfum' }
+  if (n.includes('microfiber') || n.includes('kain')) return { toneClass: 'bg-primary-soft text-primary-soft-foreground border border-primary/30', badge: 'Lap Micro' }
+  if (n.includes('kanebo') || n.includes('chamois')) return { toneClass: 'bg-warning-bg text-warning border border-warning/30', badge: 'Kanebo' }
+  if (n.includes('semir') || n.includes('tire') || n.includes('spray')) return { toneClass: 'bg-success-bg text-success border border-success/30', badge: 'Detailing' }
+  return { toneClass: 'bg-surface text-foreground border border-border', badge: 'Retail' }
 }
 
 export default function MerchandiseCatalog({ 
@@ -114,26 +114,28 @@ export default function MerchandiseCatalog({
       {/* Search & Category Filter */}
       <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6b7367]" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-dark" />
           <input
             type="text"
+            aria-label="Cari merchandise"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Cari merchandise (parfum, lap, aksesoris)..."
-            className="w-full pl-9 pr-3 py-1.5 bg-[#18181c] border border-[#26272d] rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00ffff] transition-all"
+            className="w-full min-h-[44px] pl-10 pr-3 py-2 bg-subsurface border border-border rounded-xl text-base sm:text-xs text-foreground placeholder:text-muted-dark focus:outline-none focus:border-ring transition-all"
           />
         </div>
 
         {/* Category Filter Chips */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
           {categories.map((cat) => (
             <button
               key={cat}
+              type="button"
               onClick={() => setSelectedCategory(cat)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all ${
+              className={`min-h-[36px] px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
                 selectedCategory === cat
-                  ? 'bg-amber-400 text-slate-950 shadow-sm'
-                  : 'bg-[#121215] text-[#bbcbb2] hover:text-white hover:bg-[#18181c] border border-[#26272d]'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'bg-subsurface text-muted hover:text-foreground border border-border'
               }`}
             >
               {cat === 'ALL' ? 'Semua Retail' : cat}
@@ -142,23 +144,23 @@ export default function MerchandiseCatalog({
         </div>
       </div>
 
-      {/* Grid of Merchandise Products - 100% Identical Dimensions to Cafe Menu Cards */}
+      {/* Grid of Merchandise Products - Compact Two-Column Mobile Friendly */}
       {displayItems.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-12 text-center bg-[#121215] rounded-lg border border-[#26272d] min-h-[300px]">
-          <Package className="w-10 h-10 text-[#6b7367] mb-2 animate-pulse" />
-          <p className="text-xs font-semibold text-[#bbcbb2]">
+        <div className="flex flex-col items-center justify-center p-12 text-center bg-surface rounded-xl border border-border min-h-[300px]">
+          <Package className="w-10 h-10 text-muted-dark mb-2" />
+          <p className="text-xs font-semibold text-foreground">
             {(!items || items.length === 0) 
               ? 'Belum ada produk merchandise retail'
               : 'Tidak ada produk merchandise ditemukan'}
           </p>
-          <p className="text-[11px] text-[#6b7367] mt-0.5">
+          <p className="text-[11px] text-muted mt-0.5">
             {(!items || items.length === 0)
               ? 'Tambahkan produk merchandise baru melalui menu Kelola Admin > Tab Merchandise.'
               : 'Coba kata kunci lain atau pilih Semua Kategori.'}
           </p>
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-3 pr-1 content-start min-h-[450px]">
+        <div className="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-3 pr-1 content-start min-h-[420px]">
           {displayItems.map((prod) => {
             const prodName = prod.nama_barang || prod.nama_produk
             const prodPrice = prod.harga_jual || prod.harga || 0
@@ -182,46 +184,45 @@ export default function MerchandiseCatalog({
                     })
                   }
                 }}
-                className={`glass-card hover:border-amber-400/50 p-0 rounded-lg flex flex-col justify-between text-left transition-all duration-300 group overflow-hidden h-[185px] relative shrink-0 cursor-pointer ${
+                className={`border p-0 rounded-xl flex flex-col justify-between text-left transition-all duration-200 group overflow-hidden min-h-[188px] relative shrink-0 cursor-pointer ${
                   inCart 
-                    ? 'border-amber-400/70 ring-1 ring-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.15)]' 
-                    : 'border-[#26272d]'
+                    ? 'bg-selected-surface border-border-active ring-1 ring-ring/40 shadow-sm' 
+                    : 'bg-surface border-border hover:border-border-hover'
                 }`}
               >
-                {/* Visual Banner / Gambar Icon */}
-                <div className={`w-full h-24 relative overflow-hidden bg-gradient-to-br ${visual.gradient} flex items-center justify-center`}>
-                  {/* Foto Produk atau Big Emoji Icon */}
+                {/* Visual Banner */}
+                <div className="w-full h-24 relative overflow-hidden bg-subsurface flex items-center justify-center border-b border-border/50">
                   {prod.foto_url ? (
-                    <img
-                      src={prod.foto_url}
-                      alt={prodName}
-                      loading="lazy"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
+                    <>
+                      <img
+                        src={prod.foto_url}
+                        alt={prodName}
+                        loading="lazy"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent pointer-events-none" />
+                    </>
                   ) : (
-                    <span className="text-4xl drop-shadow-lg group-hover:scale-110 transition-transform duration-300">
-                      {prod.emoji || visual.emoji}
-                    </span>
+                    <div className="w-12 h-12 rounded-2xl bg-surface border border-border flex items-center justify-center text-muted group-hover:text-primary group-hover:scale-105 transition-all">
+                      <ShoppingBag size={24} />
+                    </div>
                   )}
 
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none"></div>
-
-                  {/* Kategori Badge di sudut kiri atas */}
-                  <span className="absolute top-2 left-2 text-[9px] px-2 py-0.5 rounded-full font-extrabold uppercase backdrop-blur-md bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm z-20">
+                  {/* Kategori Badge */}
+                  <span className={`absolute top-2 left-2 text-[9px] px-2 py-0.5 rounded-full font-extrabold uppercase backdrop-blur-md shadow-sm z-20 ${visual.toneClass}`}>
                     {visual.badge}
                   </span>
 
-                  {/* Stok / Counter Badge di sudut kanan atas */}
+                  {/* Stok / Counter Badge */}
                   {inCart ? (
-                    <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center shadow-lg shadow-amber-400/30 animate-pop-in z-20">
+                    <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground font-black text-xs flex items-center justify-center shadow-sm animate-pop-in z-20 tabular-nums">
                       {inCart.qty}
                     </span>
                   ) : (
-                    <span className={`absolute top-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-md border backdrop-blur-md z-20 ${
+                    <span className={`absolute top-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-md border backdrop-blur-md z-20 tabular-nums ${
                       currentStock <= 5 
-                        ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' 
-                        : 'bg-[#121215] text-slate-200 border-[#26272d]'
+                        ? 'bg-destructive-bg text-destructive border-destructive/30' 
+                        : 'bg-surface/90 text-foreground border-border'
                     }`}>
                       Stok: {currentStock}
                     </span>
@@ -229,43 +230,46 @@ export default function MerchandiseCatalog({
                 </div>
 
                 {/* Informasi Produk & Harga */}
-                <div className="p-2.5 flex-1 flex flex-col justify-between bg-[#18181c] backdrop-blur-md relative w-full">
-                  <h4 className="font-bold text-xs text-slate-100 group-hover:text-amber-400 transition-colors line-clamp-2 leading-tight">
+                <div className={`p-2.5 flex-1 flex flex-col justify-between relative w-full ${inCart ? 'bg-selected-surface' : 'bg-surface'}`}>
+                  <h4 className="font-bold text-xs text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-tight">
                     {prodName}
                   </h4>
 
-                  <div className="mt-1.5 flex justify-between items-center">
-                    <span className="text-xs font-black text-amber-400 font-mono">
+                  <div className="mt-1.5 flex justify-between items-center gap-1.5">
+                    <span className="text-xs font-black text-foreground font-mono tabular-nums">
                       {formatRupiah(prodPrice)}
                     </span>
 
                     {/* Stepper jika ada di Cart, atau Plus Button */}
                     {inCart ? (
                       <div 
-                        className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/30 rounded-lg p-0.5"
+                        className="flex items-center gap-1 bg-subsurface border border-border rounded-full p-0.5"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <button
                           type="button"
+                          aria-label={`Kurangi ${prodName}`}
                           onClick={() => onUpdateQty && onUpdateQty(prodName, -1)}
-                          className="w-5 h-5 rounded bg-[#121215] text-amber-400 hover:bg-[#18181c] flex items-center justify-center font-bold text-xs"
+                          className="w-7 h-7 rounded-full bg-surface text-foreground hover:bg-surface-hover border border-border flex items-center justify-center font-bold text-xs"
                         >
-                          <Minus size={10} />
+                          <Minus size={11} />
                         </button>
-                        <span className="text-xs font-mono font-bold text-white px-0.5">
+                        <span className="text-xs font-mono font-bold text-foreground px-1 tabular-nums">
                           {inCart.qty}
                         </span>
                         <button
                           type="button"
+                          aria-label={`Tambah ${prodName}`}
                           onClick={() => onUpdateQty && onUpdateQty(prodName, 1)}
-                          className="w-5 h-5 rounded bg-[#121215] text-amber-400 hover:bg-[#18181c] flex items-center justify-center font-bold text-xs"
+                          className="w-7 h-7 rounded-full bg-primary text-primary-foreground hover:bg-primary-hover flex items-center justify-center font-bold text-xs"
                         >
-                          <Plus size={10} />
+                          <Plus size={11} />
                         </button>
                       </div>
                     ) : (
                       <button
                         type="button"
+                        aria-label={`Tambah ${prodName} ke keranjang`}
                         disabled={currentStock <= 0}
                         onClick={(e) => {
                           e.stopPropagation()
@@ -278,13 +282,13 @@ export default function MerchandiseCatalog({
                             tipe: 'MERCHANDISE'
                           })
                         }}
-                        className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs transition-all ${
+                        className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all border ${
                           currentStock <= 0
-                            ? 'bg-[#18181c] text-[#6b7367] cursor-not-allowed'
-                            : 'bg-[#18181c] text-slate-200 group-hover:bg-[#00ffff] group-hover:text-[#0f0f0f]'
+                            ? 'bg-subsurface border-border text-muted-dark cursor-not-allowed'
+                            : 'bg-subsurface border-border text-foreground group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary'
                         }`}
                       >
-                        <Plus size={12} />
+                        <Plus size={14} />
                       </button>
                     )}
                   </div>

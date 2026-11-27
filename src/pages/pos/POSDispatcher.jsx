@@ -19,7 +19,7 @@ export const POSDispatcher = ({ overrideType = null }) => {
   const posType = getPOSType(businessType)
 
   return (
-    <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center text-xs text-slate-400">Memuat Ruang Kasir...</div>}>
+    <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center text-xs text-muted">Memuat Ruang Kasir...</div>}>
       {posType === BUSINESS_TYPES.CAFE ? (
         <CafePOSPage />
       ) : posType === BUSINESS_TYPES.CARWASH ? (

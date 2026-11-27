@@ -306,31 +306,31 @@ export default function ThermalReceiptModal({
   return (
     <>
       {/* 1. ON-SCREEN MODAL PREVIEW (Disembunyikan saat print via CSS) */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000]/85 backdrop-blur-sm animate-fade-in no-print">
-        <div className="bg-[#121215] border border-[#26272d] w-full max-w-lg rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--overlay-backdrop)] backdrop-blur-sm animate-fade-in no-print">
+        <div className="bg-surface border border-border w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
           
           {/* Modal Header */}
-          <div className="px-5 py-4 border-b border-[#26272d] flex items-center justify-between bg-[#18181c]/60">
+          <div className="px-5 py-4 border-b border-border flex items-center justify-between bg-surface">
             <div className="flex items-center gap-2.5">
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold ${
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold border ${
                 isDropOff 
-                  ? 'bg-[#ffc71f]/10 text-[#ffc71f] border border-[#ffc71f]/30' 
-                  : 'bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/30'
+                  ? 'bg-warning-bg text-warning border-warning/30' 
+                  : 'bg-success-bg text-success border-success/30'
               }`}>
                 {isDropOff ? <Clock size={18} /> : <CheckCircle2 size={18} />}
               </div>
               <div>
-                <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
+                <h3 className="text-sm font-extrabold text-foreground flex items-center gap-2">
                   <span>{receiptData.title}</span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase ${
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase border ${
                     isDropOff 
-                      ? 'bg-[#ffc71f]/15 text-[#ffc71f] border border-[#ffc71f]/40' 
-                      : 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/40'
+                      ? 'bg-warning-bg text-warning border-warning/30' 
+                      : 'bg-success-bg text-success border-success/30'
                   }`}>
                     {isDropOff ? 'DITINGGAL' : 'LUNAS'}
                   </span>
                 </h3>
-                <p className="text-[11px] text-[#bbcbb2] mt-0.5">
+                <p className="text-[11px] text-muted mt-0.5">
                   {isDropOff 
                     ? 'Struk tanda terima saat mobil ditinggal pelanggan' 
                     : 'Struk resmi pelunasan kasir'}
@@ -338,21 +338,23 @@ export default function ThermalReceiptModal({
               </div>
             </div>
             <button
+              type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-[#bbcbb2] hover:text-white hover:bg-[#18181c] transition-colors"
+              aria-label="Tutup pratinjau struk"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-muted hover:text-foreground hover:bg-subsurface transition-colors"
             >
               <X size={18} />
             </button>
           </div>
 
           {/* Modal Body: Thermal Paper Preview */}
-          <div className="p-4 sm:p-5 overflow-y-auto flex-1 bg-[#000000]/50 flex flex-col items-center">
+          <div className="p-4 sm:p-5 overflow-y-auto flex-1 bg-canvas flex flex-col items-center">
             {renderReceiptContent(false)}
 
             {/* Quick WhatsApp Input Field */}
-            <div className="w-full max-w-[340px] mt-4 p-3 bg-[#18181c] border border-[#26272d] rounded-xl space-y-2">
-              <label className="text-[10px] uppercase font-bold text-[#bbcbb2] flex items-center gap-1">
-                <Smartphone size={12} className="text-[#00ffff]" />
+            <div className="w-full max-w-[340px] mt-4 p-3 bg-surface border border-border rounded-xl space-y-2">
+              <label className="text-[10px] uppercase font-bold text-muted flex items-center gap-1">
+                <Smartphone size={12} className="text-primary" />
                 <span>Nomor WhatsApp Pelanggan:</span>
               </label>
               <div className="flex gap-2">
@@ -361,40 +363,41 @@ export default function ThermalReceiptModal({
                   value={phoneInput}
                   onChange={(e) => setPhoneInput(e.target.value)}
                   placeholder="Contoh: 08123456789"
-                  className="flex-1 bg-[#121215] border border-[#26272d] rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-[#00ffff]"
+                  className="flex-1 min-h-[44px] bg-subsurface border border-border rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-foreground font-mono focus:outline-none focus:border-ring"
                 />
                 <button
                   type="button"
                   onClick={handleCopyText}
                   title="Salin Teks Struk"
-                  className="px-2.5 py-1.5 bg-[#26272d] hover:bg-[#3f414a] text-slate-200 rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+                  aria-label="Salin teks struk"
+                  className="min-w-[44px] min-h-[44px] px-2.5 py-1.5 bg-subsurface hover:bg-surface-hover border border-border text-foreground rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1"
                 >
-                  {copied ? <Check size={12} className="text-[#00ffff]" /> : <Copy size={12} />}
+                  {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
                 </button>
               </div>
             </div>
           </div>
 
           {/* Modal Actions Footer */}
-          <div className="px-5 py-4 border-t border-[#26272d] bg-[#121215] flex flex-col gap-3">
+          <div className="px-5 py-4 border-t border-border bg-surface flex flex-col gap-3">
             {/* Status Alert for Bluetooth Action */}
             {btStatusMsg && (
-              <div className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 animate-fade-in ${
+              <div className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 animate-fade-in border ${
                 btStatusMsg.type === 'success' 
-                  ? 'bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/30' 
-                  : 'bg-[#ff5102]/10 text-[#ff5102] border border-[#ff5102]/30'
+                  ? 'bg-success-bg text-success border-success/30' 
+                  : 'bg-destructive-bg text-destructive border-destructive/30'
               }`}>
                 {btStatusMsg.type === 'success' ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />}
                 <span>{btStatusMsg.text}</span>
               </div>
             )}
 
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2.5">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 bg-[#18181c] hover:bg-[#26272d] text-slate-200 border border-[#26272d] font-bold rounded-lg text-xs transition-colors"
+                  className="min-h-[40px] px-4 py-2 bg-subsurface hover:bg-surface-hover text-foreground border border-border font-bold rounded-xl text-xs transition-colors"
                 >
                   Tutup
                 </button>
@@ -403,14 +406,15 @@ export default function ThermalReceiptModal({
                   <button
                     type="button"
                     onClick={() => setShowKitchenSlip(!showKitchenSlip)}
-                    className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                    className={`min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
                       showKitchenSlip
-                        ? 'bg-[#ffc71f]/20 text-[#ffc71f] border-[#ffc71f]/40 font-bold rounded-lg shadow-xs'
-                        : 'bg-[#18181c] hover:bg-[#26272d] text-slate-200 border-[#26272d] font-bold rounded-lg'
+                        ? 'bg-warning-bg text-warning border-warning/40 shadow-xs'
+                        : 'bg-subsurface hover:bg-surface-hover text-foreground border-border'
                     }`}
                     title="Ganti ke format Tiket Dapur / Bar (tanpa harga)"
                   >
-                    <span>{showKitchenSlip ? '🧾 Lihat Struk Kasir' : '🍜 Format Tiket Dapur'}</span>
+                    {showKitchenSlip ? <FileText size={13} /> : <Coffee size={13} />}
+                    <span>{showKitchenSlip ? 'Lihat Struk Kasir' : 'Format Tiket Dapur'}</span>
                   </button>
                 )}
               </div>
@@ -420,7 +424,7 @@ export default function ThermalReceiptModal({
                   <button
                     type="button"
                     onClick={handleSendWhatsApp}
-                    className="px-3.5 py-2 bg-[#18181c] hover:bg-[#26272d] text-[#00ffff] border border-[#00ffff]/40 font-bold rounded-lg text-xs transition-all flex items-center gap-1.5 active:scale-[0.98]"
+                    className="min-h-[40px] px-3.5 py-2 bg-subsurface hover:bg-surface-hover text-primary border border-primary/40 font-bold rounded-xl text-xs transition-all flex items-center gap-1.5 active:scale-[0.98]"
                   >
                     <Send size={14} />
                     <span>Kirim WA</span>
@@ -432,28 +436,22 @@ export default function ThermalReceiptModal({
                   type="button"
                   onClick={handleBluetoothPrint}
                   disabled={isBluetoothPrinting}
-                  className="px-3.5 py-2 bg-[#18181c] hover:bg-[#26272d] text-[#00ffff] border border-[#00ffff] font-extrabold rounded-lg text-xs transition-all flex items-center gap-1.5 active:scale-[0.98] disabled:opacity-50"
+                  className="min-h-[40px] px-3.5 py-2 bg-primary-soft hover:bg-primary/20 text-primary-soft-foreground border border-primary/40 font-bold rounded-xl text-xs transition-all flex items-center gap-1.5 active:scale-[0.98] disabled:opacity-50"
                   title="Cetak instan langsung ke printer thermal Bluetooth (Bebas Watermark & Tanpa RawBT)"
                 >
                   {isBluetoothPrinting ? (
                     <Loader2 size={14} className="animate-spin" />
                   ) : (
-                    <Bluetooth size={14} className="text-[#00ffff]" />
+                    <Bluetooth size={14} />
                   )}
-                  <span>{isBluetoothPrinting ? 'Mencetak...' : (showKitchenSlip ? '⚡ Cetak Tiket Dapur' : '⚡ Cetak Bluetooth')}</span>
+                  <span>{isBluetoothPrinting ? 'Mencetak...' : (showKitchenSlip ? 'Cetak Tiket Dapur' : 'Cetak Bluetooth')}</span>
                 </button>
 
                 {/* Standard Browser / PDF Print */}
                 <button
                   type="button"
                   onClick={handlePrint}
-                  className={`px-4 py-2 text-[#0f0f0f] font-extrabold rounded-lg text-xs transition-all flex items-center gap-1.5 active:scale-[0.98] ${
-                    showKitchenSlip
-                      ? 'bg-[#ffc71f] hover:bg-[#ffc71f]/90 text-[#0f0f0f] shadow-md shadow-[#ffc71f]/20'
-                      : isDropOff 
-                        ? 'bg-[#ffc71f] hover:bg-[#ffc71f]/90 text-[#0f0f0f] shadow-md shadow-[#ffc71f]/20' 
-                        : 'bg-[#00ffff] hover:bg-[#00ffff]/90 text-[#0f0f0f] shadow-md shadow-[#00ffff]/20'
-                  }`}
+                  className="min-h-[40px] px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground font-bold rounded-full text-xs transition-all flex items-center gap-1.5 active:scale-[0.98] shadow-sm"
                   title="Cetak via dialog browser / PDF"
                 >
                   <Printer size={14} />

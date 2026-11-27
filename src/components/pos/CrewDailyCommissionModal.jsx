@@ -22,24 +22,26 @@ export default function CrewDailyCommissionModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000]/85 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-2xl glass-panel border border-[#26272d] rounded-3xl p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--overlay-backdrop)] backdrop-blur-sm animate-fade-in">
+      <div className="w-full max-w-2xl bg-surface border border-border rounded-3xl p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#26272d] shrink-0">
+        <div className="flex items-center justify-between pb-3 border-b border-border shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-[#18181c] border border-[#00ffff]/30 flex items-center justify-center text-[#00ffff]">
+            <div className="w-9 h-9 rounded-lg bg-primary-soft border border-primary/30 flex items-center justify-center text-primary-soft-foreground">
               <Users size={18} />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">Rekap Komisi Kru Pencuci Hari Ini</h3>
-              <p className="text-[10px] text-[#bbcbb2]">
+              <h3 className="text-base font-bold text-foreground">Rekap Komisi Kru Pencuci Hari Ini</h3>
+              <p className="text-[10px] text-muted">
                 Transparansi Upah Harian Kru Lapangan (Solo 100% / Tim 50%)
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#bbcbb2] hover:text-white hover:bg-[#18181c] transition-colors"
+            aria-label="Tutup modal komisi kru"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-muted hover:text-foreground hover:bg-subsurface transition-colors"
           >
             <X size={16} />
           </button>
@@ -48,7 +50,7 @@ export default function CrewDailyCommissionModal({
         {/* List of Crew */}
         <div className="flex-1 overflow-y-auto my-4 space-y-3 custom-scrollbar pr-1">
           {crewSummaries.length === 0 ? (
-            <div className="text-center py-12 text-slate-500 text-xs">
+            <div className="text-center py-12 text-muted text-xs">
               Belum ada pengerjaan cuci mobil yang tercatat hari ini.
             </div>
           ) : (
@@ -57,23 +59,23 @@ export default function CrewDailyCommissionModal({
               return (
                 <div
                   key={crew.name}
-                  className="p-4 rounded-lg bg-[#121215]/80 border border-[#26272d] hover:border-[#3f414a] transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5"
+                  className="p-4 rounded-xl bg-subsurface border border-border hover:border-border-hover transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#18181c] border border-[#26272d] flex items-center justify-center text-[#00ffff] font-bold shrink-0">
+                    <div className="w-10 h-10 rounded-lg bg-primary-soft border border-primary/30 flex items-center justify-center text-primary-soft-foreground font-bold shrink-0">
                       {crew.name.substring(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
                         <span>{crew.name}</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#18181c] text-slate-200 border border-[#26272d] font-mono">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface text-foreground border border-border font-mono tabular-nums">
                           {crew.totalCars || 0} Mobil
                         </span>
                       </h4>
-                      <p className="text-[11px] text-[#bbcbb2] mt-0.5">
-                        Komisi: <strong className="text-slate-200">{formatRupiah(crew.totalWage || 0)}</strong>
+                      <p className="text-[11px] text-muted mt-0.5 tabular-nums">
+                        Komisi: <strong className="text-foreground">{formatRupiah(crew.totalWage || 0)}</strong>
                         {crew.totalWithdrawals > 0 && (
-                          <span className="text-rose-400 ml-2">
+                          <span className="text-destructive ml-2">
                             • Kasbon: -{formatRupiah(crew.totalWithdrawals)}
                           </span>
                         )}
@@ -81,12 +83,12 @@ export default function CrewDailyCommissionModal({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-[#26272d]">
+                  <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-border">
                     <div className="text-left sm:text-right">
-                      <span className="text-[9px] uppercase tracking-wider text-[#bbcbb2] font-semibold block">
+                      <span className="text-[9px] uppercase tracking-wider text-muted font-semibold block">
                         Upah Bersih
                       </span>
-                      <span className="text-sm font-black text-[#00ffff] font-mono">
+                      <span className="text-sm font-black text-foreground font-mono tabular-nums">
                         {formatRupiah(netWage)}
                       </span>
                     </div>
@@ -94,10 +96,10 @@ export default function CrewDailyCommissionModal({
                     <button
                       type="button"
                       onClick={() => handlePrintMiniSlip(crew)}
-                      className="px-3 py-2 rounded-lg bg-[#18181c] hover:bg-[#26272d] border border-[#26272d] text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-sm"
+                      className="min-h-[44px] px-3.5 py-2 rounded-xl bg-surface hover:bg-surface-hover border border-border text-foreground text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-[0.98] shadow-sm"
                       title="Cetak Slip Thermal Mini"
                     >
-                      <Printer size={13} className="text-brand-emerald" />
+                      <Printer size={14} className="text-primary" />
                       <span>Cetak Slip</span>
                     </button>
                   </div>
@@ -108,14 +110,14 @@ export default function CrewDailyCommissionModal({
         </div>
 
         {/* Footer */}
-        <div className="pt-3 border-t border-[#26272d] flex items-center justify-between shrink-0">
-          <p className="text-[10px] text-slate-500 italic">
+        <div className="pt-3 border-t border-border flex items-center justify-between shrink-0 gap-3">
+          <p className="text-[10px] text-muted-dark italic">
             *Komisi langsung dihitung otomatis saat transaksi cuci mobil diselesaikan kasir.
           </p>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-lg bg-[#121215] hover:bg-[#18181c] text-slate-200 text-xs font-bold transition-all cursor-pointer"
+            className="min-h-[44px] px-4 py-2 rounded-xl bg-subsurface hover:bg-surface-hover border border-border text-foreground text-xs font-bold transition-all cursor-pointer shrink-0"
           >
             Tutup
           </button>
