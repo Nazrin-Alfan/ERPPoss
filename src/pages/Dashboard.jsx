@@ -850,7 +850,7 @@ const Dashboard = () => {
     const data = financialAnalytics.trendData
     if (!data || data.length === 0) {
       return (
-        <div className="h-44 flex items-center justify-center text-slate-600 text-xs font-semibold">
+        <div className="h-44 flex items-center justify-center text-muted text-xs font-semibold">
           Belum ada riwayat transaksi pada rentang waktu ini.
         </div>
       )
@@ -858,7 +858,7 @@ const Dashboard = () => {
 
     const trendKey = activeSection === 'CAFE' ? 'cafeOmzet' : activeSection === 'CARWASH' ? 'carwashOmzet' : 'omzet'
     const trendLabel = activeSection === 'CAFE' ? 'Omzet Penjualan Cafe' : activeSection === 'CARWASH' ? 'Omzet Layanan Carwash' : 'Omzet Penjualan Holding'
-    const lineColor = activeSection === 'CAFE' ? '#ffc71f' : '#00ffff'
+    const lineColor = activeSection === 'CAFE' ? 'var(--warning)' : 'var(--primary)'
 
     const maxVal = Math.max(...data.map(d => Math.max(d[trendKey] || 0, d.pengeluaran)), 100000)
     const svgWidth = 600
@@ -891,9 +891,9 @@ const Dashboard = () => {
               </linearGradient>
             </defs>
 
-            <line x1={padding} y1={padding} x2={svgWidth - padding} y2={padding} stroke="#26272d" strokeDasharray="3 3" opacity="0.6" />
-            <line x1={padding} y1={svgHeight / 2} x2={svgWidth - padding} y2={svgHeight / 2} stroke="#26272d" strokeDasharray="3 3" opacity="0.6" />
-            <line x1={padding} y1={svgHeight - padding} x2={svgWidth - padding} y2={svgHeight - padding} stroke="#26272d" strokeWidth="1" />
+            <line x1={padding} y1={padding} x2={svgWidth - padding} y2={padding} stroke="var(--border)" strokeDasharray="3 3" opacity="0.8" />
+            <line x1={padding} y1={svgHeight / 2} x2={svgWidth - padding} y2={svgHeight / 2} stroke="var(--border)" strokeDasharray="3 3" opacity="0.8" />
+            <line x1={padding} y1={svgHeight - padding} x2={svgWidth - padding} y2={svgHeight - padding} stroke="var(--border)" strokeWidth="1" />
 
             {/* Translucent Area Gradient */}
             <polygon
@@ -914,7 +914,7 @@ const Dashboard = () => {
             {/* Expense Curve */}
             <polyline
               fill="none"
-              stroke="#ff5102"
+              stroke="var(--danger)"
               strokeWidth="2"
               strokeDasharray="4 4"
               strokeLinecap="round"
@@ -936,18 +936,18 @@ const Dashboard = () => {
                 <g key={i} className="group cursor-pointer">
                   <rect x={x - 8} y={Math.min(yOmzet, yExp) - 8} width="16" height={Math.abs(yOmzet - yExp) + 16} fill="transparent" />
                   <circle cx={x} cy={yOmzet} r="4" fill={lineColor} className="transition-all group-hover:r-6" />
-                  <circle cx={x} cy={yExp} r="3.5" fill="#ff5102" className="transition-all group-hover:r-5" />
+                  <circle cx={x} cy={yExp} r="3.5" fill="var(--danger)" className="transition-all group-hover:r-5" />
                   <g className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                    <rect x={x - 55} y={tooltipY} width="110" height="34" rx="4" fill="#121215" stroke="#26272d" strokeWidth="1" />
+                    <rect x={x - 55} y={tooltipY} width="110" height="34" rx="4" fill="var(--surface)" stroke="var(--border)" strokeWidth="1" />
                     <text x={x} y={tooltipY + 12} fontSize="9" fill={lineColor} fontWeight="bold" textAnchor="middle">
                       {formatRupiah(valOmzet)}
                     </text>
-                    <text x={x} y={tooltipY + 26} fontSize="9" fill="#ff5102" fontWeight="bold" textAnchor="middle">
+                    <text x={x} y={tooltipY + 26} fontSize="9" fill="var(--danger)" fontWeight="bold" textAnchor="middle">
                       {formatRupiah(d.pengeluaran)}
                     </text>
                   </g>
                   {showLabel && (
-                    <text x={x} y={svgHeight - 8} fontSize="9" fill="#bbcbb2" textAnchor="middle" className="font-mono">
+                    <text x={x} y={svgHeight - 8} fontSize="9" fill="var(--muted-foreground)" textAnchor="middle" className="font-mono tabular-nums">
                       {dateLabel}
                     </text>
                   )}
@@ -956,13 +956,13 @@ const Dashboard = () => {
             })}
           </svg>
 
-          <div className="flex justify-center items-center gap-6 mt-3 text-xs font-semibold">
+          <div className="flex justify-center items-center gap-6 mt-3 text-xs font-semibold flex-wrap">
             <span className="flex items-center gap-2" style={{ color: lineColor }}>
               <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: lineColor }}></span>
               {trendLabel}
             </span>
-            <span className="flex items-center gap-2 text-[#ff5102]">
-              <span className="w-3 h-0.5 border-t-2 border-dashed border-[#ff5102]"></span>
+            <span className="flex items-center gap-2 text-destructive">
+              <span className="w-3 h-0.5 border-t-2 border-dashed border-destructive"></span>
               Pengeluaran Operasional
             </span>
           </div>
@@ -971,46 +971,50 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="p-3 sm:p-5 pb-24 md:pb-8 space-y-4 max-w-7xl mx-auto bg-[#000000]">
+    <div className="p-3 sm:p-5 pb-24 md:pb-8 space-y-4 max-w-7xl mx-auto bg-canvas text-foreground">
       {/* Top Header & Context Controls */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b border-[#26272d] pb-4">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b border-border pb-4">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-[#18181c] border border-[#26272d] flex items-center justify-center text-[#00ffff] shadow-xs shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-primary-soft border border-primary/25 flex items-center justify-center text-primary shrink-0">
             <BarChart3 size={20} strokeWidth={1.75} />
           </div>
-          <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white truncate">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground truncate">
               Ikhtisar Performa Bisnis
             </h1>
-            <p className="text-[#bbcbb2] text-xs mt-0.5 truncate">Monitoring operasional kasir, omzet & likuiditas multi-divisi</p>
+            <p className="text-muted text-xs mt-0.5 leading-relaxed">Monitoring operasional kasir, omzet &amp; likuiditas multi-divisi</p>
           </div>
         </div>
 
         {/* Right Header Controls: Time Filter + AI Button + Refresh */}
         <div className="flex items-center gap-2 flex-wrap w-full xl:w-auto justify-start xl:justify-end">
           {/* Time Range Filter */}
-          <div className="relative flex bg-[#18181c] p-0.5 rounded-lg border border-[#26272d] text-xs">
+          <div className="relative flex bg-subsurface p-1 rounded-xl border border-border text-xs flex-wrap">
             <button
+              type="button"
               onClick={() => { setTimeRange('today'); setShowCustomCalendar(false) }}
-              className={`px-3 py-1.5 rounded-md font-bold transition-all cursor-pointer active:scale-[0.98] ${timeRange === 'today' ? 'bg-[#00ffff] text-[#121215] shadow-xs' : 'text-[#bbcbb2] hover:text-white'}`}
+              className={`min-h-[36px] px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer active:scale-[0.98] ${timeRange === 'today' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted hover:text-foreground'}`}
             >
               Hari Ini
             </button>
             <button
+              type="button"
               onClick={() => { setTimeRange('month'); setShowCustomCalendar(false) }}
-              className={`px-3 py-1.5 rounded-md font-bold transition-all cursor-pointer active:scale-[0.98] ${timeRange === 'month' ? 'bg-[#00ffff] text-[#121215] shadow-xs' : 'text-[#bbcbb2] hover:text-white'}`}
+              className={`min-h-[36px] px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer active:scale-[0.98] ${timeRange === 'month' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted hover:text-foreground'}`}
             >
               Bulan Ini
             </button>
             <button
+              type="button"
               onClick={() => { setTimeRange('custom'); setShowCustomCalendar(!showCustomCalendar) }}
-              className={`px-3 py-1.5 rounded-md font-bold transition-all cursor-pointer active:scale-[0.98] ${timeRange === 'custom' ? 'bg-[#00ffff] text-[#121215] shadow-xs' : 'text-[#bbcbb2] hover:text-white'}`}
+              className={`min-h-[36px] px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer active:scale-[0.98] ${timeRange === 'custom' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted hover:text-foreground'}`}
             >
               Kustom
             </button>
             <button
+              type="button"
               onClick={() => { setTimeRange('all'); setShowCustomCalendar(false) }}
-              className={`px-3 py-1.5 rounded-md font-bold transition-all cursor-pointer active:scale-[0.98] ${timeRange === 'all' ? 'bg-[#00ffff] text-[#121215] shadow-xs' : 'text-[#bbcbb2] hover:text-white'}`}
+              className={`min-h-[36px] px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer active:scale-[0.98] ${timeRange === 'all' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted hover:text-foreground'}`}
             >
               Semua
             </button>
@@ -1032,6 +1036,7 @@ const Dashboard = () => {
 
           {/* AI Executive Intelligence Button */}
           <button
+            type="button"
             onClick={() => {
               const el = document.getElementById('ai-prompt-studio')
               if (el) {
@@ -1040,7 +1045,7 @@ const Dashboard = () => {
                 setShowAIPromptModal(true)
               }
             }}
-            className="px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 text-[#00ffff] bg-[#00ffff]/15 hover:bg-[#00ffff]/25 border border-[#00ffff]/40 text-xs cursor-pointer active:scale-[0.98] shadow-xs shrink-0"
+            className="min-h-[40px] px-4 py-1.5 rounded-full font-semibold transition-all flex items-center gap-1.5 text-primary-soft-foreground bg-primary-soft hover:opacity-90 border border-primary/25 text-xs cursor-pointer active:scale-[0.98] shrink-0"
             title="Buka Asisten Analisis Bisnis"
           >
             <Bot size={14} strokeWidth={2} />
@@ -1049,36 +1054,38 @@ const Dashboard = () => {
 
           {/* Refresh Button */}
           <button
+            type="button"
             onClick={fetchAllAnalyticsData}
             disabled={loading}
-            className="p-2 bg-[#18181c] hover:bg-[#242428] border border-[#26272d] text-[#bbcbb2] hover:text-white rounded-lg transition-all cursor-pointer active:scale-[0.98] disabled:opacity-50 shrink-0"
+            className="min-w-[40px] min-h-[40px] flex items-center justify-center bg-surface hover:bg-surface-hover border border-border text-muted hover:text-foreground rounded-xl transition-all cursor-pointer active:scale-[0.98] disabled:opacity-50 shrink-0"
             title="Refresh Data"
+            aria-label="Refresh Data Dashboard"
           >
-            <RefreshCw size={15} strokeWidth={1.75} className={loading ? 'animate-spin text-[#00ffff]' : ''} />
+            <RefreshCw size={15} strokeWidth={1.75} className={loading ? 'animate-spin text-primary' : ''} />
           </button>
         </div>
       </div>
 
       {errorMsg && (
-        <div className="p-3 rounded-lg bg-[#ff5102]/10 border border-[#ff5102]/30 text-[#ff5102] text-xs flex items-center gap-2">
+        <div className="p-3 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-xs flex items-center gap-2">
           <AlertTriangle size={15} strokeWidth={1.75} className="shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
       {/* Sektor Usaha & Aksi Cepat Navigation Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-[#121215] p-2.5 sm:p-3 rounded-xl border border-[#26272d]">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-surface p-2.5 sm:p-3 rounded-2xl border border-border shadow-xs">
         {/* Sektor Usaha Switcher */}
         <div className="overflow-x-auto no-scrollbar max-w-full">
           {tenantBusinessType === 'HYBRID' ? (
-            <div className="flex items-center gap-1 bg-[#18181c] p-0.5 rounded-lg border border-[#26272d] text-xs shrink-0 flex-nowrap">
+            <div className="flex items-center gap-1 bg-subsurface p-1 rounded-xl border border-border text-xs shrink-0 flex-nowrap">
               <button
                 type="button"
                 onClick={() => setActiveSection('ALL')}
-                className={`px-3 py-1.5 rounded-md font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-[0.98] ${
+                className={`min-h-[36px] px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-[0.98] ${
                   activeSection === 'ALL'
-                    ? 'bg-[#00ffff] text-[#121215] shadow-xs'
-                    : 'text-[#bbcbb2] hover:text-white hover:bg-[#242428]'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    : 'text-muted hover:text-foreground hover:bg-surface'
                 }`}
               >
                 <Store size={13} strokeWidth={1.75} />
@@ -1087,10 +1094,10 @@ const Dashboard = () => {
               <button
                 type="button"
                 onClick={() => setActiveSection('CAFE')}
-                className={`px-3 py-1.5 rounded-md font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-[0.98] ${
+                className={`min-h-[36px] px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-[0.98] ${
                   activeSection === 'CAFE'
-                    ? 'bg-[#ffc71f] text-[#121215] shadow-xs'
-                    : 'text-[#bbcbb2] hover:text-white hover:bg-[#242428]'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    : 'text-muted hover:text-foreground hover:bg-surface'
                 }`}
               >
                 <Coffee size={13} strokeWidth={1.75} />
@@ -1099,10 +1106,10 @@ const Dashboard = () => {
               <button
                 type="button"
                 onClick={() => setActiveSection('CARWASH')}
-                className={`px-3 py-1.5 rounded-md font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-[0.98] ${
+                className={`min-h-[36px] px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-[0.98] ${
                   activeSection === 'CARWASH'
-                    ? 'bg-[#00ffff] text-[#121215] shadow-xs'
-                    : 'text-[#bbcbb2] hover:text-white hover:bg-[#242428]'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    : 'text-muted hover:text-foreground hover:bg-surface'
                 }`}
               >
                 <Car size={13} strokeWidth={1.75} />
@@ -1110,16 +1117,16 @@ const Dashboard = () => {
               </button>
             </div>
           ) : (
-            <span className="text-xs font-bold text-white flex items-center gap-1.5 px-2 py-1">
+            <span className="text-xs font-bold text-foreground flex items-center gap-1.5 px-2 py-1">
               {tenantBusinessType === 'CAFE' ? (
                 <>
-                  <Coffee size={15} strokeWidth={1.75} className="text-[#ffc71f]" />
-                  <span>Operasional Cafe & Resto</span>
+                  <Coffee size={15} strokeWidth={1.75} className="text-warning" />
+                  <span>Operasional Cafe &amp; Resto</span>
                 </>
               ) : (
                 <>
-                  <Car size={15} strokeWidth={1.75} className="text-[#00ffff]" />
-                  <span>Operasional Carwash & Detailing</span>
+                  <Car size={15} strokeWidth={1.75} className="text-primary" />
+                  <span>Operasional Carwash &amp; Detailing</span>
                 </>
               )}
             </span>
@@ -1129,39 +1136,43 @@ const Dashboard = () => {
         {/* Quick Navigation Links */}
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-full flex-nowrap shrink-0">
           <button
+            type="button"
             onClick={() => navigate('/pos')}
-            className="px-2.5 py-1.5 rounded-lg bg-[#18181c] hover:bg-[#242428] text-[#ffc71f] border border-[#26272d] text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98] whitespace-nowrap"
+            className="min-h-[38px] px-3.5 py-1.5 rounded-full bg-subsurface hover:bg-surface-hover text-foreground border border-border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98] whitespace-nowrap"
           >
-            <Coffee size={13} strokeWidth={1.75} />
+            <Coffee size={13} strokeWidth={1.75} className="text-warning" />
             <span>Kasir POS</span>
           </button>
           {activeSection !== 'CAFE' && (
             <button
+              type="button"
               onClick={() => navigate('/queue')}
-              className="px-2.5 py-1.5 rounded-lg bg-[#18181c] hover:bg-[#242428] text-[#00ffff] border border-[#26272d] text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98] whitespace-nowrap"
+              className="min-h-[38px] px-3.5 py-1.5 rounded-full bg-subsurface hover:bg-surface-hover text-foreground border border-border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98] whitespace-nowrap"
             >
-              <Car size={13} strokeWidth={1.75} />
+              <Car size={13} strokeWidth={1.75} className="text-primary" />
               <span>Antrean</span>
             </button>
           )}
           <button
+            type="button"
             onClick={() => navigate('/finance')}
-            className="px-2.5 py-1.5 rounded-lg bg-[#18181c] hover:bg-[#242428] text-white border border-[#26272d] text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98] whitespace-nowrap"
+            className="min-h-[38px] px-3.5 py-1.5 rounded-full bg-subsurface hover:bg-surface-hover text-foreground border border-border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98] whitespace-nowrap"
           >
-            <DollarSign size={13} strokeWidth={1.75} className="text-[#00ffff]" />
+            <DollarSign size={13} strokeWidth={1.75} className="text-success" />
             <span>Buku Kas</span>
           </button>
           <button
+            type="button"
             onClick={() => navigate('/reports')}
-            className="px-2.5 py-1.5 rounded-lg bg-[#18181c] hover:bg-[#242428] text-white border border-[#26272d] text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98] whitespace-nowrap"
+            className="min-h-[38px] px-3.5 py-1.5 rounded-full bg-subsurface hover:bg-surface-hover text-foreground border border-border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98] whitespace-nowrap"
           >
-            <FileText size={13} strokeWidth={1.75} className="text-[#ff5102]" />
+            <FileText size={13} strokeWidth={1.75} className="text-destructive" />
             <span>Laporan</span>
           </button>
         </div>
       </div>
 
-      {/* Main Dashboard Grid: shadcn dashboard-2 style */}
+      {/* Main Dashboard Grid: Bento KPIs */}
       <div className="space-y-6">
         {/* Top Row - Key Metrics (4 Bento Cards) */}
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
@@ -1169,25 +1180,25 @@ const Dashboard = () => {
           {activeSection === 'ALL' && (
             <>
               {/* Metric 1: Total Pendapatan (Omzet) */}
-              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
-                <div className="flex justify-between items-start">
+              <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between hover:border-border-hover transition-all shadow-xs group">
+                <div className="flex justify-between items-start gap-2">
                   <div>
-                    <p className="text-xs font-medium text-[#bbcbb2]">Total Pendapatan (Omzet)</p>
-                    <h3 className="text-2xl font-bold text-white mt-1 font-mono tabular-nums tracking-tight">
+                    <p className="text-xs font-medium text-muted">Total Pendapatan (Omzet)</p>
+                    <h3 className="text-2xl font-bold text-foreground mt-1 font-mono tabular-nums tracking-tight">
                       {formatRupiah(overviewStats.totalRevenue)}
                     </h3>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30 font-mono">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-primary-soft text-primary-soft-foreground border border-primary/25 font-mono tabular-nums shrink-0">
                     <Receipt size={12} strokeWidth={2} />
                     {filteredStrukByTime.length > 0 ? `${filteredStrukByTime.length} Struk` : (overviewStats.totalRevenue > 0 ? 'Aktif' : '0 Transaksi')}
                   </span>
                 </div>
-                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
-                  <p className="font-semibold text-white flex items-center gap-1">
-                    {overviewStats.totalRevenue > 0 ? 'Omzet Penjualan Aktif' : 'Belum Ada Transaksi'} 
-                    {overviewStats.totalRevenue > 0 ? <CheckCircle size={13} className="text-[#00ffff]" /> : null}
+                <div className="mt-4 pt-3 border-t border-border text-xs">
+                  <p className="font-semibold text-foreground flex items-center gap-1">
+                    {overviewStats.totalRevenue > 0 ? 'Omzet Penjualan Aktif' : 'Belum Ada Transaksi'}
+                    {overviewStats.totalRevenue > 0 ? <CheckCircle size={13} className="text-success" /> : null}
                   </p>
-                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
+                  <p className="text-[11px] text-muted mt-0.5 truncate font-mono tabular-nums">
                     CW: {formatRupiah(carwashAnalytics.totalRevenue)} • Cafe: {formatRupiah(cafeAnalytics.totalRevenue)}
                   </p>
                 </div>
@@ -1196,74 +1207,74 @@ const Dashboard = () => {
               {/* Metric 2: Total Pengeluaran & Biaya */}
               <div
                 onClick={() => { setSelectedExpenseDivision('ALL'); setShowExpenseModal(true) }}
-                className="bg-[#121215] border border-[#26272d] hover:border-[#ff5102]/50 rounded-xl p-5 flex flex-col justify-between transition-all shadow-xs group cursor-pointer"
+                className="bg-surface border border-border hover:border-destructive/40 rounded-2xl p-5 flex flex-col justify-between transition-all shadow-xs group cursor-pointer"
                 title="Klik untuk melihat rincian seluruh pengeluaran toko"
               >
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-start gap-2">
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <p className="text-xs font-medium text-[#bbcbb2]">Total Pengeluaran & Biaya</p>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#ff5102]/10 text-[#ff5102] font-semibold flex items-center gap-0.5">
+                      <p className="text-xs font-medium text-muted">Total Pengeluaran &amp; Biaya</p>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-destructive-bg text-destructive font-semibold flex items-center gap-0.5">
                         <Eye size={10} />
                         Detail
                       </span>
                     </div>
-                    <h3 className="text-2xl font-bold text-[#ff5102] mt-1 font-mono tabular-nums tracking-tight">
+                    <h3 className="text-2xl font-bold text-destructive mt-1 font-mono tabular-nums tracking-tight">
                       {formatRupiah(segmentedExpenses.totalExpenses)}
                     </h3>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#ff5102]/15 text-[#ff5102] border border-[#ff5102]/30 font-mono">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-destructive-bg text-destructive border border-destructive/30 font-mono tabular-nums shrink-0">
                     <TrendingDown size={12} strokeWidth={2} />
                     {cfoHealth.expenseRatio === '0.0' && segmentedExpenses.totalExpenses > 0 ? 'Beban Riil' : `${cfoHealth.expenseRatio}% Beban`}
                   </span>
                 </div>
-                <div className="mt-3 pt-2.5 border-t border-[#26272d] text-xs space-y-1">
-                  <div className="flex justify-between text-[11px] font-mono">
-                    <span className="text-[#00ffff]">CW: {formatRupiah(segmentedExpenses.carwashExp)}</span>
-                    <span className="text-[#ffc71f]">Cafe: {formatRupiah(segmentedExpenses.cafeExp)}</span>
+                <div className="mt-3 pt-2.5 border-t border-border text-xs space-y-1">
+                  <div className="flex justify-between text-[11px] font-mono tabular-nums">
+                    <span className="text-primary font-semibold">CW: {formatRupiah(segmentedExpenses.carwashExp)}</span>
+                    <span className="text-warning font-semibold">Cafe: {formatRupiah(segmentedExpenses.cafeExp)}</span>
                   </div>
-                  <div className="flex justify-between text-[11px] font-mono">
-                    <span className="text-purple-400">Bersama: {formatRupiah(segmentedExpenses.sharedExp)}</span>
-                    <span className="text-[#bbcbb2] text-[10px]">Klik rincian ➔</span>
+                  <div className="flex justify-between text-[11px] font-mono tabular-nums">
+                    <span className="text-muted">Bersama: {formatRupiah(segmentedExpenses.sharedExp)}</span>
+                    <span className="text-primary text-[10px] font-sans font-semibold">Klik rincian ➔</span>
                   </div>
                 </div>
               </div>
 
               {/* Metric 3: Laba Bersih Operasional */}
-              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
-                <div className="flex justify-between items-start">
+              <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between hover:border-border-hover transition-all shadow-xs group">
+                <div className="flex justify-between items-start gap-2">
                   <div>
-                    <p className="text-xs font-medium text-[#bbcbb2]">Laba Bersih Operasional</p>
-                    <h3 className={`text-2xl font-bold mt-1 font-mono tabular-nums tracking-tight ${segmentedExpenses.holdingNetProfit >= 0 ? 'text-[#00ffff]' : 'text-[#ff5102]'}`}>
+                    <p className="text-xs font-medium text-muted">Laba Bersih Operasional</p>
+                    <h3 className={`text-2xl font-bold mt-1 font-mono tabular-nums tracking-tight ${segmentedExpenses.holdingNetProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
                       {formatRupiah(segmentedExpenses.holdingNetProfit)}
                     </h3>
                   </div>
-                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md font-mono ${
-                    segmentedExpenses.holdingNetProfit >= 0 ? 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30' : 'bg-[#ff5102]/15 text-[#ff5102] border border-[#ff5102]/30'
+                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full font-mono tabular-nums shrink-0 border ${
+                    segmentedExpenses.holdingNetProfit >= 0 ? 'bg-success-bg text-success border-success/30' : 'bg-destructive-bg text-destructive border-destructive/30'
                   }`}>
                     {segmentedExpenses.holdingNetProfit >= 0 ? <TrendingUp size={12} strokeWidth={2} /> : <TrendingDown size={12} strokeWidth={2} />}
-                    {segmentedExpenses.holdingProfitMargin === '0.0' && segmentedExpenses.holdingNetProfit < 0 
-                      ? 'Defisit' 
+                    {segmentedExpenses.holdingProfitMargin === '0.0' && segmentedExpenses.holdingNetProfit < 0
+                      ? 'Defisit'
                       : `${segmentedExpenses.holdingProfitMargin}% Margin`}
                   </span>
                 </div>
-                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
+                <div className="mt-4 pt-3 border-t border-border text-xs">
                   {segmentedExpenses.holdingNetProfit < 0 ? (
                     <>
-                      <p className="font-semibold text-[#ff5102] flex items-center gap-1">
-                        Defisit Operasional <AlertTriangle size={13} className="text-[#ff5102]" />
+                      <p className="font-semibold text-destructive flex items-center gap-1">
+                        Defisit Operasional <AlertTriangle size={13} className="text-destructive" />
                       </p>
-                      <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
-                        Pengeluaran & beban melebihi omzet pemasukan
+                      <p className="text-[11px] text-muted mt-0.5 truncate">
+                        Pengeluaran &amp; beban melebihi omzet pemasukan
                       </p>
                     </>
                   ) : (
                     <>
-                      <p className="font-semibold text-white flex items-center gap-1">
-                        Laba Bersih Sehat <CheckCircle size={13} className="text-[#00ffff]" />
+                      <p className="font-semibold text-foreground flex items-center gap-1">
+                        Laba Bersih Sehat <CheckCircle size={13} className="text-success" />
                       </p>
-                      <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
-                        Omzet dikurangi beban CW, Cafe & bersama
+                      <p className="text-[11px] text-muted mt-0.5 truncate">
+                        Omzet dikurangi beban CW, Cafe &amp; bersama
                       </p>
                     </>
                   )}
@@ -1271,24 +1282,24 @@ const Dashboard = () => {
               </div>
 
               {/* Metric 4: Likuiditas Kas & Sinergi Toko */}
-              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
-                <div className="flex justify-between items-start">
+              <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between hover:border-border-hover transition-all shadow-xs group">
+                <div className="flex justify-between items-start gap-2">
                   <div>
-                    <p className="text-xs font-medium text-[#bbcbb2]">Likuiditas Kas & Sinergi Toko</p>
-                    <h3 className="text-2xl font-bold text-white mt-1 font-mono tabular-nums tracking-tight">
-                      {advancedKPIs.crossConversionRate}% <span className="text-xs text-[#bbcbb2] font-normal font-sans">Estafet</span>
+                    <p className="text-xs font-medium text-muted">Likuiditas Kas &amp; Sinergi Toko</p>
+                    <h3 className="text-2xl font-bold text-primary mt-1 font-mono tabular-nums tracking-tight">
+                      {advancedKPIs.crossConversionRate}% <span className="text-xs text-muted font-normal font-sans">Estafet</span>
                     </h3>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#f57733]/15 text-[#f57733] border border-[#f57733]/30 font-mono">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-warning-bg text-warning border border-warning/30 font-mono tabular-nums shrink-0">
                     <Store size={12} strokeWidth={2} />
                     {advancedKPIs.crossCount} Pesanan
                   </span>
                 </div>
-                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
-                  <p className="font-semibold text-white flex items-center gap-1">
-                    Total Kas Aktif: <strong className="text-[#00ffff] font-mono">{formatRupiah(overviewStats.totalLiquid)}</strong>
+                <div className="mt-4 pt-3 border-t border-border text-xs">
+                  <p className="font-semibold text-foreground flex items-center gap-1">
+                    Total Kas Aktif: <strong className="text-primary font-mono tabular-nums">{formatRupiah(overviewStats.totalLiquid)}</strong>
                   </p>
-                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
+                  <p className="text-[11px] text-muted mt-0.5 truncate font-mono tabular-nums">
                     {filteredStrukByTime.length} struk • Rata-rata: {formatRupiah(advancedKPIs.combinedARPU)}
                   </p>
                 </div>
@@ -1300,24 +1311,24 @@ const Dashboard = () => {
           {activeSection === 'CARWASH' && (
             <>
               {/* CW Card 1: Omzet Divisi Carwash */}
-              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
-                <div className="flex justify-between items-start">
+              <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between hover:border-border-hover transition-all shadow-xs group">
+                <div className="flex justify-between items-start gap-2">
                   <div>
-                    <p className="text-xs font-medium text-[#bbcbb2]">Omzet Divisi Carwash</p>
-                    <h3 className="text-2xl font-bold text-[#00ffff] mt-1 font-mono tabular-nums tracking-tight">
+                    <p className="text-xs font-medium text-muted">Omzet Divisi Carwash</p>
+                    <h3 className="text-2xl font-bold text-primary mt-1 font-mono tabular-nums tracking-tight">
                       {formatRupiah(carwashAnalytics.totalRevenue)}
                     </h3>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30 font-mono">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-primary-soft text-primary-soft-foreground border border-primary/25 font-mono tabular-nums shrink-0">
                     <Car size={12} strokeWidth={2} />
                     {overviewStats.totalRevenue > 0 ? ((carwashAnalytics.totalRevenue / overviewStats.totalRevenue) * 100).toFixed(0) : 0}% Holding
                   </span>
                 </div>
-                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
-                  <p className="font-semibold text-white flex items-center gap-1">
+                <div className="mt-4 pt-3 border-t border-border text-xs">
+                  <p className="font-semibold text-foreground flex items-center gap-1 font-mono tabular-nums">
                     Rata-rata: {formatRupiah(Math.round(carwashAnalytics.totalRevenue / operatingDays))}/hari
                   </p>
-                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
+                  <p className="text-[11px] text-muted mt-0.5 truncate font-mono tabular-nums">
                     {carwashAnalytics.totalUnits} unit dicuci • AOV: {formatRupiah(carwashAnalytics.carwashAOV)}
                   </p>
                 </div>
@@ -1326,82 +1337,82 @@ const Dashboard = () => {
               {/* CW Card 2: Total Pengeluaran Carwash */}
               <div
                 onClick={() => { setSelectedExpenseDivision('CARWASH'); setShowExpenseModal(true) }}
-                className="bg-[#121215] border border-[#26272d] hover:border-[#00ffff]/50 rounded-xl p-5 flex flex-col justify-between transition-all shadow-xs group cursor-pointer"
+                className="bg-surface border border-border hover:border-primary/50 rounded-2xl p-5 flex flex-col justify-between transition-all shadow-xs group cursor-pointer"
                 title="Klik untuk melihat rincian pengeluaran divisi carwash"
               >
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-start gap-2">
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <p className="text-xs font-medium text-[#bbcbb2]">Pengeluaran Carwash</p>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#00ffff]/10 text-[#00ffff] font-semibold flex items-center gap-0.5">
+                      <p className="text-xs font-medium text-muted">Pengeluaran Carwash</p>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-primary-soft text-primary-soft-foreground font-semibold flex items-center gap-0.5">
                         <Eye size={10} />
                         Detail
                       </span>
                     </div>
-                    <h3 className="text-2xl font-bold text-[#ff5102] mt-1 font-mono tabular-nums tracking-tight">
+                    <h3 className="text-2xl font-bold text-destructive mt-1 font-mono tabular-nums tracking-tight">
                       {formatRupiah(segmentedExpenses.carwashExp)}
                     </h3>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#ff5102]/15 text-[#ff5102] border border-[#ff5102]/30 font-mono">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-destructive-bg text-destructive border border-destructive/30 font-mono shrink-0">
                     <TrendingDown size={12} strokeWidth={2} />
                     Beban Cuci
                   </span>
                 </div>
-                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
-                  <p className="font-semibold text-white flex items-center gap-1">
-                    Chemical, Operasional & Komisi <ArrowRight size={13} className="text-[#00ffff] group-hover:translate-x-0.5 transition-transform" />
+                <div className="mt-4 pt-3 border-t border-border text-xs">
+                  <p className="font-semibold text-foreground flex items-center gap-1">
+                    Chemical, Operasional &amp; Komisi <ArrowRight size={13} className="text-primary group-hover:translate-x-0.5 transition-transform" />
                   </p>
-                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
-                    Komisi kru: {formatRupiah(segmentedExpenses.carwashCommission)} • Bahan & utilitas
+                  <p className="text-[11px] text-muted mt-0.5 truncate font-mono tabular-nums">
+                    Komisi kru: {formatRupiah(segmentedExpenses.carwashCommission)} • Bahan &amp; utilitas
                   </p>
                 </div>
               </div>
 
               {/* CW Card 3: Kas Bersih Carwash (Net Profit) */}
-              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
-                <div className="flex justify-between items-start">
+              <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between hover:border-border-hover transition-all shadow-xs group">
+                <div className="flex justify-between items-start gap-2">
                   <div>
-                    <p className="text-xs font-medium text-[#bbcbb2]">Kas Bersih Carwash</p>
-                    <h3 className={`text-2xl font-bold mt-1 font-mono tabular-nums tracking-tight ${segmentedExpenses.carwashNetProfit >= 0 ? 'text-[#00ffff]' : 'text-[#ff5102]'}`}>
+                    <p className="text-xs font-medium text-muted">Kas Bersih Carwash</p>
+                    <h3 className={`text-2xl font-bold mt-1 font-mono tabular-nums tracking-tight ${segmentedExpenses.carwashNetProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
                       {formatRupiah(segmentedExpenses.carwashNetProfit)}
                     </h3>
                   </div>
-                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md font-mono ${
-                    segmentedExpenses.carwashNetProfit >= 0 ? 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30' : 'bg-[#ff5102]/15 text-[#ff5102] border border-[#ff5102]/30'
+                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full font-mono tabular-nums shrink-0 border ${
+                    segmentedExpenses.carwashNetProfit >= 0 ? 'bg-success-bg text-success border-success/30' : 'bg-destructive-bg text-destructive border-destructive/30'
                   }`}>
                     {segmentedExpenses.carwashNetProfit >= 0 ? <TrendingUp size={12} strokeWidth={2} /> : <TrendingDown size={12} strokeWidth={2} />}
                     {segmentedExpenses.carwashProfitMargin}% Margin
                   </span>
                 </div>
-                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
-                  <p className="font-semibold text-white flex items-center gap-1">
-                    Laba Bersih Operasional Cuci <CheckCircle size={13} className="text-[#00ffff]" />
+                <div className="mt-4 pt-3 border-t border-border text-xs">
+                  <p className="font-semibold text-foreground flex items-center gap-1">
+                    Laba Bersih Operasional Cuci <CheckCircle size={13} className="text-success" />
                   </p>
-                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
+                  <p className="text-[11px] text-muted mt-0.5 truncate">
                     Omzet carwash dikurangi beban operasional cuci
                   </p>
                 </div>
               </div>
 
               {/* CW Card 4: Volume & Utilisasi Bay */}
-              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
-                <div className="flex justify-between items-start">
+              <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between hover:border-border-hover transition-all shadow-xs group">
+                <div className="flex justify-between items-start gap-2">
                   <div>
-                    <p className="text-xs font-medium text-[#bbcbb2]">Utilisasi Bay Cuci</p>
-                    <h3 className="text-2xl font-bold text-[#00ffff] mt-1 font-mono tabular-nums tracking-tight">
+                    <p className="text-xs font-medium text-muted">Utilisasi Bay Cuci</p>
+                    <h3 className="text-2xl font-bold text-primary mt-1 font-mono tabular-nums tracking-tight">
                       {advancedKPIs.capacityEfficiency}%
                     </h3>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#f57733]/15 text-[#f57733] border border-[#f57733]/30 font-mono">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-warning-bg text-warning border border-warning/30 font-mono tabular-nums shrink-0">
                     <Layers size={12} strokeWidth={2} />
                     Target {targetCapacity}/Hari
                   </span>
                 </div>
-                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
-                  <p className="font-semibold text-white flex items-center gap-1">
-                    Cross-Sell Cafe: {advancedKPIs.crossConversionRate}% <TrendingUp size={13} className="text-[#f57733]" />
+                <div className="mt-4 pt-3 border-t border-border text-xs">
+                  <p className="font-semibold text-foreground flex items-center gap-1 font-mono tabular-nums">
+                    Cross-Sell Cafe: {advancedKPIs.crossConversionRate}% <TrendingUp size={13} className="text-warning" />
                   </p>
-                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
+                  <p className="text-[11px] text-muted mt-0.5 truncate">
                     {activeQueueSummary.totalToday} mobil antre hari ini ({activeQueueSummary.completed} selesai)
                   </p>
                 </div>
@@ -1413,25 +1424,25 @@ const Dashboard = () => {
           {activeSection === 'CAFE' && (
             <>
               {/* Cafe Card 1: Omzet Divisi Cafe */}
-              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
-                <div className="flex justify-between items-start">
+              <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between hover:border-border-hover transition-all shadow-xs group">
+                <div className="flex justify-between items-start gap-2">
                   <div>
-                    <p className="text-xs font-medium text-[#bbcbb2]">Omzet Divisi Cafe & Resto</p>
-                    <h3 className="text-2xl font-bold text-[#ffc71f] mt-1 font-mono tabular-nums tracking-tight">
+                    <p className="text-xs font-medium text-muted">Omzet Divisi Cafe &amp; Resto</p>
+                    <h3 className="text-2xl font-bold text-warning mt-1 font-mono tabular-nums tracking-tight">
                       {formatRupiah(cafeAnalytics.totalRevenue)}
                     </h3>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#ffc71f]/15 text-[#ffc71f] border border-[#ffc71f]/30 font-mono">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-warning-bg text-warning border border-warning/30 font-mono tabular-nums shrink-0">
                     <Coffee size={12} strokeWidth={2} />
                     {overviewStats.totalRevenue > 0 ? ((cafeAnalytics.totalRevenue / overviewStats.totalRevenue) * 100).toFixed(0) : 0}% Holding
                   </span>
                 </div>
-                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
-                  <p className="font-semibold text-white flex items-center gap-1">
+                <div className="mt-4 pt-3 border-t border-border text-xs">
+                  <p className="font-semibold text-foreground flex items-center gap-1 font-mono tabular-nums">
                     Rata-rata: {formatRupiah(Math.round(cafeAnalytics.totalRevenue / operatingDays))}/hari
                   </p>
-                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
-                    {cafeAnalytics.totalItems} porsi • {cafeAnalytics.cafeStrukCount} struk pesanan F&B
+                  <p className="text-[11px] text-muted mt-0.5 truncate font-mono tabular-nums">
+                    {cafeAnalytics.totalItems} porsi • {cafeAnalytics.cafeStrukCount} struk pesanan F&amp;B
                   </p>
                 </div>
               </div>
@@ -1439,83 +1450,83 @@ const Dashboard = () => {
               {/* Cafe Card 2: Total Pengeluaran Cafe */}
               <div
                 onClick={() => { setSelectedExpenseDivision('CAFE'); setShowExpenseModal(true) }}
-                className="bg-[#121215] border border-[#26272d] hover:border-[#ffc71f]/50 rounded-xl p-5 flex flex-col justify-between transition-all shadow-xs group cursor-pointer"
+                className="bg-surface border border-border hover:border-warning/50 rounded-2xl p-5 flex flex-col justify-between transition-all shadow-xs group cursor-pointer"
                 title="Klik untuk melihat rincian pengeluaran divisi cafe & resto"
               >
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-start gap-2">
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <p className="text-xs font-medium text-[#bbcbb2]">Pengeluaran Cafe & Resto</p>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#ffc71f]/10 text-[#ffc71f] font-semibold flex items-center gap-0.5">
+                      <p className="text-xs font-medium text-muted">Pengeluaran Cafe &amp; Resto</p>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-warning-bg text-warning font-semibold flex items-center gap-0.5">
                         <Eye size={10} />
                         Detail
                       </span>
                     </div>
-                    <h3 className="text-2xl font-bold text-[#ff5102] mt-1 font-mono tabular-nums tracking-tight">
+                    <h3 className="text-2xl font-bold text-destructive mt-1 font-mono tabular-nums tracking-tight">
                       {formatRupiah(segmentedExpenses.cafeExp)}
                     </h3>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#ff5102]/15 text-[#ff5102] border border-[#ff5102]/30 font-mono">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-destructive-bg text-destructive border border-destructive/30 font-mono shrink-0">
                     <TrendingDown size={12} strokeWidth={2} />
-                    Beban F&B
+                    Beban F&amp;B
                   </span>
                 </div>
-                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
-                  <p className="font-semibold text-white flex items-center gap-1">
-                    Bahan Baku & Dapur <ArrowRight size={13} className="text-[#ffc71f] group-hover:translate-x-0.5 transition-transform" />
+                <div className="mt-4 pt-3 border-t border-border text-xs">
+                  <p className="font-semibold text-foreground flex items-center gap-1">
+                    Bahan Baku &amp; Dapur <ArrowRight size={13} className="text-warning group-hover:translate-x-0.5 transition-transform" />
                   </p>
-                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
-                    Kulakan kopi, susu, sirup, kemasan & gas dapur
+                  <p className="text-[11px] text-muted mt-0.5 truncate">
+                    Kulakan kopi, susu, sirup, kemasan &amp; gas dapur
                   </p>
                 </div>
               </div>
 
               {/* Cafe Card 3: Kas Bersih Cafe (Net Profit) */}
-              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
-                <div className="flex justify-between items-start">
+              <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between hover:border-border-hover transition-all shadow-xs group">
+                <div className="flex justify-between items-start gap-2">
                   <div>
-                    <p className="text-xs font-medium text-[#bbcbb2]">Kas Bersih Cafe</p>
-                    <h3 className={`text-2xl font-bold mt-1 font-mono tabular-nums tracking-tight ${segmentedExpenses.cafeNetProfit >= 0 ? 'text-[#ffc71f]' : 'text-[#ff5102]'}`}>
+                    <p className="text-xs font-medium text-muted">Kas Bersih Cafe</p>
+                    <h3 className={`text-2xl font-bold mt-1 font-mono tabular-nums tracking-tight ${segmentedExpenses.cafeNetProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
                       {formatRupiah(segmentedExpenses.cafeNetProfit)}
                     </h3>
                   </div>
-                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md font-mono ${
-                    segmentedExpenses.cafeNetProfit >= 0 ? 'bg-[#ffc71f]/15 text-[#ffc71f] border border-[#ffc71f]/30' : 'bg-[#ff5102]/15 text-[#ff5102] border border-[#ff5102]/30'
+                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full font-mono tabular-nums shrink-0 border ${
+                    segmentedExpenses.cafeNetProfit >= 0 ? 'bg-success-bg text-success border-success/30' : 'bg-destructive-bg text-destructive border-destructive/30'
                   }`}>
                     {segmentedExpenses.cafeNetProfit >= 0 ? <TrendingUp size={12} strokeWidth={2} /> : <TrendingDown size={12} strokeWidth={2} />}
                     {segmentedExpenses.cafeProfitMargin}% Margin
                   </span>
                 </div>
-                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
-                  <p className="font-semibold text-white flex items-center gap-1">
-                    Laba Bersih Operasional F&B <CheckCircle size={13} className="text-[#ffc71f]" />
+                <div className="mt-4 pt-3 border-t border-border text-xs">
+                  <p className="font-semibold text-foreground flex items-center gap-1">
+                    Laba Bersih Operasional F&amp;B <CheckCircle size={13} className="text-success" />
                   </p>
-                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
-                    Omzet F&B dikurangi beban bahan & dapur
+                  <p className="text-[11px] text-muted mt-0.5 truncate">
+                    Omzet F&amp;B dikurangi beban bahan &amp; dapur
                   </p>
                 </div>
               </div>
 
               {/* Cafe Card 4: Top Seller Menu & AOV */}
-              <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between hover:border-[#3f414a] transition-all shadow-xs group">
-                <div className="flex justify-between items-start">
+              <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between hover:border-border-hover transition-all shadow-xs group">
+                <div className="flex justify-between items-start gap-2">
                   <div className="min-w-0 pr-2">
-                    <p className="text-xs font-medium text-[#bbcbb2]">Menu Terlaris (Champion)</p>
-                    <h3 className="text-lg font-bold text-[#ffc71f] mt-1 tracking-tight truncate" title={cafeAnalytics.topMenus[0]?.nama || 'Kopi / Minuman'}>
+                    <p className="text-xs font-medium text-muted">Menu Terlaris (Champion)</p>
+                    <h3 className="text-lg font-bold text-foreground mt-1 tracking-tight truncate" title={cafeAnalytics.topMenus[0]?.nama || 'Kopi / Minuman'}>
                       {cafeAnalytics.topMenus[0]?.nama || 'Menu Favorit'}
                     </h3>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#ffc71f]/15 text-[#ffc71f] border border-[#ffc71f]/30 font-mono shrink-0">
-                    <Star size={12} strokeWidth={2} className="fill-[#ffc71f]" />
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-warning-bg text-warning border border-warning/30 font-mono tabular-nums shrink-0">
+                    <Star size={12} strokeWidth={2} className="fill-warning text-warning" />
                     {cafeAnalytics.topMenus[0]?.qty || 0} Porsi
                   </span>
                 </div>
-                <div className="mt-4 pt-3 border-t border-[#26272d] text-xs">
-                  <p className="font-semibold text-white flex items-center gap-1 truncate">
-                    AOV: <strong className="font-mono text-white">{formatRupiah(cafeAnalytics.cafeAOV)}</strong> • {formatRupiah(cafeAnalytics.topMenus[0]?.revenue || 0)}
+                <div className="mt-4 pt-3 border-t border-border text-xs">
+                  <p className="font-semibold text-foreground flex items-center gap-1 truncate font-mono tabular-nums">
+                    AOV: <strong className="font-mono text-foreground">{formatRupiah(cafeAnalytics.cafeAOV)}</strong> • {formatRupiah(cafeAnalytics.topMenus[0]?.revenue || 0)}
                   </p>
-                  <p className="text-[11px] text-[#bbcbb2] mt-0.5 truncate">
-                    Item F&B dengan volume pemesanan tertinggi
+                  <p className="text-[11px] text-muted mt-0.5 truncate">
+                    Item F&amp;B dengan volume pemesanan tertinggi
                   </p>
                 </div>
               </div>
@@ -1526,19 +1537,20 @@ const Dashboard = () => {
         {/* Second Row - Charts in 6-6 columns (Sales Performance & Revenue Breakdown) */}
         <div className="grid gap-4 sm:gap-6 grid-cols-1 xl:grid-cols-2">
           {/* Chart 1: Sales Performance (Area Chart) */}
-          <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between shadow-xs">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-4 border-b border-[#26272d]">
+          <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between shadow-xs">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-4 border-b border-border">
               <div>
-                <h3 className="text-base font-bold text-white">Sales Performance</h3>
-                <p className="text-xs text-[#bbcbb2]">Tren pergerakan omzet harian vs pengeluaran operasional</p>
+                <h3 className="text-base font-bold text-foreground">Sales Performance</h3>
+                <p className="text-xs text-muted">Tren pergerakan omzet harian vs pengeluaran operasional</p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-mono font-bold text-[#00ffff] bg-[#18181c] px-2.5 py-1 rounded-lg border border-[#26272d]">
+                <span className="text-[11px] font-mono tabular-nums font-bold text-primary-soft-foreground bg-primary-soft px-2.5 py-1 rounded-full border border-primary/25">
                   Rasio Beban: {cfoHealth.expenseRatio}%
                 </span>
                 <button
+                  type="button"
                   onClick={() => navigate('/reports')}
-                  className="px-2.5 py-1 rounded-lg bg-[#18181c] hover:bg-[#242428] text-white border border-[#26272d] text-xs font-semibold transition-all cursor-pointer"
+                  className="min-h-[34px] px-3 py-1 rounded-full bg-subsurface hover:bg-surface-hover text-foreground border border-border text-xs font-semibold transition-all cursor-pointer"
                 >
                   Export
                 </button>
@@ -1549,13 +1561,13 @@ const Dashboard = () => {
               {renderTrendChart()}
             </div>
 
-            <div className="pt-3 border-t border-[#26272d] flex items-center justify-between text-xs text-[#bbcbb2]">
-              <span>Rata-rata Omzet: <strong className="text-[#00ffff] font-mono">{formatRupiah(cfoHealth.avgDailyOmzet)}/hari</strong></span>
+            <div className="pt-3 border-t border-border flex items-center justify-between text-xs text-muted">
+              <span>Rata-rata Omzet: <strong className="text-primary font-mono tabular-nums">{formatRupiah(cfoHealth.avgDailyOmzet)}/hari</strong></span>
               <span>
-                Kas Bersih: <strong className={`font-mono ${
-                  activeSection === 'CAFE' ? (segmentedExpenses.cafeNetProfit >= 0 ? 'text-[#ffc71f]' : 'text-[#ff5102]')
-                  : activeSection === 'CARWASH' ? (segmentedExpenses.carwashNetProfit >= 0 ? 'text-[#00ffff]' : 'text-[#ff5102]')
-                  : (segmentedExpenses.holdingNetProfit >= 0 ? 'text-[#00ffff]' : 'text-[#ff5102]')
+                Kas Bersih: <strong className={`font-mono tabular-nums ${
+                  activeSection === 'CAFE' ? (segmentedExpenses.cafeNetProfit >= 0 ? 'text-success' : 'text-destructive')
+                  : activeSection === 'CARWASH' ? (segmentedExpenses.carwashNetProfit >= 0 ? 'text-success' : 'text-destructive')
+                  : (segmentedExpenses.holdingNetProfit >= 0 ? 'text-success' : 'text-destructive')
                 }`}>
                   {formatRupiah(activeSection === 'CAFE' ? segmentedExpenses.cafeNetProfit : activeSection === 'CARWASH' ? segmentedExpenses.carwashNetProfit : segmentedExpenses.holdingNetProfit)}
                 </strong>
@@ -1564,19 +1576,20 @@ const Dashboard = () => {
           </div>
 
           {/* Chart 2: Revenue & Expense Breakdown by Source */}
-          <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between shadow-xs">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-4 border-b border-[#26272d]">
+          <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between shadow-xs">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-4 border-b border-border">
               <div>
-                <h3 className="text-base font-bold text-white">
+                <h3 className="text-base font-bold text-foreground">
                   {activeSection === 'CAFE' ? 'Struktur Beban & Penjualan Cafe' : activeSection === 'CARWASH' ? 'Struktur Beban & Layanan Carwash' : 'Struktur Beban & Pengeluaran Holding'}
                 </h3>
-                <p className="text-xs text-[#bbcbb2]">
+                <p className="text-xs text-muted">
                   {activeSection === 'CAFE' ? 'Distribusi pengeluaran bahan baku, dapur & menu terlaris' : activeSection === 'CARWASH' ? 'Distribusi pengeluaran komisi, chemical & model mobil' : 'Rincian pengeluaran carwash, cafe & beban bersama'}
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => navigate('/reports')}
-                className="px-2.5 py-1 rounded-lg bg-[#18181c] hover:bg-[#242428] text-white border border-[#26272d] text-xs font-semibold transition-all cursor-pointer"
+                className="min-h-[34px] px-3 py-1 rounded-full bg-subsurface hover:bg-surface-hover text-foreground border border-border text-xs font-semibold transition-all cursor-pointer"
               >
                 Laporan Lengkap
               </button>
@@ -1588,27 +1601,27 @@ const Dashboard = () => {
                   {/* Category 1: Pengeluaran Carwash */}
                   <div
                     onClick={() => { setSelectedExpenseDivision('CARWASH'); setShowExpenseModal(true) }}
-                    className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] hover:border-[#00ffff]/50 transition-all cursor-pointer group space-y-2"
+                    className="p-3.5 rounded-xl bg-subsurface border border-border hover:border-border-hover transition-all cursor-pointer group space-y-2"
                     title="Klik untuk rincian pengeluaran divisi carwash"
                   >
                     <div className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-[#00ffff]"></span>
-                        <span className="font-semibold text-white group-hover:text-[#00ffff] transition-colors flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-full bg-primary"></span>
+                        <span className="font-semibold text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
                           Pengeluaran Divisi Carwash
-                          <Eye size={12} className="text-[#00ffff] opacity-80" />
+                          <Eye size={12} className="text-primary opacity-80" />
                         </span>
                       </div>
                       <div className="text-right">
-                        <span className="font-mono font-bold text-[#00ffff]">{formatRupiah(segmentedExpenses.carwashExp)}</span>
-                        <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">
+                        <span className="font-mono tabular-nums font-bold text-primary">{formatRupiah(segmentedExpenses.carwashExp)}</span>
+                        <span className="text-[11px] text-muted ml-1.5 font-mono tabular-nums">
                           ({segmentedExpenses.totalExpenses > 0 ? ((segmentedExpenses.carwashExp / segmentedExpenses.totalExpenses) * 100).toFixed(1) : 0}%)
                         </span>
                       </div>
                     </div>
-                    <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
+                    <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border">
                       <div
-                        className="bg-[#00ffff] h-full rounded-full transition-all duration-500"
+                        className="bg-primary h-full rounded-full transition-all duration-500"
                         style={{ width: `${segmentedExpenses.totalExpenses > 0 ? (segmentedExpenses.carwashExp / segmentedExpenses.totalExpenses) * 100 : 0}%` }}
                       />
                     </div>
@@ -1617,27 +1630,27 @@ const Dashboard = () => {
                   {/* Category 2: Pengeluaran Cafe */}
                   <div
                     onClick={() => { setSelectedExpenseDivision('CAFE'); setShowExpenseModal(true) }}
-                    className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] hover:border-[#ffc71f]/50 transition-all cursor-pointer group space-y-2"
+                    className="p-3.5 rounded-xl bg-subsurface border border-border hover:border-border-hover transition-all cursor-pointer group space-y-2"
                     title="Klik untuk rincian pengeluaran divisi cafe"
                   >
                     <div className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-[#ffc71f]"></span>
-                        <span className="font-semibold text-white group-hover:text-[#ffc71f] transition-colors flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-full bg-warning"></span>
+                        <span className="font-semibold text-foreground group-hover:text-warning transition-colors flex items-center gap-1.5">
                           Pengeluaran Divisi Cafe
-                          <Eye size={12} className="text-[#ffc71f] opacity-80" />
+                          <Eye size={12} className="text-warning opacity-80" />
                         </span>
                       </div>
                       <div className="text-right">
-                        <span className="font-mono font-bold text-[#ffc71f]">{formatRupiah(segmentedExpenses.cafeExp)}</span>
-                        <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">
+                        <span className="font-mono tabular-nums font-bold text-warning">{formatRupiah(segmentedExpenses.cafeExp)}</span>
+                        <span className="text-[11px] text-muted ml-1.5 font-mono tabular-nums">
                           ({segmentedExpenses.totalExpenses > 0 ? ((segmentedExpenses.cafeExp / segmentedExpenses.totalExpenses) * 100).toFixed(1) : 0}%)
                         </span>
                       </div>
                     </div>
-                    <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
+                    <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border">
                       <div
-                        className="bg-[#ffc71f] h-full rounded-full transition-all duration-500"
+                        className="bg-warning h-full rounded-full transition-all duration-500"
                         style={{ width: `${segmentedExpenses.totalExpenses > 0 ? (segmentedExpenses.cafeExp / segmentedExpenses.totalExpenses) * 100 : 0}%` }}
                       />
                     </div>
@@ -1646,27 +1659,27 @@ const Dashboard = () => {
                   {/* Category 3: Pengeluaran Bersama (Shared Overhead) */}
                   <div
                     onClick={() => { setSelectedExpenseDivision('SHARED'); setShowExpenseModal(true) }}
-                    className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] hover:border-[#f57733]/50 transition-all cursor-pointer group space-y-2"
+                    className="p-3.5 rounded-xl bg-subsurface border border-border hover:border-border-hover transition-all cursor-pointer group space-y-2"
                     title="Klik untuk rincian pengeluaran bersama / overhead"
                   >
                     <div className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-[#f57733]"></span>
-                        <span className="font-semibold text-white group-hover:text-[#f57733] transition-colors flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-full bg-ink"></span>
+                        <span className="font-semibold text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
                           Pengeluaran Bersama (Gaji/Utilitas/Holding)
-                          <Eye size={12} className="text-[#f57733] opacity-80" />
+                          <Eye size={12} className="text-muted opacity-80" />
                         </span>
                       </div>
                       <div className="text-right">
-                        <span className="font-mono font-bold text-[#f57733]">{formatRupiah(segmentedExpenses.sharedExp)}</span>
-                        <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">
+                        <span className="font-mono tabular-nums font-bold text-foreground">{formatRupiah(segmentedExpenses.sharedExp)}</span>
+                        <span className="text-[11px] text-muted ml-1.5 font-mono tabular-nums">
                           ({segmentedExpenses.totalExpenses > 0 ? ((segmentedExpenses.sharedExp / segmentedExpenses.totalExpenses) * 100).toFixed(1) : 0}%)
                         </span>
                       </div>
                     </div>
-                    <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
+                    <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border">
                       <div
-                        className="bg-[#f57733] h-full rounded-full transition-all duration-500"
+                        className="bg-ink h-full rounded-full transition-all duration-500"
                         style={{ width: `${segmentedExpenses.totalExpenses > 0 ? (segmentedExpenses.sharedExp / segmentedExpenses.totalExpenses) * 100 : 0}%` }}
                       />
                     </div>
@@ -1679,66 +1692,66 @@ const Dashboard = () => {
                   {/* Row 1: Pengeluaran Operasional Cuci */}
                   <div
                     onClick={() => { setSelectedExpenseDivision('CARWASH'); setShowExpenseModal(true) }}
-                    className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] hover:border-[#ff5102]/50 transition-all cursor-pointer group space-y-2"
+                    className="p-3.5 rounded-xl bg-subsurface border border-border hover:border-destructive/40 transition-all cursor-pointer group space-y-2"
                     title="Klik untuk rincian pengeluaran operasional & komisi cuci"
                   >
                     <div className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-[#ff5102]"></span>
-                        <span className="font-semibold text-white group-hover:text-[#ff5102] transition-colors flex items-center gap-1.5">
-                          Beban Operasional & Chemical Cuci
-                          <Eye size={12} className="text-[#ff5102] opacity-80" />
+                        <span className="w-3 h-3 rounded-full bg-destructive-solid"></span>
+                        <span className="font-semibold text-foreground group-hover:text-destructive transition-colors flex items-center gap-1.5">
+                          Beban Operasional &amp; Chemical Cuci
+                          <Eye size={12} className="text-destructive opacity-80" />
                         </span>
                       </div>
                       <div className="text-right">
-                        <span className="font-mono font-bold text-[#ff5102]">{formatRupiah(segmentedExpenses.carwashExp)}</span>
-                        <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">
+                        <span className="font-mono tabular-nums font-bold text-destructive">{formatRupiah(segmentedExpenses.carwashExp)}</span>
+                        <span className="text-[11px] text-muted ml-1.5 font-mono tabular-nums">
                           ({carwashAnalytics.totalRevenue > 0 ? ((segmentedExpenses.carwashExp / carwashAnalytics.totalRevenue) * 100).toFixed(1) : 0}% omzet)
                         </span>
                       </div>
                     </div>
-                    <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
+                    <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border">
                       <div
-                        className="bg-[#ff5102] h-full rounded-full transition-all duration-500"
+                        className="bg-destructive-solid h-full rounded-full transition-all duration-500"
                         style={{ width: `${Math.min(carwashAnalytics.totalRevenue > 0 ? (segmentedExpenses.carwashExp / carwashAnalytics.totalRevenue) * 100 : 0, 100)}%` }}
                       />
                     </div>
                   </div>
 
                   {/* Row 2: Kas Bersih Carwash */}
-                  <div className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] space-y-2">
+                  <div className="p-3.5 rounded-xl bg-subsurface border border-border space-y-2">
                     <div className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-[#00ffff]"></span>
-                        <span className="font-semibold text-white">Kas Bersih Divisi Carwash</span>
+                        <span className="w-3 h-3 rounded-full bg-success"></span>
+                        <span className="font-semibold text-foreground">Kas Bersih Divisi Carwash</span>
                       </div>
                       <div className="text-right">
-                        <span className="font-mono font-bold text-[#00ffff]">{formatRupiah(segmentedExpenses.carwashNetProfit)}</span>
-                        <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">({segmentedExpenses.carwashProfitMargin}% Margin)</span>
+                        <span className="font-mono tabular-nums font-bold text-success">{formatRupiah(segmentedExpenses.carwashNetProfit)}</span>
+                        <span className="text-[11px] text-muted ml-1.5 font-mono tabular-nums">({segmentedExpenses.carwashProfitMargin}% Margin)</span>
                       </div>
                     </div>
-                    <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
+                    <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border">
                       <div
-                        className="bg-[#00ffff] h-full rounded-full transition-all duration-500"
+                        className="bg-success h-full rounded-full transition-all duration-500"
                         style={{ width: `${Math.max(Math.min(parseFloat(segmentedExpenses.carwashProfitMargin) || 0, 100), 0)}%` }}
                       />
                     </div>
                   </div>
 
                   {/* Row 3: Cross-sell to cafe */}
-                  <div className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] space-y-2">
+                  <div className="p-3.5 rounded-xl bg-subsurface border border-border space-y-2">
                     <div className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-[#f57733]"></span>
-                        <span className="font-semibold text-white">Konversi Tambahan: Cross-Order ke Cafe</span>
+                        <span className="w-3 h-3 rounded-full bg-warning"></span>
+                        <span className="font-semibold text-foreground">Konversi Tambahan: Cross-Order ke Cafe</span>
                       </div>
                       <div className="text-right">
-                        <span className="font-mono font-bold text-[#f57733]">{advancedKPIs.crossCount} Mobil</span>
-                        <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">({advancedKPIs.crossConversionRate}%)</span>
+                        <span className="font-mono tabular-nums font-bold text-warning">{advancedKPIs.crossCount} Mobil</span>
+                        <span className="text-[11px] text-muted ml-1.5 font-mono tabular-nums">({advancedKPIs.crossConversionRate}%)</span>
                       </div>
                     </div>
-                    <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
-                      <div className="bg-[#f57733] h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(parseFloat(advancedKPIs.crossConversionRate) || 0, 100)}%` }} />
+                    <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border">
+                      <div className="bg-warning h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(parseFloat(advancedKPIs.crossConversionRate) || 0, 100)}%` }} />
                     </div>
                   </div>
                 </>
@@ -1749,84 +1762,84 @@ const Dashboard = () => {
                   {/* Row 1: Pengeluaran Bahan Baku & Operasional Cafe */}
                   <div
                     onClick={() => { setSelectedExpenseDivision('CAFE'); setShowExpenseModal(true) }}
-                    className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] hover:border-[#ff5102]/50 transition-all cursor-pointer group space-y-2"
+                    className="p-3.5 rounded-xl bg-subsurface border border-border hover:border-destructive/40 transition-all cursor-pointer group space-y-2"
                     title="Klik untuk rincian pengeluaran bahan & operasional cafe"
                   >
                     <div className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-[#ff5102]"></span>
-                        <span className="font-semibold text-white group-hover:text-[#ff5102] transition-colors flex items-center gap-1.5">
-                          Beban Bahan Baku & Operasional F&B
-                          <Eye size={12} className="text-[#ff5102] opacity-80" />
+                        <span className="w-3 h-3 rounded-full bg-destructive-solid"></span>
+                        <span className="font-semibold text-foreground group-hover:text-destructive transition-colors flex items-center gap-1.5">
+                          Beban Bahan Baku &amp; Operasional F&amp;B
+                          <Eye size={12} className="text-destructive opacity-80" />
                         </span>
                       </div>
                       <div className="text-right">
-                        <span className="font-mono font-bold text-[#ff5102]">{formatRupiah(segmentedExpenses.cafeExp)}</span>
-                        <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">
+                        <span className="font-mono tabular-nums font-bold text-destructive">{formatRupiah(segmentedExpenses.cafeExp)}</span>
+                        <span className="text-[11px] text-muted ml-1.5 font-mono tabular-nums">
                           ({cafeAnalytics.totalRevenue > 0 ? ((segmentedExpenses.cafeExp / cafeAnalytics.totalRevenue) * 100).toFixed(1) : 0}% omzet)
                         </span>
                       </div>
                     </div>
-                    <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
+                    <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border">
                       <div
-                        className="bg-[#ff5102] h-full rounded-full transition-all duration-500"
+                        className="bg-destructive-solid h-full rounded-full transition-all duration-500"
                         style={{ width: `${Math.min(cafeAnalytics.totalRevenue > 0 ? (segmentedExpenses.cafeExp / cafeAnalytics.totalRevenue) * 100 : 0, 100)}%` }}
                       />
                     </div>
                   </div>
 
                   {/* Row 2: Kas Bersih Cafe */}
-                  <div className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] space-y-2">
+                  <div className="p-3.5 rounded-xl bg-subsurface border border-border space-y-2">
                     <div className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-[#ffc71f]"></span>
-                        <span className="font-semibold text-white">Kas Bersih Divisi Cafe & Resto</span>
+                        <span className="w-3 h-3 rounded-full bg-success"></span>
+                        <span className="font-semibold text-foreground">Kas Bersih Divisi Cafe &amp; Resto</span>
                       </div>
                       <div className="text-right">
-                        <span className="font-mono font-bold text-[#ffc71f]">{formatRupiah(segmentedExpenses.cafeNetProfit)}</span>
-                        <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">({segmentedExpenses.cafeProfitMargin}% Margin)</span>
+                        <span className="font-mono tabular-nums font-bold text-success">{formatRupiah(segmentedExpenses.cafeNetProfit)}</span>
+                        <span className="text-[11px] text-muted ml-1.5 font-mono tabular-nums">({segmentedExpenses.cafeProfitMargin}% Margin)</span>
                       </div>
                     </div>
-                    <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
+                    <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border">
                       <div
-                        className="bg-[#ffc71f] h-full rounded-full transition-all duration-500"
+                        className="bg-success h-full rounded-full transition-all duration-500"
                         style={{ width: `${Math.max(Math.min(parseFloat(segmentedExpenses.cafeProfitMargin) || 0, 100), 0)}%` }}
                       />
                     </div>
                   </div>
 
                   {/* Row 3: Cafe Struk Count summary row */}
-                  <div className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d] space-y-2">
+                  <div className="p-3.5 rounded-xl bg-subsurface border border-border space-y-2">
                     <div className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-[#00ffff]"></span>
-                        <span className="font-semibold text-white">Struk Pesanan F&B Diterbitkan</span>
+                        <span className="w-3 h-3 rounded-full bg-primary"></span>
+                        <span className="font-semibold text-foreground">Struk Pesanan F&amp;B Diterbitkan</span>
                       </div>
                       <div className="text-right">
-                        <span className="font-mono font-bold text-white">{cafeAnalytics.cafeStrukCount} Struk</span>
-                        <span className="text-[11px] text-[#bbcbb2] ml-1.5 font-mono">(AOV: {formatRupiah(cafeAnalytics.cafeAOV)})</span>
+                        <span className="font-mono tabular-nums font-bold text-foreground">{cafeAnalytics.cafeStrukCount} Struk</span>
+                        <span className="text-[11px] text-muted ml-1.5 font-mono tabular-nums">(AOV: {formatRupiah(cafeAnalytics.cafeAOV)})</span>
                       </div>
                     </div>
-                    <div className="w-full bg-[#121215] h-2 rounded-full overflow-hidden border border-[#26272d]">
-                      <div className="bg-[#00ffff] h-full rounded-full transition-all duration-500" style={{ width: '100%' }} />
+                    <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border">
+                      <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: '100%' }} />
                     </div>
                   </div>
                 </>
               )}
             </div>
 
-            <div className="pt-3 border-t border-[#26272d] flex items-center justify-between text-xs text-[#bbcbb2]">
+            <div className="pt-3 border-t border-border flex items-center justify-between text-xs text-muted">
               <span>
                 {activeSection === 'CAFE' ? 'Total Pengeluaran Cafe: ' : activeSection === 'CARWASH' ? 'Total Pengeluaran CW: ' : 'Total Pengeluaran Holding: '}
-                <strong className="text-[#ff5102] font-mono">
+                <strong className="text-destructive font-mono tabular-nums">
                   {formatRupiah(activeSection === 'CAFE' ? segmentedExpenses.cafeExp : activeSection === 'CARWASH' ? segmentedExpenses.carwashExp : segmentedExpenses.totalExpenses)}
                 </strong>
               </span>
               <span>
-                Kas Bersih: <strong className={`font-mono ${
-                  activeSection === 'CAFE' ? (segmentedExpenses.cafeNetProfit >= 0 ? 'text-[#ffc71f]' : 'text-[#ff5102]')
-                  : activeSection === 'CARWASH' ? (segmentedExpenses.carwashNetProfit >= 0 ? 'text-[#00ffff]' : 'text-[#ff5102]')
-                  : (segmentedExpenses.holdingNetProfit >= 0 ? 'text-[#00ffff]' : 'text-[#ff5102]')
+                Kas Bersih: <strong className={`font-mono tabular-nums ${
+                  activeSection === 'CAFE' ? (segmentedExpenses.cafeNetProfit >= 0 ? 'text-success' : 'text-destructive')
+                  : activeSection === 'CARWASH' ? (segmentedExpenses.carwashNetProfit >= 0 ? 'text-success' : 'text-destructive')
+                  : (segmentedExpenses.holdingNetProfit >= 0 ? 'text-success' : 'text-destructive')
                 }`}>
                   {formatRupiah(activeSection === 'CAFE' ? segmentedExpenses.cafeNetProfit : activeSection === 'CARWASH' ? segmentedExpenses.carwashNetProfit : segmentedExpenses.holdingNetProfit)}
                 </strong>
@@ -1838,38 +1851,39 @@ const Dashboard = () => {
         {/* Third Row - Two Column Layout (Recent Transactions & Top Products) */}
         <div className="grid gap-4 sm:gap-6 grid-cols-1 xl:grid-cols-2">
           {/* Column 1: Recent Transactions */}
-          <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between shadow-xs">
-            <div className="flex items-center justify-between pb-4 border-b border-[#26272d]">
+          <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between pb-4 border-b border-border">
               <div>
-                <h3 className="text-base font-bold text-white">Recent Transactions</h3>
-                <p className="text-xs text-[#bbcbb2]">Struk kasir & pembayaran masuk terkini</p>
+                <h3 className="text-base font-bold text-foreground">Recent Transactions</h3>
+                <p className="text-xs text-muted">Struk kasir &amp; pembayaran masuk terkini</p>
               </div>
               <button
+                type="button"
                 onClick={() => navigate('/reports')}
-                className="px-2.5 py-1 rounded-lg bg-[#18181c] hover:bg-[#242428] text-white border border-[#26272d] text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+                className="min-h-[34px] px-3 py-1 rounded-full bg-subsurface hover:bg-surface-hover text-foreground border border-border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
               >
-                <Eye size={13} className="text-[#00ffff]" />
+                <Eye size={13} className="text-primary" />
                 View All
               </button>
             </div>
 
             <div className="py-4 space-y-3">
               {recentTransactionsList.length === 0 ? (
-                <p className="text-xs text-[#6b7367] italic py-6 text-center">Belum ada transaksi pada periode ini.</p>
+                <p className="text-xs text-muted-dark italic py-6 text-center">Belum ada transaksi pada periode ini.</p>
               ) : (
                 recentTransactionsList.map((tx) => (
-                  <div key={tx.id} className="flex items-center p-3 rounded-xl bg-[#18181c] border border-[#26272d] gap-3">
-                    <div className="w-9 h-9 rounded-full bg-[#26272d] border border-[#3f414a] flex items-center justify-center text-xs font-bold text-[#00ffff] shrink-0 font-mono">
+                  <div key={tx.id} className="flex items-center p-3 rounded-xl bg-subsurface border border-border gap-3">
+                    <div className="w-9 h-9 rounded-full bg-primary-soft border border-primary/25 flex items-center justify-center text-xs font-bold text-primary-soft-foreground shrink-0 font-mono">
                       {tx.customer.initials}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-bold text-white truncate">{tx.customer.name}</p>
-                        <span className="text-xs font-mono font-bold text-white shrink-0">{tx.amount}</span>
+                        <p className="text-xs font-bold text-foreground truncate">{tx.customer.name}</p>
+                        <span className="text-xs font-mono tabular-nums font-bold text-foreground shrink-0">{tx.amount}</span>
                       </div>
                       <div className="flex items-center justify-between gap-2 mt-0.5">
-                        <p className="text-[11px] text-[#bbcbb2] truncate">{tx.customer.email}</p>
-                        <span className="text-[10px] text-[#6b7367] font-mono shrink-0">{tx.date}</span>
+                        <p className="text-[11px] text-muted truncate">{tx.customer.email}</p>
+                        <span className="text-[10px] text-muted-dark font-mono tabular-nums shrink-0">{tx.date}</span>
                       </div>
                     </div>
                   </div>
@@ -1877,60 +1891,61 @@ const Dashboard = () => {
               )}
             </div>
 
-            <div className="pt-3 border-t border-[#26272d] flex items-center justify-between text-xs text-[#bbcbb2]">
-              <span>Tercatat: <strong className="text-white font-mono">{filteredStrukByTime.length} transaksi</strong></span>
-              <button onClick={() => navigate('/pos')} className="text-[#00ffff] hover:underline font-semibold flex items-center gap-1 cursor-pointer">
+            <div className="pt-3 border-t border-border flex items-center justify-between text-xs text-muted">
+              <span>Tercatat: <strong className="text-foreground font-mono tabular-nums">{filteredStrukByTime.length} transaksi</strong></span>
+              <button type="button" onClick={() => navigate('/pos')} className="text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer">
                 Buka Layar Kasir <ArrowRight size={12} />
               </button>
             </div>
           </div>
 
           {/* Column 2: Top Products & Services */}
-          <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 flex flex-col justify-between shadow-xs">
-            <div className="flex items-center justify-between pb-4 border-b border-[#26272d]">
+          <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between pb-4 border-b border-border">
               <div>
-                <h3 className="text-base font-bold text-white">Top Products & Services</h3>
-                <p className="text-xs text-[#bbcbb2]">Item & layanan paling diminati periode ini</p>
+                <h3 className="text-base font-bold text-foreground">Top Products &amp; Services</h3>
+                <p className="text-xs text-muted">Item &amp; layanan paling diminati periode ini</p>
               </div>
               <button
+                type="button"
                 onClick={() => navigate('/database')}
-                className="px-2.5 py-1 rounded-lg bg-[#18181c] hover:bg-[#242428] text-white border border-[#26272d] text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+                className="min-h-[34px] px-3 py-1 rounded-full bg-subsurface hover:bg-surface-hover text-foreground border border-border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
               >
-                <Eye size={13} className="text-[#ffc71f]" />
+                <Eye size={13} className="text-warning" />
                 View All
               </button>
             </div>
 
             <div className="py-4 space-y-3">
               {topProductsList.length === 0 ? (
-                <div className="py-8 text-center text-[#8e8e93]">
-                  <p className="text-xs font-semibold">Belum ada transaksi pada periode ini</p>
-                  <p className="text-[11px] text-[#555] mt-1">Data penjualan produk dan layanan akan muncul secara otomatis setelah transaksi POS dicatat.</p>
+                <div className="py-8 text-center text-muted">
+                  <p className="text-xs font-semibold text-foreground">Belum ada transaksi pada periode ini</p>
+                  <p className="text-[11px] text-muted-dark mt-1">Data penjualan produk dan layanan akan muncul secara otomatis setelah transaksi POS dicatat.</p>
                 </div>
               ) : (
                 topProductsList.map((prod, idx) => (
-                  <div key={prod.id || idx} className="flex items-center p-3 rounded-xl bg-[#18181c] border border-[#26272d] gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30 flex items-center justify-center text-xs font-bold font-mono shrink-0">
+                  <div key={prod.id || idx} className="flex items-center p-3 rounded-xl bg-subsurface border border-border gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-primary-soft text-primary-soft-foreground border border-primary/25 flex items-center justify-center text-xs font-bold font-mono tabular-nums shrink-0">
                       #{idx + 1}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
-                          <p className="text-xs font-bold text-white truncate">{prod.name}</p>
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#26272d] text-[#bbcbb2] shrink-0 font-medium">
+                          <p className="text-xs font-bold text-foreground truncate">{prod.name}</p>
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-surface border border-border text-muted shrink-0 font-medium">
                             {prod.category}
                           </span>
                         </div>
-                        <span className="text-xs font-mono font-bold text-white shrink-0">{prod.revenue}</span>
+                        <span className="text-xs font-mono tabular-nums font-bold text-foreground shrink-0">{prod.revenue}</span>
                       </div>
                       <div className="flex items-center justify-between gap-2 mt-1">
-                        <div className="flex items-center gap-1 text-[11px] text-[#bbcbb2]">
-                          <Star size={11} className="text-[#ffc71f] fill-[#ffc71f]" />
+                        <div className="flex items-center gap-1 text-[11px] text-muted">
+                          <Star size={11} className="text-warning fill-warning" />
                           <span>{prod.rating}</span>
                           <span>•</span>
-                          <span className="font-mono text-[#ffc71f] font-semibold">{prod.sales} order</span>
+                          <span className="font-mono tabular-nums text-warning font-semibold">{prod.sales} order</span>
                         </div>
-                        <span className="text-[10px] text-[#00ffff] font-semibold font-mono bg-[#00ffff]/10 px-1.5 py-0.2 rounded border border-[#00ffff]/20">
+                        <span className="text-[10px] text-success font-semibold font-mono bg-success-bg px-2 py-0.5 rounded-full border border-success/30">
                           {prod.growth}
                         </span>
                       </div>
@@ -1940,9 +1955,9 @@ const Dashboard = () => {
               )}
             </div>
 
-            <div className="pt-3 border-t border-[#26272d] flex items-center justify-between text-xs text-[#bbcbb2]">
-              <span>Ranking Top Menu & Layanan</span>
-              <button onClick={() => navigate('/gudang')} className="text-[#ffc71f] hover:underline font-semibold flex items-center gap-1 cursor-pointer">
+            <div className="pt-3 border-t border-border flex items-center justify-between text-xs text-muted">
+              <span>Ranking Top Menu &amp; Layanan</span>
+              <button type="button" onClick={() => navigate('/gudang')} className="text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer">
                 Kelola Stok Gudang <ArrowRight size={12} />
               </button>
             </div>
@@ -1950,72 +1965,77 @@ const Dashboard = () => {
         </div>
 
         {/* Fourth Row - Customer Insights & Operational Tabs */}
-        <div className="bg-[#121215] border border-[#26272d] rounded-xl p-5 shadow-xs space-y-5">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-[#26272d]">
+        <div className="bg-surface border border-border rounded-2xl p-5 shadow-xs space-y-5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-border">
             <div>
-              <h3 className="text-base font-bold text-white">Customer Insights & Operations</h3>
-              <p className="text-xs text-[#bbcbb2]">Monitoring sinergi estafet, setoran kasir & batas aman persediaan</p>
+              <h3 className="text-base font-bold text-foreground">Customer Insights &amp; Operations</h3>
+              <p className="text-xs text-muted">Monitoring sinergi estafet, setoran kasir &amp; batas aman persediaan</p>
             </div>
             {/* Tabs List Navigation */}
-            <div className="flex bg-[#18181c] p-0.5 rounded-lg border border-[#26272d] text-xs">
-              <button
-                onClick={() => setActiveInsightTab('sinergi')}
-                className={`px-3 py-1.5 rounded-md font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeInsightTab === 'sinergi'
-                    ? 'bg-[#00ffff] text-[#121215] shadow-xs'
-                    : 'text-[#bbcbb2] hover:text-white'
-                }`}
-              >
-                <TrendingUp size={13} strokeWidth={1.75} />
-                <span>Sinergi & Utilisasi</span>
-              </button>
-              <button
-                onClick={() => setActiveInsightTab('rekap')}
-                className={`px-3 py-1.5 rounded-md font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeInsightTab === 'rekap'
-                    ? 'bg-[#00ffff] text-[#121215] shadow-xs'
-                    : 'text-[#bbcbb2] hover:text-white'
-                }`}
-              >
-                <DollarSign size={13} strokeWidth={1.75} />
-                <span>Rekap Kasir & Saldo</span>
-              </button>
-              <button
-                onClick={() => setActiveInsightTab('stok')}
-                className={`px-3 py-1.5 rounded-md font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeInsightTab === 'stok'
-                    ? 'bg-[#00ffff] text-[#121215] shadow-xs'
-                    : 'text-[#bbcbb2] hover:text-white'
-                }`}
-              >
-                <AlertTriangle size={13} strokeWidth={1.75} />
-                <span>Peringatan Stok</span>
-              </button>
+            <div className="overflow-x-auto no-scrollbar max-w-full">
+              <div className="flex bg-subsurface p-1 rounded-xl border border-border text-xs flex-nowrap">
+                <button
+                  type="button"
+                  onClick={() => setActiveInsightTab('sinergi')}
+                  className={`min-h-[36px] px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                    activeInsightTab === 'sinergi'
+                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      : 'text-muted hover:text-foreground'
+                  }`}
+                >
+                  <TrendingUp size={13} strokeWidth={1.75} />
+                  <span>Sinergi &amp; Utilisasi</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveInsightTab('rekap')}
+                  className={`min-h-[36px] px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                    activeInsightTab === 'rekap'
+                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      : 'text-muted hover:text-foreground'
+                  }`}
+                >
+                  <DollarSign size={13} strokeWidth={1.75} />
+                  <span>Rekap Kasir &amp; Saldo</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveInsightTab('stok')}
+                  className={`min-h-[36px] px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                    activeInsightTab === 'stok'
+                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      : 'text-muted hover:text-foreground'
+                  }`}
+                >
+                  <AlertTriangle size={13} strokeWidth={1.75} />
+                  <span>Peringatan Stok</span>
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Tab Content 1: Sinergi & Utilisasi */}
           {activeInsightTab === 'sinergi' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-              <div className="p-4 rounded-xl bg-[#18181c] border border-[#26272d] space-y-1">
-                <span className="text-[10px] text-[#6b7367] uppercase font-bold tracking-wider">ARPU Gabungan</span>
-                <p className="text-xl font-bold text-white font-mono">{formatRupiah(advancedKPIs.combinedARPU)}</p>
-                <p className="text-[11px] text-[#00ffff] font-medium">+12.5% dari target rata-rata</p>
+              <div className="p-4 rounded-xl bg-subsurface border border-border space-y-1">
+                <span className="text-[10px] text-muted-dark uppercase font-bold tracking-wider">ARPU Gabungan</span>
+                <p className="text-xl font-bold text-foreground font-mono tabular-nums">{formatRupiah(advancedKPIs.combinedARPU)}</p>
+                <p className="text-[11px] text-primary font-medium">+12.5% dari target rata-rata</p>
               </div>
-              <div className="p-4 rounded-xl bg-[#18181c] border border-[#26272d] space-y-1">
-                <span className="text-[10px] text-[#6b7367] uppercase font-bold tracking-wider">Utilisasi Bay Cuci</span>
-                <p className="text-xl font-bold text-[#00ffff] font-mono">{advancedKPIs.capacityEfficiency}%</p>
-                <p className="text-[11px] text-[#bbcbb2]">Kapasitas target {targetCapacity} unit/hari</p>
+              <div className="p-4 rounded-xl bg-subsurface border border-border space-y-1">
+                <span className="text-[10px] text-muted-dark uppercase font-bold tracking-wider">Utilisasi Bay Cuci</span>
+                <p className="text-xl font-bold text-primary font-mono tabular-nums">{advancedKPIs.capacityEfficiency}%</p>
+                <p className="text-[11px] text-muted">Kapasitas target {targetCapacity} unit/hari</p>
               </div>
-              <div className="p-4 rounded-xl bg-[#18181c] border border-[#26272d] space-y-1">
-                <span className="text-[10px] text-[#6b7367] uppercase font-bold tracking-wider">Rata-rata Unit Cuci</span>
-                <p className="text-xl font-bold text-white font-mono">{carwashAnalytics.avgCarsPerDay} mobil</p>
-                <p className="text-[11px] text-[#ffc71f]">Volume kedatangan pelanggan</p>
+              <div className="p-4 rounded-xl bg-subsurface border border-border space-y-1">
+                <span className="text-[10px] text-muted-dark uppercase font-bold tracking-wider">Rata-rata Unit Cuci</span>
+                <p className="text-xl font-bold text-foreground font-mono tabular-nums">{carwashAnalytics.avgCarsPerDay} mobil</p>
+                <p className="text-[11px] text-warning font-medium">Volume kedatangan pelanggan</p>
               </div>
-              <div className="p-4 rounded-xl bg-[#18181c] border border-[#26272d] space-y-1">
-                <span className="text-[10px] text-[#6b7367] uppercase font-bold tracking-wider">Porsi Cafe Terjual</span>
-                <p className="text-xl font-bold text-[#ffc71f] font-mono">{cafeAnalytics.totalItems} item</p>
-                <p className="text-[11px] text-[#bbcbb2]">Total pesanan dapur & barista</p>
+              <div className="p-4 rounded-xl bg-subsurface border border-border space-y-1">
+                <span className="text-[10px] text-muted-dark uppercase font-bold tracking-wider">Porsi Cafe Terjual</span>
+                <p className="text-xl font-bold text-warning font-mono tabular-nums">{cafeAnalytics.totalItems} item</p>
+                <p className="text-[11px] text-muted">Total pesanan dapur &amp; barista</p>
               </div>
             </div>
           )}
@@ -2024,51 +2044,51 @@ const Dashboard = () => {
           {activeInsightTab === 'rekap' && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
-                <div className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d]">
-                  <span className="text-[10px] font-bold text-[#00ffff] uppercase tracking-wider block">Uang Fisik Kasir (Cash)</span>
-                  <p className="text-lg font-bold text-[#00ffff] font-mono mt-1">{formatRupiah(dailyCashierRecap.totalCash)}</p>
-                  <span className="text-[11px] text-[#bbcbb2]">{dailyCashierRecap.cashPercentage}% total setoran</span>
+                <div className="p-3.5 rounded-xl bg-subsurface border border-border">
+                  <span className="text-[10px] font-bold text-success uppercase tracking-wider block">Uang Fisik Kasir (Cash)</span>
+                  <p className="text-lg font-bold text-success font-mono tabular-nums mt-1">{formatRupiah(dailyCashierRecap.totalCash)}</p>
+                  <span className="text-[11px] text-muted">{dailyCashierRecap.cashPercentage}% total setoran</span>
                 </div>
-                <div className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d]">
-                  <span className="text-[10px] font-bold text-[#ffc71f] uppercase tracking-wider block">QRIS & Non-Tunai</span>
-                  <p className="text-lg font-bold text-[#ffc71f] font-mono mt-1">{formatRupiah(dailyCashierRecap.totalNonCash)}</p>
-                  <span className="text-[11px] text-[#bbcbb2]">{dailyCashierRecap.nonCashPercentage}% digital payment</span>
+                <div className="p-3.5 rounded-xl bg-subsurface border border-border">
+                  <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">QRIS &amp; Non-Tunai</span>
+                  <p className="text-lg font-bold text-primary font-mono tabular-nums mt-1">{formatRupiah(dailyCashierRecap.totalNonCash)}</p>
+                  <span className="text-[11px] text-muted">{dailyCashierRecap.nonCashPercentage}% digital payment</span>
                 </div>
-                <div className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d]">
-                  <span className="text-[10px] font-bold text-white uppercase tracking-wider block">Total Bruto Kasir</span>
-                  <p className="text-lg font-bold text-white font-mono mt-1">{formatRupiah(dailyCashierRecap.totalOmzet)}</p>
-                  <span className="text-[11px] text-[#bbcbb2]">{dailyCashierRecap.totalTxCount} transaksi hari ini</span>
+                <div className="p-3.5 rounded-xl bg-subsurface border border-border">
+                  <span className="text-[10px] font-bold text-foreground uppercase tracking-wider block">Total Bruto Kasir</span>
+                  <p className="text-lg font-bold text-foreground font-mono tabular-nums mt-1">{formatRupiah(dailyCashierRecap.totalOmzet)}</p>
+                  <span className="text-[11px] text-muted">{dailyCashierRecap.totalTxCount} transaksi hari ini</span>
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-[#18181c] border border-[#26272d]">
+              <div className="p-3.5 rounded-xl bg-subsurface border border-border">
                 <div className="flex justify-between items-center text-xs mb-2">
-                  <span className="font-semibold text-white">Posisi Saldo Buku Kas &amp; Rekening Terdaftar:</span>
-                  <button onClick={() => navigate('/finance')} className="text-[#00ffff] hover:underline font-semibold flex items-center gap-1 cursor-pointer">
+                  <span className="font-semibold text-foreground">Posisi Saldo Buku Kas &amp; Rekening Terdaftar:</span>
+                  <button type="button" onClick={() => navigate('/finance')} className="text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer">
                     Buku Kas <ArrowRight size={12} />
                   </button>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                   {posAccountList.length > 0 ? (
                     posAccountList.map((acc) => (
-                      <div key={acc.id || acc.pos} className="p-2 rounded-lg bg-[#121215] border border-[#26272d] text-center">
-                        <span className="text-[10px] text-[#6b7367] uppercase block font-bold truncate" title={acc.label || acc.pos}>
+                      <div key={acc.id || acc.pos} className="p-2.5 rounded-lg bg-surface border border-border text-center">
+                        <span className="text-[10px] text-muted uppercase block font-bold truncate" title={acc.label || acc.pos}>
                           {acc.label || acc.pos}
                         </span>
-                        <span className="font-mono tabular-nums font-bold text-white text-xs">
+                        <span className="font-mono tabular-nums font-bold text-foreground text-xs">
                           {formatRupiah(acc.current_balance ?? acc.balance ?? 0)}
                         </span>
                       </div>
                     ))
                   ) : (
                     <>
-                      <div className="p-2 rounded-lg bg-[#121215] border border-[#26272d] text-center">
-                        <span className="text-[10px] text-[#6b7367] uppercase block font-bold">Laci Kasir</span>
-                        <span className="font-mono tabular-nums font-bold text-white text-xs">{formatRupiah(posBalances.cash)}</span>
+                      <div className="p-2.5 rounded-lg bg-surface border border-border text-center">
+                        <span className="text-[10px] text-muted uppercase block font-bold">Laci Kasir</span>
+                        <span className="font-mono tabular-nums font-bold text-foreground text-xs">{formatRupiah(posBalances.cash)}</span>
                       </div>
-                      <div className="p-2 rounded-lg bg-[#121215] border border-[#26272d] text-center">
-                        <span className="text-[10px] text-[#6b7367] uppercase block font-bold">Rekening Utama</span>
-                        <span className="font-mono tabular-nums font-bold text-white text-xs">{formatRupiah(posBalances.rekY)}</span>
+                      <div className="p-2.5 rounded-lg bg-surface border border-border text-center">
+                        <span className="text-[10px] text-muted uppercase block font-bold">Rekening Utama</span>
+                        <span className="font-mono tabular-nums font-bold text-foreground text-xs">{formatRupiah(posBalances.rekY)}</span>
                       </div>
                     </>
                   )}
@@ -2081,20 +2101,20 @@ const Dashboard = () => {
           {activeInsightTab === 'stok' && (
             <div className="space-y-3">
               {criticalStockItems.length === 0 ? (
-                <div className="p-4 rounded-xl bg-[#18181c] border border-[#26272d] text-center text-xs text-[#bbcbb2] flex items-center justify-center gap-2">
-                  <CheckCircle size={16} strokeWidth={1.75} className="text-[#00ffff]" />
-                  <span>Seluruh persediaan stok bahan baku & chemical dalam batas aman.</span>
+                <div className="p-4 rounded-xl bg-subsurface border border-border text-center text-xs text-muted flex items-center justify-center gap-2">
+                  <CheckCircle size={16} strokeWidth={1.75} className="text-success" />
+                  <span>Seluruh persediaan stok bahan baku &amp; chemical dalam batas aman.</span>
                 </div>
               ) : (
                 criticalStockItems.map((item, i) => (
-                  <div key={i} className="flex justify-between items-center text-xs p-3 rounded-xl bg-[#18181c] border border-[#26272d]">
+                  <div key={i} className="flex justify-between items-center text-xs p-3 rounded-xl bg-subsurface border border-border gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="p-1.5 rounded-md bg-[#ff5102]/15 text-[#ff5102] border border-[#ff5102]/30 shrink-0">
+                      <div className="p-1.5 rounded-md bg-destructive-bg text-destructive border border-destructive/30 shrink-0">
                         <AlertTriangle size={14} />
                       </div>
-                      <span className="font-medium text-white truncate">{item.nama_barang || item.nama_produk}</span>
+                      <span className="font-medium text-foreground truncate">{item.nama_barang || item.nama_produk}</span>
                     </div>
-                    <span className="font-mono font-bold text-[#ff5102] bg-[#ff5102]/15 px-2.5 py-1 rounded-md border border-[#ff5102]/30 shrink-0">
+                    <span className="font-mono tabular-nums font-bold text-destructive bg-destructive-bg px-2.5 py-1 rounded-full border border-destructive/30 shrink-0">
                       Sisa: {item.stok} {item.satuan || 'unit'}
                     </span>
                   </div>

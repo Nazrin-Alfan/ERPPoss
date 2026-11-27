@@ -128,7 +128,7 @@ const InteractiveCalendar = ({ startDate, endDate, onChange, onClose }) => {
       ref={calendarRef}
       role="dialog"
       aria-label="Pilih rentang tanggal"
-      className="bg-[#121215]/95 border border-[#26272d] rounded-xl p-3 sm:p-3.5 shadow-2xl w-64 sm:w-[272px] max-w-[calc(100vw-1.5rem)] text-xs text-zinc-200 font-sans select-none backdrop-blur-xl"
+      className="bg-surface border border-border rounded-2xl p-3 sm:p-3.5 shadow-xl w-64 sm:w-[272px] max-w-[calc(100vw-1.5rem)] text-xs text-foreground font-sans select-none"
     >
       {/* Month Header Navigation */}
       <div className="flex justify-between items-center mb-2.5 px-0.5">
@@ -136,25 +136,25 @@ const InteractiveCalendar = ({ startDate, endDate, onChange, onClose }) => {
           type="button"
           onClick={handlePrevMonth}
           aria-label="Bulan sebelumnya"
-          className="text-[#bbcbb2] hover:text-[#00ffff] hover:bg-[#18181c] rounded-lg transition-all p-1.5 cursor-pointer active:scale-[0.98]"
+          className="min-w-[36px] min-h-[36px] flex items-center justify-center text-muted hover:text-foreground hover:bg-subsurface rounded-lg transition-all cursor-pointer active:scale-[0.98]"
         >
           <ChevronLeft size={15} />
         </button>
-        <span className="font-bold text-xs sm:text-[13px] text-white font-sans tracking-tight">
+        <span className="font-bold text-xs sm:text-[13px] text-foreground font-sans tracking-tight">
           {MONTH_NAMES[currentMonth]} {currentYear}
         </span>
         <button
           type="button"
           onClick={handleNextMonth}
           aria-label="Bulan berikutnya"
-          className="text-[#bbcbb2] hover:text-[#00ffff] hover:bg-[#18181c] rounded-lg transition-all p-1.5 cursor-pointer active:scale-[0.98]"
+          className="min-w-[36px] min-h-[36px] flex items-center justify-center text-muted hover:text-foreground hover:bg-subsurface rounded-lg transition-all cursor-pointer active:scale-[0.98]"
         >
           <ChevronRight size={15} />
         </button>
       </div>
 
       {/* Days of Week Header */}
-      <div className="grid grid-cols-7 gap-0.5 text-center font-semibold text-[#6b7367] mb-1">
+      <div className="grid grid-cols-7 gap-0.5 text-center font-semibold text-muted-dark mb-1">
         {DAYS_OF_WEEK.map(d => (
           <div key={d} className="py-0.5 text-[10px] uppercase tracking-wider">{d}</div>
         ))}
@@ -167,14 +167,14 @@ const InteractiveCalendar = ({ startDate, endDate, onChange, onClose }) => {
           const isSelectedEnd = parsedEnd && day.dateString === endDate
           const isInRange = parsedStart && parsedEnd && day.dateString > startDate && day.dateString < endDate
 
-          let dayStyle = 'text-zinc-600/35 cursor-default'
+          let dayStyle = 'text-muted-dark/40 cursor-default'
           if (day.isCurrentMonth) {
             if (isSelectedStart || isSelectedEnd) {
-              dayStyle = 'bg-[#00ffff] text-[#0f0f0f] font-bold rounded-lg shadow-xs active:scale-[0.98] cursor-pointer'
+              dayStyle = 'bg-primary text-primary-foreground font-bold rounded-lg shadow-xs active:scale-[0.98] cursor-pointer'
             } else if (isInRange) {
-              dayStyle = 'bg-[#00ffff]/15 text-[#00ffff] font-semibold rounded-md active:scale-[0.98] cursor-pointer'
+              dayStyle = 'bg-selected-surface text-primary-soft-foreground font-semibold rounded-md active:scale-[0.98] cursor-pointer'
             } else {
-              dayStyle = 'text-zinc-200 hover:bg-[#18181c] hover:text-white rounded-lg active:scale-[0.98] cursor-pointer'
+              dayStyle = 'text-foreground hover:bg-subsurface rounded-lg active:scale-[0.98] cursor-pointer'
             }
           }
 
@@ -194,17 +194,17 @@ const InteractiveCalendar = ({ startDate, endDate, onChange, onClose }) => {
       </div>
 
       {/* Selection Footer */}
-      <div className="flex justify-between items-center text-[10px] mt-2.5 pt-2.5 border-t border-[#26272d] text-[#6b7367]">
+      <div className="flex justify-between items-center text-[10px] mt-2.5 pt-2.5 border-t border-border text-muted-dark">
         <div className="font-mono tabular-nums truncate pr-2">
           {startDate ? (
-            <span className="text-[#00ffff] font-bold">{startDate}</span>
+            <span className="text-primary font-bold">{startDate}</span>
           ) : (
             <span>Pilih tanggal</span>
           )}
           {endDate && (
             <>
-              <span className="mx-1 text-[#6b7367]">–</span>
-              <span className="text-[#00ffff] font-bold">{endDate}</span>
+              <span className="mx-1 text-muted-dark">–</span>
+              <span className="text-primary font-bold">{endDate}</span>
             </>
           )}
         </div>
@@ -213,7 +213,7 @@ const InteractiveCalendar = ({ startDate, endDate, onChange, onClose }) => {
             <button
               type="button"
               onClick={() => onChange('', '')}
-              className="px-2 py-1 rounded-md text-[#bbcbb2] hover:text-white hover:bg-[#18181c] font-semibold transition-all cursor-pointer active:scale-[0.98]"
+              className="px-2 py-1 rounded-md text-muted hover:text-foreground hover:bg-subsurface font-semibold transition-all cursor-pointer active:scale-[0.98]"
             >
               Reset
             </button>
@@ -221,7 +221,7 @@ const InteractiveCalendar = ({ startDate, endDate, onChange, onClose }) => {
           <button
             type="button"
             onClick={onClose}
-            className="px-2.5 py-1 rounded-md bg-[#00ffff]/15 hover:bg-[#00ffff]/25 text-[#00ffff] border border-[#00ffff]/30 font-bold transition-all cursor-pointer active:scale-[0.98]"
+            className="px-3 py-1 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground font-semibold transition-all cursor-pointer active:scale-[0.98]"
           >
             Done
           </button>

@@ -10,6 +10,7 @@ import {
   Users, 
   CheckCircle, 
   AlertCircle,
+  AlertTriangle,
   RefreshCw,
   Search,
   Calendar,
@@ -22,7 +23,8 @@ import {
   Columns3,
   List,
   Play,
-  Plus
+  Plus,
+  X
 } from 'lucide-react'
 
 const CarwashQueue = () => {
@@ -272,32 +274,32 @@ const CarwashQueue = () => {
   const isToday = selectedDate === new Date().toLocaleDateString('en-CA')
 
   return (
-    <div className="p-4 sm:p-6 pb-24 md:pb-6 space-y-5 max-w-7xl mx-auto animate-fade-in">
+    <div className="p-4 sm:p-6 pb-24 md:pb-6 space-y-5 max-w-7xl mx-auto animate-fade-in bg-canvas text-foreground">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-[#121215] border border-[#26272d] p-4 sm:p-5 rounded-xl">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-surface border border-border p-4 sm:p-5 rounded-2xl shadow-xs">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-3">
-            <span className="p-2 bg-[#00ffff]/15 text-[#00ffff] rounded-xl border border-[#00ffff]/30">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-3">
+            <span className="p-2 bg-primary-soft text-primary rounded-xl border border-primary/25">
               <Car size={22} strokeWidth={1.75} />
             </span>
             Antrean Carwash
           </h1>
-          <p className="text-[#bbcbb2] text-xs mt-1">
-            Live Kanban pengerjaan bay cuci mobil & kru pencuci real-time
+          <p className="text-muted text-xs mt-1">
+            Live Kanban pengerjaan bay cuci mobil &amp; kru pencuci real-time
           </p>
         </div>
 
         {/* View Mode Switcher & Date Controls */}
         <div className="flex items-center flex-wrap gap-2.5">
           {/* Switcher: Kanban Bay vs Daftar Tab */}
-          <div className="flex bg-[#18181c] p-1 rounded-xl border border-[#26272d]">
+          <div className="flex bg-subsurface p-1 rounded-xl border border-border">
             <button
               type="button"
               onClick={() => setViewMode('kanban')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 tap-tactile ${
+              className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 tap-tactile cursor-pointer ${
                 viewMode === 'kanban'
-                  ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-xs'
-                  : 'text-[#bbcbb2] hover:text-white'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'text-muted hover:text-foreground'
               }`}
             >
               <Columns3 size={13} strokeWidth={1.75} />
@@ -306,10 +308,10 @@ const CarwashQueue = () => {
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 tap-tactile ${
+              className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 tap-tactile cursor-pointer ${
                 viewMode === 'list'
-                  ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-xs'
-                  : 'text-[#bbcbb2] hover:text-white'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'text-muted hover:text-foreground'
               }`}
             >
               <List size={13} strokeWidth={1.75} />
@@ -317,20 +319,22 @@ const CarwashQueue = () => {
             </button>
           </div>
 
-          <div className="flex items-center gap-2 bg-[#18181c] px-3 py-1.5 rounded-xl border border-[#26272d] text-xs text-white">
-            <Calendar size={14} strokeWidth={1.75} className="text-[#00ffff] shrink-0" />
+          <div className="flex items-center gap-2 bg-subsurface px-3 py-1.5 rounded-xl border border-border text-xs text-foreground min-h-[40px]">
+            <Calendar size={14} strokeWidth={1.75} className="text-primary shrink-0" />
             <input
               type="date"
+              aria-label="Filter tanggal antrean"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-transparent text-white focus:outline-none text-xs cursor-pointer font-medium"
+              className="!border-0 !bg-transparent !p-0 text-foreground focus:outline-none text-base sm:text-xs cursor-pointer font-medium"
             />
           </div>
 
           {!isToday && (
             <button
+              type="button"
               onClick={() => setSelectedDate(new Date().toLocaleDateString('en-CA'))}
-              className="px-3 py-1.5 bg-[#00ffff]/15 hover:bg-[#00ffff]/25 text-[#00ffff] border border-[#00ffff]/30 rounded-xl text-xs font-bold transition-all tap-tactile"
+              className="min-h-[40px] px-3.5 py-1.5 bg-primary-soft hover:opacity-90 text-primary-soft-foreground border border-primary/25 rounded-full text-xs font-semibold transition-all tap-tactile cursor-pointer"
             >
               Hari Ini
             </button>
@@ -338,69 +342,77 @@ const CarwashQueue = () => {
 
           <Link
             to="/pos?tab=carwash"
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#00ffff] hover:bg-[#26d6d6] text-[#0f0f0f] font-black text-xs rounded-xl shadow-md transition-all tap-tactile shrink-0"
+            className="min-h-[44px] flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-xs rounded-full shadow-xs transition-all tap-tactile shrink-0"
             title="Daftarkan mobil baru di POS Carwash"
           >
             <Plus size={15} strokeWidth={2.5} />
-            <span>+ Kendaraan Masuk</span>
+            <span>Kendaraan Masuk</span>
           </Link>
 
           <button
+            type="button"
             onClick={fetchQueue}
             disabled={loading}
-            className="p-2.5 bg-[#18181c] hover:bg-[#26272d] border border-[#26272d] hover:border-[#3f414a] text-white rounded-xl transition-all tap-tactile disabled:opacity-50"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-subsurface hover:bg-surface-hover border border-border hover:border-border-hover text-foreground rounded-xl transition-all tap-tactile disabled:opacity-50 cursor-pointer"
             title="Refresh Antrean"
+            aria-label="Refresh Antrean"
           >
-            <RefreshCw size={16} strokeWidth={1.75} className={loading ? 'animate-spin text-[#00ffff]' : ''} />
+            <RefreshCw size={16} strokeWidth={1.75} className={loading ? 'animate-spin text-primary' : ''} />
           </button>
         </div>
       </div>
 
       {/* Filter and Search Section */}
-      <div className="bg-[#121215] p-3 rounded-xl flex flex-col md:flex-row justify-between gap-3 border border-[#26272d]">
+      <div className="bg-surface p-3 rounded-2xl flex flex-col md:flex-row justify-between gap-3 border border-border shadow-xs">
         {/* Kehadiran Filter (Tunggu / Tinggal) */}
-        <div className="flex bg-[#18181c] p-1 rounded-xl border border-[#26272d] self-start">
-          <button
-            onClick={() => setFilterType('ALL')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all tap-tactile ${
-              filterType === 'ALL' 
-                ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-xs' 
-                : 'text-[#bbcbb2] hover:text-white'
-            }`}
-          >
-            Semua ({queue.length})
-          </button>
-          <button
-            onClick={() => setFilterType('TUNGGU')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all tap-tactile ${
-              filterType === 'TUNGGU' 
-                ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-xs' 
-                : 'text-[#bbcbb2] hover:text-white'
-            }`}
-          >
-            Ditunggu ({queue.filter((q) => q.kehadiran === 'TUNGGU').length})
-          </button>
-          <button
-            onClick={() => setFilterType('TINGGAL')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all tap-tactile ${
-              filterType === 'TINGGAL' 
-                ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-xs' 
-                : 'text-[#bbcbb2] hover:text-white'
-            }`}
-          >
-            Ditinggal ({queue.filter((q) => q.kehadiran === 'TINGGAL').length})
-          </button>
+        <div className="overflow-x-auto no-scrollbar max-w-full self-start">
+          <div className="flex bg-subsurface p-1 rounded-xl border border-border flex-nowrap">
+            <button
+              type="button"
+              onClick={() => setFilterType('ALL')}
+              className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-semibold transition-all tap-tactile whitespace-nowrap cursor-pointer ${
+                filterType === 'ALL'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'text-muted hover:text-foreground'
+              }`}
+            >
+              Semua ({queue.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterType('TUNGGU')}
+              className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-semibold transition-all tap-tactile whitespace-nowrap cursor-pointer ${
+                filterType === 'TUNGGU'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'text-muted hover:text-foreground'
+              }`}
+            >
+              Ditunggu ({queue.filter((q) => q.kehadiran === 'TUNGGU').length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterType('TINGGAL')}
+              className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-semibold transition-all tap-tactile whitespace-nowrap cursor-pointer ${
+                filterType === 'TINGGAL'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'text-muted hover:text-foreground'
+              }`}
+            >
+              Ditinggal ({queue.filter((q) => q.kehadiran === 'TINGGAL').length})
+            </button>
+          </div>
         </div>
 
         {/* Search Input */}
         <div className="relative md:w-80">
-          <Search className="absolute left-3.5 top-2.5 text-[#6b7367]" size={15} strokeWidth={1.75} />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark pointer-events-none" size={15} strokeWidth={1.75} />
           <input
             type="text"
+            aria-label="Cari plat nomor, paket, atau kru"
             placeholder="Cari plat nomor, paket, atau kru..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-white placeholder-[#6b7367] focus:outline-none focus:border-[#00ffff] text-xs transition-colors"
+            className="w-full min-h-[44px] pl-10 pr-4 py-2 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20 text-base sm:text-xs transition-colors"
           />
         </div>
       </div>
@@ -408,31 +420,31 @@ const CarwashQueue = () => {
       {/* VIEW MODE 1: LIVE KANBAN BAY BOARD (TABLET LANDSCAPE OPTIMIZED) */}
       {viewMode === 'kanban' ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-          {/* KOLOM 1: 🟡 ANTREAN MASUK (WAITING) */}
-          <div className="bg-[#080C14] border border-amber-900/30 rounded-xl p-3.5 flex flex-col space-y-3 min-h-[400px]">
-            <div className="flex items-center justify-between pb-2.5 border-b border-amber-900/40">
+          {/* KOLOM 1: ANTREAN MASUK (WAITING) */}
+          <div className="bg-surface border border-border rounded-2xl p-3.5 flex flex-col space-y-3 min-h-[400px] shadow-xs">
+            <div className="flex items-center justify-between pb-2.5 border-b border-border">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-                <h3 className="font-bold text-xs uppercase tracking-wider text-amber-300">
+                <span className="w-2.5 h-2.5 rounded-full bg-warning"></span>
+                <h3 className="font-bold text-xs uppercase tracking-wider text-foreground">
                   Antrean Masuk
                 </h3>
               </div>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              <span className="text-[10px] font-mono tabular-nums font-bold px-2.5 py-0.5 rounded-full bg-warning-bg text-warning border border-warning/30">
                 {waitingQueue.length} unit
               </span>
             </div>
 
             {waitingQueue.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#6b7367]">
-                <Clock size={28} strokeWidth={1.5} className="mb-2 text-[#6b7367]" />
-                <p className="text-xs font-semibold text-[#bbcbb2]">Tidak ada antrean baru</p>
-                <p className="text-[10px] text-[#6b7367] mt-0.5 mb-3">Daftarkan mobil masuk melalui kasir.</p>
+              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-muted">
+                <Clock size={28} strokeWidth={1.5} className="mb-2 text-muted-dark" />
+                <p className="text-xs font-semibold text-foreground">Tidak ada antrean baru</p>
+                <p className="text-[11px] text-muted mt-0.5 mb-3">Daftarkan mobil masuk melalui kasir.</p>
                 <Link
                   to="/pos?tab=carwash"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#00ffff]/15 hover:bg-[#00ffff]/25 text-[#00ffff] border border-[#00ffff]/30 rounded-lg text-xs font-bold transition-all tap-tactile"
+                  className="min-h-[40px] inline-flex items-center gap-1.5 px-4 py-1.5 bg-primary-soft hover:opacity-90 text-primary-soft-foreground border border-primary/25 rounded-full text-xs font-semibold transition-all tap-tactile"
                 >
                   <Plus size={13} strokeWidth={2} />
-                  <span>+ Input Kendaraan di POS</span>
+                  <span>Input Kendaraan di POS</span>
                 </Link>
               </div>
             ) : (
@@ -440,36 +452,39 @@ const CarwashQueue = () => {
                 {waitingQueue.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-[#121215] p-3.5 rounded-xl border border-[#26272d] hover:border-[#ffc71f]/40 transition-all flex flex-col space-y-2.5"
+                    className="bg-subsurface p-3.5 rounded-xl border border-border hover:border-border-hover transition-all flex flex-col space-y-2.5"
                   >
-                    <div className="flex items-start justify-between">
-                      <span className="font-mono text-lg font-black text-white tracking-wider">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="font-mono text-lg font-black text-foreground tracking-wider">
                         {item.platNomor}
                       </span>
-                      <span className={`text-[9px] px-2 py-0.5 rounded-md font-bold uppercase border ${
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border shrink-0 ${
                         item.kehadiran === 'TUNGGU'
-                          ? 'bg-amber-500/15 text-[#ffc71f] border-amber-500/30'
-                          : 'bg-[#00ffff]/10 text-[#00ffff] border-[#00ffff]/30'
+                          ? 'bg-warning-bg text-warning border-warning/30'
+                          : 'bg-primary-soft text-primary-soft-foreground border-primary/25'
                       }`}>
                         {item.kehadiran}
                       </span>
                     </div>
 
-                    <div className="text-xs text-white space-y-0.5">
-                      <p className="font-bold text-white">{item.paket}</p>
-                      <p className="text-[11px] text-[#bbcbb2]">{item.model} • {item.ukuran}</p>
+                    <div className="text-xs text-foreground space-y-0.5">
+                      <p className="font-bold text-foreground">{item.paket}</p>
+                      <p className="text-[11px] text-muted">{item.model} • {item.ukuran}</p>
                     </div>
 
-                    <div className="pt-2 border-t border-[#26272d]/80 flex items-center justify-between text-[11px] text-[#bbcbb2]">
+                    <div className="pt-2 border-t border-border flex items-center justify-between text-[11px] text-muted">
                       <span>Masuk: {item.jam}</span>
-                      <span className="text-[#ffc71f] font-mono font-semibold">⏱️ {calculateDuration(item.tanggal, item.jam)}</span>
+                      <span className="text-warning font-mono tabular-nums font-semibold inline-flex items-center gap-1">
+                        <Clock size={12} className="shrink-0" />
+                        <span>{calculateDuration(item.tanggal, item.jam)}</span>
+                      </span>
                     </div>
 
                     <button
                       type="button"
                       disabled={updatingId === item.id}
                       onClick={() => handleStartWashing(item)}
-                      className="w-full py-2 bg-[#ffc71f] hover:bg-[#ffc71f]/90 text-[#0f0f0f] font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 active:scale-[0.98] disabled:opacity-50"
+                      className="w-full min-h-[44px] py-2 bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-xs rounded-full transition-all flex items-center justify-center gap-1.5 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
                     >
                       <Play size={13} strokeWidth={2} />
                       <span>Masuk Bay Cuci</span>
@@ -480,53 +495,56 @@ const CarwashQueue = () => {
             )}
           </div>
 
-          {/* KOLOM 2: 🔵 SEDANG DICUCI (BAY SLOTS) */}
-          <div className="bg-[#121215] border border-[#26272d] rounded-xl p-3.5 flex flex-col space-y-3 min-h-[400px]">
-            <div className="flex items-center justify-between pb-2.5 border-b border-[#26272d]">
+          {/* KOLOM 2: SEDANG DICUCI (BAY SLOTS) */}
+          <div className="bg-surface border border-border rounded-2xl p-3.5 flex flex-col space-y-3 min-h-[400px] shadow-xs">
+            <div className="flex items-center justify-between pb-2.5 border-b border-border">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#f57733]"></span>
-                <h3 className="font-bold text-xs uppercase tracking-wider text-[#f57733]">
+                <span className="w-2.5 h-2.5 rounded-full bg-primary"></span>
+                <h3 className="font-bold text-xs uppercase tracking-wider text-foreground">
                   Sedang Dicuci (Bay)
                 </h3>
               </div>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#f57733]/15 text-[#f57733] border border-[#f57733]/30">
+              <span className="text-[10px] font-mono tabular-nums font-bold px-2.5 py-0.5 rounded-full bg-primary-soft text-primary-soft-foreground border border-primary/25">
                 {washingQueue.length} unit
               </span>
             </div>
 
             {washingQueue.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#6b7367]">
-                <Car size={28} strokeWidth={1.5} className="mb-2 text-[#6b7367]" />
-                <p className="text-xs font-semibold text-[#bbcbb2]">Bay cuci kosong</p>
-                <p className="text-[10px] text-[#6b7367] mt-0.5">Siap menerima kendaraan dari antrean masuk.</p>
+              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-muted">
+                <Car size={28} strokeWidth={1.5} className="mb-2 text-muted-dark" />
+                <p className="text-xs font-semibold text-foreground">Bay cuci kosong</p>
+                <p className="text-[11px] text-muted mt-0.5">Siap menerima kendaraan dari antrean masuk.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {washingQueue.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-[#18181c] p-3.5 rounded-xl border border-[#26272d] hover:border-[#f57733]/40 transition-all flex flex-col space-y-2.5"
+                    className="bg-subsurface p-3.5 rounded-xl border border-border hover:border-border-active/60 transition-all flex flex-col space-y-2.5"
                   >
-                    <div className="flex items-start justify-between">
-                      <span className="font-mono text-lg font-black text-white tracking-wider">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="font-mono text-lg font-black text-foreground tracking-wider">
                         {item.platNomor}
                       </span>
-                      <span className="text-[9px] px-2 py-0.5 rounded-md font-bold uppercase bg-[#f57733]/20 text-[#f57733] border border-[#f57733]/40">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-primary-soft text-primary-soft-foreground border border-primary/25 shrink-0">
                         {item.paket}
                       </span>
                     </div>
 
-                    <div className="text-xs text-white space-y-0.5">
-                      <p className="text-[11px] text-[#bbcbb2]">{item.model} • {item.ukuran}</p>
-                      <p className="text-[11px] text-white flex items-center gap-1">
-                        <Users size={12} strokeWidth={1.75} className="text-[#bbcbb2]" />
+                    <div className="text-xs text-foreground space-y-0.5">
+                      <p className="text-[11px] text-muted">{item.model} • {item.ukuran}</p>
+                      <p className="text-[11px] text-foreground flex items-center gap-1">
+                        <Users size={12} strokeWidth={1.75} className="text-muted" />
                         <span>Kru: {item.anggota1} {item.anggota2 ? `+ ${item.anggota2}` : ''}</span>
                       </p>
                     </div>
 
-                    <div className="pt-2 border-t border-[#26272d]/80 flex items-center justify-between text-[11px] text-[#bbcbb2]">
+                    <div className="pt-2 border-t border-border flex items-center justify-between text-[11px] text-muted">
                       <span>Mulai: {item.jam}</span>
-                      <span className="text-sky-400 font-mono font-bold">⏱️ {calculateDuration(item.tanggal, item.jam)}</span>
+                      <span className="text-primary font-mono tabular-nums font-bold inline-flex items-center gap-1">
+                        <Clock size={12} className="shrink-0" />
+                        <span>{calculateDuration(item.tanggal, item.jam)}</span>
+                      </span>
                     </div>
 
                     <button
@@ -541,7 +559,7 @@ const CarwashQueue = () => {
                           tireShine: true
                         })
                       }}
-                      className="w-full py-2 bg-[#f57733] hover:bg-[#f57733]/90 text-white font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 active:scale-[0.98] disabled:opacity-50"
+                      className="w-full min-h-[44px] py-2 bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-xs rounded-full transition-all flex items-center justify-center gap-1.5 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
                     >
                       <ShieldCheck size={13} strokeWidth={1.75} />
                       <span>Selesaikan Cuci (QC)</span>
@@ -552,61 +570,63 @@ const CarwashQueue = () => {
             )}
           </div>
 
-          {/* KOLOM 3: 🟢 SELESAI DICUCI & SIAP DIAMBIL */}
-          <div className="bg-[#121215] border border-[#26272d] rounded-xl p-3.5 flex flex-col space-y-3 min-h-[400px]">
-            <div className="flex items-center justify-between pb-2.5 border-b border-[#26272d]">
+          {/* KOLOM 3: SELESAI DICUCI & SIAP DIAMBIL */}
+          <div className="bg-surface border border-border rounded-2xl p-3.5 flex flex-col space-y-3 min-h-[400px] shadow-xs">
+            <div className="flex items-center justify-between pb-2.5 border-b border-border">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#00ffff]"></span>
-                <h3 className="font-bold text-xs uppercase tracking-wider text-[#00ffff]">
+                <span className="w-2.5 h-2.5 rounded-full bg-success"></span>
+                <h3 className="font-bold text-xs uppercase tracking-wider text-foreground">
                   Siap Diambil
                 </h3>
               </div>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30">
+              <span className="text-[10px] font-mono tabular-nums font-bold px-2.5 py-0.5 rounded-full bg-success-bg text-success border border-success/30">
                 {readyQueue.length} unit
               </span>
             </div>
 
             {readyQueue.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#6b7367]">
-                <CheckCircle2 size={28} strokeWidth={1.5} className="mb-2 text-[#6b7367]" />
-                <p className="text-xs font-semibold text-[#bbcbb2]">Belum ada mobil selesai</p>
-                <p className="text-[10px] text-[#6b7367] mt-0.5">Mobil yang selesai QC akan muncul di sini.</p>
+              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-muted">
+                <CheckCircle2 size={28} strokeWidth={1.5} className="mb-2 text-muted-dark" />
+                <p className="text-xs font-semibold text-foreground">Belum ada mobil selesai</p>
+                <p className="text-[11px] text-muted mt-0.5">Mobil yang selesai QC akan muncul di sini.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {readyQueue.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-[#18181c] p-3.5 rounded-xl border border-[#26272d] hover:border-[#00ffff]/40 transition-all flex flex-col space-y-2.5"
+                    className="bg-subsurface p-3.5 rounded-xl border border-border hover:border-success/40 transition-all flex flex-col space-y-2.5"
                   >
-                    <div className="flex items-start justify-between">
-                      <span className="font-mono text-lg font-black text-white tracking-wider">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="font-mono text-lg font-black text-foreground tracking-wider">
                         {item.platNomor}
                       </span>
-                      <span className={`text-[9px] px-2 py-0.5 rounded-md font-bold uppercase border ${
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border shrink-0 ${
                         item.statusBayar === 'Selesai'
-                          ? 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30'
-                          : 'bg-amber-500/15 text-[#ffc71f] border-amber-500/30'
+                          ? 'bg-success-bg text-success border-success/30'
+                          : 'bg-warning-bg text-warning border-warning/30'
                       }`}>
                         {item.statusBayar === 'Selesai' ? 'Lunas' : 'Belum Bayar'}
                       </span>
                     </div>
 
-                    <div className="text-xs text-white space-y-0.5">
-                      <p className="font-bold text-white">{item.paket}</p>
-                      <p className="text-[11px] text-[#bbcbb2]">{item.model} • {item.ukuran}</p>
+                    <div className="text-xs text-foreground space-y-0.5">
+                      <p className="font-bold text-foreground">{item.paket}</p>
+                      <p className="text-[11px] text-muted">{item.model} • {item.ukuran}</p>
                     </div>
 
-                    <div className="pt-2 border-t border-[#26272d]/80 flex items-center justify-between text-[11px] text-[#bbcbb2]">
+                    <div className="pt-2 border-t border-border flex items-center justify-between text-[11px] text-muted">
                       <span>Kru: {item.anggota1}</span>
-                      <span className="text-[#00ffff] font-mono font-bold">✓ Selesai QC</span>
+                      <span className="text-success font-mono font-bold inline-flex items-center gap-1">
+                        <CheckCircle2 size={12} className="shrink-0" /> Selesai QC
+                      </span>
                     </div>
 
                     {item.noTelepon && (
                       <button
                         type="button"
                         onClick={() => handleSendWhatsAppNotification(item)}
-                        className="w-full py-1.5 px-2 bg-[#00ffff]/15 hover:bg-[#00ffff]/25 text-[#00ffff] border border-[#00ffff]/40 font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 active:scale-[0.98]"
+                        className="w-full min-h-[44px] py-2 px-3 bg-success-bg hover:opacity-90 text-success border border-success/30 font-semibold text-xs rounded-full transition-all flex items-center justify-center gap-1.5 active:scale-[0.98] cursor-pointer"
                       >
                         <MessageCircle size={13} strokeWidth={1.75} />
                         <span>Kirim Notifikasi WA</span>
@@ -622,321 +642,333 @@ const CarwashQueue = () => {
         /* VIEW MODE 2: TABULAR / LIST CARDS */
         <>
           {/* Status Tabs with Live Count Badges */}
-          <div className="flex gap-4 border-b border-[#26272d] pb-1">
+          <div className="flex gap-4 border-b border-border pb-1 overflow-x-auto no-scrollbar">
             <button
+              type="button"
               onClick={() => setStatusTab('Pending')}
-              className={`pb-3 px-3 font-bold text-sm transition-all border-b-2 flex items-center gap-2.5 relative tap-tactile ${
+              className={`pb-3 px-3 font-semibold text-sm transition-all border-b-2 flex items-center gap-2.5 relative tap-tactile whitespace-nowrap cursor-pointer ${
                 statusTab === 'Pending'
-                  ? 'text-[#ffc71f] border-amber-500'
-                  : 'text-[#bbcbb2] border-transparent hover:text-white'
+                  ? 'text-warning border-warning'
+                  : 'text-muted border-transparent hover:text-foreground'
               }`}
             >
               <Clock size={16} strokeWidth={1.75} />
               <span>Dalam Proses</span>
-              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                pendingItems.length > 0 
-                  ? 'bg-amber-500/20 text-[#ffc71f] border border-amber-500/30' 
-                  : 'bg-[#18181c] text-[#bbcbb2] border border-[#26272d]'
+              <span className={`text-[10px] font-bold font-mono tabular-nums px-2 py-0.5 rounded-full ${
+                pendingItems.length > 0
+                  ? 'bg-warning-bg text-warning border border-warning/30'
+                  : 'bg-subsurface text-muted border border-border'
               }`}>
                 {pendingItems.length}
               </span>
             </button>
 
             <button
+              type="button"
               onClick={() => setStatusTab('Selesai')}
-              className={`pb-3 px-3 font-bold text-sm transition-all border-b-2 flex items-center gap-2.5 relative tap-tactile ${
+              className={`pb-3 px-3 font-semibold text-sm transition-all border-b-2 flex items-center gap-2.5 relative tap-tactile whitespace-nowrap cursor-pointer ${
                 statusTab === 'Selesai'
-                  ? 'text-[#00ffff] border-emerald-500'
-                  : 'text-[#bbcbb2] border-transparent hover:text-white'
+                  ? 'text-success border-success'
+                  : 'text-muted border-transparent hover:text-foreground'
               }`}
             >
               <CheckCircle size={16} strokeWidth={1.75} />
               <span>Selesai Dicuci</span>
-              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                selesaiItems.length > 0 
-                  ? 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30' 
-                  : 'bg-[#18181c] text-[#bbcbb2] border border-[#26272d]'
+              <span className={`text-[10px] font-bold font-mono tabular-nums px-2 py-0.5 rounded-full ${
+                selesaiItems.length > 0
+                  ? 'bg-success-bg text-success border border-success/30'
+                  : 'bg-subsurface text-muted border border-border'
               }`}>
                 {selesaiItems.length}
               </span>
             </button>
           </div>
 
-      {/* Filter and Search Section */}
-      <div className="bg-[#121215]/60 p-3.5 rounded-xl flex flex-col md:flex-row justify-between gap-3 border border-[#26272d]/80 backdrop-blur-md">
-        {/* Kehadiran Filter (Tunggu / Tinggal) */}
-        <div className="flex bg-[#18181c] p-1 rounded-xl border border-[#26272d] self-start">
-          <button
-            onClick={() => setFilterType('ALL')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              filterType === 'ALL' 
-                ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-xs' 
-                : 'text-[#bbcbb2] hover:text-white'
-            }`}
-          >
-            Semua ({queue.filter((q) => q.statusBayar === statusTab).length})
-          </button>
-          <button
-            onClick={() => setFilterType('TUNGGU')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              filterType === 'TUNGGU' 
-                ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-xs' 
-                : 'text-[#bbcbb2] hover:text-white'
-            }`}
-          >
-            Ditunggu ({queue.filter((q) => q.kehadiran === 'TUNGGU' && q.statusBayar === statusTab).length})
-          </button>
-          <button
-            onClick={() => setFilterType('TINGGAL')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              filterType === 'TINGGAL' 
-                ? 'bg-[#00ffff] text-[#0f0f0f] font-bold shadow-xs' 
-                : 'text-[#bbcbb2] hover:text-white'
-            }`}
-          >
-            Ditinggal ({queue.filter((q) => q.kehadiran === 'TINGGAL' && q.statusBayar === statusTab).length})
-          </button>
-        </div>
-
-        {/* Search Input */}
-        <div className="relative md:w-80">
-          <Search className="absolute left-3.5 top-2.5 text-[#6b7367]" size={15} />
-          <input
-            type="text"
-            placeholder="Cari plat nomor, paket, atau kru..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-[#18181c] border border-[#26272d] rounded-xl text-white placeholder-[#6b7367] focus:outline-none focus:border-[#00ffff] text-xs transition-colors"
-          />
-        </div>
-      </div>
-
-      {/* Queue Card Grid / Empty State */}
-      {loading ? (
-        <div className="bg-[#121215]/40 p-16 rounded-xl flex flex-col items-center justify-center text-[#bbcbb2] border border-[#26272d]/80">
-          <RefreshCw size={36} className="animate-spin text-[#00ffff] mb-3" />
-          <p className="text-sm font-semibold text-white">Memuat antrean carwash...</p>
-        </div>
-      ) : filteredQueue.length === 0 ? (
-        <div className="bg-[#121215]/40 p-12 sm:p-16 rounded-xl flex flex-col items-center justify-center text-center border border-[#26272d]/80">
-          {statusTab === 'Pending' && selesaiItems.length > 0 ? (
-            <>
-              <div className="w-14 h-14 bg-[#00ffff]/15 text-[#00ffff] rounded-xl flex items-center justify-center mb-4 border border-[#00ffff]/30">
-                <CheckCircle2 size={28} strokeWidth={1.75} />
-              </div>
-              <h3 className="text-base font-bold text-white mb-1">
-                Semua Kendaraan Sudah Selesai Dicuci
-              </h3>
-              <p className="text-xs text-[#bbcbb2] max-w-md mb-5">
-                Tidak ada mobil dalam proses antrean saat ini. Sebanyak <strong className="text-[#00ffff]">{selesaiItems.length} mobil</strong> telah selesai dikerjakan pada {selectedDate}.
-              </p>
-              <button
-                onClick={() => setStatusTab('Selesai')}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#00ffff] hover:bg-[#00ffff]/90 text-[#0f0f0f] rounded-xl font-bold text-xs transition-all active:scale-[0.98]"
-              >
-                <span>Lihat Mobil Selesai</span>
-                <ArrowRight size={14} />
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="w-14 h-14 bg-[#18181c] text-[#6b7367] rounded-xl flex items-center justify-center mb-4 border border-[#26272d]">
-                <Car size={28} />
-              </div>
-              <h3 className="text-base font-bold text-white mb-1">
-                Tidak Ada Antrean Cuci Mobil
-              </h3>
-              <p className="text-xs text-[#bbcbb2] max-w-md mb-2">
-                Tidak ditemukan data kendaraan pada {selectedDate} untuk filter ini.
-              </p>
-              <Link
-                to="/pos?tab=carwash"
-                className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-[#00ffff] hover:bg-[#26d6d6] text-[#0f0f0f] rounded-xl font-bold text-xs transition-all tap-tactile"
-              >
-                <Plus size={14} strokeWidth={2.5} />
-                <span>Daftarkan Kendaraan Baru di Kasir</span>
-              </Link>
-              {!isToday && (
+          {/* Filter and Search Section */}
+          <div className="bg-surface p-3.5 rounded-2xl flex flex-col md:flex-row justify-between gap-3 border border-border shadow-xs">
+            {/* Kehadiran Filter (Tunggu / Tinggal) */}
+            <div className="overflow-x-auto no-scrollbar max-w-full self-start">
+              <div className="flex bg-subsurface p-1 rounded-xl border border-border flex-nowrap">
                 <button
-                  onClick={() => setSelectedDate(new Date().toLocaleDateString('en-CA'))}
-                  className="mt-3 px-4 py-2 bg-[#18181c] hover:bg-[#26272d] text-white border border-[#26272d] rounded-xl font-bold text-xs transition-all border border-[#3f414a]"
+                  type="button"
+                  onClick={() => setFilterType('ALL')}
+                  className={`min-h-[36px] px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                    filterType === 'ALL'
+                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      : 'text-muted hover:text-foreground'
+                  }`}
                 >
-                  Kembali ke Hari Ini
+                  Semua ({queue.filter((q) => q.statusBayar === statusTab).length})
                 </button>
-              )}
-            </>
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredQueue.map((item, idx) => {
-            const isTunggu = item.kehadiran === 'TUNGGU'
-            const isSelesai = item.statusBayar === 'Selesai'
-
-            return (
-              <div
-                key={item.id}
-                className={`bg-[#121215]/70 p-5 rounded-xl border transition-all duration-300 relative flex flex-col justify-between hover:-translate-y-1 hover:shadow-xl ${
-                  isSelesai
-                    ? 'border-[#00ffff]/30 bg-[#00ffff]/5 hover:border-[#00ffff]/50'
-                    : isTunggu
-                      ? 'border-[#00ffff]/30 bg-[#00ffff]/5 hover:border-[#00ffff]/50'
-                      : 'border-[#26272d] hover:border-[#3f414a]'
-                }`}
-              >
-                {/* Top Row: Kehadiran & Status Bayar */}
-                <div className="flex justify-between items-start mb-4">
-                  <span
-                    className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider border ${
-                      isTunggu
-                        ? 'bg-amber-500/15 text-[#ffc71f] border-amber-500/30'
-                        : 'bg-[#00ffff]/10 text-[#00ffff] border-[#00ffff]/30'
-                    }`}
-                  >
-                    {item.kehadiran}
-                  </span>
-
-                  <span
-                    className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider flex items-center gap-1 border ${
-                      isSelesai
-                        ? 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30'
-                        : 'bg-amber-500/15 text-[#ffc71f] border-amber-500/30'
-                    }`}
-                  >
-                    {isSelesai ? <CheckCircle size={10} /> : <AlertCircle size={10} />}
-                    {item.statusBayar}
-                  </span>
-                </div>
-
-                {/* Main Vehicle Information */}
-                <div>
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-mono text-2xl font-black tracking-wider text-white uppercase group-hover:text-[#00ffff] transition-colors">
-                      {item.platNomor}
-                    </h3>
-                    {item.kondisiBodi && item.kondisiBodi !== 'Normal' && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-[#ffc71f]/40">
-                        ⚠️ {item.kondisiBodi}
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-2 space-y-1">
-                    <p className="text-xs font-bold text-white">{item.paket}</p>
-                    <p className="text-[11px] text-[#bbcbb2] font-medium">
-                      {item.model} • {item.ukuran} • {item.variant}
-                    </p>
-                    {item.catatanKendaraan && (
-                      <p className="text-[10px] text-amber-300/80 bg-[#18181c]/60 p-1.5 rounded border border-[#26272d] italic">
-                        "{item.catatanKendaraan}"
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Status Pengerjaan & QC Actions */}
-                <div className="mt-4 pt-3 border-t border-[#26272d]/80 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] uppercase font-bold text-[#6b7367] tracking-wider">Status Fisik:</span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${
-                      item.statusPengerjaan === 'Siap Diambil'
-                        ? 'bg-emerald-500/20 text-[#00ffff] border border-emerald-500/40'
-                        : 'bg-blue-500/20 text-[#00ffff] border border-blue-500/40'
-                    }`}>
-                      {item.statusPengerjaan === 'Siap Diambil' ? <CheckCircle size={10} /> : <Clock size={10} />}
-                      {item.statusPengerjaan}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 pt-1">
-                    {item.statusPengerjaan !== 'Siap Diambil' && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setQcModalItem(item)
-                          setQcChecklist({
-                            bodyClean: true,
-                            interiorVacuum: true,
-                            glassClear: true,
-                            tireShine: true
-                          })
-                        }}
-                        className="flex-1 py-1.5 px-2 bg-[#00ffff] hover:bg-[#00ffff]/90 text-[#0f0f0f] font-bold text-[11px] rounded-lg transition-all flex items-center justify-center gap-1 active:scale-[0.98]"
-                      >
-                        <ShieldCheck size={12} />
-                        <span>QC & Selesai</span>
-                      </button>
-                    )}
-
-                    {item.noTelepon && (
-                      <button
-                        type="button"
-                        onClick={() => handleSendWhatsAppNotification(item)}
-                        className="py-1.5 px-2.5 bg-[#00ffff]/15 hover:bg-[#00ffff]/25 text-[#00ffff] border border-[#00ffff]/30 font-bold text-[11px] rounded-lg transition-all flex items-center gap-1 active:scale-[0.98]"
-                        title="Kirim Notifikasi Siap Diambil via WA"
-                      >
-                        <MessageCircle size={12} />
-                        <span>WA</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Workers & Time Footer */}
-                <div className="mt-4 pt-3 border-t border-[#26272d]/80 space-y-2">
-                  {/* Crew Assignment */}
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-1.5 text-[#bbcbb2] font-medium">
-                      {item.anggota2 ? <Users size={13} className="text-[#6b7367]" /> : <User size={13} className="text-[#6b7367]" />}
-                      Kru Pencuci:
-                    </span>
-                    <span className="font-bold text-white">
-                      {item.anggota1} {item.anggota2 ? `+ ${item.anggota2}` : ''}
-                    </span>
-                  </div>
-
-                  {/* Check-in Jam / Waiting Time */}
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-1.5 text-[#6b7367] font-medium">
-                      <Clock size={13} />
-                      Jam Masuk:
-                    </span>
-                    <span className="font-mono text-[#bbcbb2] text-[11px]">
-                      {item.jam} ({calculateDuration(item.tanggal, item.jam)})
-                    </span>
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setFilterType('TUNGGU')}
+                  className={`min-h-[36px] px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                    filterType === 'TUNGGU'
+                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      : 'text-muted hover:text-foreground'
+                  }`}
+                >
+                  Ditunggu ({queue.filter((q) => q.kehadiran === 'TUNGGU' && q.statusBayar === statusTab).length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterType('TINGGAL')}
+                  className={`min-h-[36px] px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                    filterType === 'TINGGAL'
+                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      : 'text-muted hover:text-foreground'
+                  }`}
+                >
+                  Ditinggal ({queue.filter((q) => q.kehadiran === 'TINGGAL' && q.statusBayar === statusTab).length})
+                </button>
               </div>
-            )
-          })}
-        </div>
-      )}
+            </div>
+
+            {/* Search Input */}
+            <div className="relative md:w-80">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark pointer-events-none" size={15} />
+              <input
+                type="text"
+                aria-label="Cari plat nomor, paket, atau kru"
+                placeholder="Cari plat nomor, paket, atau kru..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full min-h-[44px] pl-10 pr-4 py-2 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20 text-base sm:text-xs transition-colors"
+              />
+            </div>
+          </div>
+
+          {/* Queue Card Grid / Empty State */}
+          {loading ? (
+            <div className="bg-surface p-16 rounded-2xl flex flex-col items-center justify-center text-muted border border-border shadow-xs">
+              <RefreshCw size={36} className="animate-spin text-primary mb-3" />
+              <p className="text-sm font-semibold text-foreground">Memuat antrean carwash...</p>
+            </div>
+          ) : filteredQueue.length === 0 ? (
+            <div className="bg-surface p-12 sm:p-16 rounded-2xl flex flex-col items-center justify-center text-center border border-border shadow-xs">
+              {statusTab === 'Pending' && selesaiItems.length > 0 ? (
+                <>
+                  <div className="w-14 h-14 bg-success-bg text-success rounded-2xl flex items-center justify-center mb-4 border border-success/30">
+                    <CheckCircle2 size={28} strokeWidth={1.75} />
+                  </div>
+                  <h3 className="text-base font-bold text-foreground mb-1">
+                    Semua Kendaraan Sudah Selesai Dicuci
+                  </h3>
+                  <p className="text-xs text-muted max-w-md mb-5">
+                    Tidak ada mobil dalam proses antrean saat ini. Sebanyak <strong className="text-primary">{selesaiItems.length} mobil</strong> telah selesai dikerjakan pada {selectedDate}.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setStatusTab('Selesai')}
+                    className="min-h-[44px] inline-flex items-center gap-2 px-5 py-2 bg-primary hover:bg-primary-hover text-primary-foreground rounded-full font-semibold text-xs transition-all active:scale-[0.98] cursor-pointer"
+                  >
+                    <span>Lihat Mobil Selesai</span>
+                    <ArrowRight size={14} />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="w-14 h-14 bg-subsurface text-muted-dark rounded-2xl flex items-center justify-center mb-4 border border-border">
+                    <Car size={28} />
+                  </div>
+                  <h3 className="text-base font-bold text-foreground mb-1">
+                    Tidak Ada Antrean Cuci Mobil
+                  </h3>
+                  <p className="text-xs text-muted max-w-md mb-2">
+                    Tidak ditemukan data kendaraan pada {selectedDate} untuk filter ini.
+                  </p>
+                  <Link
+                    to="/pos?tab=carwash"
+                    className="mt-3 min-h-[44px] inline-flex items-center gap-2 px-5 py-2 bg-primary hover:bg-primary-hover text-primary-foreground rounded-full font-semibold text-xs transition-all tap-tactile"
+                  >
+                    <Plus size={14} strokeWidth={2.5} />
+                    <span>Daftarkan Kendaraan Baru di Kasir</span>
+                  </Link>
+                  {!isToday && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDate(new Date().toLocaleDateString('en-CA'))}
+                      className="mt-3 min-h-[40px] px-4 py-2 bg-subsurface hover:bg-surface-hover text-foreground border border-border rounded-full font-semibold text-xs transition-all cursor-pointer"
+                    >
+                      Kembali ke Hari Ini
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredQueue.map((item) => {
+                const isTunggu = item.kehadiran === 'TUNGGU'
+                const isSelesai = item.statusBayar === 'Selesai'
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`bg-surface p-5 rounded-2xl border transition-all duration-200 relative flex flex-col justify-between shadow-xs hover:border-border-hover ${
+                      isSelesai
+                        ? 'border-success/30'
+                        : isTunggu
+                          ? 'border-primary/30'
+                          : 'border-border'
+                    }`}
+                  >
+                    {/* Top Row: Kehadiran & Status Bayar */}
+                    <div className="flex justify-between items-start mb-4">
+                      <span
+                        className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border ${
+                          isTunggu
+                            ? 'bg-warning-bg text-warning border-warning/30'
+                            : 'bg-primary-soft text-primary-soft-foreground border-primary/25'
+                        }`}
+                      >
+                        {item.kehadiran}
+                      </span>
+
+                      <span
+                        className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 border ${
+                          isSelesai
+                            ? 'bg-success-bg text-success border-success/30'
+                            : 'bg-warning-bg text-warning border-warning/30'
+                        }`}
+                      >
+                        {isSelesai ? <CheckCircle size={10} /> : <AlertCircle size={10} />}
+                        {item.statusBayar}
+                      </span>
+                    </div>
+
+                    {/* Main Vehicle Information */}
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="font-mono text-2xl font-black tracking-wider text-foreground uppercase">
+                          {item.platNomor}
+                        </h3>
+                        {item.kondisiBodi && item.kondisiBodi !== 'Normal' && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-warning-bg text-warning font-bold border border-warning/30 inline-flex items-center gap-1 shrink-0">
+                            <AlertTriangle size={11} />
+                            <span>{item.kondisiBodi}</span>
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs font-bold text-foreground">{item.paket}</p>
+                        <p className="text-[11px] text-muted font-medium">
+                          {item.model} • {item.ukuran} • {item.variant}
+                        </p>
+                        {item.catatanKendaraan && (
+                          <p className="text-[10px] text-warning bg-warning-bg/70 p-2 rounded-lg border border-warning/25 italic">
+                            &quot;{item.catatanKendaraan}&quot;
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Status Pengerjaan & QC Actions */}
+                    <div className="mt-4 pt-3 border-t border-border space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] uppercase font-bold text-muted-dark tracking-wider">Status Fisik:</span>
+                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 border ${
+                          item.statusPengerjaan === 'Siap Diambil'
+                            ? 'bg-success-bg text-success border-success/30'
+                            : 'bg-primary-soft text-primary-soft-foreground border-primary/25'
+                        }`}>
+                          {item.statusPengerjaan === 'Siap Diambil' ? <CheckCircle size={10} /> : <Clock size={10} />}
+                          {item.statusPengerjaan}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 pt-1">
+                        {item.statusPengerjaan !== 'Siap Diambil' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setQcModalItem(item)
+                              setQcChecklist({
+                                bodyClean: true,
+                                interiorVacuum: true,
+                                glassClear: true,
+                                tireShine: true
+                              })
+                            }}
+                            className="flex-1 min-h-[40px] py-1.5 px-3 bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-xs rounded-full transition-all flex items-center justify-center gap-1 active:scale-[0.98] cursor-pointer"
+                          >
+                            <ShieldCheck size={12} />
+                            <span>QC &amp; Selesai</span>
+                          </button>
+                        )}
+
+                        {item.noTelepon && (
+                          <button
+                            type="button"
+                            onClick={() => handleSendWhatsAppNotification(item)}
+                            className="min-h-[40px] py-1.5 px-3 bg-success-bg hover:opacity-90 text-success border border-success/30 font-semibold text-xs rounded-full transition-all flex items-center gap-1 active:scale-[0.98] cursor-pointer"
+                            title="Kirim Notifikasi Siap Diambil via WA"
+                          >
+                            <MessageCircle size={12} />
+                            <span>WA</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Workers & Time Footer */}
+                    <div className="mt-4 pt-3 border-t border-border space-y-2">
+                      {/* Crew Assignment */}
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="flex items-center gap-1.5 text-muted font-medium">
+                          {item.anggota2 ? <Users size={13} className="text-muted-dark" /> : <User size={13} className="text-muted-dark" />}
+                          Kru Pencuci:
+                        </span>
+                        <span className="font-bold text-foreground">
+                          {item.anggota1} {item.anggota2 ? `+ ${item.anggota2}` : ''}
+                        </span>
+                      </div>
+
+                      {/* Check-in Jam / Waiting Time */}
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="flex items-center gap-1.5 text-muted-dark font-medium">
+                          <Clock size={13} />
+                          Jam Masuk:
+                        </span>
+                        <span className="font-mono tabular-nums text-muted text-[11px]">
+                          {item.jam} ({calculateDuration(item.tanggal, item.jam)})
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </>
       )}
 
       {/* MODAL: Quality Control & Handover Checklist */}
       {qcModalItem && (
-        <div className="fixed inset-0 bg-[#18181c]/80 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">
-          <div className="glass-panel w-full max-w-md p-6 rounded-xl shadow-2xl border border-[#26272d] animate-pop-in">
-            <div className="flex items-center justify-between pb-3 border-b border-[#26272d] mb-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 z-[9999] animate-fade-in">
+          <div className="bg-surface w-full max-w-md p-6 rounded-2xl shadow-2xl border border-border animate-pop-in text-foreground">
+            <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30">
+                <div className="p-2 rounded-xl bg-primary-soft text-primary border border-primary/25">
                   <ShieldCheck size={20} />
                 </div>
                 <div>
-                  <h4 className="text-sm font-black text-white uppercase tracking-wider">Quality Control (QC)</h4>
-                  <p className="text-xs font-mono font-bold text-[#00ffff]">{qcModalItem.platNomor} • {qcModalItem.model}</p>
+                  <h4 className="text-sm font-bold text-foreground uppercase tracking-wider">Quality Control (QC)</h4>
+                  <p className="text-xs font-mono font-bold text-primary">{qcModalItem.platNomor} • {qcModalItem.model}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setQcModalItem(null)}
-                className="text-[#bbcbb2] hover:text-white p-1 text-sm font-bold"
+                aria-label="Tutup modal QC"
+                className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl text-muted hover:text-foreground hover:bg-subsurface transition-colors cursor-pointer"
               >
-                ✕
+                <X size={16} />
               </button>
             </div>
 
-            <p className="text-xs text-[#bbcbb2] mb-4 leading-relaxed">
+            <p className="text-xs text-muted mb-4 leading-relaxed">
               Verifikasi 4 poin standar kebersihan sebelum kendaraan diserahterimakan ke kasir / pelanggan:
             </p>
 
@@ -954,18 +986,18 @@ const CarwashQueue = () => {
                     onClick={() => setQcChecklist(prev => ({ ...prev, [point.id]: !prev[point.id] }))}
                     className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start gap-3 ${
                       isChecked
-                        ? 'bg-[#00ffff]/10 border-[#00ffff]/40 text-white'
-                        : 'bg-[#121215] border-[#26272d] text-[#bbcbb2]'
+                        ? 'bg-selected-surface border-border-active text-foreground'
+                        : 'bg-subsurface border-border text-muted'
                     }`}
                   >
-                    <button type="button" className="mt-0.5 text-[#00ffff]">
+                    <button type="button" className="mt-0.5 text-primary">
                       {isChecked ? <CheckSquare size={16} /> : <Square size={16} />}
                     </button>
                     <div>
-                      <p className={`text-xs font-bold ${isChecked ? 'text-white' : 'text-[#bbcbb2]'}`}>
+                      <p className={`text-xs font-bold ${isChecked ? 'text-foreground' : 'text-muted'}`}>
                         {point.label}
                       </p>
-                      <p className="text-[10px] text-[#6b7367] mt-0.5">{point.desc}</p>
+                      <p className="text-[11px] text-muted-dark mt-0.5">{point.desc}</p>
                     </div>
                   </div>
                 )
@@ -976,7 +1008,7 @@ const CarwashQueue = () => {
               <button
                 type="button"
                 onClick={() => setQcModalItem(null)}
-                className="px-4 py-2.5 rounded-xl bg-[#18181c] hover:bg-[#26272d] text-white border border-[#26272d] font-semibold text-xs transition-colors"
+                className="min-h-[44px] px-4 py-2.5 rounded-full bg-subsurface hover:bg-surface-hover text-foreground border border-border font-semibold text-xs transition-colors cursor-pointer"
               >
                 Batal
               </button>
@@ -984,7 +1016,7 @@ const CarwashQueue = () => {
                 type="button"
                 disabled={updatingId === qcModalItem.id}
                 onClick={handleCompleteQc}
-                className="px-5 py-2.5 rounded-xl bg-[#00ffff] hover:bg-[#00ffff]/90 active:scale-[0.98] text-[#0f0f0f] font-black text-xs shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+                className="min-h-[44px] px-5 py-2.5 rounded-full bg-primary hover:bg-primary-hover active:scale-[0.98] text-primary-foreground font-semibold text-xs shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >
                 <CheckCircle size={14} />
                 <span>{updatingId === qcModalItem.id ? 'Memperbarui...' : 'Lolos QC & Siap Diambil'}</span>

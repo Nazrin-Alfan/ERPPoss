@@ -43,6 +43,17 @@ const WAVE4_1_CLEAN_FILES = [
   'src/components/ErrorBoundary.jsx'
 ]
 
+const WAVE4_2A_CLEAN_FILES = [
+  'src/pages/Dashboard.jsx',
+  'src/pages/CarwashQueue.jsx',
+  'src/components/InteractiveCalendar.jsx',
+  'src/components/common/CustomCategoryPicker.jsx',
+  'src/components/auth/OnboardingWizardModal.jsx',
+  'src/components/dashboard/ExpenseDetailModal.jsx',
+  'src/components/dashboard/AIPromptBuilderModal.jsx',
+  'src/components/dashboard/ExecutivePromptStudio.jsx'
+]
+
 const PHASE3_CLEAN_FILES = [
   'src/index.css',
   'src/context/ThemeContext.jsx',
@@ -187,6 +198,22 @@ describe('Phase 3: UI Primitives, Brand Logo B3 & Token Hygiene Gate', () => {
     const feedbackContent = fs.readFileSync(path.join(ROOT, 'src/components/common/FeedbackModal.jsx'), 'utf-8')
     if (/amber-400/i.test(feedbackContent)) {
       violations.push('src/components/common/FeedbackModal.jsx: amber-400')
+    }
+
+    expect(violations).toEqual([])
+  })
+
+  it('enforces Zero-Neon & Zero-Legacy-Dark Token Hygiene across all 8 Wave 4.2A files', () => {
+    const forbiddenWave42APattern =
+      /#00ffff|#00e5e5|#26d6d6|#c8f31d|#6366f1|#c084fc|#ffc71f|#ff5102|#f57733|#bbcbb2|#6b7367|#121215|#141418|#18181c|#1b1b1d|#26272d|#242428|#34353d|#3f414a|#080C14|#090D16|#050810|#0f0f0f|#000000|\bcyan-\d+|\bindigo-\d+|\bpurple-\d+|\bbrand-emerald\b|\bbg-slate-9|\bbg-zinc-9|\bbg-zinc-8/i
+    const violations = []
+
+    for (const relPath of WAVE4_2A_CLEAN_FILES) {
+      const content = fs.readFileSync(path.join(ROOT, relPath), 'utf-8')
+      const match = content.match(forbiddenWave42APattern)
+      if (match) {
+        violations.push(`${relPath}: ${match[0]}`)
+      }
     }
 
     expect(violations).toEqual([])

@@ -59,7 +59,7 @@ export default function CustomCategoryPicker({
   return (
     <div className="space-y-1.5 relative" ref={dropdownRef}>
       <div className="flex justify-between items-center">
-        <label className="block text-xs font-semibold text-[#bbcbb2] uppercase tracking-wider">
+        <label className="block text-xs font-semibold text-muted uppercase tracking-wider">
           {label}
         </label>
         <button
@@ -69,7 +69,7 @@ export default function CustomCategoryPicker({
             setIsAddingNew(!isAddingNew)
             setNewCatInput('')
           }}
-          className="text-[11px] font-bold text-[#ffc71f] hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
+          className="text-[11px] font-semibold text-primary hover:underline transition-colors flex items-center gap-1 cursor-pointer"
         >
           <Plus size={12} /> Tambah Kategori
         </button>
@@ -79,40 +79,40 @@ export default function CustomCategoryPicker({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full bg-[#1b1b1d] border text-left rounded-sm py-2 px-3 flex items-center justify-between text-xs transition-all outline-none cursor-pointer ${
+        className={`w-full min-h-[44px] bg-subsurface border text-left rounded-xl py-2 px-3 flex items-center justify-between text-xs transition-all outline-none cursor-pointer ${
           isOpen
-            ? 'border-[#00ffff]'
-            : 'border-[#26272d] hover:border-[#3f414a] hover:bg-[#242428]'
+            ? 'border-border-active ring-2 ring-ring/20'
+            : 'border-border hover:border-border-hover hover:bg-surface-hover'
         }`}
       >
         <div className="flex items-center gap-2 truncate">
-          <Tag size={14} className="text-[#00ffff] shrink-0" />
-          <span className="font-bold text-white truncate">
+          <Tag size={14} className="text-primary shrink-0" />
+          <span className="font-semibold text-foreground truncate">
             {value || 'Pilih Kategori Menu'}
           </span>
         </div>
         <ChevronDown
           size={14}
-          className={`text-[#bbcbb2] transition-transform duration-200 shrink-0 ${
-            isOpen ? 'rotate-180 text-[#00ffff]' : ''
+          className={`text-muted transition-transform duration-200 shrink-0 ${
+            isOpen ? 'rotate-180 text-primary' : ''
           }`}
         />
       </button>
 
       {/* Custom Dropdown Modal Panel */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-[#0f0f0f] border border-[#26272d] rounded-md shadow-2xl p-2 space-y-2 backdrop-blur-xl animate-pop-in">
+        <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-surface border border-border rounded-xl shadow-xl p-2 space-y-2 text-foreground animate-pop-in">
           {/* Form Tambah Kategori Cepat */}
           {isAddingNew ? (
-            <div className="p-2 rounded-sm bg-[#1b1b1d] border border-[#ffc71f]/30 space-y-2">
+            <div className="p-2 rounded-lg bg-subsurface border border-primary/25 space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-[11px] font-bold text-[#ffc71f] flex items-center gap-1">
+                <span className="text-[11px] font-bold text-primary flex items-center gap-1">
                   <Sparkles size={12} /> Buat Kategori Baru
                 </span>
                 <button
                   type="button"
                   onClick={() => setIsAddingNew(false)}
-                  className="text-[#bbcbb2] hover:text-white p-0.5"
+                  className="text-muted hover:text-foreground p-0.5 cursor-pointer"
                 >
                   <X size={13} />
                 </button>
@@ -123,7 +123,7 @@ export default function CustomCategoryPicker({
                   placeholder="Ketik kategori (misal: Mocktail Signature)..."
                   value={newCatInput}
                   onChange={(e) => setNewCatInput(e.target.value)}
-                  className="flex-1 bg-[#0f0f0f] border border-[#26272d] rounded-sm px-2.5 py-1 text-xs text-white placeholder-[#6b7367] focus:outline-none focus:border-[#ffc71f]"
+                  className="flex-1 min-h-[40px] bg-surface border border-border rounded-lg px-2.5 py-1 text-base sm:text-xs text-foreground placeholder:text-muted-dark focus:outline-none focus:border-border-active"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -135,7 +135,7 @@ export default function CustomCategoryPicker({
                 <button
                   type="button"
                   onClick={handleAddNew}
-                  className="px-3 py-1 bg-[#ffc71f] hover:bg-[#ffc71f]/90 text-[#0f0f0f] font-bold text-xs rounded-sm shadow-xs cursor-pointer"
+                  className="px-3 py-1.5 bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-xs rounded-full shadow-xs cursor-pointer"
                 >
                   Simpan
                 </button>
@@ -149,7 +149,7 @@ export default function CustomCategoryPicker({
                 placeholder="Cari kategori..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-[#1b1b1d] border border-[#26272d] rounded-sm px-3 py-1 text-xs text-white placeholder-[#6b7367] focus:outline-none focus:border-[#00ffff]"
+                className="w-full min-h-[40px] bg-subsurface border border-border rounded-lg px-3 py-1 text-base sm:text-xs text-foreground placeholder:text-muted-dark focus:outline-none focus:border-border-active"
                 autoFocus
               />
             </div>
@@ -158,7 +158,7 @@ export default function CustomCategoryPicker({
           {/* List Kategori Item */}
           <div className="max-h-48 overflow-y-auto space-y-0.5 pr-1">
             {filteredCategories.length === 0 ? (
-              <div className="p-3 text-center text-xs text-[#6b7367]">
+              <div className="p-3 text-center text-xs text-muted">
                 Tidak ada kategori "{search}".
                 <button
                   type="button"
@@ -166,7 +166,7 @@ export default function CustomCategoryPicker({
                     setIsAddingNew(true)
                     setNewCatInput(search)
                   }}
-                  className="block mx-auto mt-1 text-[#ffc71f] font-bold hover:underline cursor-pointer"
+                  className="block mx-auto mt-1 text-primary font-semibold hover:underline cursor-pointer"
                 >
                   + Tambah "{search}" sekarang
                 </button>
@@ -179,14 +179,14 @@ export default function CustomCategoryPicker({
                     key={cat}
                     type="button"
                     onClick={() => handleSelect(cat)}
-                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-sm text-xs font-semibold transition-all cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-[#00ffff] text-[#0f0f0f] font-bold'
-                        : 'text-[#bbcbb2] hover:bg-[#1b1b1d] hover:text-white'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-foreground hover:bg-subsurface'
                     }`}
                   >
                     <span>{cat}</span>
-                    {isSelected && <Check size={13} className="text-[#0f0f0f]" />}
+                    {isSelected && <Check size={13} className="text-primary-foreground" />}
                   </button>
                 )
               })
@@ -201,7 +201,7 @@ export default function CustomCategoryPicker({
                 setIsAddingNew(true)
                 setNewCatInput('')
               }}
-              className="w-full py-1.5 px-3 rounded-sm border border-dashed border-[#26272d] hover:border-[#ffc71f]/50 bg-[#1b1b1d]/40 text-[#bbcbb2] hover:text-[#ffc71f] text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              className="w-full py-2 px-3 rounded-lg border border-dashed border-border hover:border-primary/50 bg-subsurface text-muted hover:text-primary text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
             >
               <Plus size={13} />
               <span>Tambah Kategori Baru</span>

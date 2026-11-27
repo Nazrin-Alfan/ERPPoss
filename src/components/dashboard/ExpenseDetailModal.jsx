@@ -108,7 +108,7 @@ export default function ExpenseDetailModal({
         title: 'Rincian Pengeluaran Divisi Carwash',
         subtitle: 'Daftar komisi kru pencuci, chemical, shampoo, sabun & utilitas cuci',
         icon: Car,
-        accentColor: '#00ffff',
+        badgeClass: 'bg-primary-soft border-primary/25 text-primary',
         total: expenseData.totalCarwashExp || totalFilteredNominal
       }
     }
@@ -117,7 +117,7 @@ export default function ExpenseDetailModal({
         title: 'Rincian Pengeluaran Divisi Cafe & Resto',
         subtitle: 'Daftar belanja bahan baku (kopi, susu, sirup), kemasan & dapur',
         icon: Coffee,
-        accentColor: '#ffc71f',
+        badgeClass: 'bg-warning-bg border-warning/30 text-warning',
         total: expenseData.totalCafeExp || totalFilteredNominal
       }
     }
@@ -126,7 +126,7 @@ export default function ExpenseDetailModal({
         title: 'Rincian Pengeluaran Bersama (Shared Overhead)',
         subtitle: 'Daftar biaya utilitas (listrik, air, wifi), gaji kru umum & casbon',
         icon: Layers,
-        accentColor: '#f57733',
+        badgeClass: 'bg-subsurface border-border text-foreground',
         total: expenseData.totalSharedExp || totalFilteredNominal
       }
     }
@@ -134,7 +134,7 @@ export default function ExpenseDetailModal({
       title: 'Rincian Seluruh Pengeluaran Holding',
       subtitle: 'Konsolidasi pengeluaran carwash, cafe & beban bersama operasional',
       icon: DollarSign,
-      accentColor: '#ff5102',
+      badgeClass: 'bg-destructive-bg border-destructive/30 text-destructive',
       total: expenseData.totalExpenses || totalFilteredNominal
     }
   }, [isCarwash, isCafe, isShared, expenseData, totalFilteredNominal])
@@ -161,77 +161,72 @@ export default function ExpenseDetailModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-sm animate-fade-in">
-      <div className="bg-[#121215] border border-[#26272d] rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-xs animate-fade-in">
+      <div className="bg-surface border border-border rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden text-foreground">
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-[#26272d] flex items-center justify-between gap-3 bg-[#18181c]">
+        <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between gap-3 bg-subsurface">
           <div className="flex items-center gap-3 min-w-0">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border"
-              style={{
-                backgroundColor: `${titleInfo.accentColor}15`,
-                borderColor: `${titleInfo.accentColor}40`,
-                color: titleInfo.accentColor
-              }}
-            >
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${titleInfo.badgeClass}`}>
               <TitleIcon size={20} strokeWidth={2} />
             </div>
             <div className="min-w-0">
-              <h2 className="text-base sm:text-lg font-bold text-white truncate flex items-center gap-2">
-                <span>{titleInfo.title}</span>
-                <span className="text-xs font-mono font-normal px-2 py-0.5 rounded-md bg-[#26272d] text-[#bbcbb2]">
+              <h2 className="text-base sm:text-lg font-bold text-foreground truncate flex items-center gap-2">
+                <span className="truncate">{titleInfo.title}</span>
+                <span className="text-xs font-mono font-normal px-2 py-0.5 rounded-md bg-surface border border-border text-muted shrink-0">
                   {timeRangeLabel}
                 </span>
               </h2>
-              <p className="text-xs text-[#bbcbb2] truncate mt-0.5">{titleInfo.subtitle}</p>
+              <p className="text-xs text-muted truncate mt-0.5">{titleInfo.subtitle}</p>
             </div>
           </div>
 
           <button
+            type="button"
             onClick={onClose}
-            className="p-2 text-[#bbcbb2] hover:text-white rounded-lg hover:bg-[#26272d] transition-colors cursor-pointer active:scale-[0.98]"
+            className="min-w-[40px] min-h-[40px] flex items-center justify-center text-muted hover:text-foreground rounded-xl hover:bg-surface-hover transition-colors cursor-pointer active:scale-[0.98]"
             title="Tutup Modal"
+            aria-label="Tutup modal rincian pengeluaran"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Top Summary Cards */}
-        <div className="p-4 bg-[#141418] border-b border-[#26272d] grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="p-3 rounded-xl bg-[#18181c] border border-[#26272d]">
-            <span className="text-[10px] uppercase font-bold text-[#bbcbb2] tracking-wider block">
+        <div className="p-4 bg-canvas border-b border-border grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="p-3 rounded-xl bg-surface border border-border">
+            <span className="text-[10px] uppercase font-bold text-muted tracking-wider block">
               Total Pengeluaran
             </span>
-            <p className="text-xl font-bold text-[#ff5102] font-mono mt-0.5">
+            <p className="text-xl font-bold text-destructive font-mono tabular-nums mt-0.5">
               {formatRupiah(titleInfo.total)}
             </p>
-            <span className="text-[11px] text-[#bbcbb2]">
+            <span className="text-[11px] text-muted">
               {activeItems.length} transaksi tercatat
             </span>
           </div>
 
           {isCarwash && (
             <>
-              <div className="p-3 rounded-xl bg-[#18181c] border border-[#26272d]">
-                <span className="text-[10px] uppercase font-bold text-[#bbcbb2] tracking-wider block">
+              <div className="p-3 rounded-xl bg-surface border border-border">
+                <span className="text-[10px] uppercase font-bold text-muted tracking-wider block">
                   Komisi Kru Pencuci
                 </span>
-                <p className="text-xl font-bold text-[#00ffff] font-mono mt-0.5">
+                <p className="text-xl font-bold text-primary font-mono tabular-nums mt-0.5">
                   {formatRupiah(expenseData.carwashCommission || 0)}
                 </p>
-                <span className="text-[11px] text-[#bbcbb2]">
+                <span className="text-[11px] text-muted">
                   Bagi hasil operasional cuci
                 </span>
               </div>
-              <div className="p-3 rounded-xl bg-[#18181c] border border-[#26272d]">
-                <span className="text-[10px] uppercase font-bold text-[#bbcbb2] tracking-wider block">
-                  Bahan & Chemical
+              <div className="p-3 rounded-xl bg-surface border border-border">
+                <span className="text-[10px] uppercase font-bold text-muted tracking-wider block">
+                  Bahan &amp; Chemical
                 </span>
-                <p className="text-xl font-bold text-white font-mono mt-0.5">
+                <p className="text-xl font-bold text-foreground font-mono tabular-nums mt-0.5">
                   {formatRupiah(expenseData.carwashBahan || 0)}
                 </p>
-                <span className="text-[11px] text-[#bbcbb2]">
-                  Shampoo, semir & sabun cuci
+                <span className="text-[11px] text-muted">
+                  Shampoo, semir &amp; sabun cuci
                 </span>
               </div>
             </>
@@ -239,26 +234,26 @@ export default function ExpenseDetailModal({
 
           {isCafe && (
             <>
-              <div className="p-3 rounded-xl bg-[#18181c] border border-[#26272d]">
-                <span className="text-[10px] uppercase font-bold text-[#bbcbb2] tracking-wider block">
+              <div className="p-3 rounded-xl bg-surface border border-border">
+                <span className="text-[10px] uppercase font-bold text-muted tracking-wider block">
                   Belanja Bahan Baku
                 </span>
-                <p className="text-xl font-bold text-[#ffc71f] font-mono mt-0.5">
+                <p className="text-xl font-bold text-warning font-mono tabular-nums mt-0.5">
                   {formatRupiah(expenseData.cafeBahanBaku || 0)}
                 </p>
-                <span className="text-[11px] text-[#bbcbb2]">
-                  Kopi, susu, sirup & kemasan
+                <span className="text-[11px] text-muted">
+                  Kopi, susu, sirup &amp; kemasan
                 </span>
               </div>
-              <div className="p-3 rounded-xl bg-[#18181c] border border-[#26272d]">
-                <span className="text-[10px] uppercase font-bold text-[#bbcbb2] tracking-wider block">
+              <div className="p-3 rounded-xl bg-surface border border-border">
+                <span className="text-[10px] uppercase font-bold text-muted tracking-wider block">
                   Operasional Dapur
                 </span>
-                <p className="text-xl font-bold text-white font-mono mt-0.5">
+                <p className="text-xl font-bold text-foreground font-mono tabular-nums mt-0.5">
                   {formatRupiah(expenseData.cafeOperasional || 0)}
                 </p>
-                <span className="text-[11px] text-[#bbcbb2]">
-                  Gas, perlengkapan & dapur
+                <span className="text-[11px] text-muted">
+                  Gas, perlengkapan &amp; dapur
                 </span>
               </div>
             </>
@@ -266,25 +261,25 @@ export default function ExpenseDetailModal({
 
           {isShared && (
             <>
-              <div className="p-3 rounded-xl bg-[#18181c] border border-[#26272d]">
-                <span className="text-[10px] uppercase font-bold text-[#bbcbb2] tracking-wider block">
-                  Gaji & Casbon Kru
+              <div className="p-3 rounded-xl bg-surface border border-border">
+                <span className="text-[10px] uppercase font-bold text-muted tracking-wider block">
+                  Gaji &amp; Casbon Kru
                 </span>
-                <p className="text-xl font-bold text-[#f57733] font-mono mt-0.5">
+                <p className="text-xl font-bold text-warning font-mono tabular-nums mt-0.5">
                   {formatRupiah(expenseData.bebanBersamaGaji || 0)}
                 </p>
-                <span className="text-[11px] text-[#bbcbb2]">
-                  Gaji tetap & kasbon karyawan
+                <span className="text-[11px] text-muted">
+                  Gaji tetap &amp; kasbon karyawan
                 </span>
               </div>
-              <div className="p-3 rounded-xl bg-[#18181c] border border-[#26272d]">
-                <span className="text-[10px] uppercase font-bold text-[#bbcbb2] tracking-wider block">
+              <div className="p-3 rounded-xl bg-surface border border-border">
+                <span className="text-[10px] uppercase font-bold text-muted tracking-wider block">
                   Utilitas (Listrik/Air/Wifi)
                 </span>
-                <p className="text-xl font-bold text-white font-mono mt-0.5">
+                <p className="text-xl font-bold text-foreground font-mono tabular-nums mt-0.5">
                   {formatRupiah(expenseData.bebanBersamaUtilitas || 0)}
                 </p>
-                <span className="text-[11px] text-[#bbcbb2]">
+                <span className="text-[11px] text-muted">
                   Beban utilitas operasional
                 </span>
               </div>
@@ -293,26 +288,26 @@ export default function ExpenseDetailModal({
 
           {isAll && (
             <>
-              <div className="p-3 rounded-xl bg-[#18181c] border border-[#26272d]">
-                <span className="text-[10px] uppercase font-bold text-[#bbcbb2] tracking-wider block">
+              <div className="p-3 rounded-xl bg-surface border border-border">
+                <span className="text-[10px] uppercase font-bold text-muted tracking-wider block">
                   Beban Carwash + Cafe
                 </span>
-                <p className="text-xl font-bold text-white font-mono mt-0.5">
+                <p className="text-xl font-bold text-foreground font-mono tabular-nums mt-0.5">
                   {formatRupiah((expenseData.totalCarwashExp || 0) + (expenseData.totalCafeExp || 0))}
                 </p>
-                <span className="text-[11px] text-[#bbcbb2]">
+                <span className="text-[11px] text-muted">
                   Total operasional 2 divisi
                 </span>
               </div>
-              <div className="p-3 rounded-xl bg-[#18181c] border border-[#26272d]">
-                <span className="text-[10px] uppercase font-bold text-[#bbcbb2] tracking-wider block">
+              <div className="p-3 rounded-xl bg-surface border border-border">
+                <span className="text-[10px] uppercase font-bold text-muted tracking-wider block">
                   Beban Bersama (Overhead)
                 </span>
-                <p className="text-xl font-bold text-[#f57733] font-mono mt-0.5">
+                <p className="text-xl font-bold text-warning font-mono tabular-nums mt-0.5">
                   {formatRupiah(expenseData.totalSharedExp || 0)}
                 </p>
-                <span className="text-[11px] text-[#bbcbb2]">
-                  Gaji, utilitas & operasional
+                <span className="text-[11px] text-muted">
+                  Gaji, utilitas &amp; operasional
                 </span>
               </div>
             </>
@@ -320,31 +315,33 @@ export default function ExpenseDetailModal({
         </div>
 
         {/* Filter & Search Bar */}
-        <div className="p-3 sm:p-4 border-b border-[#26272d] flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="p-3 sm:p-4 border-b border-border flex flex-col sm:flex-row items-center justify-between gap-3 bg-surface">
           {/* Search Box */}
           <div className="relative w-full sm:w-72">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#bbcbb2]" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
             <input
               type="text"
               placeholder="Cari keterangan / kategori..."
+              aria-label="Cari rincian pengeluaran"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-[#18181c] border border-[#26272d] text-xs text-white placeholder:text-[#6b7367] focus:outline-none focus:border-[#00ffff] transition-colors"
+              className="w-full min-h-[44px] pl-9 pr-3 py-1.5 rounded-xl bg-subsurface border border-border text-base sm:text-xs text-foreground placeholder:text-muted-dark focus:outline-none focus:border-border-active transition-colors"
             />
           </div>
 
           {/* Category Filter Chips & Export */}
           <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end overflow-x-auto no-scrollbar">
             {availableCategories.length > 2 && (
-              <div className="flex items-center gap-1 bg-[#18181c] p-0.5 rounded-lg border border-[#26272d] text-xs shrink-0">
+              <div className="flex items-center gap-1 bg-subsurface p-1 rounded-xl border border-border text-xs shrink-0">
                 {availableCategories.slice(0, 4).map(cat => (
                   <button
                     key={cat}
+                    type="button"
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-2.5 py-1 rounded-md font-semibold text-[11px] transition-all cursor-pointer whitespace-nowrap active:scale-[0.98] ${
+                    className={`px-2.5 py-1 rounded-lg font-semibold text-[11px] transition-all cursor-pointer whitespace-nowrap active:scale-[0.98] ${
                       selectedCategory === cat
-                        ? 'bg-[#26272d] text-white'
-                        : 'text-[#bbcbb2] hover:text-white'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted hover:text-foreground'
                     }`}
                   >
                     {cat === 'ALL' ? 'Semua Kategori' : cat}
@@ -354,8 +351,9 @@ export default function ExpenseDetailModal({
             )}
 
             <button
+              type="button"
               onClick={handleExportCSV}
-              className="px-3 py-1.5 rounded-lg bg-[#18181c] hover:bg-[#242428] text-white border border-[#26272d] text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98] shrink-0"
+              className="min-h-[40px] px-3.5 py-1.5 rounded-full bg-subsurface hover:bg-surface-hover text-foreground border border-border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer active:scale-[0.98] shrink-0"
               title="Ekspor Data ke CSV"
             >
               <Download size={13} />
@@ -367,15 +365,15 @@ export default function ExpenseDetailModal({
         {/* Scrollable Data Table */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2 max-h-[50vh]">
           {filteredList.length === 0 ? (
-            <div className="py-12 text-center text-xs text-[#bbcbb2] space-y-2">
-              <AlertTriangle size={24} className="mx-auto text-[#6b7367]" />
-              <p className="font-semibold text-white">Tidak ada rincian pengeluaran yang ditemukan</p>
-              <p className="text-[#6b7367]">Coba ubah rentang tanggal atau kata kunci pencarian Anda.</p>
+            <div className="py-12 text-center text-xs text-muted space-y-2">
+              <AlertTriangle size={24} className="mx-auto text-muted-dark" />
+              <p className="font-semibold text-foreground">Tidak ada rincian pengeluaran yang ditemukan</p>
+              <p className="text-muted-dark">Coba ubah rentang tanggal atau kata kunci pencarian Anda.</p>
             </div>
           ) : (
-            <div className="border border-[#26272d] rounded-xl overflow-hidden">
+            <div className="border border-border rounded-xl overflow-x-auto">
               <table className="w-full text-xs text-left">
-                <thead className="bg-[#18181c] text-[#bbcbb2] border-b border-[#26272d] uppercase text-[10px] font-bold tracking-wider">
+                <thead className="bg-subsurface text-muted border-b border-border uppercase text-[10px] font-bold tracking-wider">
                   <tr>
                     <th className="py-2.5 px-3">Tanggal</th>
                     <th className="py-2.5 px-3">Kategori</th>
@@ -384,24 +382,24 @@ export default function ExpenseDetailModal({
                     <th className="py-2.5 px-3 text-right">Nominal (Rp)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#26272d]">
+                <tbody className="divide-y divide-border">
                   {filteredList.map((item, idx) => (
-                    <tr key={item.id || idx} className="hover:bg-[#18181c]/60 transition-colors">
-                      <td className="py-2.5 px-3 text-white font-mono whitespace-nowrap">
+                    <tr key={item.id || idx} className="hover:bg-surface-hover transition-colors">
+                      <td className="py-2.5 px-3 text-foreground font-mono tabular-nums whitespace-nowrap">
                         {item.tanggal ? item.tanggal.slice(0, 10) : '-'}
                       </td>
                       <td className="py-2.5 px-3">
-                        <span className="inline-block px-2 py-0.5 rounded-md bg-[#26272d] text-white text-[10px] font-semibold">
+                        <span className="inline-block px-2 py-0.5 rounded-md bg-subsurface border border-border text-foreground text-[10px] font-semibold">
                           {item.kategori || 'Operasional'}
                         </span>
                       </td>
-                      <td className="py-2.5 px-3 text-white font-medium">
+                      <td className="py-2.5 px-3 text-foreground font-medium">
                         {item.keterangan || '-'}
                       </td>
-                      <td className="py-2.5 px-3 text-[#bbcbb2] text-[11px] whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-muted text-[11px] whitespace-nowrap">
                         {item.akun || 'Kasir'}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono font-bold text-[#ff5102] whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold text-destructive whitespace-nowrap">
                         {formatRupiah(item.nominal || 0)}
                       </td>
                     </tr>
@@ -413,21 +411,22 @@ export default function ExpenseDetailModal({
         </div>
 
         {/* Footer */}
-        <div className="p-3 sm:p-4 border-t border-[#26272d] bg-[#18181c] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-          <div className="text-[#bbcbb2]">
-            Menampilkan <strong className="text-white font-mono">{filteredList.length}</strong> dari{' '}
-            <strong className="text-white font-mono">{activeItems.length}</strong> catatan pengeluaran
+        <div className="p-3 sm:p-4 border-t border-border bg-subsurface flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="text-muted">
+            Menampilkan <strong className="text-foreground font-mono tabular-nums">{filteredList.length}</strong> dari{' '}
+            <strong className="text-foreground font-mono tabular-nums">{activeItems.length}</strong> catatan pengeluaran
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-white font-semibold">
+            <span className="text-foreground font-semibold">
               Total Terfilter:{' '}
-              <strong className="text-[#ff5102] font-mono text-sm ml-1">
+              <strong className="text-destructive font-mono tabular-nums text-sm ml-1">
                 {formatRupiah(totalFilteredNominal)}
               </strong>
             </span>
             <button
+              type="button"
               onClick={onClose}
-              className="px-4 py-1.5 rounded-lg bg-[#26272d] hover:bg-[#34353d] text-white font-semibold transition-all cursor-pointer active:scale-[0.98]"
+              className="min-h-[40px] px-4 py-1.5 rounded-full bg-surface hover:bg-surface-hover border border-border text-foreground font-semibold transition-all cursor-pointer active:scale-[0.98]"
             >
               Tutup
             </button>

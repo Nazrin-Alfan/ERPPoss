@@ -24,18 +24,20 @@ describe('Phase 3: Dual-Mode ThemeContext & Strangler-Fig Safety', () => {
     expect(resolveSurfaceMode('/login', 'auto')).toBe('light')
     expect(resolveSurfaceMode('/forgot-password', 'auto')).toBe('light')
     expect(resolveSurfaceMode('/reset-password', 'auto')).toBe('light')
+    expect(resolveSurfaceMode('/dashboard', 'auto')).toBe('light')
+    expect(resolveSurfaceMode('/queue', 'auto')).toBe('light')
   })
 
-  it('keeps unmigrated Phase 4 pages in Pure Carbon Dark D1 during Wave 4.1 so root / does not swallow app routes', () => {
-    expect(resolveSurfaceMode('/dashboard', 'auto')).toBe('dark')
+  it('keeps unmigrated Phase 4 pages in Pure Carbon Dark D1 during Wave 4.2A so root / does not swallow app routes', () => {
     expect(resolveSurfaceMode('/finance', 'auto')).toBe('dark')
     expect(resolveSurfaceMode('/admin', 'auto')).toBe('dark')
     expect(resolveSurfaceMode('/gudang', 'auto')).toBe('dark')
   })
 
   it('respects explicit user light or dark preference override regardless of route', () => {
-    expect(resolveSurfaceMode('/dashboard', 'light')).toBe('light')
+    expect(resolveSurfaceMode('/finance', 'light')).toBe('light')
     expect(resolveSurfaceMode('/pos', 'light')).toBe('light')
+    expect(resolveSurfaceMode('/dashboard', 'dark')).toBe('dark')
     expect(resolveSurfaceMode('/ui-kit', 'dark')).toBe('dark')
   })
 

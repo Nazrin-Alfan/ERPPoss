@@ -309,12 +309,12 @@ export default function OnboardingWizardModal({
   }
 
   const modalContent = (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="w-full max-w-2xl border border-[#26272d] rounded-2xl shadow-2xl relative flex flex-col max-h-[92dvh] overflow-hidden my-auto bg-[#121215] text-white">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs animate-fade-in overflow-y-auto">
+      <div className="w-full max-w-2xl border border-border rounded-2xl shadow-2xl relative flex flex-col max-h-[92dvh] overflow-hidden my-auto bg-surface text-foreground">
         {/* Pinned Header Steps */}
-        <div className="px-5 sm:px-7 pt-5 pb-4 border-b border-[#26272d] shrink-0 bg-[#18181c]">
+        <div className="px-5 sm:px-7 pt-5 pb-4 border-b border-border shrink-0 bg-subsurface">
           <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#00ffff]/10 border border-[#00ffff]/30 text-[#00ffff] text-[11px] font-bold uppercase tracking-wider">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-soft border border-primary/25 text-primary-soft-foreground text-[11px] font-bold uppercase tracking-wider">
               <Sparkles size={13} />
               <span>{isGuidedExisting ? 'Setup Awal Toko' : 'Setup Outlet Baru'}</span>
             </div>
@@ -323,7 +323,7 @@ export default function OnboardingWizardModal({
                 type="button"
                 onClick={handleSkipGuidedSetup}
                 disabled={loading}
-                className="text-xs font-semibold text-[#bbcbb2] hover:text-white flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                className="text-xs font-semibold text-muted hover:text-foreground flex items-center gap-1 cursor-pointer disabled:opacity-50"
               >
                 <span>Lewati &amp; Pakai Template</span>
                 <SkipForward size={13} />
@@ -331,10 +331,10 @@ export default function OnboardingWizardModal({
             )}
           </div>
 
-          <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">
+          <h2 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">
             Konfigurasi Toko Anda
           </h2>
-          <p className="text-[#bbcbb2] text-xs mt-1">
+          <p className="text-muted text-xs mt-1">
             Langkah {currentStep} dari 3:{' '}
             {currentStep === 1
               ? 'Profil Pemilik, Alamat & Printer Struk'
@@ -344,16 +344,16 @@ export default function OnboardingWizardModal({
           </p>
 
           <div className="grid grid-cols-3 gap-2 mt-3">
-            <div className={`h-1.5 rounded-full transition-all ${currentStep >= 1 ? 'bg-[#00ffff]' : 'bg-[#26272d]'}`}></div>
-            <div className={`h-1.5 rounded-full transition-all ${currentStep >= 2 ? 'bg-[#00ffff]' : 'bg-[#26272d]'}`}></div>
-            <div className={`h-1.5 rounded-full transition-all ${currentStep >= 3 ? 'bg-[#00ffff]' : 'bg-[#26272d]'}`}></div>
+            <div className={`h-1.5 rounded-full transition-all ${currentStep >= 1 ? 'bg-primary' : 'bg-border'}`}></div>
+            <div className={`h-1.5 rounded-full transition-all ${currentStep >= 2 ? 'bg-primary' : 'bg-border'}`}></div>
+            <div className={`h-1.5 rounded-full transition-all ${currentStep >= 3 ? 'bg-primary' : 'bg-border'}`}></div>
           </div>
         </div>
 
         {/* Scrollable Form Body */}
         <div className="px-6 sm:px-8 py-5 overflow-y-auto flex-1 min-h-0 overscroll-contain">
           {error && (
-            <div role="alert" className="mb-4 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-start gap-2.5">
+            <div role="alert" className="mb-4 p-3.5 rounded-xl bg-destructive-bg border border-destructive/30 text-destructive text-xs flex items-start gap-2.5">
               <span>{error}</span>
             </div>
           )}
@@ -363,43 +363,43 @@ export default function OnboardingWizardModal({
             <div className="space-y-4 animate-fade-in">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                    Nama Lengkap Pemilik <span className="text-rose-400">*</span>
+                  <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
+                    Nama Lengkap Pemilik <span className="text-destructive">*</span>
                   </label>
                   <div className="relative">
-                    <User size={16} className="absolute left-3.5 top-3 text-slate-500" />
+                    <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark pointer-events-none" />
                     <input
                       type="text"
                       placeholder="Contoh: Budi Santoso"
                       value={ownerName}
                       onChange={(e) => setOwnerName(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-brand-emerald"
+                      className="w-full min-h-[44px] pl-10 pr-4 py-2.5 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark text-base sm:text-sm focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                    Nama Usaha / Toko <span className="text-rose-400">*</span>
+                  <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
+                    Nama Usaha / Toko <span className="text-destructive">*</span>
                   </label>
                   <div className="relative">
-                    <Store size={16} className="absolute left-3.5 top-3 text-slate-500" />
+                    <Store size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark pointer-events-none" />
                     <input
                       type="text"
                       placeholder="Contoh: Berkah Carwash & Cafe"
                       value={storeName}
                       onChange={(e) => setStoreName(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-brand-emerald"
+                      className="w-full min-h-[44px] pl-10 pr-4 py-2.5 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark text-base sm:text-sm focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20"
                     />
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
                   Model Operasional Toko
                 </label>
-                <div className="grid grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   {[
                     { id: 'HYBRID', label: 'Hybrid (Cuci + Cafe)', icon: Sparkles },
                     { id: 'CARWASH', label: 'Carwash Saja', icon: Car },
@@ -412,13 +412,13 @@ export default function OnboardingWizardModal({
                         key={opt.id}
                         type="button"
                         onClick={() => setBusinessModel(opt.id)}
-                        className={`p-3 rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
+                        className={`min-h-[44px] p-3 rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
                           active
-                            ? 'bg-brand-emerald/15 border-brand-emerald text-white'
-                            : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200'
+                            ? 'bg-selected-surface border-border-active text-foreground'
+                            : 'bg-subsurface border-border text-muted hover:text-foreground hover:border-border-hover'
                         }`}
                       >
-                        <Icon size={16} className={active ? 'text-brand-emerald shrink-0' : 'text-slate-500 shrink-0'} />
+                        <Icon size={16} className={active ? 'text-primary shrink-0' : 'text-muted-dark shrink-0'} />
                         <span className="text-xs font-bold leading-tight">{opt.label}</span>
                       </button>
                     )
@@ -428,23 +428,23 @@ export default function OnboardingWizardModal({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
                     Nomor WhatsApp Toko
                   </label>
                   <div className="relative">
-                    <Phone size={16} className="absolute left-3.5 top-3 text-slate-500" />
+                    <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark pointer-events-none" />
                     <input
                       type="text"
                       placeholder="0812-3456-7890"
                       value={storePhone}
                       onChange={(e) => setStorePhone(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-brand-emerald"
+                      className="w-full min-h-[44px] pl-10 pr-4 py-2.5 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark text-base sm:text-sm focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
                     Ukuran Kertas Printer Thermal
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -453,13 +453,13 @@ export default function OnboardingWizardModal({
                         key={w}
                         type="button"
                         onClick={() => setPrinterWidth(w)}
-                        className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        className={`min-h-[44px] py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                           printerWidth === w
-                            ? 'bg-brand-emerald/15 border-brand-emerald text-white'
-                            : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white'
+                            ? 'bg-selected-surface border-border-active text-foreground'
+                            : 'bg-subsurface border-border text-muted hover:text-foreground hover:border-border-hover'
                         }`}
                       >
-                        <Printer size={14} className={printerWidth === w ? 'text-brand-emerald' : 'text-slate-500'} />
+                        <Printer size={14} className={printerWidth === w ? 'text-primary' : 'text-muted-dark'} />
                         <span>{w}</span>
                       </button>
                     ))}
@@ -468,17 +468,17 @@ export default function OnboardingWizardModal({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
                   Alamat Fisik Toko (Tampil di Struk)
                 </label>
                 <div className="relative">
-                  <MapPin size={16} className="absolute left-3.5 top-3 text-slate-500" />
+                  <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark pointer-events-none" />
                   <input
                     type="text"
                     placeholder="Jl. Ringroad No. 88, Medan"
                     value={storeAddress}
                     onChange={(e) => setStoreAddress(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-brand-emerald"
+                    className="w-full min-h-[44px] pl-10 pr-4 py-2.5 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark text-base sm:text-sm focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20"
                   />
                 </div>
               </div>
@@ -495,15 +495,15 @@ export default function OnboardingWizardModal({
                     onClick={() => setClearStarterSamples(false)}
                     className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                       !clearStarterSamples
-                        ? 'bg-brand-emerald/15 border-brand-emerald text-white'
-                        : 'bg-slate-900/60 border-slate-800 text-slate-400'
+                        ? 'bg-selected-surface border-border-active text-foreground'
+                        : 'bg-subsurface border-border text-muted hover:border-border-hover'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold">Pertahankan Data Contoh</span>
-                      {!clearStarterSamples && <CheckCircle2 size={14} className="text-brand-emerald" />}
+                      {!clearStarterSamples && <CheckCircle2 size={14} className="text-primary" />}
                     </div>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
+                    <p className="text-[11px] text-muted mt-0.5">
                       Menu &amp; paket contoh tetap ada plus item baru Anda.
                     </p>
                   </button>
@@ -512,15 +512,15 @@ export default function OnboardingWizardModal({
                     onClick={() => setClearStarterSamples(true)}
                     className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                       clearStarterSamples
-                        ? 'bg-brand-emerald/15 border-brand-emerald text-white'
-                        : 'bg-slate-900/60 border-slate-800 text-slate-400'
+                        ? 'bg-selected-surface border-border-active text-foreground'
+                        : 'bg-subsurface border-border text-muted hover:border-border-hover'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold">Mulai Bersih (Data Sendiri)</span>
-                      {clearStarterSamples && <CheckCircle2 size={14} className="text-brand-emerald" />}
+                      {clearStarterSamples && <CheckCircle2 size={14} className="text-primary" />}
                     </div>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
+                    <p className="text-[11px] text-muted mt-0.5">
                       Hapus semua item contoh dan pakai daftar di bawah ini.
                     </p>
                   </button>
@@ -530,14 +530,14 @@ export default function OnboardingWizardModal({
               {showCarwash && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                      <Car size={14} className="text-brand-emerald" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                      <Car size={14} className="text-primary" />
                       <span>Paket Layanan Cuci</span>
                     </span>
                     <button
                       type="button"
                       onClick={() => setCarwashRows((prev) => [...prev, EMPTY_CARWASH_ROW()])}
-                      className="text-[11px] font-bold text-brand-emerald hover:underline flex items-center gap-1 cursor-pointer"
+                      className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
                     >
                       <Plus size={13} /> Tambah Paket
                     </button>
@@ -549,19 +549,19 @@ export default function OnboardingWizardModal({
                         placeholder="Nama paket (mis: Cuci Salju)"
                         value={row.nama_paket}
                         onChange={(e) => updateRow(setCarwashRows, idx, 'nama_paket', e.target.value)}
-                        className="col-span-7 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-brand-emerald"
+                        className="col-span-7 min-h-[44px] px-3 py-2 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark text-base sm:text-xs focus:outline-none focus:border-border-active"
                       />
                       <input
                         type="number"
                         placeholder="Tarif (Rp)"
                         value={row.tarif}
                         onChange={(e) => updateRow(setCarwashRows, idx, 'tarif', e.target.value)}
-                        className="col-span-4 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs font-mono focus:outline-none focus:border-brand-emerald"
+                        className="col-span-4 min-h-[44px] px-3 py-2 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark text-base sm:text-xs font-mono tabular-nums focus:outline-none focus:border-border-active"
                       />
                       <button
                         type="button"
                         onClick={() => removeRow(setCarwashRows, idx)}
-                        className="col-span-1 p-2 text-slate-500 hover:text-rose-400 cursor-pointer"
+                        className="col-span-1 min-h-[40px] flex items-center justify-center text-muted hover:text-destructive cursor-pointer"
                         aria-label="Hapus baris paket"
                       >
                         <Trash2 size={14} />
@@ -574,14 +574,14 @@ export default function OnboardingWizardModal({
               {showCafe && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                      <Coffee size={14} className="text-brand-emerald" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                      <Coffee size={14} className="text-warning" />
                       <span>Menu Cafe / Produk Jual</span>
                     </span>
                     <button
                       type="button"
                       onClick={() => setCafeRows((prev) => [...prev, EMPTY_CAFE_ROW()])}
-                      className="text-[11px] font-bold text-brand-emerald hover:underline flex items-center gap-1 cursor-pointer"
+                      className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
                     >
                       <Plus size={13} /> Tambah Menu
                     </button>
@@ -593,12 +593,12 @@ export default function OnboardingWizardModal({
                         placeholder="Nama menu (mis: Es Kopi Susu)"
                         value={row.nama_menu}
                         onChange={(e) => updateRow(setCafeRows, idx, 'nama_menu', e.target.value)}
-                        className="col-span-5 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-brand-emerald"
+                        className="col-span-5 min-h-[44px] px-3 py-2 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark text-base sm:text-xs focus:outline-none focus:border-border-active"
                       />
                       <select
                         value={row.kategori}
                         onChange={(e) => updateRow(setCafeRows, idx, 'kategori', e.target.value)}
-                        className="col-span-3 px-2 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-brand-emerald"
+                        className="col-span-3 min-h-[44px] px-2 py-2 bg-subsurface border border-border rounded-xl text-foreground text-base sm:text-xs focus:outline-none focus:border-border-active"
                       >
                         <option value="Minuman">Minuman</option>
                         <option value="Makanan">Makanan</option>
@@ -610,12 +610,12 @@ export default function OnboardingWizardModal({
                         placeholder="Harga (Rp)"
                         value={row.harga}
                         onChange={(e) => updateRow(setCafeRows, idx, 'harga', e.target.value)}
-                        className="col-span-3 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs font-mono focus:outline-none focus:border-brand-emerald"
+                        className="col-span-3 min-h-[44px] px-3 py-2 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark text-base sm:text-xs font-mono tabular-nums focus:outline-none focus:border-border-active"
                       />
                       <button
                         type="button"
                         onClick={() => removeRow(setCafeRows, idx)}
-                        className="col-span-1 p-2 text-slate-500 hover:text-rose-400 cursor-pointer"
+                        className="col-span-1 min-h-[40px] flex items-center justify-center text-muted hover:text-destructive cursor-pointer"
                         aria-label="Hapus baris menu"
                       >
                         <Trash2 size={14} />
@@ -627,8 +627,8 @@ export default function OnboardingWizardModal({
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                    <Boxes size={14} className="text-brand-emerald" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                    <Boxes size={14} className="text-primary" />
                     <span>Bahan Baku &amp; Stok Gudang Awal</span>
                   </span>
                   <button
@@ -639,7 +639,7 @@ export default function OnboardingWizardModal({
                         EMPTY_STOCK_ROW(businessModel === 'CARWASH' ? 'CARWASH' : 'CAFE'),
                       ])
                     }
-                    className="text-[11px] font-bold text-brand-emerald hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <Plus size={13} /> Tambah Bahan
                   </button>
@@ -651,19 +651,19 @@ export default function OnboardingWizardModal({
                       placeholder="Nama bahan (mis: Biji Kopi / Shampo)"
                       value={row.nama_barang}
                       onChange={(e) => updateRow(setStockRows, idx, 'nama_barang', e.target.value)}
-                      className="col-span-4 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-brand-emerald"
+                      className="col-span-4 min-h-[44px] px-3 py-2 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark text-base sm:text-xs focus:outline-none focus:border-border-active"
                     />
                     <input
                       type="number"
                       placeholder="Stok"
                       value={row.stok}
                       onChange={(e) => updateRow(setStockRows, idx, 'stok', e.target.value)}
-                      className="col-span-2 px-2.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs font-mono focus:outline-none focus:border-brand-emerald"
+                      className="col-span-2 min-h-[44px] px-2.5 py-2 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark text-base sm:text-xs font-mono tabular-nums focus:outline-none focus:border-border-active"
                     />
                     <select
                       value={row.satuan}
                       onChange={(e) => updateRow(setStockRows, idx, 'satuan', e.target.value)}
-                      className="col-span-2 px-2 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-brand-emerald"
+                      className="col-span-2 min-h-[44px] px-2 py-2 bg-subsurface border border-border rounded-xl text-foreground text-base sm:text-xs focus:outline-none focus:border-border-active"
                     >
                       <option value="pcs">pcs</option>
                       <option value="kg">kg</option>
@@ -676,19 +676,19 @@ export default function OnboardingWizardModal({
                       placeholder="HPP/unit"
                       value={row.harga_satuan}
                       onChange={(e) => updateRow(setStockRows, idx, 'harga_satuan', e.target.value)}
-                      className="col-span-3 px-2.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs font-mono focus:outline-none focus:border-brand-emerald"
+                      className="col-span-3 min-h-[44px] px-2.5 py-2 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark text-base sm:text-xs font-mono tabular-nums focus:outline-none focus:border-border-active"
                     />
                     <button
                       type="button"
                       onClick={() => removeRow(setStockRows, idx)}
-                      className="col-span-1 p-2 text-slate-500 hover:text-rose-400 cursor-pointer"
+                      className="col-span-1 min-h-[40px] flex items-center justify-center text-muted hover:text-destructive cursor-pointer"
                       aria-label="Hapus baris bahan"
                     >
                       <Trash2 size={14} />
                     </button>
                   </div>
                 ))}
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-muted">
                   Semua baris di langkah ini opsional — Anda dapat menambah atau mengedit resep BOM kapan saja di menu Admin &amp; Gudang.
                 </p>
               </div>
@@ -698,52 +698,52 @@ export default function OnboardingWizardModal({
           {/* STEP 3: AKUN KASIR PERTAMA */}
           {currentStep === 3 && (
             <div className="space-y-4 animate-fade-in">
-              <div className="p-3.5 rounded-2xl bg-brand-emerald/10 border border-brand-emerald/20 text-xs text-slate-300">
-                <span className="font-bold text-brand-emerald block mb-0.5">
+              <div className="p-3.5 rounded-2xl bg-primary-soft border border-primary/25 text-xs text-foreground">
+                <span className="font-bold text-primary-soft-foreground block mb-0.5">
                   Akun Kasir Meja Toko {isGuidedExisting ? '(Opsional)' : ''}
                 </span>
                 Staf kasir tidak membutuhkan akun Google. Buat username dan kata sandi (min. 8 karakter) jika Anda memiliki staf kasir, atau biarkan kosong untuk langsung masuk menggunakan akun Owner.
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
                   Nama Kasir
                 </label>
                 <div className="relative">
-                  <UserCheck size={16} className="absolute left-3.5 top-3.5 text-slate-500" />
+                  <UserCheck size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark pointer-events-none" />
                   <input
                     type="text"
                     placeholder="Misal: Doni"
                     value={cashierName}
                     onChange={(e) => setCashierName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-brand-emerald"
+                    className="w-full min-h-[44px] pl-10 pr-4 py-2.5 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark text-base sm:text-sm focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                    Username Kasir {!isGuidedExisting && <span className="text-rose-400">*</span>}
+                  <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
+                    Username Kasir {!isGuidedExisting && <span className="text-destructive">*</span>}
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3.5 top-2.5 text-slate-500 text-sm">@</span>
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-dark text-sm pointer-events-none">@</span>
                     <input
                       type="text"
                       placeholder="kasir1"
                       value={cashierUsername}
                       onChange={(e) => setCashierUsername(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-brand-emerald font-mono"
+                      className="w-full min-h-[44px] pl-9 pr-3 py-2.5 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark text-base sm:text-sm focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20 font-mono"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                    Kata Sandi / PIN (Min. 8) {!isGuidedExisting && <span className="text-rose-400">*</span>}
+                  <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
+                    Kata Sandi / PIN (Min. 8) {!isGuidedExisting && <span className="text-destructive">*</span>}
                   </label>
                   <div className="relative">
-                    <KeyRound size={15} className="absolute left-3 top-3 text-slate-500" />
+                    <KeyRound size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-dark pointer-events-none" />
                     <input
                       type="password"
                       placeholder="Minimal 8 karakter"
@@ -751,7 +751,7 @@ export default function OnboardingWizardModal({
                       autoComplete="new-password"
                       value={cashierPin}
                       onChange={(e) => setCashierPin(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-brand-emerald font-mono tracking-widest"
+                      className="w-full min-h-[44px] pl-9 pr-3 py-2.5 bg-subsurface border border-border rounded-xl text-foreground placeholder:text-muted-dark text-base sm:text-sm focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20 font-mono tracking-widest"
                     />
                   </div>
                 </div>
@@ -761,13 +761,13 @@ export default function OnboardingWizardModal({
         </div>
 
         {/* Pinned Footer Actions */}
-        <div className="px-5 sm:px-7 py-4 border-t border-[#26272d] bg-[#18181c] shrink-0 flex items-center justify-between">
+        <div className="px-5 sm:px-7 py-4 border-t border-border bg-subsurface shrink-0 flex items-center justify-between gap-2">
           {currentStep > 1 ? (
             <button
               type="button"
               onClick={handleBack}
               disabled={loading}
-              className="px-4 py-2.5 rounded-xl bg-[#26272d] hover:bg-zinc-700 text-zinc-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+              className="min-h-[44px] px-4 py-2.5 rounded-full bg-surface hover:bg-surface-hover border border-border text-foreground text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <ArrowLeft size={14} />
               <span>Kembali</span>
@@ -780,7 +780,7 @@ export default function OnboardingWizardModal({
             <button
               type="button"
               onClick={handleNext}
-              className="px-5 py-2.5 rounded-xl bg-[#00ffff] hover:bg-[#00e5e5] text-[#121215] text-xs font-black flex items-center gap-1.5 shadow-lg shadow-[#00ffff]/15 transition-all cursor-pointer ml-auto"
+              className="min-h-[44px] px-5 py-2.5 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer ml-auto active:scale-[0.98]"
             >
               <span>Lanjut</span>
               <ArrowRight size={14} />
@@ -790,7 +790,7 @@ export default function OnboardingWizardModal({
               type="button"
               onClick={handleSubmit}
               disabled={loading}
-              className="px-6 py-2.5 rounded-xl bg-[#00ffff] hover:bg-[#00e5e5] text-[#121215] text-xs font-black flex items-center gap-1.5 shadow-lg shadow-[#00ffff]/15 transition-all cursor-pointer ml-auto disabled:opacity-50"
+              className="min-h-[44px] px-6 py-2.5 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer ml-auto disabled:opacity-50 active:scale-[0.98]"
             >
               <span>{loading ? 'Menyiapkan Toko...' : 'Selesai & Buka Toko'}</span>
             </button>

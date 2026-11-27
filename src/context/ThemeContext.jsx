@@ -19,7 +19,9 @@ export const MIGRATED_LIGHT_ROUTES = [
   '/manual',
   '/login',
   '/forgot-password',
-  '/reset-password'
+  '/reset-password',
+  '/dashboard',
+  '/queue'
 ]
 
 export const themes = {

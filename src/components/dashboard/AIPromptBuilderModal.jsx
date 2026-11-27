@@ -205,25 +205,25 @@ export default function AIPromptBuilderModal({
   const getPresetIcon = (presetId) => {
     switch (presetId) {
       case 'CFO_AUDIT':
-        return <Receipt size={16} className="text-amber-400" />
+        return <Receipt size={16} className="text-warning" />
       case 'PRIVE_POLICY':
-        return <Scale size={16} className="text-emerald-400" />
+        return <Scale size={16} className="text-success" />
       case 'RELAY_SYNERGY':
-        return <TrendingUp size={16} className="text-cyan-400" />
+        return <TrendingUp size={16} className="text-primary" />
       case 'PEAK_HOURS':
-        return <Clock size={16} className="text-indigo-400" />
+        return <Clock size={16} className="text-primary" />
       case 'DYNAMIC_PRICING':
-        return <Sparkles size={16} className="text-yellow-400" />
+        return <Sparkles size={16} className="text-warning" />
       case 'PRODUCT_BCG':
-        return <Package size={16} className="text-rose-400" />
+        return <Package size={16} className="text-destructive" />
       case 'STOCK_RUNWAY':
-        return <AlertTriangle size={16} className="text-amber-500" />
+        return <AlertTriangle size={16} className="text-warning" />
       case 'CRM_LOYALTY':
       case 'CHURN_RECOVERY':
-        return <Users size={16} className="text-sky-400" />
+        return <Users size={16} className="text-primary" />
       case '360_HEALTH':
       default:
-        return <Layers size={16} className="text-blue-400" />
+        return <Layers size={16} className="text-primary" />
     }
   }
 
@@ -235,32 +235,33 @@ export default function AIPromptBuilderModal({
   ]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-150">
-      <div className="bg-[#090D16] border border-zinc-800/80 rounded-2xl w-full max-w-5xl max-h-[92dvh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs animate-fade-in">
+      <div className="bg-surface border border-border rounded-2xl w-full max-w-5xl max-h-[92dvh] flex flex-col shadow-2xl overflow-hidden text-foreground">
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-zinc-800 bg-zinc-900/60">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border bg-subsurface">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-700/80 flex items-center justify-center text-blue-400 shadow-inner">
+            <div className="w-10 h-10 rounded-xl bg-primary-soft border border-primary/25 flex items-center justify-center text-primary">
               <Bot size={20} strokeWidth={1.75} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base sm:text-lg font-bold text-foreground tracking-tight">
                   RelayPOS Intelligence Layer
                 </h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-semibold uppercase tracking-wider">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary-soft text-primary-soft-foreground border border-primary/25 font-semibold uppercase tracking-wider">
                   AI-Vendor-Neutral
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 mt-0.5">
+              <p className="text-xs text-muted mt-0.5">
                 Kompilasi data deterministik menjadi context bisnis siap-pakai untuk ChatGPT, Claude, Gemini, atau DeepSeek
               </p>
             </div>
           </div>
 
           <button
+            type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all duration-150 active:scale-[0.98]"
+            className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl text-muted hover:text-foreground hover:bg-surface-hover transition-all duration-150 active:scale-[0.98] cursor-pointer"
             aria-label="Tutup Dialog"
           >
             <X size={18} strokeWidth={1.75} />
@@ -268,26 +269,26 @@ export default function AIPromptBuilderModal({
         </div>
 
         {/* Security & Multi-Tenant Bar */}
-        <div className="px-4 sm:px-5 py-2.5 bg-[#050810] border-b border-zinc-800/80 flex items-center justify-between text-xs flex-wrap gap-2">
-          <div className="flex items-center gap-2 text-emerald-400 font-medium">
+        <div className="px-4 sm:px-5 py-2.5 bg-success-bg/60 border-b border-border flex items-center justify-between text-xs flex-wrap gap-2">
+          <div className="flex items-center gap-2 text-success font-semibold">
             <ShieldCheck size={14} strokeWidth={1.75} />
-            <span>Multi-Tenant Row-Level Isolated & 100% Anonim (Zero Customer PII)</span>
+            <span>Multi-Tenant Row-Level Isolated &amp; 100% Anonim (Zero Customer PII)</span>
           </div>
 
-          <div className="flex items-center gap-2 text-zinc-400 text-[11px]">
+          <div className="flex items-center gap-2 text-muted text-[11px]">
             <span>Model Usaha:</span>
-            <span className="font-bold text-white px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 flex items-center gap-1">
+            <span className="font-bold text-foreground px-2.5 py-0.5 rounded-md bg-surface border border-border flex items-center gap-1">
               {tenantType === 'CAFE' ? (
                 <>
-                  <Coffee size={12} className="text-amber-400" /> Cafe Murni
+                  <Coffee size={12} className="text-warning" /> Cafe Murni
                 </>
               ) : tenantType === 'CARWASH' ? (
                 <>
-                  <Car size={12} className="text-blue-400" /> Carwash Murni
+                  <Car size={12} className="text-primary" /> Carwash Murni
                 </>
               ) : (
                 <>
-                  <Store size={12} className="text-emerald-400" /> Hybrid (Sistem Estafet)
+                  <Store size={12} className="text-success" /> Hybrid (Sistem Estafet)
                 </>
               )}
             </span>
@@ -295,40 +296,43 @@ export default function AIPromptBuilderModal({
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex border-b border-zinc-800 bg-zinc-900/30 px-4 sm:px-5 gap-2 pt-2">
+        <div className="flex border-b border-border bg-subsurface px-4 sm:px-5 gap-2 pt-2 overflow-x-auto no-scrollbar">
           <button
+            type="button"
             onClick={() => setActiveTab('PRESETS')}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-all duration-150 ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-all duration-150 whitespace-nowrap cursor-pointer ${
               activeTab === 'PRESETS'
-                ? 'bg-[#090D16] text-white border-t border-x border-zinc-800 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
+                ? 'bg-surface text-foreground border-t border-x border-border shadow-xs'
+                : 'text-muted hover:text-foreground hover:bg-surface/50'
             }`}
           >
-            <Sparkles size={14} className={activeTab === 'PRESETS' ? 'text-blue-400' : 'text-zinc-500'} />
+            <Sparkles size={14} className={activeTab === 'PRESETS' ? 'text-primary' : 'text-muted-dark'} />
             10 Preset Strategis
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab('CUSTOM')}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-all duration-150 ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-all duration-150 whitespace-nowrap cursor-pointer ${
               activeTab === 'CUSTOM'
-                ? 'bg-[#090D16] text-white border-t border-x border-zinc-800 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
+                ? 'bg-surface text-foreground border-t border-x border-border shadow-xs'
+                : 'text-muted hover:text-foreground hover:bg-surface/50'
             }`}
           >
-            <HelpCircle size={14} className={activeTab === 'CUSTOM' ? 'text-amber-400' : 'text-zinc-500'} />
+            <HelpCircle size={14} className={activeTab === 'CUSTOM' ? 'text-warning' : 'text-muted-dark'} />
             Tanya Bebas (Custom Query)
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab('RAW_JSON')}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-all duration-150 ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-all duration-150 whitespace-nowrap cursor-pointer ${
               activeTab === 'RAW_JSON'
-                ? 'bg-[#090D16] text-white border-t border-x border-zinc-800 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
+                ? 'bg-surface text-foreground border-t border-x border-border shadow-xs'
+                : 'text-muted hover:text-foreground hover:bg-surface/50'
             }`}
           >
-            <FileCode size={14} className={activeTab === 'RAW_JSON' ? 'text-emerald-400' : 'text-zinc-500'} />
+            <FileCode size={14} className={activeTab === 'RAW_JSON' ? 'text-success' : 'text-muted-dark'} />
             Raw JSON Context
           </button>
         </div>
@@ -339,10 +343,10 @@ export default function AIPromptBuilderModal({
           {activeTab === 'PRESETS' && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider block">
+                <label className="text-xs font-bold text-foreground uppercase tracking-wider block">
                   Pilih Fokus Strategi Analisis:
                 </label>
-                <span className="text-[11px] text-zinc-500 font-mono">
+                <span className="text-[11px] text-muted font-mono tabular-nums">
                   {filteredPresets.length} Template Tersedia
                 </span>
               </div>
@@ -353,25 +357,26 @@ export default function AIPromptBuilderModal({
                   return (
                     <button
                       key={preset.id}
+                      type="button"
                       onClick={() => setSelectedPreset(preset.id)}
-                      className={`text-left p-3.5 rounded-xl border transition-all duration-150 flex items-start gap-3 active:scale-[0.98] ${
+                      className={`text-left p-3.5 rounded-xl border transition-all duration-150 flex items-start gap-3 active:scale-[0.98] cursor-pointer ${
                         isSelected
-                          ? 'bg-blue-600/10 border-blue-500/80 shadow-md ring-1 ring-blue-500/30'
-                          : 'bg-zinc-900/40 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/80'
+                          ? 'bg-selected-surface border-border-active ring-1 ring-ring/30 shadow-xs'
+                          : 'bg-subsurface border-border hover:border-border-hover hover:bg-surface-hover'
                       }`}
                     >
                       <div className={`p-2 rounded-lg mt-0.5 border ${
                         isSelected
-                          ? 'bg-blue-500/20 border-blue-500/40'
-                          : 'bg-zinc-800 border-zinc-700'
+                          ? 'bg-primary-soft border-primary/25'
+                          : 'bg-surface border-border'
                       }`}>
                         {getPresetIcon(preset.id)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-xs text-white leading-tight">
+                        <div className="font-bold text-xs text-foreground leading-tight">
                           {preset.title}
                         </div>
-                        <div className="text-[11px] text-zinc-400 mt-1 line-clamp-2 leading-relaxed">
+                        <div className="text-[11px] text-muted mt-1 line-clamp-2 leading-relaxed">
                           {preset.desc}
                         </div>
                       </div>
@@ -386,10 +391,10 @@ export default function AIPromptBuilderModal({
           {activeTab === 'CUSTOM' && (
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider block mb-1">
+                <label className="text-xs font-bold text-foreground uppercase tracking-wider block mb-1">
                   Ketik Pertanyaan atau Instruksi Spesifik:
                 </label>
-                <p className="text-xs text-zinc-400 mb-2">
+                <p className="text-xs text-muted mb-2">
                   Intelligence Layer akan otomatis melampirkan seluruh metrik keuangan, operasional, dan stok secara lengkap di balik layar.
                 </p>
                 <textarea
@@ -397,23 +402,24 @@ export default function AIPromptBuilderModal({
                   onChange={(e) => setCustomQuestion(e.target.value)}
                   placeholder="Contoh: Tolong bandingkan profitabilitas menu cafe terlaris vs menu yang jarang laku, lalu buatkan strategi bundling kombo dengan paket cuci mobil..."
                   rows={4}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-sans leading-relaxed"
+                  className="w-full bg-subsurface border border-border rounded-xl p-3 text-base sm:text-xs text-foreground placeholder:text-muted-dark focus:outline-none focus:border-border-active focus:ring-2 focus:ring-ring/20 transition-all font-sans leading-relaxed"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block mb-2">
+                <label className="text-[11px] font-bold text-muted uppercase tracking-wider block mb-2">
                   Contoh Pertanyaan Cepat (Quick Suggestions):
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {quickQuestions.map((q, idx) => (
                     <button
                       key={idx}
+                      type="button"
                       onClick={() => setCustomQuestion(q)}
-                      className="text-left p-2.5 rounded-lg bg-zinc-900/60 border border-zinc-800/80 hover:border-zinc-700 text-xs text-zinc-300 hover:text-white transition-all flex items-center justify-between gap-2 active:scale-[0.98]"
+                      className="text-left p-2.5 rounded-xl bg-subsurface border border-border hover:border-border-hover text-xs text-foreground transition-all flex items-center justify-between gap-2 active:scale-[0.98] cursor-pointer"
                     >
                       <span className="line-clamp-1">{q}</span>
-                      <ArrowRight size={12} className="text-zinc-500 flex-shrink-0" />
+                      <ArrowRight size={12} className="text-muted flex-shrink-0" />
                     </button>
                   ))}
                 </div>
@@ -425,14 +431,14 @@ export default function AIPromptBuilderModal({
           {activeTab === 'RAW_JSON' && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider block">
+                <label className="text-xs font-bold text-foreground uppercase tracking-wider block">
                   Deterministic JSON Schema Output:
                 </label>
-                <span className="text-[11px] font-mono text-zinc-400">
+                <span className="text-[11px] font-mono text-muted">
                   Ready for AI API Ingestion
                 </span>
               </div>
-              <pre className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-[11px] font-mono text-emerald-400 max-h-80 overflow-y-auto leading-relaxed select-all">
+              <pre className="w-full bg-subsurface border border-border rounded-xl p-3.5 text-[11px] font-mono text-foreground max-h-80 overflow-y-auto leading-relaxed select-all">
                 {rawJsonOutput}
               </pre>
             </div>
@@ -440,16 +446,16 @@ export default function AIPromptBuilderModal({
 
           {/* Prompt Preview Box (Hanya jika tab bukan RAW_JSON) */}
           {activeTab !== 'RAW_JSON' && (
-            <div className="space-y-2 pt-2 border-t border-zinc-800/80">
+            <div className="space-y-2 pt-2 border-t border-border">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider block">
+                <label className="text-xs font-bold text-foreground uppercase tracking-wider block">
                   Pratinjau Prompt Eksekutif:
                 </label>
-                <span className="text-[11px] text-zinc-500 font-mono">
+                <span className="text-[11px] text-muted font-mono tabular-nums">
                   {markdownPrompt.length} karakter
                 </span>
               </div>
-              <div className="bg-zinc-950 border border-zinc-800/90 rounded-xl p-3.5 max-h-64 overflow-y-auto font-mono text-[11px] text-zinc-300 whitespace-pre-wrap leading-relaxed select-all">
+              <div className="bg-subsurface border border-border rounded-xl p-3.5 max-h-64 overflow-y-auto font-mono text-[11px] text-foreground whitespace-pre-wrap leading-relaxed select-all">
                 {markdownPrompt}
               </div>
             </div>
@@ -457,20 +463,21 @@ export default function AIPromptBuilderModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 sm:p-5 border-t border-zinc-800 bg-zinc-900/60 flex items-center justify-between flex-wrap gap-3">
+        <div className="p-4 sm:p-5 border-t border-border bg-subsurface flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-2">
-            <kbd className="hidden sm:inline-block font-mono text-[10px] px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-400">
+            <kbd className="hidden sm:inline-block font-mono text-[10px] px-2 py-0.5 rounded-md bg-surface border border-border text-muted">
               100% Vendor-Neutral
             </kbd>
-            <span className="text-xs text-zinc-400">
+            <span className="text-xs text-muted">
               Tempel prompt ke ChatGPT / Claude / DeepSeek
             </span>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
             <button
+              type="button"
               onClick={handleDownloadJSON}
-              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 transition-all duration-150 flex items-center gap-2 active:scale-[0.98]"
+              className="min-h-[40px] px-3.5 py-2 rounded-full text-xs font-semibold bg-surface hover:bg-surface-hover border border-border text-foreground transition-all duration-150 flex items-center gap-2 active:scale-[0.98] cursor-pointer"
               title="Unduh file JSON"
             >
               <Download size={14} strokeWidth={1.75} />
@@ -478,11 +485,12 @@ export default function AIPromptBuilderModal({
             </button>
 
             <button
+              type="button"
               onClick={handleCopyJSON}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all duration-150 flex items-center gap-2 border active:scale-[0.98] ${
+              className={`min-h-[40px] px-3.5 py-2 rounded-full text-xs font-semibold transition-all duration-150 flex items-center gap-2 border active:scale-[0.98] cursor-pointer ${
                 copiedType === 'JSON'
-                  ? 'bg-emerald-600 border-emerald-500 text-white'
-                  : 'bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-zinc-200'
+                  ? 'bg-success border-success text-white'
+                  : 'bg-surface hover:bg-surface-hover border-border text-foreground'
               }`}
             >
               {copiedType === 'JSON' ? (
@@ -497,11 +505,12 @@ export default function AIPromptBuilderModal({
             </button>
 
             <button
+              type="button"
               onClick={handleCopyMarkdown}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-150 flex items-center gap-2 shadow-lg active:scale-[0.98] ${
+              className={`min-h-[40px] px-4 py-2 rounded-full text-xs font-semibold transition-all duration-150 flex items-center gap-2 shadow-xs active:scale-[0.98] cursor-pointer ${
                 copiedType === 'MARKDOWN'
-                  ? 'bg-emerald-600 text-white shadow-emerald-900/30'
-                  : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/30'
+                  ? 'bg-success text-white'
+                  : 'bg-primary hover:bg-primary-hover text-primary-foreground'
               }`}
             >
               {copiedType === 'MARKDOWN' ? (
