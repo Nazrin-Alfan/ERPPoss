@@ -576,4 +576,19 @@ input[type="datetime-local"]:focus {
   }
 }
 
+/* Responsive offset for workspace modals so they adapt to expanded/collapsed Sidebar */
+:root,
+[data-sidebar-state="none"] {
+  --app-sidebar-offset: 0px;
+}
+
+@media (min-width: 768px) {
+  [data-sidebar-state="expanded"] {
+    --app-sidebar-offset: 240px;
+  }
+  [data-sidebar-state="collapsed"] {
+    --app-sidebar-offset: 72px;
+  }
+}
+
 /* Print & thermal receipt rules live exclusively in src/styles/print-contracts.css */

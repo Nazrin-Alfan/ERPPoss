@@ -168,20 +168,20 @@ export function calculateOutletBreakdown({
     // Status performa kualitatif
     let healthStatus = 'STABLE'
     let healthLabel = 'Stabil'
-    let healthColor = 'text-blue-400 bg-blue-500/10 border-blue-500/30'
+    let healthColor = 'bg-primary-soft text-primary-soft-foreground border-primary/30'
 
     if (revenue > 0 && margin >= 30) {
       healthStatus = 'EXCELLENT'
       healthLabel = 'Sangat Profit'
-      healthColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
+      healthColor = 'bg-success-bg text-success border-success/30'
     } else if (revenue > 0 && netProfit < 0) {
       healthStatus = 'DEFICIT'
       healthLabel = 'Defisit'
-      healthColor = 'text-rose-400 bg-rose-500/10 border-rose-500/30'
+      healthColor = 'bg-destructive-bg text-destructive border-destructive/30'
     } else if (revenue === 0) {
       healthStatus = 'INACTIVE'
       healthLabel = 'Belum Ada Penjualan'
-      healthColor = 'text-slate-400 bg-slate-800 border-slate-700'
+      healthColor = 'bg-subsurface text-muted border-border'
     }
 
     return {

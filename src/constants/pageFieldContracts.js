@@ -161,7 +161,6 @@ export const PAGE_FIELD_CONTRACTS = [
     requiredTabs: ['ALL', 'CAFE', 'CARWASH'],
     requiredRenderedComponents: [
       'AIPromptBuilderModal',
-      'ExecutivePromptStudio',
       'ExpenseDetailModal',
       'OnboardingWizardModal',
       'InteractiveCalendar'
@@ -173,6 +172,22 @@ export const PAGE_FIELD_CONTRACTS = [
       pos_balances: ['tenant_id', 'branch_id', 'label', 'tipe', 'balance'],
       cafe: ['tenant_id', 'branch_id', 'tanggal', 'subtotal'],
       carwash: ['tenant_id', 'branch_id', 'tanggal', 'harga']
+    }
+  },
+  {
+    id: 'ai-studio',
+    name: 'AI Data Studio & Canvas Workspace',
+    route: '/ai-studio',
+    file: 'src/pages/AIStudio.jsx',
+    companionFiles: [],
+    figcraftFrame: '03',
+    requiredTabs: [],
+    requiredRenderedComponents: ['ExecutivePromptStudio'],
+    requiredSections: ['v_pocket_balances', 'targetCapacity'],
+    requiredFields: [],
+    requiredHandlers: ['fetchStudioData'],
+    dbColumns: {
+      pos_balances: ['tenant_id', 'branch_id', 'label', 'tipe', 'balance']
     }
   },
   {
@@ -834,7 +849,7 @@ export const SUBCOMPONENT_FIELD_CONTRACTS = [
   },
   {
     id: 'sub-dashboard-executive-studio',
-    parentPage: 'dashboard',
+    parentPage: 'ai-studio',
     name: 'ExecutivePromptStudio',
     file: 'src/components/dashboard/ExecutivePromptStudio.jsx',
     requiredTabs: [],

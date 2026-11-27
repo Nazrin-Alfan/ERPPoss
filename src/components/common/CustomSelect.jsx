@@ -18,6 +18,7 @@ import { ChevronDown, Check, Search, X } from 'lucide-react'
  * - disabled?: boolean
  * - className?: string
  * - menuClassName?: string
+ * - listMaxHeightClass?: string
  * - align?: 'left' | 'right'
  * - icon?: React.ReactNode
  */
@@ -34,6 +35,7 @@ export default function CustomSelect({
   disabled = false,
   className = '',
   menuClassName = '',
+  listMaxHeightClass = 'max-h-60',
   align = 'left',
   icon = null
 }) {
@@ -261,7 +263,7 @@ export default function CustomSelect({
             </div>
           )}
 
-          <div className="max-h-60 overflow-y-auto space-y-0.5 pr-0.5 custom-dropdown-scrollbar">
+          <div className={`${listMaxHeightClass} overflow-y-auto space-y-0.5 pr-0.5 custom-dropdown-scrollbar`}>
             {filteredOptions.length === 0 ? (
               <div className="p-3 text-center text-xs text-muted-dark font-normal">
                 Tidak ada pilihan ditemukan

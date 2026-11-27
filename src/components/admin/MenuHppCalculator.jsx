@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Calculator, TrendingUp, Sparkles, Check, ChevronDown, ChevronUp, AlertCircle, Package } from 'lucide-react'
 import { formatRupiah } from '../../utils/helpers'
 import { calculateMenuHpp, calculateMarginSimulation } from '../../utils/hppCalculator'
@@ -8,13 +8,21 @@ const MenuHppCalculator = ({
   stokBahan = [],
   sellingPrice = 0,
   onApplyPrice,
-  initialOpen = false
+  onHppSummaryChange,
+  initialOpen = false,
+  initialSimMode = 'recommend'
 }) => {
   const [isOpen, setIsOpen] = useState(initialOpen)
   const [calcMode, setCalcMode] = useState('recipe') // 'recipe' | 'invoice'
+  const [simMode, setSimMode] = useState(initialSimMode) // 'recommend' | 'custom_price'
   const [packagingCost, setPackagingCost] = useState(0)
   const [overheadCost, setOverheadCost] = useState(0)
   const [targetMargin, setTargetMargin] = useState(60)
+  const [customSellingPrice, setCustomSellingPrice] = useState(() => (sellingPrice > 0 ? String(sellingPrice) : ''))
+
+  useEffect(() => {
+    setCustomSellingPrice(sellingPrice > 0 ? String(sellingPrice) : '')
+  }, [sellingPrice])
 
   // Invoice mode inputs (misal beli snack / dessert jadi per box)
   const [invoiceTotal, setInvoiceTotal] = useState('')
@@ -48,14 +56,22 @@ const MenuHppCalculator = ({
     return Math.round(invoiceHppPerPortion + (parseFloat(packagingCost) || 0) + (parseFloat(overheadCost) || 0))
   }, [calcMode, recipeHppData.totalHpp, invoiceHppPerPortion, packagingCost, overheadCost])
 
+  useEffect(() => {
+    if (typeof onHppSummaryChange === 'function') {
+      onHppSummaryChange(effectiveTotalHpp)
+    }
+  }, [effectiveTotalHpp, onHppSummaryChange])
+
+  const simulatedPriceValue = Math.max(0, parseFloat(customSellingPrice) || 0)
+
   // 3. Simulasi Margin & Rekomendasi Harga
   const marginSimulation = useMemo(() => {
     return calculateMarginSimulation({
-      sellingPrice,
+      sellingPrice: simulatedPriceValue,
       totalHpp: effectiveTotalHpp,
       targetMargin
     })
-  }, [sellingPrice, effectiveTotalHpp, targetMargin])
+  }, [simulatedPriceValue, effectiveTotalHpp, targetMargin])
 
   const marginBadges = {
     HEALTHY: { text: 'Sangat Sehat', bg: 'bg-success-bg text-success border-success/30' },
@@ -237,94 +253,163 @@ const MenuHppCalculator = ({
             </div>
           </div>
 
-          {/* SIMULASI HARGA JUAL & TARGET MARGIN */}
+          {/* SIMULASI HARGA JUAL & MARGIN (SWITCHER 2 MODE) */}
           <div className="p-3 rounded-xl bg-surface border border-border space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                <TrendingUp size={14} className="text-primary" />
+            <div className="flex items-center gap-1.5 p-1 bg-subsurface rounded-lg border border-border">
+              <button
+                type="button"
+                onClick={() => setSimMode('recommend')}
+                className={`flex-1 py-1.5 px-2.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                  simMode === 'recommend'
+                    ? 'bg-primary text-primary-foreground shadow-xs font-bold'
+                    : 'text-muted hover:text-foreground'
+                }`}
+              >
                 Simulasi Rekomendasi Harga Jual
-              </span>
-              <span className="text-[10px] text-muted">
-                Target Margin: <strong className="text-primary font-mono">{targetMargin}%</strong>
-              </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSimMode('custom_price')}
+                className={`flex-1 py-1.5 px-2.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                  simMode === 'custom_price'
+                    ? 'bg-primary text-primary-foreground shadow-xs font-bold'
+                    : 'text-muted hover:text-foreground'
+                }`}
+              >
+                Hitung Margin Otomatis
+              </button>
             </div>
 
-            {/* Quick Preset Buttons */}
-            <div className="flex gap-1.5">
-              {[40, 50, 60, 70].map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => setTargetMargin(preset)}
-                  className={`flex-1 py-1 rounded text-xs font-semibold font-mono transition-all ${
-                    targetMargin === preset
-                      ? 'bg-primary text-primary-foreground font-bold shadow-sm'
-                      : 'bg-subsurface text-muted hover:text-foreground border border-border'
-                  }`}
-                >
-                  {preset}%
-                </button>
-              ))}
-              <div className="w-16">
-                <input
-                  type="number"
-                  min="1"
-                  max="95"
-                  value={targetMargin}
-                  onChange={(e) => setTargetMargin(Math.max(1, Math.min(95, parseFloat(e.target.value) || 0)))}
-                  className="w-full bg-subsurface border border-border rounded py-1 px-1.5 text-center text-xs font-mono text-foreground"
-                  title="Target Margin Kustom (%)"
-                />
-              </div>
-            </div>
-
-            {/* Rekomendasi Harga & Tombol Terapkan */}
-            {effectiveTotalHpp > 0 && (
-              <div className="p-2.5 rounded-lg bg-primary-soft border border-primary/30 flex items-center justify-between gap-3">
-                <div>
-                  <span className="text-[10px] text-primary block">Rekomendasi Harga Jual ({targetMargin}%):</span>
-                  <span className="text-sm font-bold text-primary font-mono tabular-nums">
-                    {formatRupiah(marginSimulation.recommendedPrice)}
+            {simMode === 'recommend' ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <TrendingUp size={14} className="text-primary" />
+                    Target Margin Keuntungan
+                  </span>
+                  <span className="text-[10px] text-muted">
+                    Target Margin: <strong className="text-primary font-mono">{targetMargin}%</strong>
                   </span>
                 </div>
-                {onApplyPrice && (
-                  <button
-                    type="button"
-                    onClick={() => onApplyPrice(marginSimulation.recommendedPrice)}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-primary hover:bg-primary-soft active:scale-[0.98] text-primary-foreground font-bold text-xs rounded-lg transition-all"
-                  >
-                    <Check size={13} />
-                    <span>Terapkan Harga</span>
-                  </button>
+
+                {/* Quick Preset Buttons */}
+                <div className="flex gap-1.5">
+                  {[40, 50, 60, 70].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setTargetMargin(preset)}
+                      className={`flex-1 py-1 rounded text-xs font-semibold font-mono transition-all cursor-pointer ${
+                        targetMargin === preset
+                          ? 'bg-primary text-primary-foreground font-bold shadow-sm'
+                          : 'bg-subsurface text-muted hover:text-foreground border border-border'
+                      }`}
+                    >
+                      {preset}%
+                    </button>
+                  ))}
+                  <div className="w-16">
+                    <input
+                      type="number"
+                      min="1"
+                      max="95"
+                      value={targetMargin}
+                      onChange={(e) => setTargetMargin(Math.max(1, Math.min(95, parseFloat(e.target.value) || 0)))}
+                      className="w-full bg-subsurface border border-border rounded py-1 px-1.5 text-center text-xs font-mono text-foreground"
+                      title="Target Margin Kustom (%)"
+                    />
+                  </div>
+                </div>
+
+                {/* Rekomendasi Harga & Tombol Terapkan */}
+                {effectiveTotalHpp > 0 && (
+                  <div className="p-2.5 rounded-lg bg-primary-soft border border-primary/30 flex items-center justify-between gap-3">
+                    <div>
+                      <span className="text-[10px] text-primary block">Rekomendasi Harga Jual ({targetMargin}%):</span>
+                      <span className="text-sm font-bold text-primary font-mono tabular-nums">
+                        {formatRupiah(marginSimulation.recommendedPrice)}
+                      </span>
+                    </div>
+                    {onApplyPrice && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomSellingPrice(String(marginSimulation.recommendedPrice))
+                          onApplyPrice(marginSimulation.recommendedPrice)
+                        }}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-primary hover:bg-primary-hover active:scale-[0.98] text-primary-foreground font-bold text-xs rounded-lg transition-all cursor-pointer"
+                      >
+                        <Check size={13} />
+                        <span>Terapkan Harga</span>
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-
-          {/* LIVE MARGIN ANALYSIS FROM SELLING PRICE */}
-          {sellingPrice > 0 && (
-            <div className="p-3 rounded-xl bg-surface border border-border space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-muted">Harga Jual Saat Ini:</span>
-                <span className="font-bold text-foreground font-mono">{formatRupiah(sellingPrice)}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-muted">Estimasi Laba Kotor per Porsi:</span>
-                <span className={`font-bold font-mono ${marginSimulation.grossProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
-                  {formatRupiah(marginSimulation.grossProfit)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-xs pt-1 border-t border-border">
-                <span className="text-muted">Margin Keuntungan:</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-foreground">{marginSimulation.marginPercent}%</span>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-foreground">
+                    Simulasi Harga Jual ➔ Hitung Margin Otomatis
+                  </span>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${activeBadge.bg}`}>
                     {activeBadge.text}
                   </span>
                 </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-muted mb-1">
+                    Tentukan Harga Jual (Rp)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      aria-label="Tentukan Harga Jual (Rp)"
+                      placeholder="Masukkan harga jual, misal: 20000"
+                      value={customSellingPrice}
+                      onChange={(e) => setCustomSellingPrice(e.target.value)}
+                      className="flex-1 bg-subsurface border border-border rounded-lg py-1.5 px-2.5 text-foreground text-xs font-mono tabular-nums focus:outline-none focus:border-ring"
+                    />
+                    {onApplyPrice && (
+                      <button
+                        type="button"
+                        disabled={simulatedPriceValue <= 0}
+                        onClick={() => onApplyPrice(simulatedPriceValue)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary-soft hover:bg-primary hover:text-primary-foreground text-primary-soft-foreground border border-primary/30 font-bold text-xs transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0"
+                      >
+                        <Check size={13} />
+                        <span>Terapkan</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 pt-1 border-t border-border">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted">Margin Keuntungan:</span>
+                    <span className="font-mono tabular-nums font-bold text-foreground">
+                      {simulatedPriceValue > 0 ? `${marginSimulation.marginPercent}%` : '0%'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted">Estimasi Laba Kotor per Porsi:</span>
+                    <span className={`font-bold font-mono tabular-nums ${marginSimulation.grossProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      {simulatedPriceValue > 0 ? formatRupiah(marginSimulation.grossProfit) : formatRupiah(0)}
+                    </span>
+                  </div>
+                  {simulatedPriceValue > 0 && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted">Rasio HPP / Food Cost:</span>
+                      <span className="font-mono tabular-nums font-semibold text-muted">
+                        {marginSimulation.foodCostPercent}%
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </div>

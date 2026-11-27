@@ -17,6 +17,27 @@ import { formatRupiah } from '../../utils/helpers'
 
 const SIZES = ['Small', 'Medium', 'Large', 'Extra Large']
 const VARIANTS = ['Regular', 'Body only']
+export const MAX_CARWASH_PACKAGE_NAME_LENGTH = 32
+
+export const isUniformCarwashTarif = (tarif) => {
+  if (!tarif || typeof tarif !== 'object') return false
+  const values = []
+  for (const s of SIZES) {
+    for (const v of VARIANTS) {
+      values.push(Number(tarif?.[s]?.[v] ?? 0))
+    }
+  }
+  return values.length === SIZES.length * VARIANTS.length && values.every((val) => val === values[0])
+}
+
+const buildFlatTarifMatrix = (amount) => {
+  const numeric = Math.max(0, Number(amount) || 0)
+  const matrix = {}
+  for (const s of SIZES) {
+    matrix[s] = { Regular: numeric, 'Body only': numeric }
+  }
+  return matrix
+}
 
 const CarwashPackageManager = ({
   packages = [],
@@ -29,6 +50,7 @@ const CarwashPackageManager = ({
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
+  const [isFlatRate, setIsFlatRate] = useState(false)
   const [formData, setFormData] = useState({
     nama_paket: '',
     keterangan: '',
@@ -62,6 +84,7 @@ const CarwashPackageManager = ({
 
   const openNewModal = () => {
     setEditingId(null)
+    setIsFlatRate(false)
     setFormData({
       nama_paket: '',
       keterangan: '',
@@ -117,30 +140,33 @@ const CarwashPackageManager = ({
         }
       })
 
+    const normalizedTarif = {
+      Small: {
+        Regular: pkg.tarif?.Small?.Regular ?? 50000,
+        'Body only': pkg.tarif?.Small?.['Body only'] ?? 35000
+      },
+      Medium: {
+        Regular: pkg.tarif?.Medium?.Regular ?? 55000,
+        'Body only': pkg.tarif?.Medium?.['Body only'] ?? 40000
+      },
+      Large: {
+        Regular: pkg.tarif?.Large?.Regular ?? 60000,
+        'Body only': pkg.tarif?.Large?.['Body only'] ?? 45000
+      },
+      'Extra Large': {
+        Regular: pkg.tarif?.['Extra Large']?.Regular ?? 80000,
+        'Body only': pkg.tarif?.['Extra Large']?.['Body only'] ?? 80000
+      }
+    }
+    setIsFlatRate(isUniformCarwashTarif(normalizedTarif))
+
     setFormData({
       nama_paket: pkg.nama_paket || '',
       keterangan: pkg.keterangan || '',
       komisi_skema: pkg.komisi_skema || 'TIERED',
       komisi_value: pkg.komisi_value || 0,
       is_active: pkg.is_active !== false,
-      tarif: {
-        Small: {
-          Regular: pkg.tarif?.Small?.Regular ?? 50000,
-          'Body only': pkg.tarif?.Small?.['Body only'] ?? 35000
-        },
-        Medium: {
-          Regular: pkg.tarif?.Medium?.Regular ?? 55000,
-          'Body only': pkg.tarif?.Medium?.['Body only'] ?? 40000
-        },
-        Large: {
-          Regular: pkg.tarif?.Large?.Regular ?? 60000,
-          'Body only': pkg.tarif?.Large?.['Body only'] ?? 45000
-        },
-        'Extra Large': {
-          Regular: pkg.tarif?.['Extra Large']?.Regular ?? 80000,
-          'Body only': pkg.tarif?.['Extra Large']?.['Body only'] ?? 80000
-        }
-      },
+      tarif: normalizedTarif,
       resep_bahan: existingRecipes.length > 0 ? existingRecipes : [
         {
           id_bahan_baku: 'CW-01',
@@ -171,6 +197,25 @@ const CarwashPackageManager = ({
         }
       }
     }))
+  }
+
+  const handleFlatPriceChange = (val) => {
+    const numeric = parseInt(String(val).replace(/\D/g, ''), 10) || 0
+    setFormData(prev => ({
+      ...prev,
+      tarif: buildFlatTarifMatrix(numeric)
+    }))
+  }
+
+  const handleSwitchTarifMode = (flat) => {
+    setIsFlatRate(flat)
+    if (flat) {
+      const baseAmount = formData.tarif?.Small?.Regular || 50000
+      setFormData(prev => ({
+        ...prev,
+        tarif: buildFlatTarifMatrix(baseAmount)
+      }))
+    }
   }
 
   const handleAddResepRow = () => {
@@ -224,7 +269,7 @@ const CarwashPackageManager = ({
     onSavePackage({
       id: editingId,
       ...formData,
-      nama_paket: formData.nama_paket.trim().toUpperCase(),
+      nama_paket: formData.nama_paket.trim().slice(0, MAX_CARWASH_PACKAGE_NAME_LENGTH).toUpperCase(),
       keterangan: formData.keterangan.trim(),
       komisi_value: parseFloat(formData.komisi_value) || 0,
       resep_bahan: formData.resep_bahan.filter(r => r.nama_bahan && parseFloat(r.jumlah) > 0)
@@ -277,7 +322,7 @@ const CarwashPackageManager = ({
               <div className="flex justify-between items-start gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="text-sm font-black text-foreground tracking-wide uppercase">
+                    <h4 className="text-sm font-black text-foreground tracking-wide uppercase break-words min-w-0">
                       {pkg.nama_paket}
                     </h4>
                     <span
@@ -346,35 +391,51 @@ const CarwashPackageManager = ({
                 </span>
               </div>
 
-              {/* Matriks Tarif Table */}
-              <div className="mt-3 overflow-x-auto">
-                <table className="w-full text-xs text-left">
-                  <thead>
-                    <tr className="text-muted border-b border-border text-[10px] uppercase">
-                      <th className="py-1 font-semibold">Ukuran</th>
-                      <th className="py-1 text-right font-semibold">Reguler</th>
-                      <th className="py-1 text-right font-semibold">Body Only</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border text-muted">
-                    {SIZES.map(s => {
-                      const regPrice = pkg.tarif?.[s]?.Regular ?? 0
-                      const bodyPrice = pkg.tarif?.[s]?.['Body only'] ?? 0
-                      return (
-                        <tr key={s} className="hover:bg-surface-hover">
-                          <td className="py-1 text-muted font-medium">{s}</td>
-                          <td className="py-1 text-right font-mono font-bold text-success">
-                            {formatRupiah(regPrice)}
-                          </td>
-                          <td className="py-1 text-right font-mono text-muted">
-                            {formatRupiah(bodyPrice)}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              {/* Matriks Tarif Table / Flat Summary */}
+              {isUniformCarwashTarif(pkg.tarif) ? (
+                <div className="mt-3 p-3 rounded-xl bg-subsurface border border-primary/25 flex items-center justify-between gap-2">
+                  <div>
+                    <span className="text-[11px] font-bold text-foreground block">
+                      Tarif Flat Semua Kendaraan
+                    </span>
+                    <span className="text-[10px] text-muted">
+                      Berlaku sama untuk semua ukuran &amp; varian
+                    </span>
+                  </div>
+                  <span className="text-sm font-black font-mono tabular-nums text-success">
+                    {formatRupiah(pkg.tarif?.Small?.Regular ?? 0)}
+                  </span>
+                </div>
+              ) : (
+                <div className="mt-3 overflow-x-auto">
+                  <table className="w-full text-xs text-left">
+                    <thead>
+                      <tr className="text-muted border-b border-border text-[10px] uppercase">
+                        <th className="py-1 font-semibold">Ukuran</th>
+                        <th className="py-1 text-right font-semibold">Reguler</th>
+                        <th className="py-1 text-right font-semibold">Body Only</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border text-muted">
+                      {SIZES.map(s => {
+                        const regPrice = pkg.tarif?.[s]?.Regular ?? 0
+                        const bodyPrice = pkg.tarif?.[s]?.['Body only'] ?? 0
+                        return (
+                          <tr key={s} className="hover:bg-surface-hover">
+                            <td className="py-1 text-muted font-medium">{s}</td>
+                            <td className="py-1 text-right font-mono font-bold text-success">
+                              {formatRupiah(regPrice)}
+                            </td>
+                            <td className="py-1 text-right font-mono text-muted">
+                              {formatRupiah(bodyPrice)}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )
         })}
@@ -382,7 +443,7 @@ const CarwashPackageManager = ({
 
       {/* Modal Add / Edit */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--overlay-backdrop)] backdrop-blur-sm animate-fade-in overflow-y-auto">
+        <div className="fixed inset-y-0 right-0 left-[var(--app-sidebar-offset,0px)] transition-[left] duration-200 z-50 flex items-center justify-center p-4 bg-[var(--overlay-backdrop)] backdrop-blur-sm animate-fade-in overflow-y-auto">
           <div className="bg-surface border border-border shadow-sm w-full max-w-xl p-6 rounded-2xl my-8 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center pb-4 border-b border-border">
               <div className="flex items-center gap-2">
@@ -402,17 +463,34 @@ const CarwashPackageManager = ({
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               {/* Nama Paket */}
               <div>
-                <label className="block text-xs font-bold text-muted uppercase tracking-wider mb-1">
-                  Nama Paket Cuci *
-                </label>
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <label className="block text-xs font-bold text-muted uppercase tracking-wider">
+                    Nama Paket Cuci *
+                  </label>
+                  <span
+                    className={`text-[11px] font-mono tabular-nums font-semibold ${
+                      formData.nama_paket.length > MAX_CARWASH_PACKAGE_NAME_LENGTH
+                        ? 'text-destructive'
+                        : formData.nama_paket.length >= MAX_CARWASH_PACKAGE_NAME_LENGTH - 4
+                          ? 'text-warning'
+                          : 'text-muted'
+                    }`}
+                  >
+                    {formData.nama_paket.length}/{MAX_CARWASH_PACKAGE_NAME_LENGTH}
+                  </span>
+                </div>
                 <input
                   type="text"
                   required
+                  maxLength={MAX_CARWASH_PACKAGE_NAME_LENGTH}
                   placeholder="Contoh: PAKET CUCI SALJU REGULER"
                   value={formData.nama_paket}
-                  onChange={e => setFormData(prev => ({ ...prev, nama_paket: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, nama_paket: e.target.value.slice(0, MAX_CARWASH_PACKAGE_NAME_LENGTH) }))}
                   className="w-full bg-surface border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground uppercase focus:outline-none focus:border-ring"
                 />
+                <p className="text-[10px] text-muted mt-1">
+                  Maks. {MAX_CARWASH_PACKAGE_NAME_LENGTH} karakter agar rapi di kartu antrean &amp; struk. Detail layanan tulis di Keterangan.
+                </p>
               </div>
 
               {/* Keterangan */}
@@ -555,38 +633,83 @@ const CarwashPackageManager = ({
                 )}
               </div>
 
-              {/* Matriks Tarif per Ukuran */}
+              {/* Matriks Tarif per Ukuran / Flat */}
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-muted uppercase tracking-wider">
                   Matriks Tarif Kendaraan (Rp) *
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-subsurface p-4 rounded-xl border border-border">
-                  {SIZES.map(s => (
-                    <div key={s} className="p-3 bg-surface rounded-xl border border-border space-y-2">
-                      <div className="text-xs font-bold text-primary uppercase">{s}</div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="block text-[10px] text-muted mb-0.5">Reguler</label>
-                          <input
-                            type="text"
-                            value={formData.tarif?.[s]?.Regular || ''}
-                            onChange={e => handlePriceChange(s, 'Regular', e.target.value)}
-                            className="w-full bg-surface border border-border rounded-lg px-2.5 py-1.5 text-xs text-success font-mono focus:outline-none focus:border-ring"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] text-muted mb-0.5">Body Only</label>
-                          <input
-                            type="text"
-                            value={formData.tarif?.[s]?.['Body only'] || ''}
-                            onChange={e => handlePriceChange(s, 'Body only', e.target.value)}
-                            className="w-full bg-surface border border-border rounded-lg px-2.5 py-1.5 text-xs text-muted font-mono focus:outline-none focus:border-ring"
-                          />
+                <div className="grid grid-cols-2 gap-2 p-1 bg-subsurface rounded-xl border border-border">
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchTarifMode(false)}
+                    className={`py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      !isFlatRate
+                        ? 'bg-primary text-primary-foreground shadow-xs'
+                        : 'text-muted hover:text-foreground'
+                    }`}
+                  >
+                    Tarif Per Ukuran (Matriks)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchTarifMode(true)}
+                    className={`py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      isFlatRate
+                        ? 'bg-primary text-primary-foreground shadow-xs'
+                        : 'text-muted hover:text-foreground'
+                    }`}
+                  >
+                    Tarif Sama Semua Kendaraan (Flat)
+                  </button>
+                </div>
+
+                {isFlatRate ? (
+                  <div className="bg-subsurface p-4 rounded-xl border border-primary/30 space-y-2">
+                    <label className="block text-xs font-bold text-foreground">
+                      Tarif Flat Semua Kendaraan &amp; Varian (Rp) *
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      aria-label="Tarif Flat Semua Kendaraan"
+                      placeholder="Contoh: 50000"
+                      value={formData.tarif?.Small?.Regular || ''}
+                      onChange={e => handleFlatPriceChange(e.target.value)}
+                      className="w-full bg-surface border border-border rounded-xl px-3.5 py-2.5 text-sm text-success font-mono tabular-nums font-bold focus:outline-none focus:border-ring"
+                    />
+                    <p className="text-[11px] text-muted">
+                      Nominal ini otomatis berlaku sama untuk ukuran Small, Medium, Large, dan Extra Large (Reguler maupun Body Only).
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-subsurface p-4 rounded-xl border border-border">
+                    {SIZES.map(s => (
+                      <div key={s} className="p-3 bg-surface rounded-xl border border-border space-y-2">
+                        <div className="text-xs font-bold text-primary uppercase">{s}</div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] text-muted mb-0.5">Reguler</label>
+                            <input
+                              type="text"
+                              value={formData.tarif?.[s]?.Regular || ''}
+                              onChange={e => handlePriceChange(s, 'Regular', e.target.value)}
+                              className="w-full bg-surface border border-border rounded-lg px-2.5 py-1.5 text-xs text-success font-mono focus:outline-none focus:border-ring"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] text-muted mb-0.5">Body Only</label>
+                            <input
+                              type="text"
+                              value={formData.tarif?.[s]?.['Body only'] || ''}
+                              onChange={e => handlePriceChange(s, 'Body only', e.target.value)}
+                              className="w-full bg-surface border border-border rounded-lg px-2.5 py-1.5 text-xs text-muted font-mono focus:outline-none focus:border-ring"
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}

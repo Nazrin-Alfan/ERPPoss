@@ -5,6 +5,7 @@ import {
   buildOrderReceiptData,
   buildPaymentReceiptData,
   generateWhatsAppReceiptMessage,
+  parseWhatsAppInlineFormatting,
   calculateSettlementWithSurcharge,
   DEFAULT_RECEIPT_CONFIG,
   getReceiptConfig,
@@ -181,5 +182,55 @@ describe('Receipt Generator & Thermal Printing Helpers', () => {
     expect(receipt.metodeBayar).toBe('QRIS')
     expect(receipt.isPaid).toBe(true)
     expect(receipt.statusBayar).toBe('LUNAS')
+  })
+
+  it('8. should customize WhatsApp receipt via freeform templates without 4-byte emojis while keeping permanent watermark', () => {
+    const defaultOrderRes = generateWhatsAppReceiptMessage(buildOrderReceiptData(sampleOrder), '081234567890')
+    expect(defaultOrderRes.message).not.toContain('--------------------------------')
+    expect(defaultOrderRes.message).not.toMatch(/[\uD800-\uDFFF]/)
+    expect(defaultOrderRes.message).toContain('Powered by RelayPOS • Cloud Enterprise System')
+
+    saveReceiptConfig({
+      paymentDisclaimer: 'TEKS STRUK THERMAL SAJA',
+      waOrderTemplate: 'Halo dari {nama_toko}\nPlat: {plat}\nDiskon:\n{diskon}\nTotal: {total}',
+      waPaymentTemplate: 'Terima kasih {nama_toko}!\nNota: {no_order}\n{rincian_item}\nBayar: {total}\nReview: https://g.page/r/relaypos'
+    })
+
+    const paidOrder = {
+      ...sampleOrder,
+      status_bayar: 'Selesai',
+      metode_bayar: 'CASH',
+      uang_diterima: 100000,
+      kembalian: 25000
+    }
+    const orderRes = generateWhatsAppReceiptMessage(buildOrderReceiptData(sampleOrder), '081234567890')
+    expect(orderRes.message).toContain('Halo dari RELAYPOS CARWASH & CAFE')
+    expect(orderRes.message).toContain('Plat: B 1234 ABC')
+    // Placeholder line {diskon} yang kosong otomatis dihapus bersih
+    expect(orderRes.message).not.toContain('{diskon}')
+
+    const paidRes = generateWhatsAppReceiptMessage(buildPaymentReceiptData(paidOrder), '081234567890')
+    expect(paidRes.message).toContain('Terima kasih RELAYPOS CARWASH & CAFE!')
+    expect(paidRes.message).toContain('Nota: ORD-12345678-ABCD')
+    expect(paidRes.message).toContain('Review: https://g.page/r/relaypos')
+    expect(paidRes.message).not.toContain('TEKS STRUK THERMAL SAJA')
+    // Watermark permanen RelayPOS tetap ada walau template dikosongkan
+    expect(paidRes.message).toContain('Powered by RelayPOS • Cloud Enterprise System')
+
+    const emptyTplRes = generateWhatsAppReceiptMessage(buildPaymentReceiptData(paidOrder), '081234567890', {
+      waPaymentTemplate: ''
+    })
+    expect(emptyTplRes.message).toContain('Powered by RelayPOS • Cloud Enterprise System')
+  })
+
+  it('9. should parse WhatsApp inline formatting (*bold*, _italic_, ~strike~, ```mono```) cleanly without breaking URLs', () => {
+    const tokens = parseWhatsAppInlineFormatting('Halo *Budi*, _miring_ ~lama~ ```ORD-123``` cek https://example.com/a_b_c')
+
+    expect(tokens).toContainEqual({ type: 'bold', text: 'Budi' })
+    expect(tokens).toContainEqual({ type: 'italic', text: 'miring' })
+    expect(tokens).toContainEqual({ type: 'strike', text: 'lama' })
+    expect(tokens).toContainEqual({ type: 'mono', text: 'ORD-123' })
+    expect(tokens.some((t) => t.type === 'text' && t.text.includes('https://example.com/a_b_c'))).toBe(true)
+    expect(tokens.some((t) => t.type === 'italic' && t.text === 'b')).toBe(false)
   })
 })

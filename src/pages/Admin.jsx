@@ -63,7 +63,7 @@ import CustomCategoryPicker from '../components/common/CustomCategoryPicker'
 import CustomSelect from '../components/common/CustomSelect'
 import { DEFAULT_CARWASH_PACKAGES } from '../utils/carwashHelpers'
 import { getReceiptConfig } from '../utils/receiptHelpers'
-import { calculateIngredientCost } from '../utils/hppCalculator'
+import { calculateIngredientCost, calculateMenuHpp, calculateMarginSimulation } from '../utils/hppCalculator'
 
 const Admin = () => {
   const navigate = useNavigate()
@@ -243,6 +243,30 @@ const Admin = () => {
     is_active: true
   })
   const [menuRecipe, setMenuRecipe] = useState([]) // list of { nama_bahan, jumlah_dibutuhkan, satuan }
+  const [menuCalculatorHpp, setMenuCalculatorHpp] = useState(null)
+
+  useEffect(() => {
+    if (!showMenuModal) {
+      setMenuCalculatorHpp(null)
+    }
+  }, [showMenuModal])
+
+  const menuFooterSummary = useMemo(() => {
+    const recipeHpp = calculateMenuHpp({ recipeList: menuRecipe, stockItems: stokBahan }).totalHpp
+    const effectiveHpp = menuCalculatorHpp !== null ? menuCalculatorHpp : recipeHpp
+    const appliedPrice = parseFloat(menuForm.harga) || 0
+    const sim = calculateMarginSimulation({
+      sellingPrice: appliedPrice,
+      totalHpp: effectiveHpp,
+      targetMargin: 60
+    })
+    return {
+      appliedPrice,
+      effectiveHpp,
+      marginPercent: sim.marginPercent,
+      marginStatus: sim.marginStatus
+    }
+  }, [menuRecipe, stokBahan, menuCalculatorHpp, menuForm.harga])
 
   // Daftar Kategori Menu Cafe (Bisa Custom Dinamis)
   const [cafeCategories, setCafeCategories] = useState([
@@ -2949,7 +2973,7 @@ const Admin = () => {
 
       {/* MODAL MASTER KATEGORI CASHFLOW (KUNCI KATEGORI KE JENIS) */}
       {showCategoryModal && (
-        <div className="fixed inset-0 bg-subsurface backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto animate-fade-in">
+        <div className="fixed inset-y-0 right-0 left-[var(--app-sidebar-offset,0px)] transition-[left] duration-200 bg-[var(--overlay-backdrop)] backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto animate-fade-in">
           <div className="bg-surface border border-border w-full max-w-lg p-6 rounded-2xl shadow-2xl bg-subsurface text-foreground animate-pop-in">
             <div className="flex justify-between items-center border-b border-border pb-3 mb-4">
               <h3 className="text-base font-bold text-foreground flex items-center gap-2">
@@ -3123,7 +3147,7 @@ const Admin = () => {
 
       {/* MODAL MASTER AKUN LIKUIDITAS (KAS & BANK) */}
       {showAccountModal && (
-        <div className="fixed inset-0 bg-subsurface backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div className="fixed inset-y-0 right-0 left-[var(--app-sidebar-offset,0px)] transition-[left] duration-200 bg-[var(--overlay-backdrop)] backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-surface border border-border w-full max-w-lg p-6 rounded-2xl shadow-2xl bg-subsurface text-foreground">
             <div className="flex justify-between items-center border-b border-border pb-3 mb-4">
               <h3 className="text-base font-bold text-foreground flex items-center gap-2">
@@ -3277,22 +3301,22 @@ const Admin = () => {
 
       {/* MODAL 1: Tambah/Edit Menu & Resep */}
       {showMenuModal && (
-        <div className="fixed inset-0 bg-subsurface backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-surface border border-border w-full max-w-2xl p-6 rounded-2xl shadow-2xl max-h-[90vh] flex flex-col justify-between">
-            <div>
-              <div className="flex justify-between items-center border-b border-border pb-4 mb-4">
-                <h3 className="text-lg font-bold text-foreground">
-                  {isEditingMenu ? 'Edit Menu & Resep' : 'Tambah Menu Baru'}
-                </h3>
-                <button 
-                  onClick={() => setShowMenuModal(false)}
-                  className="text-muted hover:text-foreground"
-                >
-                  ✕
-                </button>
-              </div>
+        <div className="fixed inset-y-0 right-0 left-[var(--app-sidebar-offset,0px)] transition-[left] duration-200 bg-[var(--overlay-backdrop)] backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
+          <div className="bg-surface border border-border w-full max-w-2xl p-4 sm:p-6 rounded-2xl shadow-2xl max-h-[90dvh] flex flex-col overflow-hidden">
+            <div className="flex justify-between items-center border-b border-border pb-4 mb-4 shrink-0">
+              <h3 className="text-lg font-bold text-foreground">
+                {isEditingMenu ? 'Edit Menu & Resep' : 'Tambah Menu Baru'}
+              </h3>
+              <button 
+                type="button"
+                onClick={() => setShowMenuModal(false)}
+                className="text-muted hover:text-foreground"
+              >
+                ✕
+              </button>
+            </div>
 
-              <form onSubmit={handleSaveMenu} className="space-y-4 overflow-y-auto max-h-[60vh] pr-2">
+            <form onSubmit={handleSaveMenu} className="flex-1 min-h-0 space-y-4 overflow-y-auto pr-2 pb-24 overscroll-contain">
                 {/* Upload Foto Menu (PNG/JPG, Copy-Paste, Max 2MB) */}
                 <ImageUploadPaste
                   value={menuForm.foto_url}
@@ -3374,6 +3398,7 @@ const Admin = () => {
                   stokBahan={stokBahan}
                   sellingPrice={parseFloat(menuForm.harga) || 0}
                   onApplyPrice={(newPrice) => setMenuForm(prev => ({ ...prev, harga: newPrice }))}
+                  onHppSummaryChange={setMenuCalculatorHpp}
                 />
 
                 <div>
@@ -3420,6 +3445,7 @@ const Admin = () => {
                             size="xs"
                             variant="emerald"
                             className="w-full"
+                            listMaxHeightClass="max-h-[148px]"
                           />
                         </div>
                         <div className="w-20">
@@ -3471,24 +3497,60 @@ const Admin = () => {
                     </div>
                   )}
                 </div>
-              </form>
-            </div>
+            </form>
 
-            <div className="flex justify-end gap-3 border-t border-border pt-4 mt-6">
-              <button
-                type="button"
-                onClick={() => setShowMenuModal(false)}
-                className="px-4 py-2 bg-subsurface hover:bg-surface-hover text-foreground font-bold rounded-xl text-sm"
-              >
-                Batal
-              </button>
-              <button
-                type="submit"
-                onClick={handleSaveMenu}
-                className="px-4 py-2 bg-primary hover:bg-primary-soft active:scale-[0.98] text-primary-foreground font-bold rounded-xl text-sm"
-              >
-                Simpan Menu
-              </button>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-border pt-3.5 mt-4 shrink-0">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <div className="px-2.5 py-1.5 rounded-lg bg-subsurface border border-border flex items-center gap-1.5">
+                  <span className="text-muted">HPP / Porsi:</span>
+                  <strong className="font-mono tabular-nums text-foreground">
+                    {formatRupiah(menuFooterSummary.effectiveHpp)}
+                  </strong>
+                </div>
+                <div
+                  className={`px-2.5 py-1.5 rounded-lg border flex items-center gap-1.5 ${
+                    menuFooterSummary.marginStatus === 'HEALTHY'
+                      ? 'bg-success-bg text-success border-success/30'
+                      : menuFooterSummary.marginStatus === 'MODERATE'
+                      ? 'bg-primary-soft text-primary-soft-foreground border-primary/30'
+                      : menuFooterSummary.marginStatus === 'LOW'
+                      ? 'bg-warning-bg text-warning border-warning/30'
+                      : menuFooterSummary.marginStatus === 'LOSS'
+                      ? 'bg-destructive-bg text-destructive border-destructive/30'
+                      : 'bg-subsurface text-muted border-border'
+                  }`}
+                >
+                  <span>Margin:</span>
+                  <strong className="font-mono tabular-nums">
+                    {menuFooterSummary.appliedPrice > 0 ? `${menuFooterSummary.marginPercent}%` : '0%'}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3">
+                <div className="text-right pr-2 border-r border-border">
+                  <span className="block text-[10px] font-semibold uppercase tracking-wider text-muted">
+                    Harga Diterapkan
+                  </span>
+                  <span className="text-sm font-black font-mono tabular-nums text-primary">
+                    {formatRupiah(menuFooterSummary.appliedPrice)}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowMenuModal(false)}
+                  className="px-4 py-2 bg-subsurface hover:bg-surface-hover text-foreground font-bold rounded-xl text-sm cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  onClick={handleSaveMenu}
+                  className="px-4 py-2 bg-primary hover:bg-primary-hover active:scale-[0.98] text-primary-foreground font-bold rounded-xl text-sm cursor-pointer"
+                >
+                  Simpan Menu
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -3496,7 +3558,7 @@ const Admin = () => {
 
       {/* MODAL 2: Tambah Bahan Baku Baru */}
       {showIngredientModal && (
-        <div className="fixed inset-0 bg-subsurface backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto animate-fade-in">
+        <div className="fixed inset-y-0 right-0 left-[var(--app-sidebar-offset,0px)] transition-[left] duration-200 bg-[var(--overlay-backdrop)] backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto animate-fade-in">
           <div className="bg-surface border border-border w-full max-w-md p-6 rounded-2xl shadow-2xl relative max-h-[92dvh] overflow-y-auto my-auto overscroll-contain">
             <div className="flex justify-between items-center border-b border-border pb-4 mb-4">
               <h3 className="text-lg font-bold text-foreground">Tambah Bahan Baku Baru</h3>
@@ -3615,7 +3677,7 @@ const Admin = () => {
 
       {/* MODAL 2b: Edit Bahan Baku */}
       {editingIngredient && (
-        <div className="fixed inset-0 bg-subsurface backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto animate-fade-in">
+        <div className="fixed inset-y-0 right-0 left-[var(--app-sidebar-offset,0px)] transition-[left] duration-200 bg-[var(--overlay-backdrop)] backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto animate-fade-in">
           <div className="bg-surface border border-border w-full max-w-md p-6 rounded-2xl shadow-2xl relative max-h-[92dvh] overflow-y-auto my-auto overscroll-contain">
             <div className="flex justify-between items-center border-b border-border pb-4 mb-4">
               <h3 className="text-lg font-bold text-foreground">Edit Bahan Baku</h3>
@@ -3722,7 +3784,7 @@ const Admin = () => {
       )}
       {/* MODAL OPNAME / KEBOCORAN */}
       {opnameIngredient && (
-        <div className="fixed inset-0 bg-subsurface backdrop-blur-md flex justify-center items-center p-3 sm:p-4 z-50 overflow-y-auto animate-fade-in">
+        <div className="fixed inset-y-0 right-0 left-[var(--app-sidebar-offset,0px)] transition-[left] duration-200 bg-[var(--overlay-backdrop)] backdrop-blur-md flex justify-center items-center p-3 sm:p-4 z-50 overflow-y-auto animate-fade-in">
           <div className="bg-surface border border-border w-full max-w-md p-6 rounded-2xl shadow-2xl relative max-h-[92dvh] overflow-y-auto my-auto overscroll-contain">
             <h3 className="text-xl font-bold text-foreground mb-2">Opname & Kebocoran</h3>
             <p className="text-xs text-muted mb-6 border-b border-border pb-4">
@@ -3827,7 +3889,7 @@ const Admin = () => {
 
       {/* CUSTOM MODAL: Alert / Confirm */}
       {customAlert && (
-        <div className="fixed inset-0 bg-subsurface backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">
+        <div className="fixed inset-y-0 right-0 left-[var(--app-sidebar-offset,0px)] transition-[left] duration-200 bg-[var(--overlay-backdrop)] backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fade-in">
           <div className="bg-surface border border-border w-full max-w-sm p-6 rounded-2xl shadow-2xl shadow-sm animate-pop-in text-center">
             <div className="mb-4">
               {customAlert.title === 'Sukses' ? (

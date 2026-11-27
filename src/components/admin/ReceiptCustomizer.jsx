@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { 
   Printer, 
@@ -23,14 +23,23 @@ import {
   Bluetooth,
   Zap,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Send,
+  Copy,
+  Check
 } from 'lucide-react'
 import { 
   DEFAULT_RECEIPT_CONFIG, 
+  DEFAULT_WA_ORDER_TEMPLATE,
+  DEFAULT_WA_PAYMENT_TEMPLATE,
+  WA_TEMPLATE_VARIABLES,
+  WA_TEMPLATE_PRESETS,
   PERMANENT_RELAYPOS_FOOTER,
   getReceiptConfig, 
   saveReceiptConfig,
-  formatRupiahReceipt
+  formatRupiahReceipt,
+  generateWhatsAppReceiptMessage,
+  parseWhatsAppInlineFormatting
 } from '../../utils/receiptHelpers'
 import { 
   isWebBluetoothSupported, 
@@ -47,6 +56,11 @@ export default function ReceiptCustomizer() {
   const [config, setConfig] = useState(DEFAULT_RECEIPT_CONFIG)
   const [activeSubSection, setActiveSubSection] = useState('hardware') // Default fokus langsung ke Hardware & Bluetooth!
   const [previewType, setPreviewType] = useState('PAYMENT') // 'ORDER' | 'PAYMENT'
+  const [previewChannel, setPreviewChannel] = useState('THERMAL') // 'THERMAL' | 'WHATSAPP'
+  const [waEditorMode, setWaEditorMode] = useState('ORDER') // 'ORDER' | 'PAYMENT'
+  const waTextareaRef = useRef(null)
+  const [waTestPhone, setWaTestPhone] = useState('')
+  const [waCopied, setWaCopied] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [isTestPrinting, setIsTestPrinting] = useState(false)
   const [isBtTesting, setIsBtTesting] = useState(false)
@@ -111,6 +125,45 @@ export default function ReceiptCustomizer() {
     handleChange('orderDisclaimer', text)
   }
 
+  const activeWaField = waEditorMode === 'ORDER' ? 'waOrderTemplate' : 'waPaymentTemplate'
+  const activeWaTemplateValue =
+    config[activeWaField] !== undefined
+      ? config[activeWaField]
+      : (waEditorMode === 'ORDER' ? DEFAULT_WA_ORDER_TEMPLATE : DEFAULT_WA_PAYMENT_TEMPLATE)
+
+  const handleInsertWaVariable = (token) => {
+    const el = waTextareaRef.current
+    const currentText = String(activeWaTemplateValue || '')
+    if (!el || typeof el.selectionStart !== 'number') {
+      const next = currentText ? `${currentText}${currentText.endsWith('\n') ? '' : ' '}${token}` : token
+      handleChange(activeWaField, next)
+      return
+    }
+    const start = el.selectionStart
+    const end = el.selectionEnd
+    const next = currentText.slice(0, start) + token + currentText.slice(end)
+    handleChange(activeWaField, next)
+    setTimeout(() => {
+      if (waTextareaRef.current) {
+        waTextareaRef.current.focus()
+        const cursorPos = start + token.length
+        waTextareaRef.current.setSelectionRange(cursorPos, cursorPos)
+      }
+    }, 0)
+  }
+
+  const handleApplyWaPreset = (preset) => {
+    const tpl = waEditorMode === 'ORDER' ? preset.orderTemplate : preset.paymentTemplate
+    handleChange(activeWaField, tpl)
+  }
+
+  const handleResetActiveWaTemplate = () => {
+    handleChange(
+      activeWaField,
+      waEditorMode === 'ORDER' ? DEFAULT_WA_ORDER_TEMPLATE : DEFAULT_WA_PAYMENT_TEMPLATE
+    )
+  }
+
   const handleTestPrint = () => {
     setIsTestPrinting(true)
     document.body.classList.add('has-thermal-receipt')
@@ -142,6 +195,48 @@ export default function ReceiptCustomizer() {
   const previewClosingNote = isDropOff 
     ? config.orderDisclaimer 
     : config.paymentDisclaimer
+
+  const sampleReceiptForWa = {
+    type: isDropOff ? 'ORDER_DROP_OFF' : 'PAYMENT_RECEIPT',
+    hasCarwash: true,
+    title: previewTitle,
+    storeName: config.storeName || DEFAULT_RECEIPT_CONFIG.storeName,
+    storeTagline: config.storeTagline || '',
+    storeAddress: config.storeAddress || '',
+    storePhone: config.storePhone || '',
+    storeSocial: config.storeSocial || '',
+    orderNumber: 'ORD-B8F231A9',
+    tanggal: '20/09/2026, 14:30 WIB',
+    kasir: 'KASIR UTAMA',
+    plat: 'B 1234 ABC',
+    model: 'Fortuner GR (Hitam)',
+    kehadiran: isDropOff ? 'DITINGGAL' : 'DITUNGGU',
+    items: sampleItems,
+    subtotal: sampleSubtotal,
+    diskonCarwash: 0,
+    diskonCafe: 0,
+    totalTagihan: sampleTotal,
+    total: sampleTotal,
+    isPaid: !isDropOff,
+    statusBayar: isDropOff ? 'PENDING (BELUM LUNAS)' : 'LUNAS',
+    metodeBayar: 'CASH',
+    uangDiterima: sampleCash,
+    kembalian: sampleKembalian,
+    footerText: PERMANENT_RELAYPOS_FOOTER
+  }
+  const waPreviewInfo = generateWhatsAppReceiptMessage(sampleReceiptForWa, waTestPhone, config)
+
+  const handleCopyWaPreview = () => {
+    if (navigator?.clipboard) {
+      navigator.clipboard.writeText(waPreviewInfo.message)
+      setWaCopied(true)
+      setTimeout(() => setWaCopied(false), 2000)
+    }
+  }
+
+  const handleTestSendWa = () => {
+    window.open(waPreviewInfo.url, '_blank', 'noopener,noreferrer')
+  }
 
   const handleBluetoothTestPrint = async () => {
     setIsBtTesting(true)
@@ -306,34 +401,60 @@ export default function ReceiptCustomizer() {
           <div className="flex flex-wrap gap-1.5 p-1 bg-surface border border-border rounded-xl">
             <button
               type="button"
-              onClick={() => setActiveSubSection('hardware')}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+              onClick={() => {
+                setActiveSubSection('hardware')
+                setPreviewChannel('THERMAL')
+              }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-[0.98] ${
                 activeSubSection === 'hardware'
                   ? 'bg-primary text-primary-foreground shadow-md'
                   : 'text-primary hover:text-primary hover:bg-surface-hover'
               }`}
             >
               <Bluetooth size={13} />
-              <span>⚡ Printer Bluetooth & Tes</span>
+              <span>⚡ Printer Bluetooth &amp; Tes</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setActiveSubSection('closing')}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+              onClick={() => {
+                setActiveSubSection('whatsapp')
+                setPreviewChannel('WHATSAPP')
+                setPreviewType(waEditorMode)
+              }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-[0.98] ${
+                activeSubSection === 'whatsapp'
+                  ? 'bg-success text-white shadow-md'
+                  : 'text-success hover:bg-surface-hover'
+              }`}
+            >
+              <Send size={13} />
+              <span>Struk WhatsApp &amp; Tes</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveSubSection('closing')
+                setPreviewChannel('THERMAL')
+              }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-[0.98] ${
                 activeSubSection === 'closing'
                   ? 'bg-warning text-ink-foreground shadow-md'
                   : 'text-warning hover:text-warning hover:bg-surface-hover'
               }`}
             >
               <MessageSquare size={13} />
-              <span>1. Kalimat Penutup & Footer</span>
+              <span>1. Kalimat Penutup &amp; Footer</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setActiveSubSection('store')}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+              onClick={() => {
+                setActiveSubSection('store')
+                setPreviewChannel('THERMAL')
+              }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-[0.98] ${
                 activeSubSection === 'store'
                   ? 'bg-primary text-primary-foreground shadow-md'
                   : 'text-muted hover:text-foreground hover:bg-surface-hover'
@@ -345,21 +466,27 @@ export default function ReceiptCustomizer() {
 
             <button
               type="button"
-              onClick={() => setActiveSubSection('titles')}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+              onClick={() => {
+                setActiveSubSection('titles')
+                setPreviewChannel('THERMAL')
+              }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-[0.98] ${
                 activeSubSection === 'titles'
                   ? 'bg-primary text-primary-foreground shadow-md'
                   : 'text-muted hover:text-foreground hover:bg-surface-hover'
               }`}
             >
               <FileText size={13} />
-              <span>3. Judul & Header Struk</span>
+              <span>3. Judul &amp; Header Struk</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setActiveSubSection('paper')}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+              onClick={() => {
+                setActiveSubSection('paper')
+                setPreviewChannel('THERMAL')
+              }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-[0.98] ${
                 activeSubSection === 'paper'
                   ? 'bg-primary text-primary-foreground shadow-md'
                   : 'text-muted hover:text-foreground hover:bg-surface-hover'
@@ -372,7 +499,7 @@ export default function ReceiptCustomizer() {
             <button
               type="button"
               onClick={() => setActiveSubSection('all')}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-[0.98] ${
                 activeSubSection === 'all'
                   ? 'bg-primary text-primary-foreground shadow-md'
                   : 'text-primary hover:text-primary hover:bg-surface-hover'
@@ -465,6 +592,218 @@ export default function ReceiptCustomizer() {
                     <li>Setelah terhubung, kasir dapat mencetak langsung dari modal transaksi tanpa watermark pihak ketiga.</li>
                   </ul>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================== */}
+          {/* SEKSI WA: PENGATURAN FORMAT & TEMPLATE STRUK WHATSAPP */}
+          {/* ============================================================== */}
+          {(activeSubSection === 'whatsapp' || activeSubSection === 'all') && (
+            <div
+              data-testid="wa-receipt-settings-section"
+              className="bg-surface border border-success/30 shadow-sm p-5 rounded-2xl space-y-4 animate-fade-in"
+            >
+              <div className="flex items-center justify-between border-b border-border pb-3 gap-2">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="p-2 rounded-xl bg-success-bg text-success border border-success/30 shrink-0">
+                    <Send size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-sm font-bold text-foreground">
+                      Pengaturan Template &amp; Format Struk WhatsApp
+                    </h4>
+                    <p className="text-[11px] text-muted">
+                      Tulis dan atur sendiri isi pesan WhatsApp kasir secara terpisah dari struk kertas thermal.
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full border bg-success-bg text-success border-success/30 whitespace-nowrap shrink-0">
+                  WhatsApp Ready
+                </span>
+              </div>
+
+              {/* Action Box: Uji Kirim & Salin Pesan WA */}
+              <div className="p-4 rounded-xl bg-subsurface border border-border space-y-3">
+                <div>
+                  <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <Smartphone size={14} className="text-success" />
+                    <span>Uji Kirim &amp; Salin Pesan WhatsApp Langsung</span>
+                  </div>
+                  <p className="text-[11px] text-muted mt-0.5 leading-relaxed">
+                    Setiap perubahan template di bawah langsung terlihat di panel pratinjau WA tanpa memengaruhi transaksi kasir aktif.
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    value={waTestPhone}
+                    onChange={(e) => setWaTestPhone(e.target.value)}
+                    placeholder="No. WA tujuan tes (opsional, misal 0812...)"
+                    className="flex-1 min-h-[40px] bg-surface border border-border rounded-xl px-3 py-2 text-xs text-foreground font-mono placeholder:text-muted-dark focus:outline-none focus:border-ring"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCopyWaPreview}
+                    className="min-h-[40px] px-3.5 py-2 rounded-xl bg-surface hover:bg-surface-hover border border-border text-foreground text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98] shrink-0"
+                  >
+                    {waCopied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
+                    <span>{waCopied ? 'Tersalin' : 'Salin Pesan WA'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleTestSendWa}
+                    className="min-h-[40px] px-4 py-2 rounded-xl bg-success hover:opacity-90 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-[0.98] shrink-0"
+                  >
+                    <Send size={14} />
+                    <span>Tes Kirim WA</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Switcher Template: Order (Pending) vs Bayar (Lunas) */}
+              <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-subsurface border border-border">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWaEditorMode('ORDER')
+                      setPreviewType('ORDER')
+                      setPreviewChannel('WHATSAPP')
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      waEditorMode === 'ORDER'
+                        ? 'bg-warning text-ink-foreground shadow-xs'
+                        : 'text-muted hover:text-foreground hover:bg-surface'
+                    }`}
+                  >
+                    Template Order / Pending
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWaEditorMode('PAYMENT')
+                      setPreviewType('PAYMENT')
+                      setPreviewChannel('WHATSAPP')
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      waEditorMode === 'PAYMENT'
+                        ? 'bg-success text-white shadow-xs'
+                        : 'text-muted hover:text-foreground hover:bg-surface'
+                    }`}
+                  >
+                    Template Bayar / Lunas
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleResetActiveWaTemplate}
+                  className="px-2.5 py-1.5 rounded-lg bg-surface hover:bg-surface-hover border border-border text-[11px] font-semibold text-muted hover:text-foreground flex items-center gap-1 transition-colors cursor-pointer"
+                >
+                  <RotateCcw size={12} />
+                  <span>Reset Template Ini</span>
+                </button>
+              </div>
+
+              {/* 1-Click Presets */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-bold text-muted mr-1">Gaya Preset Cepat:</span>
+                {WA_TEMPLATE_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => handleApplyWaPreset(preset)}
+                    className="text-[11px] px-2.5 py-1 rounded-full bg-subsurface hover:bg-surface-hover text-foreground border border-border font-semibold transition-all cursor-pointer active:scale-[0.98]"
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Full Freeform Template Editor */}
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label className="text-xs font-bold text-foreground uppercase tracking-wider">
+                    {waEditorMode === 'ORDER'
+                      ? 'Isi Pesan WA: Bukti Order / Pending'
+                      : 'Isi Pesan WA: Bukti Pembayaran Lunas'}
+                  </label>
+                  <span className="text-[10px] text-muted font-mono">
+                    Format WA: *tebal* • _miring_
+                  </span>
+                </div>
+                <textarea
+                  ref={waTextareaRef}
+                  data-testid="wa-template-editor"
+                  rows={11}
+                  value={activeWaTemplateValue}
+                  onChange={(e) => handleChange(activeWaField, e.target.value)}
+                  placeholder="Tulis template pesan WhatsApp di sini..."
+                  className="w-full bg-subsurface border border-border rounded-xl px-3.5 py-3 text-xs text-foreground font-mono leading-relaxed focus:outline-none focus:border-ring resize-y"
+                />
+              </div>
+
+              {/* Clickable Dynamic Variables */}
+              <div className="p-3.5 rounded-xl bg-subsurface border border-border space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-muted uppercase tracking-wider">
+                    Sisipkan Variabel Data Otomatis (Klik untuk tambah)
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {['Toko', 'Transaksi', 'Item & Bayar'].map((groupName) => (
+                    <div key={groupName} className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10px] font-bold text-muted-dark uppercase w-20 shrink-0">
+                        {groupName}:
+                      </span>
+                      {WA_TEMPLATE_VARIABLES.filter((v) => v.group === groupName).map((v) => (
+                        <button
+                          key={v.token}
+                          type="button"
+                          onClick={() => handleInsertWaVariable(v.token)}
+                          title={`Sisipkan ${v.token} (${v.label})`}
+                          className="text-[10px] px-2 py-1 rounded-lg bg-surface hover:bg-primary-soft hover:text-primary-soft-foreground border border-border hover:border-primary/30 text-foreground font-mono transition-colors cursor-pointer active:scale-[0.98]"
+                        >
+                          {v.token} <span className="font-sans text-muted">({v.label})</span>
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Watermark Permanen RelayPOS */}
+              <div className="space-y-2 p-4 rounded-xl bg-subsurface border border-border">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-muted uppercase tracking-wider flex items-center gap-1.5">
+                    <Lock size={13} className="text-warning" />
+                    <span>Watermark Permanen RelayPOS di Pesan WA</span>
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-primary-soft text-primary-soft-foreground border border-primary/30 whitespace-nowrap">
+                    Terkunci Sistem
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted leading-relaxed">
+                  Anda bebas menulis dan menyusun template pesan WA di atas sesuai gaya outlet, namun watermark RelayPOS tetap ditambahkan otomatis di paling bawah.
+                </p>
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-surface border border-border text-xs font-mono text-primary">
+                  <Sparkles size={14} className="text-primary shrink-0" />
+                  <span className="font-semibold">{PERMANENT_RELAYPOS_FOOTER}</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-border text-[11px] text-muted space-y-1">
+                <div className="flex items-center gap-1.5 font-semibold">
+                  <Info size={12} className="text-success" />
+                  <span>Petunjuk Penggunaan Template WhatsApp:</span>
+                </div>
+                <ul className="list-disc list-inside space-y-0.5 pl-1 text-[10.5px]">
+                  <li>Atur template berbeda untuk <strong>Order / Pending</strong> dan <strong>Bayar / Lunas</strong> memakai tombol switcher di atas.</li>
+                  <li>Baris yang hanya berisi variabel kosong (misalnya <code>{'{diskon}'}</code> saat tidak ada diskon) otomatis dirapikan agar tidak menyisakan baris kosong.</li>
+                  <li>Klik <strong>Simpan</strong> di kanan atas agar template tersimpan ke perangkat kasir dan database cabang.</li>
+                </ul>
               </div>
             </div>
           )}
@@ -861,169 +1200,260 @@ export default function ReceiptCustomizer() {
           )}
         </div>
 
-        {/* RIGHT COLUMN: Real-Time Interactive Thermal Receipt Preview */}
+        {/* RIGHT COLUMN: Real-Time Interactive Thermal & WhatsApp Preview */}
         <div className="lg:col-span-5 sticky top-6 space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
               <Eye size={15} className="text-primary" />
-              <span className="text-xs font-bold text-foreground uppercase tracking-wider">Live Struk Preview</span>
+              <span className="text-xs font-bold text-foreground uppercase tracking-wider">
+                {previewChannel === 'WHATSAPP' ? 'Live WhatsApp Preview' : 'Live Struk Preview'}
+              </span>
             </div>
-            
-            {/* Mode Switcher */}
-            <div className="flex items-center gap-1 p-0.5 bg-surface border border-border rounded-lg">
-              <button
-                type="button"
-                onClick={() => setPreviewType('PAYMENT')}
-                className={`px-2.5 py-1 rounded text-[11px] font-bold transition-all ${
-                  previewType === 'PAYMENT'
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted hover:text-foreground'
-                }`}
-              >
-                Bukti Bayar
-              </button>
-              <button
-                type="button"
-                onClick={() => setPreviewType('ORDER')}
-                className={`px-2.5 py-1 rounded text-[11px] font-bold transition-all ${
-                  previewType === 'ORDER'
-                    ? 'bg-warning text-ink-foreground shadow-sm'
-                    : 'text-muted hover:text-foreground'
-                }`}
-              >
-                Bukti Order
-              </button>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              {/* Channel Switcher: Thermal Paper vs WhatsApp */}
+              <div className="flex items-center gap-1 p-0.5 bg-surface border border-border rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setPreviewChannel('THERMAL')}
+                  className={`px-2 py-1 rounded text-[11px] font-bold transition-all cursor-pointer ${
+                    previewChannel === 'THERMAL'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted hover:text-foreground'
+                  }`}
+                >
+                  Kertas Thermal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewChannel('WHATSAPP')}
+                  className={`px-2 py-1 rounded text-[11px] font-bold transition-all cursor-pointer ${
+                    previewChannel === 'WHATSAPP'
+                      ? 'bg-success text-white shadow-sm'
+                      : 'text-muted hover:text-foreground'
+                  }`}
+                >
+                  Pesan WA
+                </button>
+              </div>
+
+              {/* Mode Switcher */}
+              <div className="flex items-center gap-1 p-0.5 bg-surface border border-border rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setPreviewType('PAYMENT')}
+                  className={`px-2.5 py-1 rounded text-[11px] font-bold transition-all cursor-pointer ${
+                    previewType === 'PAYMENT'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted hover:text-foreground'
+                  }`}
+                >
+                  Bukti Bayar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewType('ORDER')}
+                  className={`px-2.5 py-1 rounded text-[11px] font-bold transition-all cursor-pointer ${
+                    previewType === 'ORDER'
+                      ? 'bg-warning text-ink-foreground shadow-sm'
+                      : 'text-muted hover:text-foreground'
+                  }`}
+                >
+                  Bukti Order
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* The Physical Simulated Thermal Receipt Paper */}
-          <div className="p-4 rounded-2xl bg-surface border border-border flex justify-center shadow-inner">
-            <div 
-              style={{ width: config.paperWidth === '58mm' ? '250px' : '310px' }}
-              className="bg-white text-black p-4 font-mono shadow-2xl rounded text-[11px] leading-snug border border-dashed border-slate-300 transition-all select-none"
+          {previewChannel === 'WHATSAPP' ? (
+            <div
+              data-testid="wa-receipt-live-preview"
+              className="p-4 rounded-2xl bg-subsurface border border-border space-y-3 shadow-inner"
             >
-              {/* Header Branding */}
-              <div className="text-center pb-2 border-b border-dashed border-slate-400">
-                <h4 className="font-black text-xs uppercase tracking-wider leading-tight">
-                  {config.storeName || 'NAMA OUTLET'}
-                </h4>
-                {config.storeTagline && (
-                  <p className="text-[9px] text-slate-600 font-sans mt-0.5">{config.storeTagline}</p>
-                )}
-                {config.showStoreAddress && config.storeAddress && (
-                  <p className="text-[8.5px] text-slate-500 font-sans mt-0.5 leading-snug">{config.storeAddress}</p>
-                )}
-                {config.showStorePhone && config.storePhone && (
-                  <p className="text-[8.5px] text-slate-500 font-sans">Telp/WA: {config.storePhone}</p>
-                )}
-                
-                <div className="mt-1.5 inline-block px-2 py-0.5 border border-slate-800 font-bold text-[9px] uppercase tracking-wider rounded">
-                  {previewTitle}
+              <div className="flex items-center justify-between border-b border-border pb-2.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-success-bg text-success border border-success/30 flex items-center justify-center shrink-0">
+                    <Send size={14} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-foreground truncate">
+                      {config.storeName || 'RELAYPOS CARWASH & CAFE'}
+                    </p>
+                    <p className="text-[10px] text-success font-semibold">WhatsApp E-Receipt Preview</p>
+                  </div>
                 </div>
+                <span className="text-[10px] font-mono text-muted shrink-0">14:30</span>
               </div>
 
-              {/* Metadata */}
-              <div className="py-2 border-b border-dashed border-slate-400 space-y-0.5 text-[10px]">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">No. Order:</span>
-                  <span className="font-bold">ORD-B8F231A9</span>
+              <div className="bg-surface border border-border rounded-2xl rounded-tl-sm p-3.5 shadow-sm">
+                <div className="space-y-0.5 font-sans text-xs leading-relaxed text-foreground break-words">
+                  {String(waPreviewInfo.message || '').split(/\r?\n/).map((line, lineIdx) => {
+                    if (!line.trim()) {
+                      return <div key={lineIdx} className="h-2.5" aria-hidden="true" />
+                    }
+                    const tokens = parseWhatsAppInlineFormatting(line)
+                    return (
+                      <p key={lineIdx} className="leading-relaxed">
+                        {tokens.map((tok, tokIdx) => {
+                          if (tok.type === 'bold') {
+                            return <strong key={tokIdx} className="font-bold text-foreground">{tok.text}</strong>
+                          }
+                          if (tok.type === 'italic') {
+                            return <em key={tokIdx} className="italic text-muted">{tok.text}</em>
+                          }
+                          if (tok.type === 'strike') {
+                            return <del key={tokIdx} className="line-through text-muted">{tok.text}</del>
+                          }
+                          if (tok.type === 'mono') {
+                            return <code key={tokIdx} className="font-mono text-[11px] px-1 py-0.5 rounded bg-subsurface">{tok.text}</code>
+                          }
+                          return <React.Fragment key={tokIdx}>{tok.text}</React.Fragment>
+                        })}
+                      </p>
+                    )
+                  })}
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Waktu:</span>
-                  <span>20/09/2026, 14:30 WIB</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Kasir:</span>
-                  <span className="font-bold">KASIR UTAMA</span>
-                </div>
-                <div className="flex justify-between items-center pt-1 border-t border-dotted border-slate-300 font-bold text-[11px]">
-                  <span>No. Polisi:</span>
-                  <span className="bg-slate-100 px-1 rounded border border-slate-300">B 1234 ABC</span>
-                </div>
-                <div className="flex justify-between text-[10px]">
-                  <span className="text-slate-500">Kendaraan:</span>
-                  <span>Fortuner GR (Hitam)</span>
-                </div>
-                <div className="flex justify-between text-[10px]">
-                  <span className="text-slate-500">Kehadiran:</span>
-                  <span className={`font-black ${isDropOff ? 'text-amber-700' : 'text-slate-900'}`}>
-                    {isDropOff ? 'DITINGGAL' : 'DITUNGGU'}
+                <div className="mt-2.5 pt-2 border-t border-border/60 flex items-center justify-between text-[10px] text-muted">
+                  <span className="inline-flex items-center gap-1 text-primary font-semibold">
+                    <Lock size={10} />
+                    <span>Watermark RelayPOS aktif</span>
                   </span>
-                </div>
-              </div>
-
-              {/* Item Breakdown */}
-              <div className="py-2 border-b border-dashed border-slate-400 space-y-1.5">
-                <div className="font-bold text-[10px] text-slate-500 uppercase tracking-wider">
-                  Rincian Pesanan:
-                </div>
-                {sampleItems.map((item, idx) => (
-                  <div key={idx} className="space-y-0.5">
-                    <div className="font-bold text-[10px]">{item.name}</div>
-                    <div className="flex justify-between text-[10px] text-slate-700">
-                      <span>{item.qty} x {formatRupiahReceipt(item.price)}</span>
-                      <span className="font-mono text-right font-bold">{formatRupiahReceipt(item.subtotal)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Financial Totals */}
-              <div className="py-2 border-b border-dashed border-slate-400 space-y-1 text-[10px]">
-                <div className="flex justify-between text-slate-600">
-                  <span>Subtotal:</span>
-                  <span className="font-mono">{formatRupiahReceipt(sampleSubtotal)}</span>
-                </div>
-                <div className="flex justify-between font-black text-[12px] pt-1 border-t border-dotted border-slate-300">
-                  <span>{isDropOff ? 'ESTIMASI TOTAL:' : 'TOTAL AKHIR:'}</span>
-                  <span className="font-mono">{formatRupiahReceipt(sampleTotal)}</span>
-                </div>
-
-                {!isDropOff && (
-                  <>
-                    <div className="flex justify-between pt-1 text-slate-700 text-[10px]">
-                      <span>Metode Bayar:</span>
-                      <span className="font-bold uppercase">CASH (TUNAI)</span>
-                    </div>
-                    <div className="flex justify-between text-slate-700 text-[10px]">
-                      <span>Uang Diterima:</span>
-                      <span className="font-mono">{formatRupiahReceipt(sampleCash)}</span>
-                    </div>
-                    <div className="flex justify-between font-bold text-slate-900 text-[10px]">
-                      <span>Kembalian:</span>
-                      <span className="font-mono">{formatRupiahReceipt(sampleKembalian)}</span>
-                    </div>
-                    <div className="mt-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-center font-bold text-[9px] rounded border border-emerald-300">
-                      STATUS: LUNAS
-                    </div>
-                  </>
-                )}
-
-                {isDropOff && (
-                  <div className="mt-1.5 py-0.5 bg-amber-100 text-amber-800 text-center font-bold text-[9px] rounded border border-amber-300">
-                    STATUS: BELUM DIBAYAR (PENDING)
-                  </div>
-                )}
-              </div>
-
-              {/* Closing Sentence & Permanent RelayPOS Branding Footer */}
-              <div className="pt-2 text-center space-y-1 text-[9px] text-slate-600">
-                {previewClosingNote && (
-                  <p className="leading-snug italic font-sans font-medium text-slate-700">
-                    "{previewClosingNote}"
-                  </p>
-                )}
-                <div className="pt-1.5 border-t border-dotted border-slate-300 font-sans text-[8px] text-slate-400">
-                  {PERMANENT_RELAYPOS_FOOTER}
+                  <span className="font-mono">✓✓</span>
                 </div>
               </div>
             </div>
-          </div>
+          ) : (
+            /* The Physical Simulated Thermal Receipt Paper */
+            <div className="p-4 rounded-2xl bg-surface border border-border flex justify-center shadow-inner">
+              <div 
+                style={{ width: config.paperWidth === '58mm' ? '250px' : '310px' }}
+                className="bg-white text-black p-4 font-mono shadow-2xl rounded text-[11px] leading-snug border border-dashed border-slate-300 transition-all select-none"
+              >
+                {/* Header Branding */}
+                <div className="text-center pb-2 border-b border-dashed border-slate-400">
+                  <h4 className="font-black text-xs uppercase tracking-wider leading-tight">
+                    {config.storeName || 'NAMA OUTLET'}
+                  </h4>
+                  {config.storeTagline && (
+                    <p className="text-[9px] text-slate-600 font-sans mt-0.5">{config.storeTagline}</p>
+                  )}
+                  {config.showStoreAddress && config.storeAddress && (
+                    <p className="text-[8.5px] text-slate-500 font-sans mt-0.5 leading-snug">{config.storeAddress}</p>
+                  )}
+                  {config.showStorePhone && config.storePhone && (
+                    <p className="text-[8.5px] text-slate-500 font-sans">Telp/WA: {config.storePhone}</p>
+                  )}
+                  
+                  <div className="mt-1.5 inline-block px-2 py-0.5 border border-slate-800 font-bold text-[9px] uppercase tracking-wider rounded">
+                    {previewTitle}
+                  </div>
+                </div>
 
-          <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-[11px] text-slate-400 flex items-start gap-2">
-            <Sparkles size={14} className="text-cyan-400 shrink-0 mt-0.5" />
+                {/* Metadata */}
+                <div className="py-2 border-b border-dashed border-slate-400 space-y-0.5 text-[10px]">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">No. Order:</span>
+                    <span className="font-bold">ORD-B8F231A9</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Waktu:</span>
+                    <span>20/09/2026, 14:30 WIB</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Kasir:</span>
+                    <span className="font-bold">KASIR UTAMA</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1 border-t border-dotted border-slate-300 font-bold text-[11px]">
+                    <span>No. Polisi:</span>
+                    <span className="bg-slate-100 px-1 rounded border border-slate-300">B 1234 ABC</span>
+                  </div>
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-slate-500">Kendaraan:</span>
+                    <span>Fortuner GR (Hitam)</span>
+                  </div>
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-slate-500">Kehadiran:</span>
+                    <span className={`font-black ${isDropOff ? 'text-amber-700' : 'text-slate-900'}`}>
+                      {isDropOff ? 'DITINGGAL' : 'DITUNGGU'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Item Breakdown */}
+                <div className="py-2 border-b border-dashed border-slate-400 space-y-1.5">
+                  <div className="font-bold text-[10px] text-slate-500 uppercase tracking-wider">
+                    Rincian Pesanan:
+                  </div>
+                  {sampleItems.map((item, idx) => (
+                    <div key={idx} className="space-y-0.5">
+                      <div className="font-bold text-[10px]">{item.name}</div>
+                      <div className="flex justify-between text-[10px] text-slate-700">
+                        <span>{item.qty} x {formatRupiahReceipt(item.price)}</span>
+                        <span className="font-mono text-right font-bold">{formatRupiahReceipt(item.subtotal)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Financial Totals */}
+                <div className="py-2 border-b border-dashed border-slate-400 space-y-1 text-[10px]">
+                  <div className="flex justify-between text-slate-600">
+                    <span>Subtotal:</span>
+                    <span className="font-mono">{formatRupiahReceipt(sampleSubtotal)}</span>
+                  </div>
+                  <div className="flex justify-between font-black text-[12px] pt-1 border-t border-dotted border-slate-300">
+                    <span>{isDropOff ? 'ESTIMASI TOTAL:' : 'TOTAL AKHIR:'}</span>
+                    <span className="font-mono">{formatRupiahReceipt(sampleTotal)}</span>
+                  </div>
+
+                  {!isDropOff && (
+                    <>
+                      <div className="flex justify-between pt-1 text-slate-700 text-[10px]">
+                        <span>Metode Bayar:</span>
+                        <span className="font-bold uppercase">CASH (TUNAI)</span>
+                      </div>
+                      <div className="flex justify-between text-slate-700 text-[10px]">
+                        <span>Uang Diterima:</span>
+                        <span className="font-mono">{formatRupiahReceipt(sampleCash)}</span>
+                      </div>
+                      <div className="flex justify-between font-bold text-slate-900 text-[10px]">
+                        <span>Kembalian:</span>
+                        <span className="font-mono">{formatRupiahReceipt(sampleKembalian)}</span>
+                      </div>
+                      <div className="mt-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-center font-bold text-[9px] rounded border border-emerald-300">
+                        STATUS: LUNAS
+                      </div>
+                    </>
+                  )}
+
+                  {isDropOff && (
+                    <div className="mt-1.5 py-0.5 bg-amber-100 text-amber-800 text-center font-bold text-[9px] rounded border border-amber-300">
+                      STATUS: BELUM DIBAYAR (PENDING)
+                    </div>
+                  )}
+                </div>
+
+                {/* Closing Sentence & Permanent RelayPOS Branding Footer */}
+                <div className="pt-2 text-center space-y-1 text-[9px] text-slate-600">
+                  {previewClosingNote && (
+                    <p className="leading-snug italic font-sans font-medium text-slate-700">
+                      "{previewClosingNote}"
+                    </p>
+                  )}
+                  <div className="pt-1.5 border-t border-dotted border-slate-300 font-sans text-[8px] text-slate-400">
+                    {PERMANENT_RELAYPOS_FOOTER}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="p-3 rounded-xl bg-subsurface border border-border text-[11px] text-muted flex items-start gap-2">
+            <Sparkles size={14} className="text-primary shrink-0 mt-0.5" />
             <span>
-              Tampilan kertas struk di atas merespons langsung setiap ketikan Anda dan dicetak tepat 1 halaman tanpa kertas terbuang.
+              {previewChannel === 'WHATSAPP'
+                ? 'Pratinjau pesan WhatsApp diperbarui langsung sesuai isian Anda dengan watermark RelayPOS tetap tersemat.'
+                : 'Tampilan kertas struk di atas merespons langsung setiap ketikan Anda dan dicetak tepat 1 halaman tanpa kertas terbuang.'}
             </span>
           </div>
         </div>

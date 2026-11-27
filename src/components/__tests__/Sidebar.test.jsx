@@ -77,6 +77,7 @@ describe('Sidebar UI/UX Component & Interactive Profile Menu Test', () => {
 
     // Verify scrollable area and navigation items
     expect(html).toContain('Dashboard')
+    expect(html).toContain('AI Data Studio')
     expect(html).toContain('Kasir POS')
     expect(html).toContain('Antrean Carwash')
     expect(html).toContain('Pelanggan &amp; CRM')
@@ -152,6 +153,7 @@ describe('Sidebar UI/UX Component & Interactive Profile Menu Test', () => {
     expect(mobileNavSegment).toContain('href="/queue"')
     expect(mobileNavSegment).toContain('data-testid="mobile-bottom-nav-menu"')
     expect(mobileNavSegment).not.toContain('href="/dashboard"')
+    expect(mobileNavSegment).not.toContain('href="/ai-studio"')
     expect(mobileNavSegment).not.toContain('href="/finance"')
   })
 })

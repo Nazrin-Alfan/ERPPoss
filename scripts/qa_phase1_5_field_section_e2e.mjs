@@ -127,6 +127,11 @@ async function runPhase15FieldSectionE2E() {
     const dashNums = await page.locator('.font-mono, .tabular-nums').count();
     record('P15-05', '/dashboard division tabs & KPI tabular numerals', dashTabs.ok && dashNums > 0, `nums=${dashNums}`);
 
+    await navigateRoute('/ai-studio');
+    const studioCheck = await assertVisibleLabels([/AI Data Studio/i, /Blok Data Mandiri/i, /Pratinjau Blok Data/i], 2);
+    const studioControls = await page.locator('button, input, textarea').count();
+    record('P15-05B', '/ai-studio dedicated workspace & prompt studio controls', studioCheck.ok && studioControls >= 5, `controls=${studioControls}`);
+
     await navigateRoute('/pos');
     const startShiftBtn = page.getByRole('button', { name: /Mulai Shift/i });
     if (await startShiftBtn.isVisible().catch(() => false)) {

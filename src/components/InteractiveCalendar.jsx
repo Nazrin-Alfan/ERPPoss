@@ -7,7 +7,7 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December'
 ]
 
-const InteractiveCalendar = ({ startDate, endDate, onChange, onClose }) => {
+const InteractiveCalendar = ({ startDate, endDate, onChange, onClose, mode = 'range' }) => {
   const calendarRef = useRef(null)
   const initialDate = useMemo(() => {
     if (startDate) {
@@ -109,6 +109,12 @@ const InteractiveCalendar = ({ startDate, endDate, onChange, onClose }) => {
     if (!isCurrentMonth) return
     const clickedDateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`
 
+    if (mode === 'single') {
+      onChange(clickedDateStr, clickedDateStr)
+      if (onClose) setTimeout(onClose, 120)
+      return
+    }
+
     if (!startDate || (startDate && endDate)) {
       onChange(clickedDateStr, '')
     } else {
@@ -164,8 +170,8 @@ const InteractiveCalendar = ({ startDate, endDate, onChange, onClose }) => {
       <div className="grid grid-cols-7 gap-0.5">
         {calendarDays.map((day, idx) => {
           const isSelectedStart = parsedStart && day.dateString === startDate
-          const isSelectedEnd = parsedEnd && day.dateString === endDate
-          const isInRange = parsedStart && parsedEnd && day.dateString > startDate && day.dateString < endDate
+          const isSelectedEnd = mode === 'single' ? false : Boolean(parsedEnd && day.dateString === endDate)
+          const isInRange = mode === 'single' ? false : Boolean(parsedStart && parsedEnd && day.dateString > startDate && day.dateString < endDate)
 
           let dayStyle = 'text-muted-dark/40 cursor-default'
           if (day.isCurrentMonth) {
@@ -201,7 +207,7 @@ const InteractiveCalendar = ({ startDate, endDate, onChange, onClose }) => {
           ) : (
             <span>Pilih tanggal</span>
           )}
-          {endDate && (
+          {mode !== 'single' && endDate && (
             <>
               <span className="mx-1 text-muted-dark">–</span>
               <span className="text-primary font-bold">{endDate}</span>
@@ -209,14 +215,28 @@ const InteractiveCalendar = ({ startDate, endDate, onChange, onClose }) => {
           )}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          {(startDate || endDate) && (
+          {mode === 'single' ? (
             <button
               type="button"
-              onClick={() => onChange('', '')}
+              onClick={() => {
+                const today = new Date().toLocaleDateString('en-CA')
+                onChange(today, today)
+                if (onClose) onClose()
+              }}
               className="px-2 py-1 rounded-md text-muted hover:text-foreground hover:bg-subsurface font-semibold transition-all cursor-pointer active:scale-[0.98]"
             >
-              Reset
+              Hari Ini
             </button>
+          ) : (
+            (startDate || endDate) && (
+              <button
+                type="button"
+                onClick={() => onChange('', '')}
+                className="px-2 py-1 rounded-md text-muted hover:text-foreground hover:bg-subsurface font-semibold transition-all cursor-pointer active:scale-[0.98]"
+              >
+                Reset
+              </button>
+            )
           )}
           <button
             type="button"

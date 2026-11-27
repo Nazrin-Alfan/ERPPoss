@@ -31,11 +31,11 @@ import {
   Star,
   ShoppingCart,
   Eye,
-  MoreHorizontal
+  MoreHorizontal,
+  Sparkles
 } from 'lucide-react'
 import InteractiveCalendar from '../components/InteractiveCalendar'
 import AIPromptBuilderModal from '../components/dashboard/AIPromptBuilderModal'
-import ExecutivePromptStudio from '../components/dashboard/ExecutivePromptStudio'
 import ExpenseDetailModal from '../components/dashboard/ExpenseDetailModal'
 import OnboardingWizardModal from '../components/auth/OnboardingWizardModal'
 import { formatRupiah, parseDateSafe, calculateDailyCashierRecap } from '../utils/helpers'
@@ -138,7 +138,7 @@ const Dashboard = () => {
   }, [tenantBusinessType])
 
   const [loading, setLoading] = useState(true)
-  const [timeRange, setTimeRange] = useState('month') // 'today', 'month', 'custom', 'all'
+  const [timeRange, setTimeRange] = useState('today') // 'today', 'month', 'custom', 'all'
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [showCustomCalendar, setShowCustomCalendar] = useState(false)
@@ -246,6 +246,8 @@ const Dashboard = () => {
     if (timeRange === 'custom' && (!startDate || !endDate)) return
     fetchAllAnalyticsData()
   }, [timeRange, startDate, endDate, activeTenant?.id])
+
+  const todayDateStr = useMemo(() => new Date().toLocaleDateString('en-CA'), [])
 
   const isDateInRange = useCallback((dateStr) => {
     if (!dateStr) return false
@@ -681,11 +683,96 @@ const Dashboard = () => {
 
     const trendData = Object.values(dailyDataMap).sort((a, b) => a.date.localeCompare(b.date))
 
+    // Saat mode Hari Ini, sajikan konteks tren 7 hari terakhir agar grafik garis tetap informatif
+    let displayTrendData = trendData
+    let isRolling7DayContext = false
+    if (timeRange === 'today' && trendData.length <= 1) {
+      const now = new Date()
+      const sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6)
+      const rollingStart = sevenDaysAgo.toLocaleDateString('en-CA')
+      const isInRolling7Days = (dateStr) => {
+        if (!dateStr) return false
+        const dayKey = String(dateStr).substring(0, 10)
+        return dayKey >= rollingStart && dayKey <= todayDateStr
+      }
+
+      const rollingMap = {}
+      ;(strukList || []).forEach(s => {
+        if (isTestOrCancelledStruk(s) || isTukarUangStruk(s)) return
+        if (!isInRolling7Days(s.tanggal)) return
+        const d = String(s.tanggal).substring(0, 10)
+        if (!rollingMap[d]) rollingMap[d] = { date: d, omzet: 0, carwashOmzet: 0, cafeOmzet: 0, pengeluaran: 0 }
+        rollingMap[d].omzet += parseFloat(s.total_tagihan || 0)
+      })
+
+      ;(carwashList || []).forEach(cw => {
+        if (cw.status === 'Batal' || cw.status === 'Cancelled' || !(parseFloat(cw.harga || 0) > 0)) return
+        const parentStruk = strukMap.get(cw.id_struk)
+        if (parentStruk && isTestOrCancelledStruk(parentStruk)) return
+        if (!isInRolling7Days(cw.tanggal)) return
+        const d = String(cw.tanggal).substring(0, 10)
+        if (!rollingMap[d]) rollingMap[d] = { date: d, omzet: 0, carwashOmzet: 0, cafeOmzet: 0, pengeluaran: 0 }
+        rollingMap[d].carwashOmzet += parseFloat(cw.harga || 0)
+        rollingMap[d].pengeluaran += (parseFloat(cw.komisi_1 || 0) + parseFloat(cw.komisi_2 || 0))
+      })
+
+      ;(cafeList || []).forEach(c => {
+        if (c.status === 'Batal' || c.status === 'Cancelled' || !(parseFloat(c.subtotal) > 0)) return
+        const parentStruk = strukMap.get(c.id_struk)
+        if (parentStruk && isTestOrCancelledStruk(parentStruk)) return
+        const dateStr = parentStruk?.tanggal || c.struk?.tanggal || c.created_at
+        if (!isInRolling7Days(dateStr)) return
+        const d = String(dateStr).substring(0, 10)
+        if (!rollingMap[d]) rollingMap[d] = { date: d, omzet: 0, carwashOmzet: 0, cafeOmzet: 0, pengeluaran: 0 }
+        rollingMap[d].cafeOmzet += parseFloat(c.subtotal || ((c.harga_satuan || 0) * (c.qty || 1)) || 0)
+      })
+
+      const rollingProcessedExpIds = new Set()
+      ;(pengeluaranList || []).forEach(exp => {
+        if (isPindahSaldo(exp) || !isInRolling7Days(exp.tanggal)) return
+        if (exp.id_pengeluaran) rollingProcessedExpIds.add(exp.id_pengeluaran)
+        const d = String(exp.tanggal).substring(0, 10)
+        const nom = parseFloat(exp.nominal || exp.total_harga || 0)
+        if (nom > 0 && d) {
+          if (!rollingMap[d]) rollingMap[d] = { date: d, omzet: 0, carwashOmzet: 0, cafeOmzet: 0, pengeluaran: 0 }
+          rollingMap[d].pengeluaran += nom
+        }
+      })
+
+      ;(cashflowLogs || []).forEach(c => {
+        if (!isInRolling7Days(c.tanggal)) return
+        const d = String(c.tanggal).substring(0, 10)
+        const exp = parseFloat(c.pengeluaran || 0)
+        const jenisLower = String(c.jenis || '').toLowerCase()
+        const ketLower = String(c.keterangan_transaksi || c.keterangan || '').toLowerCase()
+        const katLower = String(c.kategori || '').toLowerCase()
+        if (jenisLower.includes('pindah') || isPindahSaldo(c) || (c.id_sumber && rollingProcessedExpIds.has(c.id_sumber))) return
+        if (
+          ketLower.includes('rekap pengeluaran') ||
+          ketLower.includes('rekap tutup kasir') ||
+          ketLower.includes('rekap kasir') ||
+          katLower.includes('rekap') ||
+          jenisLower.includes('rekap')
+        ) return
+        if (exp > 0 && d) {
+          if (!rollingMap[d]) rollingMap[d] = { date: d, omzet: 0, carwashOmzet: 0, cafeOmzet: 0, pengeluaran: 0 }
+          rollingMap[d].pengeluaran += exp
+        }
+      })
+
+      const rollingTrend = Object.values(rollingMap).sort((a, b) => a.date.localeCompare(b.date))
+      if (rollingTrend.length > 1) {
+        displayTrendData = rollingTrend
+        isRolling7DayContext = true
+      }
+    }
+
     return {
       totalExpenses: segmentedExpenses.totalExpenses,
-      trendData
+      trendData: displayTrendData,
+      isRolling7DayContext
     }
-  }, [filteredStrukByTime, filteredCarwashList, filteredCafeList, filteredPengeluaranList, filteredCashflowLogs, strukMap, segmentedExpenses.totalExpenses])
+  }, [filteredStrukByTime, filteredCarwashList, filteredCafeList, filteredPengeluaranList, filteredCashflowLogs, strukMap, segmentedExpenses.totalExpenses, timeRange, todayDateStr, strukList, carwashList, cafeList, pengeluaranList, cashflowLogs])
 
   // CFO Health & Expense Ratio
   const cfoHealth = useMemo(() => {
@@ -705,7 +792,6 @@ const Dashboard = () => {
   }, [overviewStats.totalRevenue, segmentedExpenses.totalExpenses, operatingDays])
 
   // Daily Cashier Recap (Cash vs QRIS / Non-Tunai)
-  const todayDateStr = useMemo(() => new Date().toLocaleDateString('en-CA'), [])
   const dailyCashierRecap = useMemo(() => {
     return calculateDailyCashierRecap(strukList, todayDateStr)
   }, [strukList, todayDateStr])
@@ -800,6 +886,26 @@ const Dashboard = () => {
       inProgress
     }
   }, [carwashList])
+
+  const todayCafeItemsCount = useMemo(() => {
+    return (cafeList || []).reduce((sum, c) => {
+      if (c.status === 'Batal' || c.status === 'Cancelled' || !(parseFloat(c.subtotal) > 0)) return sum
+      const parentStruk = strukMap.get(c.id_struk)
+      if (parentStruk && isTestOrCancelledStruk(parentStruk)) return sum
+      const dateStr = parentStruk?.tanggal || c.struk?.tanggal || c.created_at
+      if (!String(dateStr || '').startsWith(todayDateStr)) return sum
+      return sum + (parseInt(c.qty, 10) || 1)
+    }, 0)
+  }, [cafeList, strukMap, todayDateStr])
+
+  const todayFormattedDate = useMemo(() => {
+    return parseDateSafe(todayDateStr).toLocaleDateString('id-ID', {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    })
+  }, [todayDateStr])
 
   // Recent Transactions Data (shadcn dashboard-2)
   const recentTransactionsList = useMemo(() => {
@@ -1071,7 +1177,10 @@ const Dashboard = () => {
         : null
     const activePoint = safeHoveredIdx !== null ? chartPoints[safeHoveredIdx] : null
     const leftPercent = activePoint ? (activePoint.x / svgWidth) * 100 : 50
-    const tooltipTransform = leftPercent < 22 ? 'translateX(0)' : leftPercent > 78 ? 'translateX(-100%)' : 'translateX(-50%)'
+    const openToLeft = leftPercent >= 36
+    const tooltipPositionStyle = openToLeft
+      ? { right: `${Math.max(0, 100 - leftPercent)}%` }
+      : { left: `${Math.max(0, leftPercent)}%` }
 
     return (
       <div className="w-full">
@@ -1082,32 +1191,34 @@ const Dashboard = () => {
           {activePoint && (
             <div
               data-testid="trend-chart-tooltip"
-              style={{ left: `${leftPercent}%`, transform: tooltipTransform }}
-              className="pointer-events-none absolute top-1 z-20 min-w-[188px] max-w-[236px] rounded-xl bg-surface border border-border shadow-xl p-2.5 text-xs animate-pop-in"
+              style={tooltipPositionStyle}
+              className={`pointer-events-none absolute top-2 z-20 ${openToLeft ? 'pr-3' : 'pl-3'}`}
             >
-              <p className="text-[11px] font-bold text-foreground mb-1.5 border-b border-border pb-1">
-                {formatTrendDateLabel(activePoint.date)}
-              </p>
-              <div className="space-y-1 font-mono tabular-nums text-[11px]">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="font-sans text-muted flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: lineColor }} />
-                    Omzet
-                  </span>
-                  <span className="font-bold text-foreground">{formatRupiah(activePoint.valOmzet)}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="font-sans text-muted flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-destructive-solid shrink-0" />
-                    Beban
-                  </span>
-                  <span className="font-bold text-destructive">{formatRupiah(activePoint.valExp)}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3 pt-1 border-t border-border">
-                  <span className="font-sans text-muted font-semibold">Net</span>
-                  <span className={`font-bold ${activePoint.netDaily >= 0 ? 'text-success' : 'text-destructive'}`}>
-                    {formatRupiah(activePoint.netDaily)}
-                  </span>
+              <div className="min-w-[188px] max-w-[228px] rounded-xl bg-surface border border-border shadow-xl p-2.5 text-xs animate-pop-in">
+                <p className="text-[11px] font-bold text-foreground mb-1.5 border-b border-border pb-1">
+                  {formatTrendDateLabel(activePoint.date)}
+                </p>
+                <div className="space-y-1 font-mono tabular-nums text-[11px]">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-sans text-muted flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: lineColor }} />
+                      Omzet
+                    </span>
+                    <span className="font-bold text-foreground">{formatRupiah(activePoint.valOmzet)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-sans text-muted flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-destructive-solid shrink-0" />
+                      Beban
+                    </span>
+                    <span className="font-bold text-destructive">{formatRupiah(activePoint.valExp)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 pt-1 border-t border-border">
+                    <span className="font-sans text-muted font-semibold">Net</span>
+                    <span className={`font-bold ${activePoint.netDaily >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      {formatRupiah(activePoint.netDaily)}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1296,7 +1407,7 @@ const Dashboard = () => {
   return (
     <div className="p-3 sm:p-5 pb-24 md:pb-8 space-y-4 max-w-7xl mx-auto bg-canvas text-foreground">
       {/* Top Header & Context Controls */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b border-border pb-4 animate-fade-in">
+      <div className="relative z-40 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b border-border pb-4">
         <div className="flex items-center gap-3 min-w-0 group">
           <div className="w-10 h-10 rounded-xl bg-primary-soft border border-primary/25 flex items-center justify-center text-primary shrink-0 transition-transform duration-200 group-hover:scale-105">
             <BarChart3 size={20} strokeWidth={1.75} />
@@ -1357,22 +1468,25 @@ const Dashboard = () => {
             )}
           </div>
 
-          {/* AI Executive Intelligence Button */}
+          {/* AI Data Studio & Quick Prompt Actions */}
           <button
             type="button"
-            onClick={() => {
-              const el = document.getElementById('ai-prompt-studio')
-              if (el) {
-                el.scrollIntoView({ behavior: 'smooth' })
-              } else {
-                setShowAIPromptModal(true)
-              }
-            }}
+            onClick={() => navigate('/ai-studio')}
             className="min-h-[40px] px-4 py-1.5 rounded-full font-semibold transition-all duration-150 flex items-center gap-1.5 text-primary-soft-foreground bg-primary-soft hover:opacity-90 hover:-translate-y-0.5 hover:shadow-xs border border-primary/25 text-xs cursor-pointer active:scale-[0.98] shrink-0"
-            title="Buka Asisten Analisis Bisnis"
+            title="Buka Workspace AI Data Studio & Canvas"
           >
-            <Bot size={14} strokeWidth={2} />
-            <span>Asisten Analitik</span>
+            <Sparkles size={14} strokeWidth={2} />
+            <span>AI Data Studio</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowAIPromptModal(true)}
+            className="min-h-[40px] px-3.5 py-1.5 rounded-full font-semibold transition-all duration-150 flex items-center gap-1.5 text-muted hover:text-foreground bg-surface hover:bg-surface-hover hover:-translate-y-0.5 border border-border hover:border-border-hover text-xs cursor-pointer active:scale-[0.98] shrink-0"
+            title="Buka Ringkasan Prompt Cepat"
+          >
+            <Bot size={14} strokeWidth={1.75} />
+            <span>Prompt Cepat</span>
           </button>
 
           {/* Refresh Button */}
@@ -1494,6 +1608,87 @@ const Dashboard = () => {
           </button>
         </div>
       </div>
+
+      {/* Ringkasan Laporan Hari Ini (Selalu Tampil Pertama di Atas) */}
+      <section
+        data-testid="today-live-report-card"
+        className="bg-surface border border-border rounded-2xl p-4 shadow-xs space-y-3"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-2 h-2 rounded-full bg-success shrink-0" />
+            <h2 className="text-sm font-bold text-foreground">Laporan Hari Ini</h2>
+            <span className="text-[11px] font-medium text-muted truncate">• {todayFormattedDate}</span>
+          </div>
+          <div className="flex items-center gap-2.5 shrink-0">
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-success-bg text-success border border-success/30 whitespace-nowrap">
+              Kasir Live
+            </span>
+            <button
+              type="button"
+              onClick={() => navigate('/reports')}
+              className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer active:scale-[0.98]"
+            >
+              <span>Lihat Laporan</span>
+              <ArrowRight size={12} />
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="p-3 rounded-xl bg-subsurface border border-border">
+            <span className="text-[11px] font-semibold text-muted block">Total Bruto Hari Ini</span>
+            <p className="text-base sm:text-lg font-bold text-foreground font-mono tabular-nums mt-0.5">
+              {formatRupiah(dailyCashierRecap.totalOmzet)}
+            </p>
+            <span className="text-[11px] text-muted font-mono tabular-nums">
+              {dailyCashierRecap.totalTxCount} transaksi hari ini
+            </span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-subsurface border border-border">
+            <span className="text-[11px] font-semibold text-muted block">Uang Fisik / Cash</span>
+            <p className="text-base sm:text-lg font-bold text-success font-mono tabular-nums mt-0.5">
+              {formatRupiah(dailyCashierRecap.totalCash)}
+            </p>
+            <span className="text-[11px] text-muted font-mono tabular-nums">
+              {dailyCashierRecap.cashPercentage}% total setoran
+            </span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-subsurface border border-border">
+            <span className="text-[11px] font-semibold text-muted block">QRIS &amp; Non-Tunai</span>
+            <p className="text-base sm:text-lg font-bold text-primary font-mono tabular-nums mt-0.5">
+              {formatRupiah(dailyCashierRecap.totalNonCash)}
+            </p>
+            <span className="text-[11px] text-muted font-mono tabular-nums">
+              {dailyCashierRecap.nonCashPercentage}% pembayaran digital
+            </span>
+          </div>
+
+          {tenantBusinessType !== 'CAFE' ? (
+            <div className="p-3 rounded-xl bg-subsurface border border-border">
+              <span className="text-[11px] font-semibold text-muted block">Antrean Cuci Hari Ini</span>
+              <p className="text-base sm:text-lg font-bold text-foreground font-mono tabular-nums mt-0.5">
+                {activeQueueSummary.totalToday} unit
+              </p>
+              <span className="text-[11px] text-muted font-mono tabular-nums">
+                {activeQueueSummary.completed} selesai • {activeQueueSummary.inProgress} diproses
+              </span>
+            </div>
+          ) : (
+            <div className="p-3 rounded-xl bg-subsurface border border-border">
+              <span className="text-[11px] font-semibold text-muted block">Porsi Cafe Hari Ini</span>
+              <p className="text-base sm:text-lg font-bold text-warning font-mono tabular-nums mt-0.5">
+                {todayCafeItemsCount} porsi
+              </p>
+              <span className="text-[11px] text-muted">
+                Pesanan dapur &amp; barista hari ini
+              </span>
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* Main Dashboard Grid: Bento KPIs */}
       <div className="space-y-6">
@@ -1867,7 +2062,11 @@ const Dashboard = () => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-4 border-b border-border">
               <div>
                 <h3 className="text-base font-bold text-foreground">Sales Performance</h3>
-                <p className="text-xs text-muted">Tren pergerakan omzet harian vs pengeluaran operasional</p>
+                <p className="text-xs text-muted">
+                  {financialAnalytics.isRolling7DayContext
+                    ? 'Tren 7 hari terakhir hingga hari ini (konteks harian)'
+                    : 'Tren pergerakan omzet harian vs pengeluaran operasional'}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-mono tabular-nums font-bold text-primary-soft-foreground bg-primary-soft px-2.5 py-1 rounded-full border border-primary/25">
@@ -2585,21 +2784,6 @@ const Dashboard = () => {
           )}
         </div>
       </div>
-
-      {/* Station 4: Dedicated Section AI Executive Intelligence & Prompt Studio */}
-      <section id="ai-prompt-studio" className="w-full">
-        <ExecutivePromptStudio
-          strukList={strukList}
-          carwashList={carwashList}
-          cafeList={cafeList}
-          cashflowLogs={cashflowLogs}
-          stokList={stokList}
-          posAccountList={posAccountList}
-          tenantBusinessType={tenantBusinessType}
-          activeTenant={activeTenant}
-          targetCapacity={advancedKPIs?.targetCapacity || 30}
-        />
-      </section>
 
       {/* Modal AI Prompt Builder */}
       <AIPromptBuilderModal

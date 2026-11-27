@@ -76,11 +76,13 @@ export default function Konsolidasi() {
         }
       }
 
-      const [{ data: allStruk }, { data: allTx }, { data: allExp }, { data: allAcc }, { data: allBranches }] = await Promise.all([
+      const [{ data: allStruk }, { data: allTx }, { data: allExp }, { data: allAcc }, { data: allPocketView }, { data: allPosBal }, { data: allBranches }] = await Promise.all([
         supabase.from('struk').select('*'),
         supabase.from('transaksi').select('*'),
         supabase.from('pengeluaran').select('*'),
         supabase.from('akun_keuangan').select('*'),
+        supabase.from('v_pocket_balances').select('*'),
+        supabase.from('pos_balances').select('*'),
         supabase.from('branches').select('*').eq('is_active', true)
       ])
 
@@ -88,7 +90,15 @@ export default function Konsolidasi() {
       const myTx = filterTenantScopedRecords(sourceTx, allowedTenantIds)
       const myExp = filterTenantScopedRecords(allExp, allowedTenantIds)
         .map(e => ({ ...e, jumlah: e.jumlah ?? e.nominal ?? 0 }))
-      const myAcc = filterTenantScopedRecords(allAcc, allowedTenantIds)
+      const rawAccounts =
+        Array.isArray(allAcc) && allAcc.length > 0
+          ? allAcc
+          : Array.isArray(allPocketView) && allPocketView.length > 0
+          ? allPocketView
+          : (allPosBal || [])
+      const myAcc = filterTenantScopedRecords(rawAccounts, allowedTenantIds)
+        .filter(a => a.is_active !== false)
+        .map(a => ({ ...a, saldo: Number(a.saldo ?? a.current_balance ?? a.balance ?? 0) }))
       const myBranches = filterTenantScopedRecords(allBranches, allowedTenantIds)
 
       setTransactions(myTx)
@@ -586,7 +596,7 @@ export default function Konsolidasi() {
                         </span>
                       </div>
                     </div>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${item.healthColor}`}>
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold leading-none border shrink-0 whitespace-nowrap ${item.healthColor}`}>
                       {item.healthLabel}
                     </span>
                   </div>
@@ -729,16 +739,16 @@ export default function Konsolidasi() {
             </div>
 
             <div className="overflow-x-auto -mx-2 sm:mx-0 px-2 sm:px-0">
-              <table className="w-full text-left text-xs min-w-[540px]">
+              <table className="w-full text-left text-xs min-w-[680px]">
                 <thead>
                   <tr className="border-b border-border text-muted text-[11px] font-bold uppercase tracking-wider">
-                    <th className="pb-3 pl-1">Nama Outlet</th>
-                    <th className="pb-3 text-right">Omzet</th>
-                    <th className="pb-3 text-right">Pengeluaran</th>
-                    <th className="pb-3 text-right">Net Profit</th>
-                    <th className="pb-3 text-right">Kas Aktif</th>
-                    <th className="pb-3 text-center">Status</th>
-                    <th className="pb-3 text-center">Aksi</th>
+                    <th className="pb-3 pl-2 pr-4">Nama Outlet</th>
+                    <th className="pb-3 px-3.5 text-right">Omzet</th>
+                    <th className="pb-3 px-3.5 text-right">Pengeluaran</th>
+                    <th className="pb-3 px-3.5 text-right">Net Profit</th>
+                    <th className="pb-3 px-3.5 text-right">Kas Aktif</th>
+                    <th className="pb-3 px-3.5 text-center">Status</th>
+                    <th className="pb-3 pl-3 pr-2 text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -751,7 +761,7 @@ export default function Konsolidasi() {
                           isCurrent ? 'bg-success-bg' : ''
                         }`}
                       >
-                        <td className="py-3.5 pl-1 max-w-[150px]">
+                        <td className="py-3.5 pl-2 pr-4 max-w-[180px]">
                           <div className="flex items-center gap-2 min-w-0">
                             <div className="w-7 h-7 rounded-lg bg-subsurface border border-border flex items-center justify-center text-muted shrink-0">
                               <Store size={14} />
@@ -760,7 +770,7 @@ export default function Konsolidasi() {
                               <p className="font-bold text-foreground truncate flex items-center gap-1.5">
                                 <span className="truncate">{item.tenantName}</span>
                                 {isCurrent && (
-                                  <span className="text-[9px] px-1 py-0.2 rounded bg-success-bg text-success border border-success/30 shrink-0">
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-success-bg text-success border border-success/30 shrink-0">
                                     Aktif
                                   </span>
                                 )}
@@ -771,13 +781,13 @@ export default function Konsolidasi() {
                             </div>
                           </div>
                         </td>
-                        <td className="py-3.5 text-right font-mono font-bold text-foreground whitespace-nowrap">
+                        <td className="py-3.5 px-3.5 text-right font-mono tabular-nums font-bold text-foreground whitespace-nowrap">
                           {formatRupiah(item.revenue)}
                         </td>
-                        <td className="py-3.5 text-right font-mono text-destructive whitespace-nowrap">
+                        <td className="py-3.5 px-3.5 text-right font-mono tabular-nums text-destructive whitespace-nowrap">
                           {formatRupiah(item.expenses)}
                         </td>
-                        <td className="py-3.5 text-right font-mono font-bold whitespace-nowrap">
+                        <td className="py-3.5 px-3.5 text-right font-mono tabular-nums font-bold whitespace-nowrap">
                           <span className={item.netProfit >= 0 ? 'text-success' : 'text-destructive'}>
                             {formatRupiah(item.netProfit)}
                           </span>
@@ -785,19 +795,19 @@ export default function Konsolidasi() {
                             ({item.marginPercentage.toFixed(1)}%)
                           </span>
                         </td>
-                        <td className="py-3.5 text-right font-mono font-bold text-primary whitespace-nowrap">
+                        <td className="py-3.5 px-3.5 text-right font-mono tabular-nums font-bold text-primary whitespace-nowrap">
                           {formatRupiah(item.cashBalance)}
                         </td>
-                        <td className="py-3.5 text-center whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${item.healthColor}`}>
+                        <td className="py-3.5 px-3.5 text-center whitespace-nowrap">
+                          <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[11px] font-semibold leading-tight border whitespace-nowrap ${item.healthColor}`}>
                             {item.healthLabel}
                           </span>
                         </td>
-                        <td className="py-3.5 text-center whitespace-nowrap">
+                        <td className="py-3.5 pl-3 pr-2 text-center whitespace-nowrap">
                           <button
                             type="button"
                             onClick={() => handleJumpToTenant(item.tenantId)}
-                            className="px-2.5 py-1.5 rounded-lg bg-subsurface hover:bg-surface-hover text-muted hover:text-foreground text-[11px] font-bold border border-border transition-all inline-flex items-center gap-1 cursor-pointer"
+                            className="px-3 py-1.5 rounded-lg bg-subsurface hover:bg-surface-hover text-muted hover:text-foreground text-[11px] font-bold border border-border transition-all inline-flex items-center gap-1 cursor-pointer"
                             title="Beralih ke outlet ini & lihat operasionalnya"
                           >
                             <span>Kelola</span>

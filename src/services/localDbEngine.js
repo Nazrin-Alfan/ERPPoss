@@ -11,6 +11,10 @@ import { GeneralLedgerService, calculateMovingAverageCost } from './generalLedge
 import { DEFAULT_CARWASH_PACKAGES, calculateCarwashPriceAndCommission } from '../utils/carwashHelpers.js'
 import { resolveAccountForPaymentMethod } from '../constants/transactionConstants.js'
 import { normalizeEmailIdentity } from './mandiriEmailParser.js'
+import { DEMO_MOCK_SEED_VERSION, applyDevMockSeedData } from './demoMockSeed.js'
+
+const isBrowserDevSandbox = () =>
+  Boolean(typeof window !== 'undefined' && import.meta.env?.DEV && import.meta.env?.MODE !== 'test')
 
 const POSTGRES_UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
@@ -618,6 +622,22 @@ export class LocalDatabaseStore {
           this.data.karyawan_cuci.push(JSON.parse(JSON.stringify(kc)))
         }
       })
+    }
+
+    if (isBrowserDevSandbox()) {
+      const needsDemoSeed =
+        this.data._demo_seed_version !== DEMO_MOCK_SEED_VERSION &&
+        (!this.data.struk || this.data.struk.length === 0) &&
+        (!this.data.cashflow || this.data.cashflow.length === 0)
+      if (needsDemoSeed) {
+        applyDevMockSeedData(this.data)
+        this.data._demo_seed_version = DEMO_MOCK_SEED_VERSION
+        this.data.journal_entries = []
+        this.data.journal_entry_lines = []
+        const gl = new GeneralLedgerService(this)
+        gl.backfillHistoricalJournals(DEFAULT_TENANT_ID)
+        this.saveToStorage(true)
+      }
     }
 
     if (this.data.journal_entries.length === 0) {

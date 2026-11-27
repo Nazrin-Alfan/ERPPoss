@@ -52,4 +52,20 @@ describe('InteractiveCalendar UI Polish & Viewport Alignment Suite', () => {
     expect(calendarSrc).toContain('Escape')
     expect(calendarSrc).toContain('mousedown')
   })
+
+  it('TC_04 (SINGLE_DATE_MODE): Supports single-date picker mode without range dash separator and includes Hari Ini shortcut', () => {
+    const html = renderToString(
+      React.createElement(InteractiveCalendar, {
+        mode: 'single',
+        startDate: '2026-11-27',
+        endDate: '2026-11-27',
+        onChange: vi.fn(),
+        onClose: vi.fn()
+      })
+    )
+
+    expect(html).toContain('2026-11-27')
+    expect(html).toContain('Hari Ini')
+    expect(html).not.toContain('>–<')
+  })
 })

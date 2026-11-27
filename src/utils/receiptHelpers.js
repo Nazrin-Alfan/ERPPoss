@@ -5,6 +5,142 @@
 
 export const PERMANENT_RELAYPOS_FOOTER = 'Powered by RelayPOS • Cloud Enterprise System'
 
+export const DEFAULT_WA_ORDER_TEMPLATE = `*{nama_toko}*
+*BUKTI PENERIMAAN KENDARAAN*
+
+Halo Kak, pesanan Anda sudah kami terima:
+No. Order: *{no_order}*
+Waktu: {tanggal}
+{info_kendaraan_atau_meja}
+
+*Rincian Pesanan:*
+{rincian_item}
+{diskon}
+*Total Estimasi: {total}*
+Status: *{status}*
+
+Kami akan segera mengabarkan via WhatsApp bila pesanan selesai. Simpan pesan ini sebagai tanda terima.`
+
+export const DEFAULT_WA_PAYMENT_TEMPLATE = `*{nama_toko}*
+*E-STRUK PEMBAYARAN LUNAS*
+
+Terima kasih sudah berkunjung ke {nama_toko}! Berikut ringkasan transaksi Anda:
+No. Transaksi: *{no_order}*
+Waktu: {tanggal}
+{info_kendaraan_atau_meja}
+
+*Rincian Pesanan:*
+{rincian_item}
+{diskon}
+*Total Bayar: {total}*
+Status: *{status}*
+{rincian_pembayaran}
+
+Semoga puas dengan layanan kami dan sampai jumpa kembali!`
+
+export const WA_TEMPLATE_VARIABLES = [
+  { token: '{nama_toko}', label: 'Nama Toko', group: 'Toko' },
+  { token: '{slogan}', label: 'Slogan', group: 'Toko' },
+  { token: '{alamat}', label: 'Alamat', group: 'Toko' },
+  { token: '{telepon}', label: 'Telepon/WA', group: 'Toko' },
+  { token: '{sosmed}', label: 'Sosmed', group: 'Toko' },
+  { token: '{no_order}', label: 'No. Order', group: 'Transaksi' },
+  { token: '{tanggal}', label: 'Tanggal/Jam', group: 'Transaksi' },
+  { token: '{kasir}', label: 'Nama Kasir', group: 'Transaksi' },
+  { token: '{info_kendaraan_atau_meja}', label: 'Kendaraan / Meja (Otomatis)', group: 'Transaksi' },
+  { token: '{plat}', label: 'No. Polisi', group: 'Transaksi' },
+  { token: '{model}', label: 'Model Mobil', group: 'Transaksi' },
+  { token: '{kehadiran}', label: 'Kehadiran', group: 'Transaksi' },
+  { token: '{meja}', label: 'No. Meja / Tipe', group: 'Transaksi' },
+  { token: '{rincian_item}', label: 'Daftar Item', group: 'Item & Bayar' },
+  { token: '{diskon}', label: 'Potongan Diskon', group: 'Item & Bayar' },
+  { token: '{total}', label: 'Total Tagihan', group: 'Item & Bayar' },
+  { token: '{status}', label: 'Status Bayar', group: 'Item & Bayar' },
+  { token: '{metode_bayar}', label: 'Metode Bayar', group: 'Item & Bayar' },
+  { token: '{uang_diterima}', label: 'Uang Diterima', group: 'Item & Bayar' },
+  { token: '{kembalian}', label: 'Kembalian', group: 'Item & Bayar' },
+  { token: '{rincian_pembayaran}', label: 'Detail Bayar & Kembali', group: 'Item & Bayar' }
+]
+
+export const WA_TEMPLATE_PRESETS = [
+  {
+    id: 'default',
+    label: 'Ramah & Jelas',
+    orderTemplate: DEFAULT_WA_ORDER_TEMPLATE,
+    paymentTemplate: DEFAULT_WA_PAYMENT_TEMPLATE
+  },
+  {
+    id: 'express',
+    label: 'Singkat Express',
+    orderTemplate: `*{nama_toko}* - Order *{no_order}*
+{info_kendaraan_atau_meja}
+{rincian_item}
+Total: *{total}* ({status})
+Kami kabari segera saat selesai.`,
+    paymentTemplate: `*{nama_toko}* - Nota *{no_order}*
+{rincian_item}
+Total: *{total}* ({status})
+{rincian_pembayaran}
+Terima kasih!`
+  },
+  {
+    id: 'formal',
+    label: 'Lengkap & Resmi',
+    orderTemplate: `*{nama_toko}*
+{alamat}
+Telp/WA: {telepon}
+
+*TANDA TERIMA ORDER RESMI*
+No. Order: *{no_order}*
+Tanggal: {tanggal}
+Kasir: {kasir}
+{info_kendaraan_atau_meja}
+
+*Rincian Layanan / Menu:*
+{rincian_item}
+{diskon}
+*Total Estimasi: {total}*
+Status: *{status}*
+
+Mohon simpan pesan ini sebagai bukti pengambilan unit/pesanan.`,
+    paymentTemplate: `*{nama_toko}*
+{alamat}
+Telp/WA: {telepon}
+
+*BUKTI PEMBAYARAN RESMI*
+No. Struk: *{no_order}*
+Tanggal: {tanggal}
+Kasir: {kasir}
+{info_kendaraan_atau_meja}
+
+*Rincian Transaksi:*
+{rincian_item}
+{diskon}
+*Total Dibayar: {total}*
+Status: *{status}*
+{rincian_pembayaran}
+
+Terima kasih atas kepercayaan Anda.`
+  },
+  {
+    id: 'review',
+    label: 'Ajak Review & Follow',
+    orderTemplate: `*{nama_toko}*
+Halo Kak! Order *{no_order}* sudah masuk antrean kami.
+{info_kendaraan_atau_meja}
+{rincian_item}
+Estimasi: *{total}* ({status})
+
+Sambil menunggu, nikmati kopi & menu cafe kami atau tunggu kabar WA dari kami ya Kak.`,
+    paymentTemplate: `*{nama_toko}*
+Terima kasih Kak! Pembayaran *{no_order}* sebesar *{total}* sudah *{status}*.
+{rincian_item}
+{rincian_pembayaran}
+
+Puas dengan layanan kami? Follow {sosmed} atau balas pesan ini jika ada masukan ya Kak!`
+  }
+]
+
 export const DEFAULT_RECEIPT_CONFIG = {
   storeName: 'RELAYPOS CARWASH & CAFE',
   storeTagline: 'Professional Car Wash, Detailing & Cafe',
@@ -20,7 +156,22 @@ export const DEFAULT_RECEIPT_CONFIG = {
   footerText: PERMANENT_RELAYPOS_FOOTER,
   paperWidth: '72mm', // '58mm' | '72mm' | '80mm'
   showStorePhone: true,
-  showStoreAddress: true
+  showStoreAddress: true,
+  // Dedicated WhatsApp E-Receipt Freeform Templates (Terpisah dari Struk Printer Thermal)
+  waOrderTemplate: DEFAULT_WA_ORDER_TEMPLATE,
+  waPaymentTemplate: DEFAULT_WA_PAYMENT_TEMPLATE,
+  waGreeting: 'Halo Kak! Terima kasih sudah berkunjung ke {storeName}. Berikut e-struk digital transaksi Anda:',
+  waOrderTitle: 'BUKTI PENERIMAAN KENDARAAN',
+  waPaymentTitle: 'E-STRUK PEMBAYARAN LUNAS',
+  waOrderClosing: 'Kami akan segera mengabarkan via WhatsApp begitu kendaraan Anda selesai dikerjakan. Simpan pesan ini sebagai tanda terima.',
+  waPaymentClosing: 'Terima kasih banyak atas kunjungan Anda! Semoga puas dengan layanan kami dan sampai jumpa kembali.',
+  waExtraNote: '',
+  waShowAddress: true,
+  waShowPhone: true,
+  waShowSocial: true,
+  waShowCashier: true,
+  waShowItemDetails: true,
+  waShowPaymentBreakdown: true
 }
 
 let _inMemoryConfigStorage = null
@@ -244,70 +395,155 @@ export const buildPaymentReceiptData = (order, customConfig = null) => {
 }
 
 /**
- * Generates WhatsApp formatted text message and wa.me URL
+ * Tokenizes WhatsApp inline formatting (*bold*, _italic_, ~strike~, ```mono```)
+ * into safe React-renderable spans without turning URLs/snake_case underscores into italics.
  */
-export const generateWhatsAppReceiptMessage = (receiptData, overridePhone = '') => {
+export const parseWhatsAppInlineFormatting = (line) => {
+  const input = String(line || '')
+  if (!input) return []
+
+  const tokenRe = /```([^`]+)```|\*([^*\n]+)\*|(?<![a-zA-Z0-9])_([^_\n]+)_(?![a-zA-Z0-9])|~([^~\n]+)~/g
+  const tokens = []
+  let lastIndex = 0
+  let match
+
+  while ((match = tokenRe.exec(input)) !== null) {
+    if (match.index > lastIndex) {
+      tokens.push({ type: 'text', text: input.slice(lastIndex, match.index) })
+    }
+    if (match[1] !== undefined) {
+      tokens.push({ type: 'mono', text: match[1] })
+    } else if (match[2] !== undefined) {
+      tokens.push({ type: 'bold', text: match[2] })
+    } else if (match[3] !== undefined) {
+      tokens.push({ type: 'italic', text: match[3] })
+    } else if (match[4] !== undefined) {
+      tokens.push({ type: 'strike', text: match[4] })
+    }
+    lastIndex = tokenRe.lastIndex
+  }
+
+  if (lastIndex < input.length) {
+    tokens.push({ type: 'text', text: input.slice(lastIndex) })
+  }
+
+  return tokens
+}
+
+/**
+ * Renders a configurable WhatsApp template string using receipt variables,
+ * automatically collapsing lines that contain only empty placeholders.
+ */
+export const renderWhatsAppTemplate = (template, vars = {}) => {
+  const tokenRegex = /\{([a-z0-9_]+)\}/gi
+  const lines = String(template || '').split(/\r?\n/)
+  const renderedLines = []
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+    const matches = [...trimmed.matchAll(tokenRegex)]
+    if (matches.length > 0) {
+      const leftoverText = trimmed.replace(tokenRegex, '').trim()
+      const allEmpty = matches.every((m) => !String(vars[m[1].toLowerCase()] ?? '').trim())
+      if (!leftoverText && allEmpty) {
+        continue
+      }
+    }
+    const replaced = line.replace(tokenRegex, (full, key) => {
+      const k = key.toLowerCase()
+      return vars[k] !== undefined ? String(vars[k]) : full
+    })
+    renderedLines.push(replaced.replace(/[ \t]+$/g, ''))
+  }
+
+  return renderedLines.join('\n').replace(/\n{3,}/g, '\n\n').trim()
+}
+
+/**
+ * Generates WhatsApp formatted text message and wa.me URL
+ * Menggunakan template konfigurasi WhatsApp khusus (terpisah dari struk kertas thermal)
+ * dengan watermark RelayPOS yang selalu dipertahankan di bagian bawah.
+ */
+export const generateWhatsAppReceiptMessage = (receiptData, overridePhone = '', customConfig = null) => {
+  const cfg = customConfig
+    ? { ...DEFAULT_RECEIPT_CONFIG, ...customConfig }
+    : getReceiptConfig()
   const targetPhone = normalizeWhatsAppPhone(overridePhone || receiptData.noTelepon)
   const isDropOff = receiptData.type === 'ORDER_DROP_OFF'
+  const storeName = receiptData.storeName || cfg.storeName || DEFAULT_RECEIPT_CONFIG.storeName
+  const storeTagline = (receiptData.storeTagline !== undefined ? receiptData.storeTagline : cfg.storeTagline) || ''
+  const storeAddress = receiptData.storeAddress || cfg.storeAddress || ''
+  const storePhone = receiptData.storePhone || cfg.storePhone || ''
+  const storeSocial = receiptData.storeSocial || cfg.storeSocial || ''
 
-  let msg = `*${receiptData.storeName}*\n`
-  if (receiptData.storeTagline) {
-    msg += `_${receiptData.storeTagline}_\n`
-  }
-  if (receiptData.showStoreAddress && receiptData.storeAddress) {
-    msg += `📍 ${receiptData.storeAddress}\n`
-  }
-  if (receiptData.showStorePhone && receiptData.storePhone) {
-    msg += `📞 Hub: ${receiptData.storePhone}\n`
-  }
-  msg += `--------------------------------\n`
-  msg += `*${receiptData.title}*\n`
-  msg += `No. Transaksi : *${receiptData.orderNumber}*\n`
-  msg += `Tanggal/Jam   : ${receiptData.tanggal}\n`
-  msg += `Kasir         : ${receiptData.kasir}\n`
-
-  const hasCarwashInfo = receiptData.hasCarwash || (receiptData.plat && receiptData.plat !== '-')
+  const hasCarwashInfo = Boolean(receiptData.hasCarwash || (receiptData.plat && receiptData.plat !== '-'))
+  const infoLines = []
   if (hasCarwashInfo) {
-    msg += `No. Polisi    : *${receiptData.plat}*\n`
-    if (receiptData.model && receiptData.model !== '-') {
-      msg += `Tipe Unit     : ${receiptData.model}\n`
-    }
+    const modelSuffix = receiptData.model && receiptData.model !== '-' ? ` (${receiptData.model})` : ''
+    infoLines.push(`No. Polisi: *${receiptData.plat || '-'}*${modelSuffix}`)
     if (receiptData.kehadiran) {
-      msg += `Kehadiran     : *${receiptData.kehadiran}*\n`
+      infoLines.push(`Kehadiran: *${receiptData.kehadiran}*`)
     }
   } else if (receiptData.nomorMejaAntrean || receiptData.tipePesanan) {
-    msg += `Meja / Pesanan: *${receiptData.nomorMejaAntrean || receiptData.tipePesanan}*\n`
+    infoLines.push(`Meja / Pesanan: *${receiptData.nomorMejaAntrean || receiptData.tipePesanan}*`)
   }
-  msg += `--------------------------------\n`
-  msg += `*RINCIAN LAYANAN & PESANAN:*\n`
 
-  receiptData.items.forEach(item => {
-    msg += `• ${item.name} x${item.qty} = ${formatRupiahReceipt(item.subtotal)}\n`
-    if (item.detail) msg += `  _${item.detail}_\n`
+  const itemLines = []
+  ;(receiptData.items || []).forEach((item) => {
+    itemLines.push(`• ${item.name} x${item.qty} - ${formatRupiahReceipt(item.subtotal)}`)
+    if (item.detail) itemLines.push(`  _${item.detail}_`)
   })
 
+  const discountLines = []
   if (receiptData.diskonCarwash > 0) {
-    msg += `Diskon Carwash: -${formatRupiahReceipt(receiptData.diskonCarwash)}\n`
+    discountLines.push(`Diskon Carwash: -${formatRupiahReceipt(receiptData.diskonCarwash)}`)
   }
   if (receiptData.diskonCafe > 0) {
-    msg += `Diskon Cafe   : -${formatRupiahReceipt(receiptData.diskonCafe)}\n`
+    discountLines.push(`Diskon Cafe: -${formatRupiahReceipt(receiptData.diskonCafe)}`)
   }
 
-  msg += `--------------------------------\n`
-  msg += `*TOTAL ${isDropOff ? 'ESTIMASI' : 'TAGIHAN'} : ${formatRupiahReceipt(receiptData.totalTagihan)}*\n`
-  msg += `STATUS          : *${receiptData.statusBayar}*\n`
-
+  const paymentLines = []
   if (receiptData.isPaid) {
-    msg += `Metode Bayar    : ${receiptData.metodeBayar}\n`
-    if (receiptData.metodeBayar === 'CASH') {
-      msg += `Uang Diterima   : ${formatRupiahReceipt(receiptData.uangDiterima)}\n`
-      msg += `Kembalian       : ${formatRupiahReceipt(receiptData.kembalian)}\n`
+    paymentLines.push(`Metode Bayar: ${receiptData.metodeBayar || '-'}`)
+    if (receiptData.metodeBayar === 'CASH' || receiptData.metodeBayar === 'SPLIT') {
+      paymentLines.push(`Uang Diterima: ${formatRupiahReceipt(receiptData.uangDiterima || 0)}`)
+      paymentLines.push(`Kembalian: ${formatRupiahReceipt(receiptData.kembalian || 0)}`)
     }
   }
 
-  msg += `--------------------------------\n`
-  msg += `${receiptData.disclaimer}\n\n`
-  msg += `_${receiptData.footerText}_`
+  const vars = {
+    nama_toko: storeName,
+    slogan: storeTagline,
+    alamat: storeAddress,
+    telepon: storePhone,
+    sosmed: storeSocial,
+    no_order: receiptData.orderNumber || '-',
+    tanggal: receiptData.tanggal || '-',
+    kasir: receiptData.kasir || 'KASIR',
+    info_kendaraan_atau_meja: infoLines.join('\n'),
+    plat: hasCarwashInfo ? (receiptData.plat || '-') : '',
+    model: hasCarwashInfo && receiptData.model && receiptData.model !== '-' ? receiptData.model : '',
+    kehadiran: hasCarwashInfo ? (receiptData.kehadiran || '') : '',
+    meja: receiptData.nomorMejaAntrean || receiptData.tipePesanan || '',
+    rincian_item: itemLines.join('\n'),
+    diskon: discountLines.join('\n'),
+    total: formatRupiahReceipt(receiptData.totalTagihan ?? receiptData.total ?? 0),
+    status: receiptData.statusBayar || (isDropOff ? 'PENDING (BELUM LUNAS)' : 'LUNAS'),
+    metode_bayar: receiptData.isPaid ? (receiptData.metodeBayar || '-') : '-',
+    uang_diterima: receiptData.isPaid ? formatRupiahReceipt(receiptData.uangDiterima || 0) : '-',
+    kembalian: receiptData.isPaid ? formatRupiahReceipt(receiptData.kembalian || 0) : '-',
+    rincian_pembayaran: paymentLines.join('\n')
+  }
+
+  const activeTemplate = isDropOff
+    ? (cfg.waOrderTemplate !== undefined ? cfg.waOrderTemplate : DEFAULT_WA_ORDER_TEMPLATE)
+    : (cfg.waPaymentTemplate !== undefined ? cfg.waPaymentTemplate : DEFAULT_WA_PAYMENT_TEMPLATE)
+
+  const body = renderWhatsAppTemplate(activeTemplate, vars)
+  // Watermark RelayPOS wajib selalu tersemat di paling bawah pesan WA
+  const msg = body
+    ? `${body}\n\n_${PERMANENT_RELAYPOS_FOOTER}_`
+    : `_${PERMANENT_RELAYPOS_FOOTER}_`
 
   const encoded = encodeURIComponent(msg)
   const url = targetPhone ? `https://wa.me/${targetPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`

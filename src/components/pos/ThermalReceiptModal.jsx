@@ -53,8 +53,8 @@ export default function ThermalReceiptModal({
 
   const isDropOff = receiptData.type === 'ORDER_DROP_OFF'
   const isKitchenSlip = receiptData.type === 'KITCHEN_TICKET'
-  const waInfo = generateWhatsAppReceiptMessage(receiptData, phoneInput)
   const config = getReceiptConfig()
+  const waInfo = generateWhatsAppReceiptMessage(receiptData, phoneInput, config)
   const hasBtSupport = isWebBluetoothSupported()
   const hasCafeItems = receiptData.items?.some(it => it.type === 'CAFE' || !it.type)
 
@@ -327,12 +327,14 @@ export default function ThermalReceiptModal({
                       ? 'bg-warning-bg text-warning border-warning/30' 
                       : 'bg-success-bg text-success border-success/30'
                   }`}>
-                    {isDropOff ? 'DITINGGAL' : 'LUNAS'}
+                    {isDropOff ? (receiptData.kehadiran === 'DITINGGAL' ? 'DITINGGAL' : 'PENDING') : 'LUNAS'}
                   </span>
                 </h3>
                 <p className="text-[11px] text-muted mt-0.5">
                   {isDropOff 
-                    ? 'Struk tanda terima saat mobil ditinggal pelanggan' 
+                    ? (receiptData.kehadiran === 'DITINGGAL'
+                        ? 'Struk tanda terima saat mobil ditinggal pelanggan'
+                        : 'Struk bukti pesanan / tagihan pending (belum lunas)')
                     : 'Struk resmi pelunasan kasir'}
                 </p>
               </div>
@@ -368,7 +370,7 @@ export default function ThermalReceiptModal({
                 <button
                   type="button"
                   onClick={handleCopyText}
-                  title="Salin Teks Struk"
+                  title="Salin Teks Pesan WA"
                   aria-label="Salin teks struk"
                   className="min-w-[44px] min-h-[44px] px-2.5 py-1.5 bg-subsurface hover:bg-surface-hover border border-border text-foreground rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1"
                 >

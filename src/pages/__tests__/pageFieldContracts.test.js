@@ -183,7 +183,7 @@ describe('Phase 1.5: AST Page, Section, Field & Subcomponent Regression Contract
 
       const uncovered = primaryRoutes.filter((r) => !contractedRoutes.has(r))
       expect(uncovered).toEqual([])
-      expect(PAGE_FIELD_CONTRACTS).toHaveLength(18)
+      expect(PAGE_FIELD_CONTRACTS).toHaveLength(19)
     })
 
     it('covers all 22 domain interactive modals, managers, and views inside SUBCOMPONENT_FIELD_CONTRACTS', () => {

@@ -200,7 +200,7 @@ async function runTahap4Suite() {
     );
 
     // T4-06: Restricted Route Containment Test for Kasir
-    const restrictedRoutes = ['/dashboard', '/konsolidasi', '/finance', '/reports', '/karyawan', '/admin', '/founder', '/database'];
+    const restrictedRoutes = ['/dashboard', '/ai-studio', '/konsolidasi', '/finance', '/reports', '/karyawan', '/admin', '/founder', '/database'];
     const blockedResults = [];
 
     for (const restricted of restrictedRoutes) {

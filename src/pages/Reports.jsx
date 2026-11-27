@@ -423,7 +423,7 @@ const Reports = () => {
   return (
     <div className="p-6 pb-24 md:pb-8 space-y-6 max-w-7xl mx-auto">
       {/* Top Header & Actions */}
-      <div className="flex justify-between items-center flex-wrap gap-4 border-b border-border pb-5 print:hidden">
+      <div className="relative z-30 flex justify-between items-center flex-wrap gap-4 border-b border-border pb-5 print:hidden">
         <div>
           <div className="flex items-center gap-3">
             <div className="bg-surface w-10 h-10 rounded-xl border border-destructive/30 flex items-center justify-center text-destructive shadow-lg shadow-sm">
@@ -551,7 +551,7 @@ const Reports = () => {
         <GeneralLedgerView tenantId={targetTenantId} />
       ) : (
         /* Printable Sheet Area */
-        <div id="print-area" className="bg-surface border border-border p-8 rounded-2xl bg-subsurface text-foreground print:bg-white print:text-black print:p-0 print:border-none print:shadow-none space-y-8">
+        <div id="print-area" className="bg-surface border border-border p-4 sm:p-6 lg:p-8 rounded-2xl text-foreground print:bg-white print:text-black print:p-0 print:border-none print:shadow-none space-y-8">
         {/* Header Laporan Resmi */}
         <div className="text-center border-b-2 border-border pb-6 print:border-black print:pb-4">
           <div className="flex justify-center items-center gap-2 mb-1">
@@ -568,22 +568,32 @@ const Reports = () => {
         </div>
 
         {/* Bento Overview: Performa Unit Usaha (Cafe vs Carwash) */}
-        <div className={`grid grid-cols-1 gap-4 ${features.isHybrid ? 'md:grid-cols-4 print:grid-cols-4' : 'md:grid-cols-3 print:grid-cols-3'}`}>
+        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${features.isHybrid ? 'xl:grid-cols-4 print:grid-cols-4' : 'lg:grid-cols-3 print:grid-cols-3'}`}>
           {/* Card Cafe */}
           {features.hasCafe && (
-            <div className="p-4 rounded-2xl border border-border bg-surface print:border-black print:bg-transparent">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black uppercase tracking-wider text-warning">Unit Cafe & F&B</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-warning-bg text-warning font-bold">
+            <div className="p-4 rounded-2xl border border-border bg-subsurface/60 flex flex-col justify-between gap-3 min-w-0 print:border-black print:bg-transparent">
+              <div className="flex items-center justify-between gap-2 min-h-[24px]">
+                <span className="text-[11px] font-black uppercase tracking-wider text-warning truncate">Unit Cafe &amp; F&amp;B</span>
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-warning-bg text-warning border border-warning/25 font-bold font-mono tabular-nums whitespace-nowrap shrink-0">
                   Margin {statements.marginCafe.toFixed(0)}%
                 </span>
               </div>
-              <div className="mt-3 space-y-1">
-                <p className="text-xs text-muted">Omzet: <span className="text-foreground font-bold">{formatRupiah(statements.cafeRevenue)}</span></p>
-                <p className="text-xs text-muted">Beban: <span className="text-destructive font-bold">({formatRupiah(statements.totalBebanCafe)})</span></p>
-                <div className="pt-2 border-t border-border flex items-center justify-between">
-                  <span className="text-xs font-semibold text-foreground">Laba Cafe:</span>
-                  <span className={`text-sm font-black ${statements.labaOperasionalCafe >= 0 ? 'text-primary' : 'text-destructive'}`}>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="text-muted">Omzet</span>
+                  <span className="text-foreground font-mono tabular-nums font-bold text-right whitespace-nowrap">
+                    {formatRupiah(statements.cafeRevenue)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="text-muted">Beban</span>
+                  <span className="text-destructive font-mono tabular-nums font-bold text-right whitespace-nowrap">
+                    ({formatRupiah(statements.totalBebanCafe)})
+                  </span>
+                </div>
+                <div className="pt-2.5 border-t border-border flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold text-foreground">Laba Cafe</span>
+                  <span className={`text-sm font-mono tabular-nums font-black text-right whitespace-nowrap ${statements.labaOperasionalCafe >= 0 ? 'text-primary' : 'text-destructive'}`}>
                     {formatRupiah(statements.labaOperasionalCafe)}
                   </span>
                 </div>
@@ -593,19 +603,29 @@ const Reports = () => {
 
           {/* Card Carwash */}
           {features.hasCarwash && (
-            <div className="p-4 rounded-2xl border border-border bg-surface print:border-black print:bg-transparent">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black uppercase tracking-wider text-primary">Unit Carwash</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary-soft text-primary-soft-foreground font-bold">
+            <div className="p-4 rounded-2xl border border-border bg-subsurface/60 flex flex-col justify-between gap-3 min-w-0 print:border-black print:bg-transparent">
+              <div className="flex items-center justify-between gap-2 min-h-[24px]">
+                <span className="text-[11px] font-black uppercase tracking-wider text-primary truncate">Unit Carwash</span>
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-primary-soft text-primary-soft-foreground border border-primary/25 font-bold font-mono tabular-nums whitespace-nowrap shrink-0">
                   Margin {statements.marginCarwash.toFixed(0)}%
                 </span>
               </div>
-              <div className="mt-3 space-y-1">
-                <p className="text-xs text-muted">Omzet: <span className="text-foreground font-bold">{formatRupiah(statements.carwashRevenue)}</span></p>
-                <p className="text-xs text-muted">Beban: <span className="text-destructive font-bold">({formatRupiah(statements.totalBebanCarwash)})</span></p>
-                <div className="pt-2 border-t border-border flex items-center justify-between">
-                  <span className="text-xs font-semibold text-foreground">Laba Carwash:</span>
-                  <span className={`text-sm font-black ${statements.labaOperasionalCarwash >= 0 ? 'text-primary' : 'text-destructive'}`}>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="text-muted">Omzet</span>
+                  <span className="text-foreground font-mono tabular-nums font-bold text-right whitespace-nowrap">
+                    {formatRupiah(statements.carwashRevenue)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="text-muted">Beban</span>
+                  <span className="text-destructive font-mono tabular-nums font-bold text-right whitespace-nowrap">
+                    ({formatRupiah(statements.totalBebanCarwash)})
+                  </span>
+                </div>
+                <div className="pt-2.5 border-t border-border flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold text-foreground">Laba Carwash</span>
+                  <span className={`text-sm font-mono tabular-nums font-black text-right whitespace-nowrap ${statements.labaOperasionalCarwash >= 0 ? 'text-primary' : 'text-destructive'}`}>
                     {formatRupiah(statements.labaOperasionalCarwash)}
                   </span>
                 </div>
@@ -614,14 +634,29 @@ const Reports = () => {
           )}
 
           {/* Card Overhead Bersama */}
-          <div className="p-4 rounded-2xl border border-border bg-surface print:border-black print:bg-transparent">
-            <span className="text-[11px] font-black uppercase tracking-wider text-primary block">Biaya Bersama</span>
-            <div className="mt-3 space-y-1">
-              <p className="text-xs text-muted">Listrik & Air: <span className="text-foreground font-bold">{formatRupiah(statements.bebanBersamaUtilitas)}</span></p>
-              <p className="text-xs text-muted">Gaji/Casbon: <span className="text-foreground font-bold">{formatRupiah(statements.bebanBersamaGaji)}</span></p>
-              <div className="pt-2 border-t border-border flex items-center justify-between">
-                <span className="text-xs font-semibold text-foreground">Total Overhead:</span>
-                <span className="text-sm font-black text-destructive">
+          <div className="p-4 rounded-2xl border border-border bg-subsurface/60 flex flex-col justify-between gap-3 min-w-0 print:border-black print:bg-transparent">
+            <div className="flex items-center justify-between gap-2 min-h-[24px]">
+              <span className="text-[11px] font-black uppercase tracking-wider text-primary truncate">Biaya Bersama</span>
+              <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-subsurface text-muted border border-border font-bold whitespace-nowrap shrink-0">
+                Overhead
+              </span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3 text-xs">
+                <span className="text-muted">Listrik &amp; Air</span>
+                <span className="text-foreground font-mono tabular-nums font-bold text-right whitespace-nowrap">
+                  {formatRupiah(statements.bebanBersamaUtilitas)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3 text-xs">
+                <span className="text-muted">Gaji / Casbon</span>
+                <span className="text-foreground font-mono tabular-nums font-bold text-right whitespace-nowrap">
+                  {formatRupiah(statements.bebanBersamaGaji)}
+                </span>
+              </div>
+              <div className="pt-2.5 border-t border-border flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-foreground">Total Overhead</span>
+                <span className="text-sm font-mono tabular-nums font-black text-destructive text-right whitespace-nowrap">
                   ({formatRupiah(statements.totalBebanBersama)})
                 </span>
               </div>
@@ -629,14 +664,35 @@ const Reports = () => {
           </div>
 
           {/* Card Laba Bersih Konsolidasi */}
-          <div className="p-4 rounded-2xl border border-border bg-surface print:border-black print:bg-transparent">
-            <span className="text-[11px] font-black uppercase tracking-wider text-primary block">Laba Bersih Konsolidasi</span>
-            <div className="mt-3 space-y-1">
-              <p className="text-xs text-muted">Total Omzet: <span className="text-foreground font-bold">{formatRupiah(statements.totalRevenue)}</span></p>
-              <p className="text-xs text-muted">Total Beban: <span className="text-destructive font-bold">({formatRupiah(statements.totalOperatingExpenses)})</span></p>
-              <div className="pt-2 border-t border-border flex items-center justify-between">
-                <span className="text-xs font-semibold text-foreground">Net Profit:</span>
-                <span className={`text-base font-black ${statements.netProfit >= 0 ? 'text-primary' : 'text-destructive'}`}>
+          <div className="p-4 rounded-2xl border border-border bg-subsurface/60 flex flex-col justify-between gap-3 min-w-0 print:border-black print:bg-transparent">
+            <div className="flex items-center justify-between gap-2 min-h-[24px]">
+              <span className="text-[11px] font-black uppercase tracking-wider text-primary truncate">Laba Bersih Konsolidasi</span>
+              <span
+                className={`text-[10px] px-2.5 py-0.5 rounded-full border font-bold font-mono tabular-nums whitespace-nowrap shrink-0 ${
+                  statements.netProfit >= 0
+                    ? 'bg-success-bg text-success border-success/25'
+                    : 'bg-destructive-bg text-destructive border-destructive/25'
+                }`}
+              >
+                Net {statements.totalRevenue > 0 ? ((statements.netProfit / statements.totalRevenue) * 100).toFixed(0) : '0'}%
+              </span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3 text-xs">
+                <span className="text-muted">Total Omzet</span>
+                <span className="text-foreground font-mono tabular-nums font-bold text-right whitespace-nowrap">
+                  {formatRupiah(statements.totalRevenue)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3 text-xs">
+                <span className="text-muted">Total Beban</span>
+                <span className="text-destructive font-mono tabular-nums font-bold text-right whitespace-nowrap">
+                  ({formatRupiah(statements.totalOperatingExpenses)})
+                </span>
+              </div>
+              <div className="pt-2.5 border-t border-border flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-foreground">Net Profit</span>
+                <span className={`text-base font-mono tabular-nums font-black text-right whitespace-nowrap ${statements.netProfit >= 0 ? 'text-primary' : 'text-destructive'}`}>
                   {formatRupiah(statements.netProfit)}
                 </span>
               </div>

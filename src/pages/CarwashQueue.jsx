@@ -452,10 +452,10 @@ const CarwashQueue = () => {
                 {waitingQueue.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-subsurface p-3.5 rounded-xl border border-border hover:border-border-hover transition-all flex flex-col space-y-2.5"
+                    className="bg-subsurface p-3.5 rounded-xl border border-border hover:border-border-hover transition-all flex flex-col space-y-2.5 min-w-0 overflow-hidden"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="font-mono text-lg font-black text-foreground tracking-wider">
+                    <div className="flex items-start justify-between gap-2 min-w-0">
+                      <span className="font-mono text-lg font-black text-foreground tracking-wider shrink-0">
                         {item.platNomor}
                       </span>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border shrink-0 ${
@@ -467,9 +467,9 @@ const CarwashQueue = () => {
                       </span>
                     </div>
 
-                    <div className="text-xs text-foreground space-y-0.5">
-                      <p className="font-bold text-foreground">{item.paket}</p>
-                      <p className="text-[11px] text-muted">{item.model} • {item.ukuran}</p>
+                    <div className="text-xs text-foreground space-y-0.5 min-w-0">
+                      <p className="font-bold text-foreground break-words line-clamp-2" title={item.paket}>{item.paket}</p>
+                      <p className="text-[11px] text-muted truncate">{item.model} • {item.ukuran}</p>
                     </div>
 
                     <div className="pt-2 border-t border-border flex items-center justify-between text-[11px] text-muted">
@@ -520,22 +520,28 @@ const CarwashQueue = () => {
                 {washingQueue.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-subsurface p-3.5 rounded-xl border border-border hover:border-border-active/60 transition-all flex flex-col space-y-2.5"
+                    className="bg-subsurface p-3.5 rounded-xl border border-border hover:border-border-active/60 transition-all flex flex-col space-y-2.5 min-w-0 overflow-hidden"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="font-mono text-lg font-black text-foreground tracking-wider">
+                    <div className="flex items-start justify-between gap-2 min-w-0">
+                      <span className="font-mono text-lg font-black text-foreground tracking-wider shrink-0">
                         {item.platNomor}
                       </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-primary-soft text-primary-soft-foreground border border-primary/25 shrink-0">
-                        {item.paket}
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-primary-soft text-primary-soft-foreground border border-primary/25 shrink-0 whitespace-nowrap">
+                        Sedang Cuci
                       </span>
                     </div>
 
-                    <div className="text-xs text-foreground space-y-0.5">
-                      <p className="text-[11px] text-muted">{item.model} • {item.ukuran}</p>
-                      <p className="text-[11px] text-foreground flex items-center gap-1">
-                        <Users size={12} strokeWidth={1.75} className="text-muted" />
-                        <span>Kru: {item.anggota1} {item.anggota2 ? `+ ${item.anggota2}` : ''}</span>
+                    <div className="text-xs text-foreground space-y-1 min-w-0">
+                      <span
+                        title={item.paket}
+                        className="inline-block max-w-full truncate text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase bg-primary-soft/70 text-primary-soft-foreground border border-primary/20"
+                      >
+                        {item.paket}
+                      </span>
+                      <p className="text-[11px] text-muted truncate">{item.model} • {item.ukuran}</p>
+                      <p className="text-[11px] text-foreground flex items-center gap-1 min-w-0">
+                        <Users size={12} strokeWidth={1.75} className="text-muted shrink-0" />
+                        <span className="truncate">Kru: {item.anggota1} {item.anggota2 ? `+ ${item.anggota2}` : ''}</span>
                       </p>
                     </div>
 
@@ -595,10 +601,10 @@ const CarwashQueue = () => {
                 {readyQueue.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-subsurface p-3.5 rounded-xl border border-border hover:border-success/40 transition-all flex flex-col space-y-2.5"
+                    className="bg-subsurface p-3.5 rounded-xl border border-border hover:border-success/40 transition-all flex flex-col space-y-2.5 min-w-0 overflow-hidden"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="font-mono text-lg font-black text-foreground tracking-wider">
+                    <div className="flex items-start justify-between gap-2 min-w-0">
+                      <span className="font-mono text-lg font-black text-foreground tracking-wider shrink-0">
                         {item.platNomor}
                       </span>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border shrink-0 ${
@@ -610,9 +616,9 @@ const CarwashQueue = () => {
                       </span>
                     </div>
 
-                    <div className="text-xs text-foreground space-y-0.5">
-                      <p className="font-bold text-foreground">{item.paket}</p>
-                      <p className="text-[11px] text-muted">{item.model} • {item.ukuran}</p>
+                    <div className="text-xs text-foreground space-y-0.5 min-w-0">
+                      <p className="font-bold text-foreground break-words line-clamp-2" title={item.paket}>{item.paket}</p>
+                      <p className="text-[11px] text-muted truncate">{item.model} • {item.ukuran}</p>
                     </div>
 
                     <div className="pt-2 border-t border-border flex items-center justify-between text-[11px] text-muted">
@@ -806,7 +812,7 @@ const CarwashQueue = () => {
                 return (
                   <div
                     key={item.id}
-                    className={`bg-surface p-5 rounded-2xl border transition-all duration-200 relative flex flex-col justify-between shadow-xs hover:border-border-hover ${
+                    className={`bg-surface p-5 rounded-2xl border transition-all duration-200 relative flex flex-col justify-between shadow-xs hover:border-border-hover min-w-0 overflow-hidden ${
                       isSelesai
                         ? 'border-success/30'
                         : isTunggu
@@ -851,9 +857,9 @@ const CarwashQueue = () => {
                           </span>
                         )}
                       </div>
-                      <div className="mt-2 space-y-1">
-                        <p className="text-xs font-bold text-foreground">{item.paket}</p>
-                        <p className="text-[11px] text-muted font-medium">
+                      <div className="mt-2 space-y-1 min-w-0">
+                        <p className="text-xs font-bold text-foreground break-words line-clamp-2" title={item.paket}>{item.paket}</p>
+                        <p className="text-[11px] text-muted font-medium truncate">
                           {item.model} • {item.ukuran} • {item.variant}
                         </p>
                         {item.catatanKendaraan && (

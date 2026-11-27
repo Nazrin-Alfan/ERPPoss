@@ -264,7 +264,7 @@ export default function BankEmailBindingModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[var(--overlay-backdrop)] backdrop-blur-sm animate-fade-in overflow-y-auto"
+      className="fixed inset-y-0 right-0 left-[var(--app-sidebar-offset,0px)] transition-[left] duration-200 z-50 flex items-center justify-center p-3 sm:p-4 bg-[var(--overlay-backdrop)] backdrop-blur-sm animate-fade-in overflow-y-auto"
       aria-labelledby="bank-email-binding-modal-title"
     >
       <div className="w-full max-w-3xl bg-surface border border-border rounded-2xl shadow-2xl flex flex-col max-h-[92dvh] overflow-hidden my-auto">

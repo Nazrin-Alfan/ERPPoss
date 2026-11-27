@@ -66,6 +66,7 @@ import {
 import MerchandiseCatalog from '../../components/pos/MerchandiseCatalog'
 import { mapPosHistoryTransaction, buildHistoryPaymentReceipt } from '../../utils/posHistory'
 import CustomSelect from '../../components/common/CustomSelect'
+import InteractiveCalendar from '../../components/InteractiveCalendar'
 import {
   buildOrderReceiptData,
   buildPaymentReceiptData,
@@ -225,11 +226,20 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
     const active = (DEFAULT_MASTER_DATA.kasir || []).filter(k => k.is_active)
     return active.length > 0 ? (active[0].nama || '').toUpperCase() : 'KASIR'
   })
-  const [selectedPayment, setSelectedPayment] = useState(() => {
-    const active = (DEFAULT_MASTER_DATA.metode_bayar || []).filter(p => p.is_active)
-    return active.length > 0 ? active[0].nama : 'CASH'
-  })
-  const [paymentStatus, setPaymentStatus] = useState('Selesai') // 'Selesai' (default) or 'Pending' (bon)
+  const [selectedPayment, setSelectedPayment] = useState('')
+  const [paymentStatus, setPaymentStatus] = useState('Pending') // 'Pending' (default) or 'Selesai' (lunas)
+
+  const handlePaymentStatusChange = (nextStatus) => {
+    setPaymentStatus(nextStatus)
+    if (nextStatus === 'Pending') {
+      setSelectedPayment('')
+      setUangDiterima('')
+      setSplitCashAmount('')
+      setSplitQrisAmount('')
+    } else if (nextStatus === 'Selesai' && !selectedPayment) {
+      setSelectedPayment(paymentMethods[0]?.nama || 'CASH')
+    }
+  }
 
   // Modal Hari Ini (Starting Capital)
   const [showModalModal, setShowModalModal] = useState(false)
@@ -256,6 +266,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
   const [pendingSearchQuery, setPendingSearchQuery] = useState('')
   const [historySearchQuery, setHistorySearchQuery] = useState('')
   const [historyDate, setHistoryDate] = useState(() => new Date().toLocaleDateString('en-CA'))
+  const [showHistoryCalendar, setShowHistoryCalendar] = useState(false)
 
   // Inventory (Stok Gudang) states for Cashier Monitoring
   const [inventoryList, setInventoryList] = useState([])
@@ -567,7 +578,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
         setSelectedCashier(defaultCashiers[0].nama ? defaultCashiers[0].nama.toUpperCase() : 'KASIR')
       }
 
-      if (defaultPayments && defaultPayments.length > 0) setSelectedPayment(defaultPayments[0].nama)
+      // Jangan timpa selectedPayment saat status default masih Pending agar metode bayar awal tetap kosong
 
       await Promise.all([
         fetchPendingBills(),
@@ -1103,8 +1114,9 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
       // 5. Masukkan state bayar
       setEditingStrukId(struk.id_struk)
-      setSelectedPayment(struk.metode_bayar || 'CASH')
-      setPaymentStatus(struk.status_bayar || 'Selesai')
+      const loadedStatus = struk.status_bayar || 'Pending'
+      setPaymentStatus(loadedStatus)
+      setSelectedPayment(loadedStatus === 'Pending' ? '' : (struk.metode_bayar || 'CASH'))
 
       if (struk.metode_bayar === 'SPLIT') {
         setSplitCashAmount(String(struk.nominal_cash || 0))
@@ -1673,25 +1685,28 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
       const currentTime = new Date().toTimeString().split(' ')[0] // HH:MM:SS
 
       // 1. Simpan Transaksi Struk
-      const effectivePayment = paymentStatus === 'Selesai' ? selectedPayment : (selectedPayment || paymentMethods[0]?.nama || 'CASH')
+      const isSettledNow = paymentStatus === 'Selesai'
+      const effectivePayment = isSettledNow ? selectedPayment : (selectedPayment || '')
 
       let nCash = 0
       let nQris = 0
       const paymentUpper = String(effectivePayment || '').toUpperCase().trim()
-      if (paymentUpper === 'SPLIT') {
-        nCash = parseFloat(splitCashAmount || 0)
-        nQris = parseFloat(splitQrisAmount || 0)
-        if (Math.abs((nCash + nQris) - grandTotal) > 0.01) {
-          setError(`Gagal Checkout: Jumlah bayar Tunai (${formatRupiah(nCash)}) + QRIS (${formatRupiah(nQris)}) tidak sama dengan Total Tagihan (${formatRupiah(grandTotal)}).`)
-          setLoading(false)
-          return
+      if (isSettledNow) {
+        if (paymentUpper === 'SPLIT') {
+          nCash = parseFloat(splitCashAmount || 0)
+          nQris = parseFloat(splitQrisAmount || 0)
+          if (Math.abs((nCash + nQris) - grandTotal) > 0.01) {
+            setError(`Gagal Checkout: Jumlah bayar Tunai (${formatRupiah(nCash)}) + QRIS (${formatRupiah(nQris)}) tidak sama dengan Total Tagihan (${formatRupiah(grandTotal)}).`)
+            setLoading(false)
+            return
+          }
+        } else if (paymentUpper === 'CASH' || paymentUpper === 'TUNAI' || paymentUpper.includes('CASH') || paymentUpper.includes('TUNAI')) {
+          nCash = grandTotal
+        } else if (paymentUpper === 'QRIS' || paymentUpper.includes('QRIS') || paymentUpper === 'TRANSFER' || paymentUpper === 'EDC' || paymentUpper === 'DEBIT') {
+          nQris = grandTotal
+        } else {
+          nCash = grandTotal
         }
-      } else if (paymentUpper === 'CASH' || paymentUpper === 'TUNAI' || paymentUpper.includes('CASH') || paymentUpper.includes('TUNAI')) {
-        nCash = grandTotal
-      } else if (paymentUpper === 'QRIS' || paymentUpper.includes('QRIS') || paymentUpper === 'TRANSFER' || paymentUpper === 'EDC' || paymentUpper === 'DEBIT') {
-        nQris = grandTotal
-      } else {
-        nCash = grandTotal
       }
 
       // 1. Siapkan Payload Header Struk untuk Atomic Checkout
@@ -1701,12 +1716,12 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
         tanggal: todayDate,
         jam: currentTime,
         metode_bayar: effectivePayment,
-        nominal_cash: nCash,
-        nominal_qris: nQris,
-        bayar: nCash + nQris,
-        nominal_bayar: nCash + nQris,
-        uang_diterima: uangDiterima ? parseFloat(uangDiterima) : (nCash + nQris),
-        kembalian: isNaN(kembalian) ? 0 : Math.max(0, kembalian),
+        nominal_cash: isSettledNow ? nCash : 0,
+        nominal_qris: isSettledNow ? nQris : 0,
+        bayar: isSettledNow ? (nCash + nQris) : 0,
+        nominal_bayar: isSettledNow ? (nCash + nQris) : 0,
+        uang_diterima: isSettledNow ? (uangDiterima ? parseFloat(uangDiterima) : (nCash + nQris)) : 0,
+        kembalian: isSettledNow && !isNaN(kembalian) ? Math.max(0, kembalian) : 0,
         status_bayar: paymentStatus,
         kasir: selectedCashier.toUpperCase(),
         diskon_carwash: totalDiskonCarwash,
@@ -1861,11 +1876,11 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
       }
 
       // Alur Operasional:
-      // 1. Jika order berstatus Pending dan mobil DITINGGAL -> Tampilkan Bukti Order (Drop-Off Slip)
+      // 1. Jika order berstatus Pending -> Tampilkan Bukti Order / Tagihan Pending
       // 2. Jika order Selesai (Lunas) -> Tampilkan Bukti Pembayaran Resmi
-      if (paymentStatus === 'Pending' && carwashForm.kehadiran === 'TINGGAL') {
+      if (paymentStatus === 'Pending') {
         setActiveReceipt(buildOrderReceiptData(receiptOrderPayload))
-      } else if (paymentStatus === 'Selesai') {
+      } else {
         setActiveReceipt(buildPaymentReceiptData(receiptOrderPayload))
       }
 
@@ -1881,6 +1896,8 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
       setUangDiterima('')
       setSplitCashAmount('')
       setSplitQrisAmount('')
+      setPaymentStatus('Pending')
+      setSelectedPayment('')
       setCarwashForm(prev => ({
         ...prev,
         platNomor: '',
@@ -2871,19 +2888,46 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
 
               {/* Date Filter & Actions */}
               <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1.5 bg-subsurface border border-border rounded-xl px-2.5 py-1 text-xs">
-                  <Calendar size={13} className="text-muted" />
-                  <input
-                    type="date"
+                <div className="relative z-30">
+                  <button
+                    type="button"
                     aria-label="Filter tanggal riwayat transaksi"
-                    value={historyDate}
-                    onChange={(e) => setHistoryDate(e.target.value)}
-                    className="bg-transparent text-foreground text-base sm:text-xs focus:outline-none cursor-pointer"
-                  />
+                    onClick={() => setShowHistoryCalendar((prev) => !prev)}
+                    className="min-h-[38px] flex items-center gap-2 bg-subsurface hover:bg-surface-hover border border-border rounded-xl px-3 py-1.5 text-xs font-mono tabular-nums font-semibold text-foreground transition-all cursor-pointer active:scale-[0.98]"
+                  >
+                    <Calendar size={14} className="text-primary shrink-0" />
+                    <span>
+                      {historyDate
+                        ? parseDateSafe(historyDate).toLocaleDateString('id-ID', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                          })
+                        : 'Pilih Tanggal'}
+                    </span>
+                    <ChevronDown size={13} className={`text-muted transition-transform ${showHistoryCalendar ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {showHistoryCalendar && (
+                    <div className="fixed inset-x-3 top-28 sm:inset-x-auto sm:absolute sm:right-0 sm:top-full sm:mt-2 z-[999] flex justify-center sm:block">
+                      <InteractiveCalendar
+                        mode="single"
+                        startDate={historyDate}
+                        endDate={historyDate}
+                        onChange={(selected) => {
+                          if (selected) setHistoryDate(selected)
+                        }}
+                        onClose={() => setShowHistoryCalendar(false)}
+                      />
+                    </div>
+                  )}
                 </div>
                 <button
                   type="button"
-                  onClick={() => setHistoryDate(new Date().toLocaleDateString('en-CA'))}
+                  onClick={() => {
+                    setHistoryDate(new Date().toLocaleDateString('en-CA'))
+                    setShowHistoryCalendar(false)
+                  }}
                   className={`min-h-[38px] px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
                     historyDate === new Date().toLocaleDateString('en-CA')
                       ? 'bg-primary text-primary-foreground'
@@ -4153,8 +4197,10 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                <label className="text-[10px] text-muted uppercase tracking-wider font-extrabold block mb-1">Metode Bayar</label>
                <CustomSelect
                  value={selectedPayment}
+                 placeholder={paymentStatus === 'Pending' ? 'Belum dipilih' : 'Pilih metode...'}
                  onChange={(val) => setSelectedPayment(val)}
                  options={[
+                   ...(paymentStatus === 'Pending' ? [{ value: '', label: '— Belum dipilih —' }] : []),
                    ...paymentMethods.map(p => ({ value: p.nama, label: p.nama })),
                    { value: 'SPLIT', label: 'SPLIT (Cash + QRIS)' }
                  ]}
@@ -4167,10 +4213,10 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                <label className="text-[10px] text-muted uppercase tracking-wider font-extrabold block mb-1">Status</label>
                <CustomSelect
                  value={paymentStatus}
-                 onChange={(val) => setPaymentStatus(val)}
+                 onChange={handlePaymentStatusChange}
                  options={[
-                   { value: 'Selesai', label: 'Selesai (Lunas)' },
-                   { value: 'Pending', label: 'Pending (Bon)' }
+                   { value: 'Pending', label: 'Pending (Bon)' },
+                   { value: 'Selesai', label: 'Selesai (Lunas)' }
                  ]}
                  size="xs"
                  variant="blue"
@@ -4179,7 +4225,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
              </div>
              </div>
 
-                 {selectedPayment === 'SPLIT' && (
+                 {paymentStatus === 'Selesai' && selectedPayment === 'SPLIT' && (
              <div className="p-3.5 rounded-xl bg-subsurface border border-border space-y-3 my-1">
                <span className="text-[10px] text-muted-dark uppercase tracking-wider font-extrabold block">Pembayaran Terpisah (Split)</span>
                <div className="space-y-1">
@@ -4640,8 +4686,10 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                   <label className="text-[10px] text-muted uppercase tracking-wider font-extrabold block mb-1">Metode Bayar</label>
                   <CustomSelect
                     value={selectedPayment}
+                    placeholder={paymentStatus === 'Pending' ? 'Belum dipilih' : 'Pilih metode...'}
                     onChange={(val) => setSelectedPayment(val)}
                     options={[
+                      ...(paymentStatus === 'Pending' ? [{ value: '', label: '— Belum dipilih —' }] : []),
                       ...paymentMethods.map(p => ({ value: p.nama, label: p.nama })),
                       { value: 'SPLIT', label: 'SPLIT (Cash + QRIS)' }
                     ]}
@@ -4654,10 +4702,10 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
                   <label className="text-[10px] text-muted uppercase tracking-wider font-extrabold block mb-1">Status</label>
                   <CustomSelect
                     value={paymentStatus}
-                    onChange={(val) => setPaymentStatus(val)}
+                    onChange={handlePaymentStatusChange}
                     options={[
-                      { value: 'Selesai', label: 'Selesai (Lunas)' },
-                      { value: 'Pending', label: 'Pending (Bon)' }
+                      { value: 'Pending', label: 'Pending (Bon)' },
+                      { value: 'Selesai', label: 'Selesai (Lunas)' }
                     ]}
                     size="xs"
                     variant="blue"
@@ -4667,7 +4715,7 @@ const CafePOS = ({ forcedBusinessType = null } = {}) => {
               </div>
 
               {/* Pembayaran Split Mobile */}
-              {selectedPayment === 'SPLIT' && (
+              {paymentStatus === 'Selesai' && selectedPayment === 'SPLIT' && (
                 <div className="p-3.5 rounded-xl bg-subsurface border border-border space-y-2.5">
                   <span className="text-[10px] text-muted-dark uppercase tracking-wider font-extrabold block">Pembayaran Terpisah (Split)</span>
                   <div className="grid grid-cols-2 gap-2">

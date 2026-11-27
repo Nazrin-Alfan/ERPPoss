@@ -33,6 +33,7 @@ const UIKitPreview = ENABLE_UI_KIT_PREVIEW
 
 // Lazy load seluruh modul halaman ERP agar initial bundle ringan & cepat dimuat
 const Dashboard = lazy(() => import('./pages/Dashboard'))
+const AIStudio = lazy(() => import('./pages/AIStudio'))
 const CafePOS = lazy(() => import('./pages/CafePOS'))
 const CarwashQueue = lazy(() => import('./pages/CarwashQueue'))
 const Finance = lazy(() => import('./pages/Finance'))
@@ -236,6 +237,7 @@ export const AppContent = () => {
   return (
     <div
       data-theme={resolvedMode}
+      data-sidebar-state={!showSidebar ? 'none' : isSidebarCollapsed ? 'collapsed' : 'expanded'}
       className="h-[100dvh] w-full max-w-full bg-canvas text-foreground flex flex-col md:flex-row overflow-x-hidden"
     >
       {/* Render Sidebar jika sudah login dan bukan di halaman mandiri */}
@@ -285,7 +287,7 @@ export const AppContent = () => {
           </>
         )}
 
-        <div className={`relative z-10 flex-1 min-h-0 ${showSidebar ? 'pb-20 md:pb-0' : ''}`}>
+        <div className={`relative flex-1 min-h-0 ${showSidebar ? 'pb-20 md:pb-0' : ''}`}>
           <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <Routes>
@@ -311,6 +313,16 @@ export const AppContent = () => {
                     <Dashboard />
                   </ProtectedRoute>
                 } 
+              />
+
+              {/* Rute Workspace Khusus AI Data Studio & Canvas (Owner & Super Admin) */}
+              <Route
+                path="/ai-studio"
+                element={
+                  <ProtectedRoute allowedRoles={ROLE_PERMISSIONS.CAN_VIEW_EXECUTIVE_DASHBOARD}>
+                    <AIStudio />
+                  </ProtectedRoute>
+                }
               />
 
               {/* Rute Konsolidasi Portofolio Multi-Outlet (Owner & Super Admin - Dedicated Executive Layout) */}

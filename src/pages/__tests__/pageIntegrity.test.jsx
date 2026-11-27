@@ -51,6 +51,7 @@ import ResetPassword from '../ResetPassword'
 import LandingPage from '../LandingPage'
 import UserManualPage from '../UserManualPage'
 import Dashboard from '../Dashboard'
+import AIStudio from '../AIStudio'
 import HybridPOSPage from '../pos/HybridPOSPage'
 import CarwashQueue from '../CarwashQueue'
 import Finance from '../Finance'
@@ -69,6 +70,7 @@ import OwnerWithdrawalModal from '../../components/finance/OwnerWithdrawalModal'
 import VoidReasonModal from '../../components/pos/VoidReasonModal'
 import ShiftClosingModal from '../../components/pos/ShiftClosingModal'
 import ThermalReceiptModal from '../../components/pos/ThermalReceiptModal'
+import BankMutationInboxTab from '../../components/finance/BankMutationInboxTab'
 
 describe('Phase 1.5: All 18 Production Pages & Critical Modals SSR Render Integrity', () => {
   beforeEach(() => {
@@ -82,6 +84,7 @@ describe('Phase 1.5: All 18 Production Pages & Critical Modals SSR Render Integr
     { name: 'LandingPage (/welcome)', route: '/welcome', Component: LandingPage, role: 'guest', markers: ['RelayPOS', '/login'] },
     { name: 'UserManualPage (/panduan)', route: '/panduan', Component: UserManualPage, role: 'guest', markers: ['Panduan Penggunaan'] },
     { name: 'Dashboard (/dashboard)', route: '/dashboard', Component: Dashboard, role: 'Owner', markers: ['Ikhtisar Performa Bisnis'] },
+    { name: 'AIStudio (/ai-studio)', route: '/ai-studio', Component: AIStudio, role: 'Owner', markers: ['AI Data Studio'] },
     { name: 'HybridPOSPage (/pos)', route: '/pos', Component: HybridPOSPage, role: 'Owner', markers: ['Kasir'] },
     { name: 'CarwashQueue (/queue)', route: '/queue', Component: CarwashQueue, role: 'Owner', markers: ['Antrean'] },
     { name: 'Finance (/finance)', route: '/finance', Component: Finance, role: 'Owner', markers: ['Monitoring Keuangan', 'tabular-nums'] },
@@ -205,5 +208,10 @@ describe('Phase 1.5: All 18 Production Pages & Critical Modals SSR Render Integr
     }
     expect(receiptHtml).toContain('id="thermal-receipt-print-wrapper"')
     expect(receiptHtml).toContain('Kopi Susu')
+
+    const bankInboxHtml = renderToString(
+      <BankMutationInboxTab pockets={[]} cashflowList={[]} expenseCategories={[]} />
+    )
+    expect(bankInboxHtml).toContain('Antrean Rekonsiliasi Email Notifikasi Bank Mandiri')
   })
 })

@@ -42,7 +42,7 @@ describe('MenuHppCalculator Component (SSR Test)', () => {
     expect(html).toContain(formatRupiah(7000))
   })
 
-  it('merender panel kalkulator saat initialOpen true dengan rincian biaya dan rekomendasi harga', () => {
+  it('merender panel kalkulator saat initialOpen true dengan switcher 2 mode dan rekomendasi harga', () => {
     const html = renderToString(
       React.createElement(MenuHppCalculator, {
         menuRecipe: mockRecipe,
@@ -56,7 +56,42 @@ describe('MenuHppCalculator Component (SSR Test)', () => {
     expect(html).toContain('Tutup')
     expect(html).toContain('Biaya Bahan Baku (Food Cost)')
     expect(html).toContain('Simulasi Rekomendasi Harga Jual')
+    expect(html).toContain('Hitung Margin Otomatis')
     expect(html).toContain('Terapkan Harga')
-    expect(html).toContain('Estimasi Laba Kotor per Porsi')
+    expect(html).not.toContain('Tentukan Harga Jual (Rp)')
+  })
+
+  it('merender panel Hitung Margin Otomatis saat mode custom_price aktif (termasuk saat harga awal 0)', () => {
+    const htmlWithPrice = renderToString(
+      React.createElement(MenuHppCalculator, {
+        menuRecipe: mockRecipe,
+        stokBahan: mockStok,
+        sellingPrice: 20000,
+        onApplyPrice: vi.fn(),
+        initialOpen: true,
+        initialSimMode: 'custom_price'
+      })
+    )
+
+    expect(htmlWithPrice).toContain('Tentukan Harga Jual (Rp)')
+    expect(htmlWithPrice).toContain('Margin Keuntungan:')
+    expect(htmlWithPrice).toContain('Estimasi Laba Kotor per Porsi:')
+    expect(htmlWithPrice).toContain('65%')
+    expect(htmlWithPrice).toContain(formatRupiah(13000))
+    expect(htmlWithPrice).not.toContain('Terapkan Harga')
+
+    const htmlZero = renderToString(
+      React.createElement(MenuHppCalculator, {
+        menuRecipe: mockRecipe,
+        stokBahan: mockStok,
+        sellingPrice: 0,
+        onApplyPrice: vi.fn(),
+        initialOpen: true,
+        initialSimMode: 'custom_price'
+      })
+    )
+
+    expect(htmlZero).toContain('Tentukan Harga Jual (Rp)')
+    expect(htmlZero).toContain('0%')
   })
 })

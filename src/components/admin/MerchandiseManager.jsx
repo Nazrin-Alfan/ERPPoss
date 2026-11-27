@@ -400,7 +400,7 @@ export default function MerchandiseManager({
 
       {/* Modal Tambah / Edit Merchandise */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-[var(--overlay-backdrop)] backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-y-0 right-0 left-[var(--app-sidebar-offset,0px)] transition-[left] duration-200 z-50 bg-[var(--overlay-backdrop)] backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-surface border border-border shadow-sm w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="p-4 border-b border-border flex justify-between items-center bg-surface">

@@ -63,16 +63,15 @@ export default function BankMutationInboxTab({
   const [rowForms, setRowForms] = useState({})
 
   // Simulator / Importer Modal state
+  const defaultTemplate = SAMPLE_MANDIRI_EMAIL_TEMPLATES.TRANSFER_BIFAST || Object.values(SAMPLE_MANDIRI_EMAIL_TEMPLATES)[0] || {}
   const [showImportModal, setShowImportModal] = useState(false)
-  const [selectedTemplateKey, setSelectedTemplateKey] = useState('mandiri_transfer_v1')
+  const [selectedTemplateKey, setSelectedTemplateKey] = useState('TRANSFER_BIFAST')
   const [simConnectionId, setSimConnectionId] = useState('')
   const [simLast4, setSimLast4] = useState('1122')
-  const [simSender, setSimSender] = useState('notifikasi@bankmandiri.co.id')
-  const [simSubject, setSimSubject] = useState(
-    SAMPLE_MANDIRI_EMAIL_TEMPLATES.mandiri_transfer_v1.subject
-  )
-  const [simHtml, setSimHtml] = useState(
-    SAMPLE_MANDIRI_EMAIL_TEMPLATES.mandiri_transfer_v1.rawHtml
+  const [simSender, setSimSender] = useState(defaultTemplate.from || 'noreply.livin@bankmandiri.co.id')
+  const [simSubject, setSimSubject] = useState(defaultTemplate.subject || '')
+  const [simHtml, setSimHtml] = useState(() =>
+    typeof defaultTemplate.getBody === 'function' ? defaultTemplate.getBody('1122') : ''
   )
   const [ingesting, setIngesting] = useState(false)
 
@@ -83,7 +82,7 @@ export default function BankMutationInboxTab({
       let draftQuery = supabase
         .from('bank_transaction_drafts')
         .select('*')
-        .order('tx_occurred_at', { ascending: false })
+        .order('occurred_at', { ascending: false })
       let connQuery = supabase
         .from('bank_email_connections')
         .select('*')
@@ -149,6 +148,7 @@ export default function BankMutationInboxTab({
       'Operasional'
     const fallbackTargetPocket =
       allActivePockets.find((p) => p.id !== draft.pocket_id)?.id || ''
+    const counterpartyName = draft.counterparty_name || draft.beneficiary_name || 'Penerima'
     return {
       action:
         draft.review_reason === 'POSSIBLE_DUPLICATE'
@@ -160,8 +160,8 @@ export default function BankMutationInboxTab({
       kategori: defaultCategory,
       keterangan:
         draft.suggested_keterangan ||
-        `Mutasi Mandiri ${draft.tx_type || 'TRANSFER'} ke ${draft.beneficiary_name || 'Penerima'}`,
-      existing_cashflow_id: draft.matched_cashflow_id || '',
+        `Mutasi Mandiri ${draft.tx_type || 'TRANSFER'} ke ${counterpartyName}`,
+      existing_cashflow_id: draft.duplicate_candidate_cashflow_id || draft.matched_cashflow_id || '',
       ignore_reason: ''
     }
   }
@@ -182,17 +182,29 @@ export default function BankMutationInboxTab({
     if (!tpl) return
     const targetLast4 = overrideLast4 || simLast4 || '1122'
     setSelectedTemplateKey(tplKey)
-    setSimSubject(tpl.subject)
-    setSimHtml(tpl.rawHtml.replace(/1122/g, targetLast4))
+    if (tpl.from) setSimSender(tpl.from)
+    setSimSubject(tpl.subject || '')
+    setSimHtml(typeof tpl.getBody === 'function' ? tpl.getBody(targetLast4) : '')
   }
 
   const parsedPreview = useMemo(() => {
-    return parseMandiriNotificationEmail({
+    const raw = parseMandiriNotificationEmail({
       from: simSender,
       subject: simSubject,
-      html: simHtml,
+      body: simHtml,
       receivedAt: new Date().toISOString()
     })
+    return {
+      ...raw,
+      ok: Boolean(raw?.recognized && raw?.postable),
+      reason:
+        raw?.error ||
+        (raw?.postable === false
+          ? `Status: ${raw?.parse_status || raw?.transaction_status || 'TIDAK VALID'}`
+          : ''),
+      source_account_last4: raw?.account_last4 || '',
+      beneficiary_name: raw?.counterparty_name || '-'
+    }
   }, [simSender, simSubject, simHtml])
 
   const handleIngestEmail = async (e) => {
@@ -249,26 +261,23 @@ export default function BankMutationInboxTab({
       }
 
       const uniqueMsgId = `livin-ui-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+      const resolvedLast4 = parsedPreview.account_last4 || parsedPreview.source_account_last4 || simLast4 || '1122'
       const { data: rpcRes, error: rpcErr } = await supabase.rpc(
         'fn_ingest_mandiri_normalized_tx',
         {
           p_connection_id: activeConnId,
           p_provider_message_id: uniqueMsgId,
-          p_sender_email: parsedPreview.sender_email,
-          p_subject: parsedPreview.subject,
-          p_email_received_at: parsedPreview.email_received_at,
-          p_tx_occurred_at: parsedPreview.tx_occurred_at,
-          p_parser_version: parsedPreview.parser_version,
-          p_tx_type: parsedPreview.tx_type,
-          p_source_account_last4: parsedPreview.source_account_last4,
-          p_beneficiary_name: parsedPreview.beneficiary_name,
-          p_beneficiary_bank: parsedPreview.beneficiary_bank,
-          p_beneficiary_account: parsedPreview.beneficiary_account,
-          p_principal_amount: parsedPreview.principal_amount,
-          p_fee_amount: parsedPreview.fee_amount,
-          p_bank_reference_no: `${parsedPreview.bank_reference_no}-${Date.now().toString().slice(-4)}`,
-          p_raw_excerpt_redacted: parsedPreview.raw_excerpt_redacted,
-          p_confidence: parsedPreview.confidence
+          p_sender_email: simSender,
+          p_sender_verified: Boolean(parsedPreview.sender_verified),
+          p_subject: simSubject,
+          p_received_at: new Date().toISOString(),
+          p_payload: {
+            ...parsedPreview,
+            account_last4: resolvedLast4,
+            bank_reference: parsedPreview.bank_reference
+              ? `${parsedPreview.bank_reference}-${Date.now().toString().slice(-4)}`
+              : `MND-UI-${Date.now()}`
+          }
         }
       )
 
@@ -276,7 +285,7 @@ export default function BankMutationInboxTab({
 
       if (rpcRes?.status === 'IGNORED_UNBOUND_ACCOUNT') {
         setError(
-          `Notifikasi diabaikan otomatis (IGNORED_UNBOUND_ACCOUNT): Ekor rekening •••• ${parsedPreview.source_account_last4} belum diikat ke kantong saldo manapun di tenant ini.`
+          `Notifikasi diabaikan otomatis (IGNORED_UNBOUND_ACCOUNT): Ekor rekening •••• ${resolvedLast4} belum diikat ke kantong saldo manapun di tenant ini.`
         )
       } else if (rpcRes?.status === 'SKIPPED_BEFORE_CUTOFF') {
         setError(
@@ -284,7 +293,7 @@ export default function BankMutationInboxTab({
         )
       } else {
         setSuccess(
-          `Notifikasi Mandiri •••• ${parsedPreview.source_account_last4} sebesar ${formatRupiah(
+          `Notifikasi Mandiri •••• ${resolvedLast4} sebesar ${formatRupiah(
             parsedPreview.total_debit
           )} berhasil masuk antrean (${rpcRes?.review_status || 'READY'}).`
         )
@@ -331,7 +340,7 @@ export default function BankMutationInboxTab({
           p_expected_version: Number(draft.version || 1),
           p_action: form.action,
           p_pocket_id: form.pocket_id || null,
-          p_target_pocket_id: form.action === 'TRANSFER_POCKET' ? form.target_pocket_id : null,
+          p_destination_pocket_id: form.action === 'TRANSFER_POCKET' ? form.target_pocket_id : null,
           p_jenis: form.jenis || 'Operasional',
           p_kategori: form.kategori || 'Operasional',
           p_keterangan: form.keterangan || draft.suggested_keterangan,
@@ -579,7 +588,7 @@ export default function BankMutationInboxTab({
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface border border-border font-mono font-bold text-xs text-foreground">
                           <Building2 size={12} className="text-primary" />
-                          MANDIRI •••• {draft.source_account_last4}
+                          MANDIRI •••• {draft.account_last4 || draft.source_account_last4 || '----'}
                         </span>
                         <span className="px-2 py-0.5 rounded-md bg-surface border border-border font-mono text-[11px] text-muted">
                           {draft.tx_type}
@@ -592,7 +601,7 @@ export default function BankMutationInboxTab({
                         {draft.review_status === 'NEEDS_REVIEW' && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-warning-bg text-warning border border-warning/30 text-[10px] font-bold">
                             <AlertTriangle size={11} />
-                            NEEDS REVIEW: {draft.review_reason || 'PERiksa KANTONG'}
+                            NEEDS REVIEW: {draft.review_reason || 'PERIKSA KANTONG'}
                           </span>
                         )}
                         {draft.review_status === 'POSTED' && (
@@ -608,18 +617,18 @@ export default function BankMutationInboxTab({
                           </span>
                         )}
                         <span className="text-[11px] font-mono text-muted-dark">
-                          Ref: {draft.bank_reference_no || '-'}
+                          Ref: {draft.bank_reference || draft.bank_reference_no || '-'}
                         </span>
                       </div>
 
                       <div className="text-sm font-bold text-foreground">
-                        Penerima: {draft.beneficiary_name || 'Merchant / Penerima'}{' '}
+                        Penerima: {draft.counterparty_name || draft.beneficiary_name || 'Merchant / Penerima'}{' '}
                         {draft.beneficiary_bank ? `(${draft.beneficiary_bank})` : ''}
                       </div>
                       <div className="text-[11px] text-muted font-mono">
                         Waktu Transaksi:{' '}
-                        {draft.tx_occurred_at
-                          ? new Date(draft.tx_occurred_at).toLocaleString('id-ID')
+                        {(draft.occurred_at || draft.tx_occurred_at)
+                          ? new Date(draft.occurred_at || draft.tx_occurred_at).toLocaleString('id-ID')
                           : '-'}
                       </div>
                     </div>
@@ -642,7 +651,7 @@ export default function BankMutationInboxTab({
                       <ShieldAlert size={15} className="shrink-0 text-warning" />
                       <span>
                         {draft.review_reason === 'AMBIGUOUS_POCKET'
-                          ? `Ekor rekening •••• ${draft.source_account_last4} terhubung ke lebih dari 1 kantong saldo di tenant ini. Pilih kantong saldo yang tepat sebelum memposting.`
+                          ? `Ekor rekening •••• ${draft.account_last4 || draft.source_account_last4 || '----'} terhubung ke lebih dari 1 kantong saldo di tenant ini. Pilih kantong saldo yang tepat sebelum memposting.`
                           : draft.review_reason === 'POSSIBLE_DUPLICATE'
                           ? 'Ditemukan transaksi pengeluaran manual dengan nominal dan tanggal serupa. Pilih "Tautkan ke Cashflow Manual" agar saldo tidak terpotong dua kali.'
                           : 'Ekor rekening belum terikat ke kantong default. Pilih kantong saldo tujuan secara eksplisit.'}
@@ -885,9 +894,9 @@ export default function BankMutationInboxTab({
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {[
-                    { key: 'mandiri_transfer_v1', label: 'Transfer BI-FAST (Rp 252.500)' },
-                    { key: 'mandiri_qris_payment_v1', label: 'Bayar QRIS (Rp 85.000)' },
-                    { key: 'mandiri_bill_va_v1', label: 'Tagihan PLN (Rp 453.000)' }
+                    { key: 'TRANSFER_BIFAST', label: 'Transfer BI-FAST (Rp 352.500)' },
+                    { key: 'QRIS_PAYMENT', label: 'Bayar QRIS (Rp 125.000)' },
+                    { key: 'BILL_VA', label: 'Tagihan PLN (Rp 483.000)' }
                   ].map((tpl) => (
                     <button
                       key={tpl.key}

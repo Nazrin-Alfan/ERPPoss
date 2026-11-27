@@ -29,7 +29,8 @@ import {
   MessageSquarePlus,
   BookOpen,
   Sun,
-  Moon
+  Moon,
+  Sparkles
 } from 'lucide-react'
 
 import { getTenantFeatures } from '../utils/businessCapabilities'
@@ -127,6 +128,17 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           name: 'Dashboard',
           path: '/dashboard',
           icon: LayoutDashboard,
+          allowedRoles: ROLE_PERMISSIONS.CAN_VIEW_EXECUTIVE_DASHBOARD
+        }
+      ]
+    },
+    {
+      title: 'AI & DATA STUDIO',
+      items: [
+        {
+          name: 'AI Data Studio',
+          path: '/ai-studio',
+          icon: Sparkles,
           allowedRoles: ROLE_PERMISSIONS.CAN_VIEW_EXECUTIVE_DASHBOARD
         }
       ]
